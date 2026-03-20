@@ -6,8 +6,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
-import com.example.cardiosimulator.ui.screens.BaseSplitScreen
+import com.example.cardiosimulator.ui.screens.MainScreen
+import com.example.cardiosimulator.ui.viewmodels.MainViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -15,7 +17,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             CardioSimulatorTheme {
-                BaseSplitScreen()
+                MainScreen(
+                    viewModel = MainViewModel(
+                        repository = Points.fromResources(this)
+                    )
+                )
             }
         }
     }
@@ -25,6 +31,5 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Preview() {
     CardioSimulatorTheme {
-        BaseSplitScreen()
     }
 }
