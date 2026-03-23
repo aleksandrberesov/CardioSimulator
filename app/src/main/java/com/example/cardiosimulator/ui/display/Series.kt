@@ -14,14 +14,14 @@ import androidx.compose.ui.Modifier
 fun Series(
     points: Points,
     modifier: Modifier = Modifier,
-    index: Int = 1
+    title: String = "",
 ){
     val dataPoints = Points(List(6) { points.values }.flatten())
-    Row(modifier = Modifier.fillMaxWidth()) {
+    Row(modifier = Modifier.seriesArea()) {
         Box(
             modifier = Modifier.weight(1f),
             contentAlignment = Alignment.Center
-        ) { Text(index.toString()) }
+        ) { Text(title) }
         Box(
             modifier = Modifier.weight(10f),
             contentAlignment = Alignment.Center

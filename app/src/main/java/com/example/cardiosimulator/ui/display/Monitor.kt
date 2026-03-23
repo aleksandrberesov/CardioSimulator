@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.example.cardiosimulator.data.Points
+import com.example.cardiosimulator.ui.panels.SeriesControlPanel
 
 
 @Composable
@@ -24,9 +25,15 @@ fun Monitor(
                 Series(
                     points = points,
                     modifier = modifier,
-                    index = index + 1
+                    title = (index + 1).toString()
                 )
             }
+        }
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.Center
+        ) {
+            SeriesControlPanel()
         }
     }
 }
