@@ -4,8 +4,11 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,6 +32,8 @@ fun Tab(
     Column(
         modifier = modifier
             .fillMaxHeight(1f)
+            .width(IntrinsicSize.Max)
+            .defaultMinSize(minWidth = 56.dp)
             .border(borderWidth, MaterialTheme.colorScheme.outline)
             .clickable(onClick = onClick)
             .padding(4.dp),

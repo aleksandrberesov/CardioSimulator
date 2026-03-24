@@ -12,8 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.cardiosimulator.ui.components.Label
 import com.example.cardiosimulator.ui.components.Tab
+import com.example.cardiosimulator.ui.utils.padWithFiveSpaces
 
 @Composable
 fun SeriesControlPanel(
@@ -39,7 +41,7 @@ fun SeriesControlPanel(
             onClick = onTab2Click
         )
         Tab(
-            text = "Compare",
+            text = "Compare".padWithFiveSpaces(),
             onClick = onTab3Click
         )
         Tab(
@@ -53,7 +55,7 @@ fun SeriesControlPanel(
             onClick = onTab5Click
         )
         Tab(
-            text = "Electrodes",
+            text = "Electrodes".padWithFiveSpaces(),
             onClick = onTab5Click
         )
         Tab(
@@ -65,7 +67,8 @@ fun SeriesControlPanel(
             text = "EOS",
             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
             color = androidx.compose.ui.graphics.Color.Red,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            fontSize = 24.sp
         )
         Tab(
             icon = Icons.Default.Pause,
@@ -76,14 +79,15 @@ fun SeriesControlPanel(
             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
             color = androidx.compose.ui.graphics.Color.White,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            backgroundColor = androidx.compose.ui.graphics.Color.Black
+            backgroundColor = androidx.compose.ui.graphics.Color.Black,
+            fontSize = 24.sp
         )
         Tab(
-            text = "EMD/EBPA",
+            text = "EMD/EBPA".padWithFiveSpaces(),
             onClick = onTab5Click
         )
         Tab(
-            text = "Muscle",
+            text = "Muscle".padWithFiveSpaces(),
             onClick = onTab5Click
         )
         Tab(

@@ -17,20 +17,22 @@ fun Monitor(
     count: Int = 1
 ){
     Column(modifier = Modifier.fillMaxSize()) {
-        repeat(count) { index ->
-            Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.Center
-            ) {
-                Series(
-                    points = points,
-                    modifier = modifier,
-                    title = (index + 1).toString()
-                )
+        Column(modifier = Modifier.fillMaxSize().weight(10f)) {
+            repeat(count) { index ->
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Series(
+                        points = points,
+                        modifier = modifier,
+                        title = (index + 1).toString()
+                    )
+                }
             }
         }
         Box(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1.0f),
             contentAlignment = Alignment.Center
         ) {
             SeriesControlPanel()

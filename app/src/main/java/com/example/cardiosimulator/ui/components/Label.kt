@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -24,7 +25,8 @@ fun Label(
     color: Color = MaterialTheme.colorScheme.onSurface,
     fontWeight: FontWeight? = null,
     textAlign: TextAlign = TextAlign.Center,
-    backgroundColor: Color = Color.Transparent
+    backgroundColor: Color = Color.Transparent,
+    fontSize: TextUnit = TextUnit.Unspecified
 ) {
     Column(
         modifier = modifier
@@ -39,7 +41,8 @@ fun Label(
             style = style,
             color = color,
             fontWeight = fontWeight,
-            textAlign = textAlign
+            textAlign = textAlign,
+            fontSize = fontSize
         )
     }
 }
