@@ -15,3 +15,6 @@ fun Modifier.chartArea(): Modifier {
         .background(Color.White)
         //.padding(16.dp)
 }
+fun Modifier.Tab(): Modifier {
+    return this
+}

@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -34,7 +35,7 @@ fun Tab(
             .fillMaxHeight(1f)
             .width(IntrinsicSize.Max)
             .defaultMinSize(minWidth = 56.dp)
-            .border(borderWidth, MaterialTheme.colorScheme.outline)
+            .border(borderWidth, Color.Black)
             .clickable(onClick = onClick)
             .padding(4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -44,23 +45,22 @@ fun Tab(
             Icon(
                 imageVector = icon,
                 contentDescription = text,
-                tint = MaterialTheme.colorScheme.onSurface,
+                tint = Color.Black,
                 modifier = iconModifier
             )
         } else if (text != null) {
             Text(
                 text = text,
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = Color.Black
             )
-        }
-
-        if (subText != null) {
-            Text(
-                text = subText,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (subText != null) {
+                Text(
+                    text = subText,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.Black
+                )
+            }
         }
     }
 }

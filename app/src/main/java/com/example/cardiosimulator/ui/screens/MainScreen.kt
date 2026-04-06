@@ -38,7 +38,9 @@ fun MainScreen(viewModel: MainViewModel){
             Box(
                 modifier = Modifier.weight(4f).middleSectionCenter(),
                 contentAlignment = Alignment.Center
-            ) { Monitor(points = viewModel.points, count = 12) }
+            ) {
+                Monitor(points = viewModel.points, count = 12)
+            }
         }
 
     }
