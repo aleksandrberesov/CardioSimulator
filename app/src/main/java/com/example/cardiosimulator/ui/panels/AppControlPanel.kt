@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.MainViewModel
@@ -52,7 +53,7 @@ fun AppControlPanel(
             ) {
                 Box {
                     Tab(
-                        text = selectedOperatingMode,
+                        text = selectedOperatingMode.title,
                         onClick = { expanded = true }
                     )
                     DropdownMenu(
@@ -61,7 +62,7 @@ fun AppControlPanel(
                     ) {
                         operatingModes.forEach { item ->
                             DropdownMenuItem(
-                                text = { Text(item) },
+                                text = { Text(item.title) },
                                 onClick = {
                                     viewModel.updateOperatingMode(item)
                                     expanded = false
@@ -98,7 +99,9 @@ fun AppControlPanelPreview() {
     CardioSimulatorTheme {
         AppControlPanel(
             viewModel = MainViewModel(
-                appState = com.example.cardiosimulator.domain.AppStateModel(initialOperatingMode = "Preview"),
+                appState = com.example.cardiosimulator.domain.AppBuilder()
+                    .addMode(OperatingModeModel(title = "Test", description = ""))
+                    .build(),
                 repository = com.example.cardiosimulator.data.Points.fromResources(context)
             )
         )

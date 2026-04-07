@@ -1,4 +1,5 @@
 package com.example.cardiosimulator.ui.screens
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,8 +12,10 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import android.content.res.Configuration
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.Points
-import com.example.cardiosimulator.domain.AppStateModel
+import com.example.cardiosimulator.domain.AppBuilder
+import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.viewmodels.MainViewModel
 import com.example.cardiosimulator.ui.display.Monitor
 import com.example.cardiosimulator.ui.panels.AppControlPanel
@@ -66,14 +69,20 @@ fun MainScreen(viewModel: MainViewModel){
     }
 }
 
-@Preview(showBackground = true, widthDp = 1000, heightDp = 1000)
+@SuppressLint("LocalContextResourcesRead")
+@Preview(showBackground = true, widthDp = 1000, heightDp = 600)
 @Composable
 fun MainScreenPreview() {
     val context = LocalContext.current
+    val appModes = context.resources.getStringArray(R.array.app_modes)
+    val appBuilder = AppBuilder()
+    appModes.forEach { title ->
+        appBuilder.addMode(OperatingModeModel(title, ""))
+    }
     CardioSimulatorTheme {
         MainScreen(
             viewModel = MainViewModel(
-                appState = AppStateModel(initialOperatingMode = "Test"),
+                appState = appBuilder.build(),
                 repository = Points.fromResources(context)
             )
         )

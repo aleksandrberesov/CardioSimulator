@@ -1,11 +1,13 @@
 package com.example.cardiosimulator.domain
 
-data class AppStateModel(val initialOperatingMode: String) {
-    var selectedOperatingMode: String = initialOperatingMode
+data class AppStateModel(
+    val initialOperatingMode: OperatingModeModel,
+    val operatingModes: List<OperatingModeModel>
+) {
+    var selectedOperatingMode: OperatingModeModel = initialOperatingMode
         private set
 
-    val operatingModes = listOf("Item 1", "Item 2", "Item 3", "Item 4")
-    fun updateMode(newMode: String) {
+    fun updateMode(newMode: OperatingModeModel) {
         selectedOperatingMode = newMode
     }
 }
