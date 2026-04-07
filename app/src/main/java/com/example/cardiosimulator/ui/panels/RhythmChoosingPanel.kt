@@ -16,6 +16,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,8 +24,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.ui.screens.verticalScrollbar
+import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 
 @Composable
 fun RhythmChoosingPanel(
@@ -54,7 +57,6 @@ fun RhythmChoosingPanel(
             .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Row 1: Search (weight 1)
         Row(
             modifier = Modifier.fillMaxWidth().weight(1f),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -76,8 +78,6 @@ fun RhythmChoosingPanel(
                 singleLine = true
             )
         }
-
-        // Row 2: Rhythms List (weight 5)
         Row(
             modifier = Modifier.fillMaxWidth().weight(5f),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -109,8 +109,6 @@ fun RhythmChoosingPanel(
                 }
             }
         }
-
-        // Row 3: Heart Issues List (weight 5)
         Row(
             modifier = Modifier.fillMaxWidth().weight(5f),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -141,6 +139,16 @@ fun RhythmChoosingPanel(
                     }
                 }
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun RhythmChoosingPanelPreview() {
+    CardioSimulatorTheme {
+        Surface {
+            RhythmChoosingPanel()
         }
     }
 }

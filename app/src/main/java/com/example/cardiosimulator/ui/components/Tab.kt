@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -17,8 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 
 @Composable
 fun Tab(
@@ -61,6 +66,31 @@ fun Tab(
                     color = Color.Black
                 )
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TabPreview() {
+    CardioSimulatorTheme {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Tab(
+                text = "4x",
+                onClick = {}
+            )
+            Tab(
+                text = "25",
+                subText = "mm/s",
+                onClick = {}
+            )
+            Tab(
+                icon = Icons.Default.Pause,
+                onClick = {}
+            )
         }
     }
 }
