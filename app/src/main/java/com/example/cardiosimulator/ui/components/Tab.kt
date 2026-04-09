@@ -2,6 +2,7 @@ package com.example.cardiosimulator.ui.components
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -18,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
@@ -33,14 +35,17 @@ fun Tab(
     subText: String? = null,
     icon: ImageVector? = null,
     iconModifier: Modifier = Modifier,
-    borderWidth: Dp = 1.dp
+    borderWidth: Dp = 1.dp,
+    cornerRadius: Dp = 4.dp
 ) {
+    val shape = RoundedCornerShape(cornerRadius)
     Column(
         modifier = modifier
             .fillMaxHeight(1f)
             .width(IntrinsicSize.Max)
             .defaultMinSize(minWidth = 56.dp)
-            .border(borderWidth, Color.Black)
+            .border(borderWidth, Color.Black, shape)
+            .clip(shape)
             .clickable(onClick = onClick)
             .padding(4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -56,7 +61,7 @@ fun Tab(
         } else if (text != null) {
             Text(
                 text = text,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelLarge,
                 color = Color.Black
             )
             if (subText != null) {
@@ -70,7 +75,7 @@ fun Tab(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, widthDp = 1000, heightDp = 50)
 @Composable
 fun TabPreview() {
     CardioSimulatorTheme {

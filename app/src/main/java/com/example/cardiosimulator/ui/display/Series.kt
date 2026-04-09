@@ -1,6 +1,7 @@
 package com.example.cardiosimulator.ui.display
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
@@ -21,10 +22,14 @@ fun Series(
         Box(
             modifier = Modifier.weight(1f),
             contentAlignment = Alignment.Center
-        ) { Text(title) }
+        ) {
+            Text(title)
+        }
         Box(
             modifier = Modifier.weight(10f),
             contentAlignment = Alignment.Center
-        ) { ChartCanvas(points = dataPoints, modifier = modifier, scaleY = 1f) }
+        ) {
+            ChartCanvas(points = dataPoints, modifier = modifier, scaleY = 1f)
+        }
     }
 }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.HorizontalDivider
@@ -24,6 +25,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.ui.screens.verticalScrollbar
@@ -36,6 +39,7 @@ fun RhythmChoosingPanel(
     onSearchQueryChange: (String) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
+    var selectedRhythm by remember { mutableStateOf<String?>(null) }
     val rhythms = listOf(
         "Sinus Rhythm", "Sinus Tachycardia", "Sinus Bradycardia", "Sinus Arrhythmia",
         "Atrial Fibrillation", "Atrial Flutter", "SVT", "Atrial Tachycardia",
@@ -43,12 +47,8 @@ fun RhythmChoosingPanel(
         "Junctional Rhythm", "Idioventricular Rhythm", "First Degree AV Block",
         "Mobitz I (Wenckebach)", "Mobitz II", "Third Degree AV Block"
     )
-    val heartIssues = listOf(
-        "Heart Failure", "Heart Attack", "Heart Valve Disease"
-    )
 
     val rhythmsListState = rememberLazyListState()
-    val heartIssuesListState = rememberLazyListState()
 
     Column(
         modifier = modifier
@@ -59,7 +59,7 @@ fun RhythmChoosingPanel(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            //horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             OutlinedTextField(
                 value = searchQuery,
@@ -68,14 +68,17 @@ fun RhythmChoosingPanel(
                     onSearchQueryChange(it)
                 },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Search rhythm...") },
+                textStyle = TextStyle(color = Color.Black),
+                placeholder = { Text("Rhythm...", color = Color.Black) },
                 leadingIcon = {
                     Icon(
+                        tint = Color.Black,
                         imageVector = Icons.Default.Search,
                         contentDescription = "Search"
                     )
                 },
-                singleLine = true
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
             )
         }
         Row(
@@ -90,53 +93,19 @@ fun RhythmChoosingPanel(
                     .verticalScrollbar(rhythmsListState)
             ) {
                 items(rhythms.filter { it.contains(searchQuery, ignoreCase = true) }) { rhythm ->
-                    Column(
+                    val isSelected = rhythm == selectedRhythm
+                    Text(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onRhythmSelect(rhythm) }
-                            .padding(vertical = 12.dp, horizontal = 4.dp)
-                    ) {
-                        Text(
-                            text = rhythm,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(top = 8.dp),
-                            thickness = 0.5.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant
-                        )
-                    }
-                }
-            }
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth().weight(5f),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            LazyColumn(
-                state = heartIssuesListState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight()
-                    .verticalScrollbar(heartIssuesListState)
-            ) {
-                items(heartIssues.filter { it.contains(searchQuery, ignoreCase = true) }) { heartIssue ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onRhythmSelect(heartIssue) }
-                            .padding(vertical = 12.dp, horizontal = 4.dp)
-                    ) {
-                        Text(
-                            text = heartIssue,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(top = 8.dp),
-                            thickness = 0.5.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant
-                        )
-                    }
+                            .clickable {
+                                selectedRhythm = rhythm
+                                onRhythmSelect(rhythm)
+                            }
+                            .padding(vertical = 12.dp, horizontal = 4.dp),
+                        text = rhythm,
+                        color = if (isSelected) Color.Red else Color.Black,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
                 }
             }
         }

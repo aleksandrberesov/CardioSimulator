@@ -24,12 +24,11 @@ class MainActivity : ComponentActivity() {
         appModes.forEach { title ->
             appBuilder.addMode(OperatingModeModel(title, ""))
         }
-
         setContent {
             CardioSimulatorTheme {
                 MainScreen(
                     viewModel = MainViewModel(
-                        appState = appBuilder.build(),
+                        appState = appBuilder.build(initialModeTitle = "Teaching"),
                         repository = Points.fromResources(this)
                     )
                 )

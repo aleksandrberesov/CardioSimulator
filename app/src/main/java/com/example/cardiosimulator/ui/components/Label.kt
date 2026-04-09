@@ -1,7 +1,9 @@
 package com.example.cardiosimulator.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
@@ -26,12 +28,17 @@ fun Label(
     fontWeight: FontWeight? = null,
     textAlign: TextAlign = TextAlign.Center,
     backgroundColor: Color = Color.Transparent,
-    fontSize: TextUnit = TextUnit.Unspecified
+    fontSize: TextUnit = TextUnit.Unspecified,
+    borderWidth: androidx.compose.ui.unit.Dp = 0.dp,
+    borderColor: Color = Color.Transparent,
+    cornerRadius: androidx.compose.ui.unit.Dp = 0.dp
 ) {
+    val shape = RoundedCornerShape(cornerRadius)
     Column(
         modifier = modifier
             .fillMaxHeight(1f)
-            .background(backgroundColor)
+            .border(borderWidth, borderColor, shape)
+            .background(backgroundColor, shape)
             .padding(4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
