@@ -14,19 +14,19 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.components.Label
 import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.ui.utils.padWithFiveSpaces
 
+import com.example.cardiosimulator.domain.SeriesScheme
+import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
+
 @Composable
 fun SeriesControlPanel(
+    viewModel: MonitorViewModel,
     modifier: Modifier = Modifier,
-    onTab1Click: () -> Unit = {},
-    onTab2Click: () -> Unit = {},
-    onTab3Click: () -> Unit = {},
-    onTab4Click: () -> Unit = {},
-    onTab5Click: () -> Unit = {},
     onRulerClick: () -> Unit = {},
     onPauseClick: () -> Unit = {}
 ) {
@@ -41,29 +41,35 @@ fun SeriesControlPanel(
         ) {
             Tab(
                 text = "4x",
-                onClick = onTab1Click
+                onClick = { 
+                    viewModel.setSeriesCount(4)
+                    viewModel.setSeriesScheme(SeriesScheme.OneColumn)
+                }
             )
             Tab(
                 text = "12x",
-                onClick = onTab2Click
+                onClick = { 
+                    viewModel.setSeriesCount(12)
+                    viewModel.setSeriesScheme(SeriesScheme.Grid)
+                }
             )
             Tab(
                 text = "Compare",
-                onClick = onTab3Click
+                onClick = { viewModel.setSeriesScheme(SeriesScheme.TwoColumn) }
             )
             Tab(
                 text = "25",
                 subText = "mm/s",
-                onClick = onTab4Click
+                onClick = { /* TODO: Speed control */ }
             )
             Tab(
                 text = "50",
                 subText = "mm/s",
-                onClick = onTab5Click
+                onClick = { /* TODO: Speed control */ }
             )
             Tab(
                 text = "Electrodes",
-                onClick = onTab5Click
+                onClick = { viewModel.toggleGridScheme() }
             )
             Tab(
                 icon = Icons.Default.Straighten,
@@ -110,15 +116,15 @@ fun SeriesControlPanel(
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Tab(
                     text = "EMD/EBPA",
-                    onClick = onTab5Click
+                    onClick = { }
                 )
                 Tab(
                     text = "Muscle",
-                    onClick = onTab5Click
+                    onClick = { }
                 )
                 Tab(
                     icon = Icons.Default.Hub,
-                    onClick = onPauseClick,
+                    onClick = { viewModel.toggleGridScheme() },
                     borderWidth = 0.dp
                 )
             }
@@ -130,6 +136,6 @@ fun SeriesControlPanel(
 @Composable
 fun SeriesControlPanelPreview() {
     CardioSimulatorTheme {
-        SeriesControlPanel()
+        SeriesControlPanel(viewModel = viewModel())
     }
 }

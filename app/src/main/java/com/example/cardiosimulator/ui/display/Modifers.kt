@@ -8,12 +8,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.unit.dp
+import com.example.cardiosimulator.domain.GridScheme
 import kotlin.math.roundToInt
-
-enum class GridScheme {
-    Pink,
-    BlueGray
-}
 
 fun Modifier.seriesArea(): Modifier {
     return this

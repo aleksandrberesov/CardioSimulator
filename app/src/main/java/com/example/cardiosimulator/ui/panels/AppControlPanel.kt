@@ -20,12 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.components.Tab
-import com.example.cardiosimulator.ui.screens.ExaminationScreen
-import com.example.cardiosimulator.ui.screens.OSKEScreen
-import com.example.cardiosimulator.ui.screens.TeachingScreen
-import com.example.cardiosimulator.ui.screens.TestingScreen
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.MainViewModel
 
@@ -94,14 +93,21 @@ fun AppControlPanel(
 @Composable
 fun AppControlPanelPreview() {
     val context = androidx.compose.ui.platform.LocalContext.current
+    val previewViewModel: MainViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return MainViewModel(
+                    appState = com.example.cardiosimulator.domain.AppBuilder()
+                        .addMode(OperatingModeModel(title = "Test", description = ""))
+                        .build(),
+                    repository = com.example.cardiosimulator.data.Points.fromResources(context)
+                ) as T
+            }
+        }
+    )
     CardioSimulatorTheme {
         AppControlPanel(
-            viewModel = MainViewModel(
-                appState = com.example.cardiosimulator.domain.AppBuilder()
-                    .addMode(OperatingModeModel(title = "Test", description = ""))
-                    .build(),
-                repository = com.example.cardiosimulator.data.Points.fromResources(context)
-            )
+            viewModel = previewViewModel
         )
     }
 }

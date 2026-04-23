@@ -5,14 +5,24 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.cardiosimulator.domain.SeriesScheme
 import com.example.cardiosimulator.ui.display.Monitor
-import com.example.cardiosimulator.ui.panels.RhythmChoosingPanel
 import com.example.cardiosimulator.ui.viewmodels.MainViewModel
+import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 
 @Composable
 fun TestingScreen(viewModel: MainViewModel){
+    val monitorViewModel: MonitorViewModel = viewModel()
+
+    LaunchedEffect(Unit) {
+        monitorViewModel.setSeriesCount(12)
+        monitorViewModel.setSeriesScheme(SeriesScheme.Grid)
+    }
+
     Row(
         modifier = Modifier.fillMaxSize().systemBarsPadding()
     ) {
@@ -20,7 +30,10 @@ fun TestingScreen(viewModel: MainViewModel){
             modifier = Modifier.weight(4f).middleSectionLeft(),
             contentAlignment = Alignment.TopStart
         ) {
-            Monitor(points = viewModel.points, count = 12)
+            Monitor(
+                points = viewModel.points,
+                monitorViewModel = monitorViewModel
+            )
         }
         Box(
             modifier = Modifier.weight(1f).middleSectionCenter(),

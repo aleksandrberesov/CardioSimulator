@@ -49,7 +49,6 @@ fun TeachingControlPanel(
         Row(
             modifier = Modifier
                 .fillMaxWidth(),
-//                .padding(8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
