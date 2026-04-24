@@ -110,7 +110,7 @@ fun AppControlPanel(
                     modifier = Modifier.weight(5f).fillMaxWidth()
                 ){
                     when (selectedOperatingMode.title) {
-                        "Teaching" -> TeachingControlPanel(viewModel = viewModel)
+                        "Teaching" -> TeachingControlPanel()
                         "Testing" -> TestingControlPanel(viewModel = viewModel)
                         "Examination" -> {}
                         "OSKE" -> {}

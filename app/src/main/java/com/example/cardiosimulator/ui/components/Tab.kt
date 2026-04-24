@@ -43,7 +43,7 @@ fun Tab(
         modifier = modifier
             .fillMaxHeight(1f)
             .width(IntrinsicSize.Max)
-            .defaultMinSize(minWidth = 56.dp)
+            .defaultMinSize(minWidth = 35.dp)
             .border(borderWidth, Color.Black, shape)
             .clip(shape)
             .clickable(onClick = onClick)
