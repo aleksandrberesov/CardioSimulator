@@ -70,7 +70,6 @@ fun MonitorControlPanel(
                             text = { Text("${count}x") },
                             onClick = {
                                 viewModel.setSeriesCount(count)
-                                viewModel.setSeriesScheme(if (count == 1) SeriesScheme.OneColumn else SeriesScheme.Grid)
                                 countMenuExpanded = false
                             }
                         )

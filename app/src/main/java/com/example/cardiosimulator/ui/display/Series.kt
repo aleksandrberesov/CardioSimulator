@@ -23,7 +23,6 @@ fun Series(
     modifier: Modifier = Modifier,
     title: String = "",
 ){
-    val dataPoints = Points(List(6) { points.values }.flatten())
     Row(modifier = Modifier.seriesArea()) {
         Box(
             modifier = Modifier
@@ -43,7 +42,7 @@ fun Series(
             modifier = Modifier.weight(15f),
             contentAlignment = Alignment.Center
         ) {
-            ChartCanvas(points = dataPoints, modifier = modifier, scaleY = 1f)
+            ChartCanvas(points = points, modifier = modifier, scaleY = 1f)
         }
     }
 }

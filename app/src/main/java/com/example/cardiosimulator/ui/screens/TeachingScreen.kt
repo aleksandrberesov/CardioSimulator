@@ -22,6 +22,7 @@ fun TeachingScreen(viewModel: MainViewModel){
     val monitorViewModel: MonitorViewModel = viewModel()
     val rhythms by viewModel.rhythms.collectAsState()
     val selectedRhythm by viewModel.selectedRhythm.collectAsState()
+    val waveforms by viewModel.waveforms.collectAsState()
 
     LaunchedEffect(Unit) {
         monitorViewModel.setSeriesCount(12)
@@ -47,7 +48,8 @@ fun TeachingScreen(viewModel: MainViewModel){
         ) {
             Monitor(
                 points = viewModel.points,
-                monitorViewModel = monitorViewModel
+                monitorViewModel = monitorViewModel,
+                waveformsByLead = waveforms,
             )
         }
     }

@@ -47,6 +47,19 @@ class EcgRepository(private val assets: AssetManager) {
             ?.mapNotNull { partsIndex[it.partIdenty] }
             .orEmpty()
 
+    fun assembleWaveform(seriesIdenty: String): List<Float> {
+        val series = series(seriesIdenty) ?: return emptyList()
+        val out = ArrayList<Float>(series.partRefs.size * 64)
+        for (ref in series.partRefs) {
+            val part = partsIndex[ref.partIdenty] ?: continue
+            val amp = if (part.amplitude > 0f) part.amplitude else 1f
+            for (sample in part.samples) {
+                out += (sample - SAMPLE_BASELINE) * amp
+            }
+        }
+        return out
+    }
+
     private fun <T> readAll(dir: String, parse: (String) -> T): List<T> =
         (assets.list(dir) ?: emptyArray())
             .asSequence()
@@ -69,6 +82,7 @@ class EcgRepository(private val assets: AssetManager) {
     companion object {
         private const val PARTS_DIR = "Parts"
         private const val SERIES_DIR = "Series"
+        private const val SAMPLE_BASELINE = 1024f
         private val LEAD_SUFFIXES = listOf(
             " aVR", " aVL", " aVF",
             " V1", " V2", " V3", " V4", " V5", " V6",

@@ -6,6 +6,7 @@ import com.example.cardiosimulator.data.EcgRepository
 import com.example.cardiosimulator.data.PathologyGroup
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.AppStateModel
+import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.OperatingModeModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +32,9 @@ class MainViewModel(
     private val _selectedRhythm = MutableStateFlow<PathologyGroup?>(null)
     val selectedRhythm: StateFlow<PathologyGroup?> = _selectedRhythm.asStateFlow()
 
+    private val _waveforms = MutableStateFlow<Map<Lead, Points>>(emptyMap())
+    val waveforms: StateFlow<Map<Lead, Points>> = _waveforms.asStateFlow()
+
     init {
         ecgRepository?.let { repo ->
             viewModelScope.launch {
@@ -49,6 +53,16 @@ class MainViewModel(
     }
 
     fun selectRhythm(pathology: String) {
-        _selectedRhythm.value = _rhythms.value.firstOrNull { it.pathology == pathology }
+        val group = _rhythms.value.firstOrNull { it.pathology == pathology } ?: return
+        _selectedRhythm.value = group
+        val repo = ecgRepository ?: return
+        viewModelScope.launch {
+            val map = withContext(Dispatchers.IO) {
+                group.seriesIdentyByLead.mapValues { (_, identy) ->
+                    Points(repo.assembleWaveform(identy))
+                }
+            }
+            _waveforms.value = map
+        }
     }
 }

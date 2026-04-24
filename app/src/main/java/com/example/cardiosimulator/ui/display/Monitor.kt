@@ -14,6 +14,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.GridScheme
+import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.SeriesScheme
 import com.example.cardiosimulator.ui.panels.MonitorControlPanel
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
@@ -26,11 +27,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import com.example.cardiosimulator.ui.screens.SettingsDialog
 
+private val LEAD_ORDER = listOf(
+    Lead.I, Lead.II, Lead.III,
+    Lead.aVR, Lead.aVL, Lead.aVF,
+    Lead.V1, Lead.V2, Lead.V3, Lead.V4, Lead.V5, Lead.V6,
+)
+
 @Composable
 fun Monitor(
     points: Points,
     modifier: Modifier = Modifier,
-    monitorViewModel: MonitorViewModel = viewModel()
+    monitorViewModel: MonitorViewModel = viewModel(),
+    waveformsByLead: Map<Lead, Points> = emptyMap(),
 ){
     val mode by monitorViewModel.monitorMode.collectAsState()
     var showSettings by remember { mutableStateOf(false) }
@@ -68,10 +76,14 @@ fun Monitor(
                             contentAlignment = Alignment.Center
                         ) {
                             if (itemIndex < mode.count) {
+                                val lead = LEAD_ORDER.getOrNull(itemIndex)
+                                val leadPoints = lead?.let { waveformsByLead[it] }
+                                    ?.takeIf { it.values.size >= 2 }
+                                    ?: points
                                 Series(
-                                    points = points,
+                                    points = leadPoints,
                                     modifier = modifier,
-                                    title = (itemIndex + 1).toString()
+                                    title = lead?.name ?: (itemIndex + 1).toString()
                                 )
                             }
                         }
