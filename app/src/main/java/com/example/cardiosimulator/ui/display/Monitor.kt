@@ -21,6 +21,11 @@ import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import kotlin.math.ceil
 
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import com.example.cardiosimulator.ui.screens.SettingsDialog
+
 @Composable
 fun Monitor(
     points: Points,
@@ -28,6 +33,14 @@ fun Monitor(
     monitorViewModel: MonitorViewModel = viewModel()
 ){
     val mode by monitorViewModel.monitorMode.collectAsState()
+    var showSettings by remember { mutableStateOf(false) }
+
+    if (showSettings) {
+        SettingsDialog(
+            viewModel = monitorViewModel,
+            onDismiss = { showSettings = false }
+        )
+    }
 
     val columns = when (mode.seriesScheme) {
         SeriesScheme.OneColumn -> 1
@@ -70,7 +83,10 @@ fun Monitor(
             modifier = Modifier.weight(1.0f),
             contentAlignment = Alignment.Center
         ) {
-            MonitorControlPanel(viewModel = monitorViewModel)
+            MonitorControlPanel(
+                viewModel = monitorViewModel,
+                onSettingsClick = { showSettings = true }
+            )
         }
     }
 }

@@ -29,24 +29,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.cardiosimulator.data.PathologyGroup
 import com.example.cardiosimulator.ui.screens.verticalScrollbar
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 
 @Composable
 fun RhythmChoosingPanel(
     modifier: Modifier = Modifier,
-    onRhythmSelect: (String) -> Unit = {},
+    rhythms: List<PathologyGroup> = emptyList(),
+    selectedPathology: String? = null,
+    onRhythmSelect: (PathologyGroup) -> Unit = {},
     onSearchQueryChange: (String) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    var selectedRhythm by remember { mutableStateOf<String?>(null) }
-    val rhythms = listOf(
-        "Sinus Rhythm", "Sinus Tachycardia", "Sinus Bradycardia", "Sinus Arrhythmia",
-        "Atrial Fibrillation", "Atrial Flutter", "SVT", "Atrial Tachycardia",
-        "Ventricular Tachycardia", "Ventricular Fibrillation", "Asystole", "PEA",
-        "Junctional Rhythm", "Idioventricular Rhythm", "First Degree AV Block",
-        "Mobitz I (Wenckebach)", "Mobitz II", "Third Degree AV Block"
-    )
 
     val rhythmsListState = rememberLazyListState()
 
@@ -92,17 +87,17 @@ fun RhythmChoosingPanel(
                     .fillMaxHeight()
                     .verticalScrollbar(rhythmsListState)
             ) {
-                items(rhythms.filter { it.contains(searchQuery, ignoreCase = true) }) { rhythm ->
-                    val isSelected = rhythm == selectedRhythm
+                val filtered = rhythms.filter {
+                    it.displayTitle.contains(searchQuery, ignoreCase = true)
+                }
+                items(filtered, key = { it.pathology }) { rhythm ->
+                    val isSelected = rhythm.pathology == selectedPathology
                     Text(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable {
-                                selectedRhythm = rhythm
-                                onRhythmSelect(rhythm)
-                            }
+                            .clickable { onRhythmSelect(rhythm) }
                             .padding(vertical = 12.dp, horizontal = 4.dp),
-                        text = rhythm,
+                        text = rhythm.displayTitle,
                         color = if (isSelected) Color.Red else Color.Black,
                         style = MaterialTheme.typography.bodyLarge
                     )

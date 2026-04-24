@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.example.cardiosimulator"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.example.cardiosimulator"
@@ -33,6 +33,11 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    sourceSets {
+        getByName("main") {
+            assets.srcDirs("src/main/assets", rootProject.file(".data"))
+        }
     }
 }
 
