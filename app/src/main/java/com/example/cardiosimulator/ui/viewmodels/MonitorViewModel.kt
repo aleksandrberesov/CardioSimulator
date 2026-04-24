@@ -25,6 +25,14 @@ class MonitorViewModel : ViewModel() {
         _monitorMode.update { it.copy(gridScheme = scheme) }
     }
 
+    fun setSpeed(speed: Int) {
+        _monitorMode.update { it.copy(speed = speed) }
+    }
+
+    fun setScale(scale: Int) {
+        _monitorMode.update { it.copy(scale = scale) }
+    }
+
     fun toggleGridScheme() {
         _monitorMode.update { 
             val newScheme = if (it.gridScheme == GridScheme.Pink) GridScheme.BlueGray else GridScheme.Pink

@@ -1,12 +1,17 @@
 package com.example.cardiosimulator.ui.panels
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +32,31 @@ import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.MainViewModel
+
+@Composable
+fun CompanyLogo(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .border(1.dp, Color.Black, RoundedCornerShape(4.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(20.dp)
+                    .background(Color.Red, RoundedCornerShape(2.dp))
+            )
+            Text(
+                text = "",
+                style = MaterialTheme.typography.titleSmall,
+                color = Color.Black
+            )
+        }
+    }
+}
 
 @Composable
 fun AppControlPanel(
@@ -50,10 +80,12 @@ fun AppControlPanel(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
-                    modifier = Modifier.weight(2f).fillMaxWidth()
+                    modifier = Modifier.weight(0.5f).fillMaxWidth()
                 ) {
                     Tab(
                         text = selectedOperatingMode.title,
@@ -75,7 +107,7 @@ fun AppControlPanel(
                     }
                 }
                 Box(
-                    modifier = Modifier.weight(2f).fillMaxWidth()
+                    modifier = Modifier.weight(5f).fillMaxWidth()
                 ){
                     when (selectedOperatingMode.title) {
                         "Teaching" -> TeachingControlPanel(viewModel = viewModel)
@@ -83,6 +115,11 @@ fun AppControlPanel(
                         "Examination" -> {}
                         "OSKE" -> {}
                     }
+                }
+                Box(
+                    modifier = Modifier.weight(0.5f).fillMaxWidth()
+                ) {
+                    CompanyLogo()
                 }
             }
         }

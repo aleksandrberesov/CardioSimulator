@@ -8,6 +8,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.OperatingModeModel
@@ -25,12 +28,20 @@ class MainActivity : ComponentActivity() {
             appBuilder.addMode(OperatingModeModel(title, ""))
         }
         setContent {
+            val viewModel: MainViewModel = viewModel(
+                factory = object : ViewModelProvider.Factory {
+                    @Suppress("UNCHECKED_CAST")
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        return MainViewModel(
+                            appState = appBuilder.build(initialModeTitle = "Teaching"),
+                            repository = Points.fromResources(this@MainActivity)
+                        ) as T
+                    }
+                }
+            )
             CardioSimulatorTheme {
                 MainScreen(
-                    viewModel = MainViewModel(
-                        appState = appBuilder.build(initialModeTitle = "Teaching"),
-                        repository = Points.fromResources(this)
-                    )
+                    viewModel = viewModel
                 )
             }
         }
@@ -47,12 +58,20 @@ fun MainPreview() {
     appModes.forEach { title ->
         appBuilder.addMode(OperatingModeModel(title, ""))
     }
+    val previewViewModel: MainViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return MainViewModel(
+                    appState = appBuilder.build(),
+                    repository = Points.fromResources(context)
+                ) as T
+            }
+        }
+    )
     CardioSimulatorTheme {
         MainScreen(
-            viewModel = MainViewModel(
-                appState = appBuilder.build(),
-                repository = Points.fromResources(context)
-            )
+            viewModel = previewViewModel
         )
     }
 }

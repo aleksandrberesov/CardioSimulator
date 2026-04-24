@@ -30,7 +30,7 @@ fun Series(
                 .weight(1f)
                 .fillMaxHeight()
                 .padding(top = 8.dp, start = 8.dp),
-            contentAlignment = Alignment.TopStart
+            contentAlignment = Alignment.CenterStart
         ) {
             Text(
                 text = title,

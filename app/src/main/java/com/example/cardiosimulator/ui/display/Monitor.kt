@@ -14,9 +14,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.GridScheme
-import com.example.cardiosimulator.domain.MonitorModeModel
 import com.example.cardiosimulator.domain.SeriesScheme
-import com.example.cardiosimulator.ui.panels.SeriesControlPanel
+import com.example.cardiosimulator.ui.panels.MonitorControlPanel
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import kotlin.math.ceil
@@ -71,7 +70,7 @@ fun Monitor(
             modifier = Modifier.weight(1.0f),
             contentAlignment = Alignment.Center
         ) {
-            SeriesControlPanel(viewModel = monitorViewModel)
+            MonitorControlPanel(viewModel = monitorViewModel)
         }
     }
 }
@@ -83,11 +82,11 @@ fun MonitorOneColumn12Preview() {
         0f, 0.1f, 0.2f, 0.5f, 1f, 0.5f, 0.2f, 0.1f, 0f,
         -0.1f, -0.2f, -0.5f, -1f, -0.5f, -0.2f, -0.1f, 0f
     ))
+    val vm: MonitorViewModel = viewModel()
+    vm.setSeriesCount(12)
+    vm.setSeriesScheme(SeriesScheme.OneColumn)
+    vm.setGridScheme(GridScheme.Pink)
     CardioSimulatorTheme {
-        val vm = MonitorViewModel()
-        vm.setSeriesCount(12)
-        vm.setSeriesScheme(SeriesScheme.OneColumn)
-        vm.setGridScheme(GridScheme.Pink)
         Monitor(
             points = samplePoints,
             monitorViewModel = vm
@@ -102,11 +101,11 @@ fun MonitorTwoColumn12Preview() {
         0f, 0.1f, 0.2f, 0.5f, 1f, 0.5f, 0.2f, 0.1f, 0f,
         -0.1f, -0.2f, -0.5f, -1f, -0.5f, -0.2f, -0.1f, 0f
     ))
+    val vm: MonitorViewModel = viewModel()
+    vm.setSeriesCount(12)
+    vm.setSeriesScheme(SeriesScheme.TwoColumn)
+    vm.setGridScheme(GridScheme.BlueGray)
     CardioSimulatorTheme {
-        val vm = MonitorViewModel()
-        vm.setSeriesCount(12)
-        vm.setSeriesScheme(SeriesScheme.TwoColumn)
-        vm.setGridScheme(GridScheme.BlueGray)
         Monitor(
             points = samplePoints,
             monitorViewModel = vm
@@ -121,11 +120,11 @@ fun MonitorGrid12Preview() {
         0f, 0.1f, 0.2f, 0.5f, 1f, 0.5f, 0.2f, 0.1f, 0f,
         -0.1f, -0.2f, -0.5f, -1f, -0.5f, -0.2f, -0.1f, 0f
     ))
+    val vm: MonitorViewModel = viewModel()
+    vm.setSeriesCount(12)
+    vm.setSeriesScheme(SeriesScheme.Grid)
+    vm.setGridScheme(GridScheme.Pink)
     CardioSimulatorTheme {
-        val vm = MonitorViewModel()
-        vm.setSeriesCount(12)
-        vm.setSeriesScheme(SeriesScheme.Grid)
-        vm.setGridScheme(GridScheme.Pink)
         Monitor(
             points = samplePoints,
             monitorViewModel = vm
