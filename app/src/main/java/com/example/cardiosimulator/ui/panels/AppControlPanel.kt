@@ -31,7 +31,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
-import com.example.cardiosimulator.ui.viewmodels.MainViewModel
+import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 
 @Composable
 fun CompanyLogo(modifier: Modifier = Modifier) {
@@ -60,7 +60,7 @@ fun CompanyLogo(modifier: Modifier = Modifier) {
 
 @Composable
 fun AppControlPanel(
-    viewModel: MainViewModel,
+    viewModel: AppViewModel,
     modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -130,10 +130,10 @@ fun AppControlPanel(
 @Composable
 fun AppControlPanelPreview() {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val previewViewModel: MainViewModel = viewModel(
+    val previewViewModel: AppViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return MainViewModel(
+                return AppViewModel(
                     appState = com.example.cardiosimulator.domain.AppBuilder()
                         .addMode(OperatingModeModel(title = "Test", description = ""))
                         .build(),

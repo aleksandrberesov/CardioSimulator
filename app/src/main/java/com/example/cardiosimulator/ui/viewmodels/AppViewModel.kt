@@ -15,13 +15,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class MainViewModel(
+import com.example.cardiosimulator.domain.Language
+
+class AppViewModel(
     private val appState: AppStateModel,
     private val repository: Points,
     private val ecgRepository: EcgRepository? = null,
 ) : ViewModel() {
     val points = repository
     val operatingModes = appState.operatingModes
+
+    private val _selectedLanguage = MutableStateFlow(appState.selectedLanguage)
+    val selectedLanguage: StateFlow<Language> = _selectedLanguage.asStateFlow()
 
     private val _selectedOperatingMode = MutableStateFlow(appState.selectedOperatingMode)
     val selectedOperatingMode: StateFlow<OperatingModeModel> = _selectedOperatingMode
@@ -45,6 +50,11 @@ class MainViewModel(
                 _rhythms.value = list
             }
         }
+    }
+
+    fun updateLanguage(language: Language) {
+        appState.updateLanguage(language)
+        _selectedLanguage.value = language
     }
 
     fun updateOperatingMode(mode: OperatingModeModel) {

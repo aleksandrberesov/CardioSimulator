@@ -14,11 +14,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.domain.SeriesScheme
 import com.example.cardiosimulator.ui.display.Monitor
 import com.example.cardiosimulator.ui.panels.RhythmChoosingPanel
-import com.example.cardiosimulator.ui.viewmodels.MainViewModel
+import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 
 @Composable
-fun TeachingScreen(viewModel: MainViewModel){
+fun TeachingScreen(viewModel: AppViewModel){
     val monitorViewModel: MonitorViewModel = viewModel()
     val rhythms by viewModel.rhythms.collectAsState()
     val selectedRhythm by viewModel.selectedRhythm.collectAsState()
@@ -48,6 +48,7 @@ fun TeachingScreen(viewModel: MainViewModel){
         ) {
             Monitor(
                 points = viewModel.points,
+                appViewModel = viewModel,
                 monitorViewModel = monitorViewModel,
                 waveformsByLead = waveforms,
             )

@@ -17,7 +17,7 @@ import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.screens.MainScreen
-import com.example.cardiosimulator.ui.viewmodels.MainViewModel
+import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,11 +29,11 @@ class MainActivity : ComponentActivity() {
             appBuilder.addMode(OperatingModeModel(title, ""))
         }
         setContent {
-            val viewModel: MainViewModel = viewModel(
+            val viewModel: AppViewModel = viewModel(
                 factory = object : ViewModelProvider.Factory {
                     @Suppress("UNCHECKED_CAST")
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                        return MainViewModel(
+                        return AppViewModel(
                             appState = appBuilder.build(initialModeTitle = "Teaching"),
                             repository = Points.fromResources(this@MainActivity),
                             ecgRepository = EcgRepository(this@MainActivity.assets)
@@ -60,11 +60,11 @@ fun MainPreview() {
     appModes.forEach { title ->
         appBuilder.addMode(OperatingModeModel(title, ""))
     }
-    val previewViewModel: MainViewModel = viewModel(
+    val previewViewModel: AppViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return MainViewModel(
+                return AppViewModel(
                     appState = appBuilder.build(),
                     repository = Points.fromResources(context)
                 ) as T

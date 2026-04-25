@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import com.example.cardiosimulator.ui.screens.SettingsDialog
+import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 
 private val LEAD_ORDER = listOf(
     Lead.I, Lead.II, Lead.III,
@@ -36,6 +37,7 @@ private val LEAD_ORDER = listOf(
 @Composable
 fun Monitor(
     points: Points,
+    appViewModel: AppViewModel,
     modifier: Modifier = Modifier,
     monitorViewModel: MonitorViewModel = viewModel(),
     waveformsByLead: Map<Lead, Points> = emptyMap(),
@@ -45,7 +47,8 @@ fun Monitor(
 
     if (showSettings) {
         SettingsDialog(
-            viewModel = monitorViewModel,
+            monitorViewModel = monitorViewModel,
+            appViewModel = appViewModel,
             onDismiss = { showSettings = false }
         )
     }
@@ -117,6 +120,7 @@ fun MonitorOneColumn12Preview() {
     CardioSimulatorTheme {
         Monitor(
             points = samplePoints,
+            appViewModel = viewModel(),
             monitorViewModel = vm
         )
     }
@@ -136,6 +140,7 @@ fun MonitorTwoColumn12Preview() {
     CardioSimulatorTheme {
         Monitor(
             points = samplePoints,
+            appViewModel = viewModel(),
             monitorViewModel = vm
         )
     }
@@ -155,6 +160,7 @@ fun MonitorGrid12Preview() {
     CardioSimulatorTheme {
         Monitor(
             points = samplePoints,
+            appViewModel = viewModel(),
             monitorViewModel = vm
         )
     }

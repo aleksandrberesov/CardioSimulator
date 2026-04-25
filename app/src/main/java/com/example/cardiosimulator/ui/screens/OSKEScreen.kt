@@ -7,12 +7,10 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.example.cardiosimulator.ui.display.Monitor
-import com.example.cardiosimulator.ui.panels.RhythmChoosingPanel
-import com.example.cardiosimulator.ui.viewmodels.MainViewModel
+import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 
 @Composable
-fun OSKEScreen(viewModel: MainViewModel){
+fun OSKEScreen(viewModel: AppViewModel){
     Row(
         modifier = Modifier.fillMaxSize().systemBarsPadding()
     ) {

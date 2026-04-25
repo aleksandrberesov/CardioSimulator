@@ -11,11 +11,11 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.domain.SeriesScheme
 import com.example.cardiosimulator.ui.display.Monitor
-import com.example.cardiosimulator.ui.viewmodels.MainViewModel
+import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 
 @Composable
-fun TestingScreen(viewModel: MainViewModel){
+fun TestingScreen(viewModel: AppViewModel){
     val monitorViewModel: MonitorViewModel = viewModel()
 
     LaunchedEffect(Unit) {
@@ -32,6 +32,7 @@ fun TestingScreen(viewModel: MainViewModel){
         ) {
             Monitor(
                 points = viewModel.points,
+                appViewModel = viewModel,
                 monitorViewModel = monitorViewModel
             )
         }
