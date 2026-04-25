@@ -39,7 +39,8 @@ fun Series(
             )
         }
         Box(
-            modifier = Modifier.weight(15f),
+            modifier = Modifier
+                .weight(15f),
             contentAlignment = Alignment.Center
         ) {
             ChartCanvas(points = points, modifier = modifier, scaleY = 1f)

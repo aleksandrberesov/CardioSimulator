@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -144,16 +143,16 @@ fun MonitorControlPanel(
         Box {
             var scaleMenuExpanded by remember { mutableStateOf(false) }
             Tab(
-                text = "${monitorMode.scale}%",
+                text = "${(monitorMode.scale * 100).toInt()}%",
                 onClick = { scaleMenuExpanded = true }
             )
             DropdownMenu(
                 expanded = scaleMenuExpanded,
                 onDismissRequest = { scaleMenuExpanded = false }
             ) {
-                listOf(100, 75, 50, 25).forEach { scaleOption ->
+                listOf(1.0f, 2.0f, 3.0f, 4.0f, 5.0f).forEach { scaleOption ->
                     DropdownMenuItem(
-                        text = { Text("$scaleOption%") },
+                        text = { Text("${(scaleOption * 100).toInt()}%") },
                         onClick = {
                             viewModel.setScale(scaleOption)
                             scaleMenuExpanded = false

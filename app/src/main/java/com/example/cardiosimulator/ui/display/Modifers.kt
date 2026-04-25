@@ -15,6 +15,7 @@ fun Modifier.seriesArea(): Modifier {
     return this
         .fillMaxWidth(1f)
         .fillMaxHeight(1f)
+//        .border(1.dp, Color.Black)
 }
 
 fun Modifier.ekgGrid(scheme: GridScheme = GridScheme.Pink): Modifier {
