@@ -19,10 +19,8 @@ import com.example.cardiosimulator.domain.Language
 
 class AppViewModel(
     private val appState: AppStateModel,
-    private val repository: Points,
     private val ecgRepository: EcgRepository? = null,
 ) : ViewModel() {
-    val points = repository
     val operatingModes = appState.operatingModes
 
     private val _selectedLanguage = MutableStateFlow(appState.selectedLanguage)

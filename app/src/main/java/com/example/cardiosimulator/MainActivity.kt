@@ -12,7 +12,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.data.EcgRepository
-import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
@@ -35,7 +34,6 @@ class MainActivity : ComponentActivity() {
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         return AppViewModel(
                             appState = appBuilder.build(initialModeTitle = "Teaching"),
-                            repository = Points.fromResources(this@MainActivity),
                             ecgRepository = EcgRepository(this@MainActivity.assets)
                         ) as T
                     }
@@ -66,7 +64,6 @@ fun MainPreview() {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return AppViewModel(
                     appState = appBuilder.build(),
-                    repository = Points.fromResources(context)
                 ) as T
             }
         }

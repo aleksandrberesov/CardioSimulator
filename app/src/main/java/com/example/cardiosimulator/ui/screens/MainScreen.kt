@@ -16,7 +16,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.R
-import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
@@ -56,14 +55,11 @@ fun MainScreenPreview() {
         appBuilder.addMode(OperatingModeModel(title, ""))
     }
 
-    val samplePoints = Points(List(100) { (it % 10).toFloat() / 10f })
-
     val previewViewModel: AppViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return AppViewModel(
-                    appState = appBuilder.build(),
-                    repository = samplePoints
+                    appState = appBuilder.build()
                 ) as T
             }
         }

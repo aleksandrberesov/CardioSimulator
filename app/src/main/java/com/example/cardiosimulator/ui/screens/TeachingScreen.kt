@@ -47,7 +47,6 @@ fun TeachingScreen(viewModel: AppViewModel){
             contentAlignment = Alignment.Center
         ) {
             Monitor(
-                points = viewModel.points,
                 appViewModel = viewModel,
                 monitorViewModel = monitorViewModel,
                 waveformsByLead = waveforms,

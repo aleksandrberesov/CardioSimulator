@@ -129,7 +129,6 @@ fun AppControlPanel(
 @Preview(showBackground = true, widthDp = 1000, heightDp = 100)
 @Composable
 fun AppControlPanelPreview() {
-    val context = androidx.compose.ui.platform.LocalContext.current
     val previewViewModel: AppViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -137,7 +136,6 @@ fun AppControlPanelPreview() {
                     appState = com.example.cardiosimulator.domain.AppBuilder()
                         .addMode(OperatingModeModel(title = "Test", description = ""))
                         .build(),
-                    repository = com.example.cardiosimulator.data.Points.fromResources(context)
                 ) as T
             }
         }

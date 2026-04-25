@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -17,16 +19,11 @@ import com.example.cardiosimulator.domain.GridScheme
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.SeriesScheme
 import com.example.cardiosimulator.ui.panels.MonitorControlPanel
+import com.example.cardiosimulator.ui.screens.SettingsDialog
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
+import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import kotlin.math.ceil
-
-
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import com.example.cardiosimulator.ui.screens.SettingsDialog
-import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 
 private val LEAD_ORDER = listOf(
     Lead.I, Lead.II, Lead.III,
@@ -36,20 +33,20 @@ private val LEAD_ORDER = listOf(
 
 @Composable
 fun Monitor(
-    points: Points,
     appViewModel: AppViewModel,
     modifier: Modifier = Modifier,
     monitorViewModel: MonitorViewModel = viewModel(),
-    waveformsByLead: Map<Lead, Points> = emptyMap(),
+    waveformsByLead: Map<Lead, Points>? = null,
+    points: Points = Points(emptyList()),
 ){
     val mode by monitorViewModel.monitorMode.collectAsState()
-    var showSettings by remember { mutableStateOf(false) }
+    val showSettings = remember { mutableStateOf(false) }
 
-    if (showSettings) {
+    if (showSettings.value) {
         SettingsDialog(
             monitorViewModel = monitorViewModel,
             appViewModel = appViewModel,
-            onDismiss = { showSettings = false }
+            onDismiss = { showSettings.value = false }
         )
     }
 
@@ -80,7 +77,7 @@ fun Monitor(
                         ) {
                             if (itemIndex < mode.count) {
                                 val lead = LEAD_ORDER.getOrNull(itemIndex)
-                                val leadPoints = lead?.let { waveformsByLead[it] }
+                                val leadPoints = lead?.let { waveformsByLead?.get(it) }
                                     ?.takeIf { it.values.size >= 2 }
                                     ?: points
                                 Series(
@@ -100,7 +97,7 @@ fun Monitor(
         ) {
             MonitorControlPanel(
                 viewModel = monitorViewModel,
-                onSettingsClick = { showSettings = true }
+                onSettingsClick = { showSettings.value = true }
             )
         }
     }
