@@ -10,13 +10,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.cardiosimulator.R
 import com.example.cardiosimulator.domain.AppBuilder
+import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
@@ -34,11 +33,11 @@ fun MainScreen(viewModel: AppViewModel){
         Box(
             modifier = Modifier.weight(15f).fillMaxWidth()
         ) {
-            when (selectedMode.title) {
-                "Teaching" -> TeachingScreen(viewModel = viewModel)
-                "Testing" -> TestingScreen(viewModel = viewModel)
-                "Examination" -> ExaminationScreen(viewModel = viewModel)
-                "OSKE" -> OSKEScreen(viewModel = viewModel)
+            when (selectedMode.id) {
+                OperatingMode.Teaching -> TeachingScreen(viewModel = viewModel)
+                OperatingMode.Testing -> TestingScreen(viewModel = viewModel)
+                OperatingMode.Examination -> ExaminationScreen(viewModel = viewModel)
+                OperatingMode.OSKE -> OSKEScreen(viewModel = viewModel)
             }
         }
     }
@@ -48,15 +47,14 @@ fun MainScreen(viewModel: AppViewModel){
 @Preview(showBackground = true, widthDp = 1000, heightDp = 600)
 @Composable
 fun MainScreenPreview() {
-    val context = LocalContext.current
-    val appModes = context.resources.getStringArray(R.array.app_modes)
     val appBuilder = AppBuilder()
-    appModes.forEach { title ->
-        appBuilder.addMode(OperatingModeModel(title, ""))
+    OperatingMode.entries.forEach { mode ->
+        appBuilder.addMode(OperatingModeModel(mode))
     }
 
     val previewViewModel: AppViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return AppViewModel(
                     appState = appBuilder.build()

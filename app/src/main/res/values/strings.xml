@@ -1,3 +1,54 @@
 <resources>
     <string name="app_name">Cardio Simulator</string>
+
+    <!-- Operating modes -->
+    <string name="mode_teaching">Teaching</string>
+    <string name="mode_testing">Testing</string>
+    <string name="mode_examination">Examination</string>
+    <string name="mode_oske">OSKE</string>
+
+    <!-- Settings dialog -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_color_scheme">Monitor Color Scheme</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_close">CLOSE</string>
+
+    <!-- Grid scheme labels -->
+    <string name="grid_scheme_pink">Pink</string>
+    <string name="grid_scheme_blue_gray">Blue/Gray</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_settings">Settings</string>
+    <string name="placeholder_hello">Hello, world!</string>
+
+    <!-- Monitor control panel -->
+    <string name="monitor_columns_one">1 Column</string>
+    <string name="monitor_columns_two">2 Columns</string>
+    <string name="monitor_columns_grid">Grid</string>
+    <string name="monitor_columns_one_short">1 Col</string>
+    <string name="monitor_columns_two_short">2 Cols</string>
+    <string name="monitor_columns_grid_short">Grid</string>
+    <string name="monitor_speed_unit">mm/s</string>
+    <string name="monitor_speed_format">%1$d mm/s</string>
+    <string name="monitor_count_format">%1$d\u00D7</string>
+    <string name="monitor_scale_format">%1$d%%</string>
+    <string name="monitor_electrodes">Electrodes</string>
+    <string name="monitor_emd_ebpa">EMD/EBPA</string>
+    <string name="monitor_muscle">Muscle</string>
+    <string name="monitor_eos">EOS</string>
+    <string name="monitor_hr_format">HR %1$d</string>
+    <string name="monitor_tips">Tips</string>
+
+    <!-- Rhythm panel -->
+    <string name="rhythm_search_placeholder">Rhythm…</string>
+    <string name="rhythm_search_content_description">Search</string>
+
+    <!-- Testing panel -->
+    <string name="testing_question_format">Question %1$d</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_settings">Settings</string>
+    <string name="cd_pause">Pause</string>
+    <string name="cd_ruler">Ruler</string>
 </resources>

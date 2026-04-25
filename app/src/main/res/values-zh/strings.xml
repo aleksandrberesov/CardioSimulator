@@ -1,0 +1,54 @@
+<resources>
+    <string name="app_name">心脏模拟器</string>
+
+    <!-- Operating modes -->
+    <string name="mode_teaching">教学</string>
+    <string name="mode_testing">测试</string>
+    <string name="mode_examination">考试</string>
+    <string name="mode_oske">客观结构化临床考试</string>
+
+    <!-- Settings dialog -->
+    <string name="settings_title">设置</string>
+    <string name="settings_color_scheme">监视器配色方案</string>
+    <string name="settings_language">语言</string>
+    <string name="settings_close">关闭</string>
+
+    <!-- Grid scheme labels -->
+    <string name="grid_scheme_pink">粉色</string>
+    <string name="grid_scheme_blue_gray">蓝灰色</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">主页</string>
+    <string name="nav_settings">设置</string>
+    <string name="placeholder_hello">你好,世界!</string>
+
+    <!-- Monitor control panel -->
+    <string name="monitor_columns_one">1 列</string>
+    <string name="monitor_columns_two">2 列</string>
+    <string name="monitor_columns_grid">网格</string>
+    <string name="monitor_columns_one_short">1 列</string>
+    <string name="monitor_columns_two_short">2 列</string>
+    <string name="monitor_columns_grid_short">网格</string>
+    <string name="monitor_speed_unit">毫米/秒</string>
+    <string name="monitor_speed_format">%1$d 毫米/秒</string>
+    <string name="monitor_count_format">%1$d\u00D7</string>
+    <string name="monitor_scale_format">%1$d%%</string>
+    <string name="monitor_electrodes">电极</string>
+    <string name="monitor_emd_ebpa">无脉电活动</string>
+    <string name="monitor_muscle">肌肉</string>
+    <string name="monitor_eos">心电轴</string>
+    <string name="monitor_hr_format">心率 %1$d</string>
+    <string name="monitor_tips">提示</string>
+
+    <!-- Rhythm panel -->
+    <string name="rhythm_search_placeholder">心律…</string>
+    <string name="rhythm_search_content_description">搜索</string>
+
+    <!-- Testing panel -->
+    <string name="testing_question_format">问题 %1$d</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_settings">设置</string>
+    <string name="cd_pause">暂停</string>
+    <string name="cd_ruler">标尺</string>
+</resources>

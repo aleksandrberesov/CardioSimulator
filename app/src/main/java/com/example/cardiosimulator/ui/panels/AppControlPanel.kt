@@ -23,11 +23,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
@@ -88,7 +90,7 @@ fun AppControlPanel(
                     modifier = Modifier.weight(0.5f).fillMaxWidth()
                 ) {
                     Tab(
-                        text = selectedOperatingMode.title,
+                        text = stringResource(selectedOperatingMode.id.titleRes),
                         onClick = { expanded = true }
                     )
                     DropdownMenu(
@@ -97,7 +99,7 @@ fun AppControlPanel(
                     ) {
                         operatingModes.forEach { item ->
                             DropdownMenuItem(
-                                text = { Text(item.title) },
+                                text = { Text(stringResource(item.id.titleRes)) },
                                 onClick = {
                                     viewModel.updateOperatingMode(item)
                                     expanded = false
@@ -109,11 +111,11 @@ fun AppControlPanel(
                 Box(
                     modifier = Modifier.weight(5f).fillMaxWidth()
                 ){
-                    when (selectedOperatingMode.title) {
-                        "Teaching" -> TeachingControlPanel()
-                        "Testing" -> TestingControlPanel(viewModel = viewModel)
-                        "Examination" -> {}
-                        "OSKE" -> {}
+                    when (selectedOperatingMode.id) {
+                        OperatingMode.Teaching -> TeachingControlPanel()
+                        OperatingMode.Testing -> TestingControlPanel(viewModel = viewModel)
+                        OperatingMode.Examination -> {}
+                        OperatingMode.OSKE -> {}
                     }
                 }
                 Box(
@@ -134,7 +136,7 @@ fun AppControlPanelPreview() {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return AppViewModel(
                     appState = com.example.cardiosimulator.domain.AppBuilder()
-                        .addMode(OperatingModeModel(title = "Test", description = ""))
+                        .addMode(OperatingModeModel(OperatingMode.Teaching))
                         .build(),
                 ) as T
             }

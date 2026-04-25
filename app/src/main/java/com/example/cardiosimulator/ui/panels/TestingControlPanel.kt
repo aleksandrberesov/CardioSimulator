@@ -10,8 +10,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.cardiosimulator.R
 import com.example.cardiosimulator.ui.components.Label
 import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
@@ -46,7 +48,7 @@ fun TestingControlPanel(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Label(
-                    text = "Question 13",
+                    text = stringResource(R.string.testing_question_format, 13),
                     fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                     color = androidx.compose.ui.graphics.Color.Red,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,

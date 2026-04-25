@@ -1,0 +1,54 @@
+<resources>
+    <string name="app_name">Кардиосимулятор</string>
+
+    <!-- Operating modes -->
+    <string name="mode_teaching">Обучение</string>
+    <string name="mode_testing">Тестирование</string>
+    <string name="mode_examination">Экзамен</string>
+    <string name="mode_oske">ОСКЭ</string>
+
+    <!-- Settings dialog -->
+    <string name="settings_title">Настройки</string>
+    <string name="settings_color_scheme">Цветовая схема монитора</string>
+    <string name="settings_language">Язык</string>
+    <string name="settings_close">ЗАКРЫТЬ</string>
+
+    <!-- Grid scheme labels -->
+    <string name="grid_scheme_pink">Розовая</string>
+    <string name="grid_scheme_blue_gray">Сине-серая</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Главная</string>
+    <string name="nav_settings">Настройки</string>
+    <string name="placeholder_hello">Привет, мир!</string>
+
+    <!-- Monitor control panel -->
+    <string name="monitor_columns_one">1 столбец</string>
+    <string name="monitor_columns_two">2 столбца</string>
+    <string name="monitor_columns_grid">Сетка</string>
+    <string name="monitor_columns_one_short">1 ст.</string>
+    <string name="monitor_columns_two_short">2 ст.</string>
+    <string name="monitor_columns_grid_short">Сетка</string>
+    <string name="monitor_speed_unit">мм/с</string>
+    <string name="monitor_speed_format">%1$d мм/с</string>
+    <string name="monitor_count_format">%1$d\u00D7</string>
+    <string name="monitor_scale_format">%1$d%%</string>
+    <string name="monitor_electrodes">Электроды</string>
+    <string name="monitor_emd_ebpa">ЭМД/ЭБПА</string>
+    <string name="monitor_muscle">Мышцы</string>
+    <string name="monitor_eos">ЭОС</string>
+    <string name="monitor_hr_format">ЧСС %1$d</string>
+    <string name="monitor_tips">Подсказки</string>
+
+    <!-- Rhythm panel -->
+    <string name="rhythm_search_placeholder">Ритм…</string>
+    <string name="rhythm_search_content_description">Поиск</string>
+
+    <!-- Testing panel -->
+    <string name="testing_question_format">Вопрос %1$d</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_settings">Настройки</string>
+    <string name="cd_pause">Пауза</string>
+    <string name="cd_ruler">Линейка</string>
+</resources>

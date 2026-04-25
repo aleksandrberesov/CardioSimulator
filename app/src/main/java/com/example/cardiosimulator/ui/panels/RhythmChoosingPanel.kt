@@ -26,9 +26,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.PathologyGroup
 import com.example.cardiosimulator.ui.screens.verticalScrollbar
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
@@ -64,12 +66,12 @@ fun RhythmChoosingPanel(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = TextStyle(color = Color.Black),
-                placeholder = { Text("Rhythm...", color = Color.Black) },
+                placeholder = { Text(stringResource(R.string.rhythm_search_placeholder), color = Color.Black) },
                 leadingIcon = {
                     Icon(
                         tint = Color.Black,
                         imageVector = Icons.Default.Search,
-                        contentDescription = "Search"
+                        contentDescription = stringResource(R.string.rhythm_search_content_description)
                     )
                 },
                 singleLine = true,

@@ -1,8 +1,11 @@
 package com.example.cardiosimulator.domain
 
-enum class GridScheme {
-    Pink,
-    BlueGray
+import androidx.annotation.StringRes
+import com.example.cardiosimulator.R
+
+enum class GridScheme(@StringRes val labelRes: Int) {
+    Pink(R.string.grid_scheme_pink),
+    BlueGray(R.string.grid_scheme_blue_gray)
 }
 
 enum class SeriesScheme {

@@ -1,7 +1,18 @@
 package com.example.cardiosimulator.domain
 
-enum class Language {
-    EN, RU, CH, ES
+enum class Language(val tag: String, val displayName: String) {
+    EN("en", "English"),
+    RU("ru", "Русский"),
+    ZH("zh", "中文"),
+    ES("es", "Español");
+
+    companion object {
+        fun fromTag(tag: String?): Language? {
+            if (tag.isNullOrEmpty()) return null
+            val primary = tag.substringBefore('-').lowercase()
+            return entries.firstOrNull { it.tag == primary }
+        }
+    }
 }
 
 data class AppStateModel(

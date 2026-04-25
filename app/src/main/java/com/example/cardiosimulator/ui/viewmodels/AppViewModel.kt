@@ -1,5 +1,7 @@
 package com.example.cardiosimulator.ui.viewmodels
 
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cardiosimulator.data.EcgRepository
@@ -23,7 +25,7 @@ class AppViewModel(
 ) : ViewModel() {
     val operatingModes = appState.operatingModes
 
-    private val _selectedLanguage = MutableStateFlow(appState.selectedLanguage)
+    private val _selectedLanguage = MutableStateFlow(currentSystemLanguage(appState.selectedLanguage))
     val selectedLanguage: StateFlow<Language> = _selectedLanguage.asStateFlow()
 
     private val _selectedOperatingMode = MutableStateFlow(appState.selectedOperatingMode)
@@ -51,8 +53,16 @@ class AppViewModel(
     }
 
     fun updateLanguage(language: Language) {
+        if (_selectedLanguage.value == language) return
         appState.updateLanguage(language)
         _selectedLanguage.value = language
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language.tag))
+    }
+
+    private fun currentSystemLanguage(default: Language): Language {
+        val locales = AppCompatDelegate.getApplicationLocales()
+        val tag = if (!locales.isEmpty) locales.get(0)?.toLanguageTag() else null
+        return Language.fromTag(tag) ?: default
     }
 
     fun updateOperatingMode(mode: OperatingModeModel) {

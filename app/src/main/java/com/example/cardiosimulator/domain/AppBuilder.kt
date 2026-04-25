@@ -8,15 +8,11 @@ class AppBuilder {
         return this
     }
 
-    fun build(initialModeTitle: String? = null): AppStateModel {
+    fun build(initialMode: OperatingMode? = null): AppStateModel {
         check(modes.isNotEmpty()) { "At least one operating mode must be added before building." }
-        val initialMode = if (initialModeTitle != null) {
-            modes.find { it.title == initialModeTitle } ?: modes.first()
-        } else {
-            modes.first()
-        }
+        val initial = initialMode?.let { id -> modes.find { it.id == id } } ?: modes.first()
         return AppStateModel(
-            initialOperatingMode = initialMode,
+            initialOperatingMode = initial,
             operatingModes = modes.toList()
         )
     }

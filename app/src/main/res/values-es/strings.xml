@@ -1,0 +1,54 @@
+<resources>
+    <string name="app_name">Simulador Cardíaco</string>
+
+    <!-- Operating modes -->
+    <string name="mode_teaching">Enseñanza</string>
+    <string name="mode_testing">Prueba</string>
+    <string name="mode_examination">Examen</string>
+    <string name="mode_oske">ECOE</string>
+
+    <!-- Settings dialog -->
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_color_scheme">Esquema de color del monitor</string>
+    <string name="settings_language">Idioma</string>
+    <string name="settings_close">CERRAR</string>
+
+    <!-- Grid scheme labels -->
+    <string name="grid_scheme_pink">Rosa</string>
+    <string name="grid_scheme_blue_gray">Azul/Gris</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_settings">Ajustes</string>
+    <string name="placeholder_hello">¡Hola, mundo!</string>
+
+    <!-- Monitor control panel -->
+    <string name="monitor_columns_one">1 columna</string>
+    <string name="monitor_columns_two">2 columnas</string>
+    <string name="monitor_columns_grid">Cuadrícula</string>
+    <string name="monitor_columns_one_short">1 col.</string>
+    <string name="monitor_columns_two_short">2 col.</string>
+    <string name="monitor_columns_grid_short">Cuadr.</string>
+    <string name="monitor_speed_unit">mm/s</string>
+    <string name="monitor_speed_format">%1$d mm/s</string>
+    <string name="monitor_count_format">%1$d\u00D7</string>
+    <string name="monitor_scale_format">%1$d%%</string>
+    <string name="monitor_electrodes">Electrodos</string>
+    <string name="monitor_emd_ebpa">AESP/AEPS</string>
+    <string name="monitor_muscle">Músculo</string>
+    <string name="monitor_eos">EE</string>
+    <string name="monitor_hr_format">FC %1$d</string>
+    <string name="monitor_tips">Consejos</string>
+
+    <!-- Rhythm panel -->
+    <string name="rhythm_search_placeholder">Ritmo…</string>
+    <string name="rhythm_search_content_description">Buscar</string>
+
+    <!-- Testing panel -->
+    <string name="testing_question_format">Pregunta %1$d</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_settings">Ajustes</string>
+    <string name="cd_pause">Pausar</string>
+    <string name="cd_ruler">Regla</string>
+</resources>

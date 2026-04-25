@@ -11,8 +11,10 @@ kotlin = "2.3.20"
 composeBom = "2026.03.00"
 foundationLayout = "1.10.5"
 runtime = "1.10.5"
+appcompat = "1.7.1"
 
 [libraries]
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
