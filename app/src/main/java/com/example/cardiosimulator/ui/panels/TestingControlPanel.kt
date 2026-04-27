@@ -10,6 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.cardiosimulator.ui.components.Label
@@ -18,15 +20,15 @@ import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 
 @Composable
 fun TestingControlPanel(
-    viewModel: AppViewModel,
+    @Suppress("UNUSED_PARAMETER") viewModel: AppViewModel,
     modifier: Modifier = Modifier,
     onTab2Click: () -> Unit = {},
-    onTab3Click: () -> Unit = {},
+    @Suppress("UNUSED_PARAMETER") onTab3Click: () -> Unit = {},
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = Color.White,
-        tonalElevation = 3.dp
+        tonalElevation = 3.dp,
     ) {
         Row(
             modifier = Modifier
@@ -47,9 +49,9 @@ fun TestingControlPanel(
             ) {
                 Label(
                     text = "Question 13",
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                    color = androidx.compose.ui.graphics.Color.Red,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Red,
+                    textAlign = TextAlign.Center,
                     fontSize = 24.sp
                 )
                 Tab(
