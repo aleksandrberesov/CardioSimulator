@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Row
@@ -22,9 +23,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 
 @Composable
@@ -46,29 +49,47 @@ fun Tab(
             .defaultMinSize(minWidth = 35.dp)
             .border(borderWidth, Color.Black, shape)
             .clip(shape)
-            .clickable(onClick = onClick)
-            .padding(4.dp),
+            .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        if (icon != null) {
-            Icon(
-                imageVector = icon,
-                contentDescription = text,
-                tint = Color.Black,
-                modifier = iconModifier
-            )
-        } else if (text != null) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge,
-                color = Color.Black
-            )
-            if (subText != null) {
+        when {
+            icon != null -> {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = text,
+                    tint = Color.Black,
+                    modifier = iconModifier.padding(4.dp)
+                )
+            }
+            text != null && subText != null -> {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy((-6).dp)
+                ) {
+                    Text(
+                        text = text,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.Black,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp)
+                    )
+                    Text(
+                        text = subText,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                        color = Color.Black,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp)
+                    )
+                }
+            }
+            text != null -> {
                 Text(
-                    text = subText,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Color.Black
+                    text = text,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color.Black,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(4.dp)
                 )
             }
         }
