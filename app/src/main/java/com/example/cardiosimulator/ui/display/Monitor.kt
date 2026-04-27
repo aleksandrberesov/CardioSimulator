@@ -118,7 +118,7 @@ fun Monitor(
                 repeat(rows) { rowIndex ->
                     Row(modifier = Modifier.weight(1f)) {
                         repeat(columns) { colIndex ->
-                            val itemIndex = rowIndex * columns + colIndex
+                            val itemIndex = colIndex * rows + rowIndex
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
