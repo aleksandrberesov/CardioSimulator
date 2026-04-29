@@ -9,8 +9,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-import com.example.cardiosimulator.domain.Language
-
 class MonitorViewModel : ViewModel() {
     private val _monitorMode = MutableStateFlow(MonitorModeModel())
     val monitorMode: StateFlow<MonitorModeModel> = _monitorMode.asStateFlow()
@@ -31,7 +29,7 @@ class MonitorViewModel : ViewModel() {
         _monitorMode.update { it.copy(speed = speed) }
     }
 
-    fun setScale(scale: Int) {
+    fun setScale(scale: Float) {
         _monitorMode.update { it.copy(scale = scale) }
     }
 }

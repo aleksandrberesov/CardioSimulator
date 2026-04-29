@@ -13,6 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+/.icons
 /.data/Parts/1_AVB_t2_I
 /.data/Parts/1_AVB_t2_II
 /.data/Parts/1ABBLOCK_AVF
@@ -2561,3 +2562,4 @@ local.properties
 /.data/Series/Øèæ ªÑ½Òñ«þ¬«ó V4
 /.data/Series/Øèæ ªÑ½Òñ«þ¬«ó V5
 /.data/Series/Øèæ ªÑ½Òñ«þ¬«ó V6
+/.claude/worktrees/charming-hertz-d394c5/

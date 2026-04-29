@@ -144,16 +144,16 @@ fun MonitorControlPanel(
         Box {
             var scaleMenuExpanded by remember { mutableStateOf(false) }
             Tab(
-                text = stringResource(R.string.monitor_scale_format, monitorMode.scale),
+                text = "${(monitorMode.scale * 100).toInt()}%",
                 onClick = { scaleMenuExpanded = true }
             )
             DropdownMenu(
                 expanded = scaleMenuExpanded,
                 onDismissRequest = { scaleMenuExpanded = false }
             ) {
-                listOf(100, 75, 50, 25).forEach { scaleOption ->
+                listOf(1.0f, 2.0f, 3.0f, 4.0f, 5.0f).forEach { scaleOption ->
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.monitor_scale_format, scaleOption)) },
+                        text = { Text("${(scaleOption * 100).toInt()}%") },
                         onClick = {
                             viewModel.setScale(scaleOption)
                             scaleMenuExpanded = false
