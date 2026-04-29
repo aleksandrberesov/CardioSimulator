@@ -63,7 +63,7 @@ fun AppControlPanel(
                     modifier = Modifier.weight(0.5f).fillMaxWidth()
                 ) {
                     Tab(
-                        text = selectedOperatingMode.title,
+                        text = stringResource(selectedOperatingMode.id.titleRes),
                         onClick = { expanded = true }
                     )
                     DropdownMenu(
@@ -72,7 +72,7 @@ fun AppControlPanel(
                     ) {
                         operatingModes.forEach { item ->
                             DropdownMenuItem(
-                                text = { Text(item.title) },
+                                text = { Text(stringResource(item.id.titleRes)) },
                                 onClick = {
                                     viewModel.updateOperatingMode(item)
                                     expanded = false
@@ -84,11 +84,11 @@ fun AppControlPanel(
                 Box(
                     modifier = Modifier.weight(5f).fillMaxWidth()
                 ){
-                    when (selectedOperatingMode.title) {
-                        "Teaching" -> TeachingControlPanel()
-                        "Testing" -> TestingControlPanel(viewModel = viewModel)
-                        "Examination" -> {}
-                        "OSKE" -> {}
+                    when (selectedOperatingMode.id) {
+                        OperatingMode.Teaching -> TeachingControlPanel()
+                        OperatingMode.Testing -> TestingControlPanel(viewModel = viewModel)
+                        OperatingMode.Examination -> {}
+                        OperatingMode.OSKE -> {}
                     }
                 }
             }
@@ -109,7 +109,7 @@ fun AppControlPanelPreview() {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return AppViewModel(
                     appState = com.example.cardiosimulator.domain.AppBuilder()
-                        .addMode(OperatingModeModel(title = "Test", description = ""))
+                        .addMode(OperatingModeModel(OperatingMode.Teaching))
                         .build(),
                 ) as T
             }

@@ -38,6 +38,7 @@ fun Tab(
     subText: String? = null,
     icon: ImageVector? = null,
     iconModifier: Modifier = Modifier,
+    iconContentDescription: String? = null,
     borderWidth: Dp = 1.dp,
     cornerRadius: Dp = 4.dp
 ) {

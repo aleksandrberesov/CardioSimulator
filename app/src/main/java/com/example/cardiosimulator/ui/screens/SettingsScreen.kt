@@ -10,10 +10,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.example.cardiosimulator.R
 import com.example.cardiosimulator.domain.GridScheme
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
@@ -58,15 +60,14 @@ fun SettingsContent(
             horizontalAlignment = Alignment.Start
         ) {
             Text(
-                text = "Settings",
+                text = stringResource(R.string.settings_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 24.dp)
             )
 
-            // Color Scheme Setting
             Text(
-                text = "Monitor Color Scheme",
+                text = stringResource(R.string.settings_color_scheme),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
@@ -80,7 +81,7 @@ fun SettingsContent(
                     FilterChip(
                         selected = isSelected,
                         onClick = { monitorViewModel.setGridScheme(scheme) },
-                        label = { Text(scheme.name) },
+                        label = { Text(stringResource(scheme.labelRes)) },
                         leadingIcon = if (isSelected) {
                             {
                                 Icon(
@@ -96,9 +97,8 @@ fun SettingsContent(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Language Setting
             Text(
-                text = "Language",
+                text = stringResource(R.string.settings_language),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
@@ -112,7 +112,7 @@ fun SettingsContent(
                     FilterChip(
                         selected = isSelected,
                         onClick = { appViewModel.updateLanguage(language) },
-                        label = { Text(language.name) },
+                        label = { Text(language.displayName) },
                         leadingIcon = if (isSelected) {
                             {
                                 Icon(
@@ -132,7 +132,7 @@ fun SettingsContent(
                 onClick = onDismiss,
                 modifier = Modifier.align(Alignment.End)
             ) {
-                Text("CLOSE")
+                Text(stringResource(R.string.settings_close))
             }
         }
     }
@@ -142,8 +142,5 @@ fun SettingsContent(
 @Composable
 fun SettingsContentPreview() {
     CardioSimulatorTheme {
-        // Mock view models for preview if possible, or just pass nulls if they are not used in a way that crashes
-        // Since they are used in collectAsState, we might need a better way or just accept it might not render perfectly in simple preview
-        // For now, I'll just use the viewModel() but it needs to be the right type.
     }
 }

@@ -12,10 +12,11 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.cardiosimulator.R
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -28,13 +29,13 @@ fun BaseScreen() {
                     selected = true,
                     onClick = { },
                     icon = {  },
-                    label = { Text("Home") }
+                    label = { Text(stringResource(R.string.nav_home)) }
                 )
                 NavigationBarItem(
                     selected = false,
                     onClick = { },
                     icon = { },
-                    label = { Text("Settings") }
+                    label = { Text(stringResource(R.string.nav_settings)) }
                 )
             }
         },
@@ -43,14 +44,14 @@ fun BaseScreen() {
                 NavigationBarItem(
                     selected = true,
                     onClick = { },
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                    label = { Text("Home") }
+                    icon = { Icon(Icons.Default.Home, contentDescription = stringResource(R.string.nav_home)) },
+                    label = { Text(stringResource(R.string.nav_home)) }
                 )
                 NavigationBarItem(
                     selected = false,
                     onClick = { },
-                    icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
-                    label = { Text("Settings") }
+                    icon = { Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.nav_settings)) },
+                    label = { Text(stringResource(R.string.nav_settings)) }
                 )
             }
         }
@@ -60,7 +61,7 @@ fun BaseScreen() {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            Text("Hello, world!")
+            Text(stringResource(R.string.placeholder_hello))
         }
     }
 }

@@ -25,10 +25,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.cardiosimulator.R
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.components.ControlPanelDivider
 import com.example.cardiosimulator.ui.components.Label
@@ -56,11 +58,10 @@ fun MonitorControlPanel(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Group 1: Menus (Count, Scheme, Speed, Scale)
         Box {
             var countMenuExpanded by remember { mutableStateOf(false) }
             Tab(
-                text = "${monitorMode.count}x",
+                text = stringResource(R.string.monitor_count_format, monitorMode.count),
                 onClick = { countMenuExpanded = true }
             )
             DropdownMenu(
@@ -69,7 +70,7 @@ fun MonitorControlPanel(
             ) {
                 listOf(1, 6, 12).forEach { count ->
                     DropdownMenuItem(
-                        text = { Text("${count}x") },
+                        text = { Text(stringResource(R.string.monitor_count_format, count)) },
                         onClick = {
                             viewModel.setSeriesCount(count)
                             countMenuExpanded = false
@@ -83,9 +84,9 @@ fun MonitorControlPanel(
             var schemeMenuExpanded by remember { mutableStateOf(false) }
             Tab(
                 text = when (monitorMode.seriesScheme) {
-                    SeriesScheme.OneColumn -> "1 Col"
-                    SeriesScheme.TwoColumn -> "2 Cols"
-                    SeriesScheme.Grid -> "Grid"
+                    SeriesScheme.OneColumn -> stringResource(R.string.monitor_columns_one_short)
+                    SeriesScheme.TwoColumn -> stringResource(R.string.monitor_columns_two_short)
+                    SeriesScheme.Grid -> stringResource(R.string.monitor_columns_grid_short)
                 },
                 onClick = { schemeMenuExpanded = true }
             )
@@ -94,21 +95,21 @@ fun MonitorControlPanel(
                 onDismissRequest = { schemeMenuExpanded = false }
             ) {
                 DropdownMenuItem(
-                    text = { Text("1 Column") },
+                    text = { Text(stringResource(R.string.monitor_columns_one)) },
                     onClick = {
                         viewModel.setSeriesScheme(SeriesScheme.OneColumn)
                         schemeMenuExpanded = false
                     }
                 )
                 DropdownMenuItem(
-                    text = { Text("2 Columns") },
+                    text = { Text(stringResource(R.string.monitor_columns_two)) },
                     onClick = {
                         viewModel.setSeriesScheme(SeriesScheme.TwoColumn)
                         schemeMenuExpanded = false
                     }
                 )
                 DropdownMenuItem(
-                    text = { Text("Grid") },
+                    text = { Text(stringResource(R.string.monitor_columns_grid)) },
                     onClick = {
                         viewModel.setSeriesScheme(SeriesScheme.Grid)
                         schemeMenuExpanded = false
@@ -121,7 +122,7 @@ fun MonitorControlPanel(
             var speedMenuExpanded by remember { mutableStateOf(false) }
             Tab(
                 text = "${monitorMode.speed}",
-                subText = "mm/s",
+                subText = stringResource(R.string.monitor_speed_unit),
                 onClick = { speedMenuExpanded = true }
             )
             DropdownMenu(
@@ -130,7 +131,7 @@ fun MonitorControlPanel(
             ) {
                 listOf(25, 50).forEach { speed ->
                     DropdownMenuItem(
-                        text = { Text("$speed mm/s") },
+                        text = { Text(stringResource(R.string.monitor_speed_format, speed)) },
                         onClick = {
                             viewModel.setSpeed(speed)
                             speedMenuExpanded = false
@@ -164,16 +165,14 @@ fun MonitorControlPanel(
 
         ControlPanelDivider()
 
-        // Group 2: Mode Toggles
-        Tab(text = "Electrodes", onClick = { })
-        Tab(text = "EMD/EBPA", onClick = { })
-        Tab(text = "Muscle", onClick = { })
+        Tab(text = stringResource(R.string.monitor_electrodes), onClick = { })
+        Tab(text = stringResource(R.string.monitor_emd_ebpa), onClick = { })
+        Tab(text = stringResource(R.string.monitor_muscle), onClick = { })
 
         ControlPanelDivider()
 
-        // Group 3: Status Indicators
         Label(
-            text = "EOS",
+            text = stringResource(R.string.monitor_eos),
             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
             color = androidx.compose.ui.graphics.Color.Red,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -183,7 +182,7 @@ fun MonitorControlPanel(
             cornerRadius = 4.dp
         )
         Label(
-            text = "HR 160",
+            text = stringResource(R.string.monitor_hr_format, 160),
             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
             color = androidx.compose.ui.graphics.Color.White,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -191,22 +190,24 @@ fun MonitorControlPanel(
             fontSize = 20.sp,
             cornerRadius = 4.dp
         )
-        Tab(text = "Tips", onClick = onTipsClick)
+        Tab(text = stringResource(R.string.monitor_tips), onClick = onTipsClick)
 
         ControlPanelDivider()
 
-        // Group 4: Main Actions
         Tab(
             icon = Icons.Default.Straighten,
             iconModifier = Modifier.rotate(-45f),
+            iconContentDescription = stringResource(R.string.cd_ruler),
             onClick = onRulerClick
         )
         Tab(
             icon = Icons.Default.Pause,
+            iconContentDescription = stringResource(R.string.cd_pause),
             onClick = onPauseClick
         )
         Tab(
             icon = Icons.Default.Settings,
+            iconContentDescription = stringResource(R.string.cd_settings),
             onClick = onSettingsClick,
             borderWidth = 0.dp
         )
