@@ -52,17 +52,17 @@ fun MonitorControlPanel(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
             .padding(8.dp)
             .height(IntrinsicSize.Min),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box {
+        Box(modifier = Modifier.weight(1f)) {
             var countMenuExpanded by remember { mutableStateOf(false) }
             Tab(
                 text = stringResource(R.string.monitor_count_format, monitorMode.count),
-                onClick = { countMenuExpanded = true }
+                onClick = { countMenuExpanded = true },
+                modifier = Modifier.fillMaxWidth()
             )
             DropdownMenu(
                 expanded = countMenuExpanded,
@@ -80,7 +80,7 @@ fun MonitorControlPanel(
             }
         }
 
-        Box {
+        Box(modifier = Modifier.weight(1f)) {
             var schemeMenuExpanded by remember { mutableStateOf(false) }
             Tab(
                 text = when (monitorMode.seriesScheme) {
@@ -88,7 +88,8 @@ fun MonitorControlPanel(
                     SeriesScheme.TwoColumn -> stringResource(R.string.monitor_columns_two_short)
                     SeriesScheme.Grid -> stringResource(R.string.monitor_columns_grid_short)
                 },
-                onClick = { schemeMenuExpanded = true }
+                onClick = { schemeMenuExpanded = true },
+                modifier = Modifier.fillMaxWidth()
             )
             DropdownMenu(
                 expanded = schemeMenuExpanded,
@@ -118,12 +119,13 @@ fun MonitorControlPanel(
             }
         }
 
-        Box {
+        Box(modifier = Modifier.weight(1f)) {
             var speedMenuExpanded by remember { mutableStateOf(false) }
             Tab(
                 text = "${monitorMode.speed}",
                 subText = stringResource(R.string.monitor_speed_unit),
-                onClick = { speedMenuExpanded = true }
+                onClick = { speedMenuExpanded = true },
+                modifier = Modifier.fillMaxWidth()
             )
             DropdownMenu(
                 expanded = speedMenuExpanded,
@@ -141,11 +143,12 @@ fun MonitorControlPanel(
             }
         }
 
-        Box {
+        Box(modifier = Modifier.weight(1f)) {
             var scaleMenuExpanded by remember { mutableStateOf(false) }
             Tab(
                 text = "${(monitorMode.scale * 100).toInt()}%",
-                onClick = { scaleMenuExpanded = true }
+                onClick = { scaleMenuExpanded = true },
+                modifier = Modifier.fillMaxWidth()
             )
             DropdownMenu(
                 expanded = scaleMenuExpanded,
@@ -165,9 +168,21 @@ fun MonitorControlPanel(
 
         ControlPanelDivider()
 
-        Tab(text = stringResource(R.string.monitor_electrodes), onClick = { })
-        Tab(text = stringResource(R.string.monitor_emd_ebpa), onClick = { })
-        Tab(text = stringResource(R.string.monitor_muscle), onClick = { })
+        Tab(
+            text = stringResource(R.string.monitor_electrodes),
+            onClick = { },
+            modifier = Modifier.weight(1.5f)
+        )
+        Tab(
+            text = stringResource(R.string.monitor_emd_ebpa),
+            onClick = { },
+            modifier = Modifier.weight(1.5f)
+        )
+        Tab(
+            text = stringResource(R.string.monitor_muscle),
+            onClick = { },
+            modifier = Modifier.weight(1.5f)
+        )
 
         ControlPanelDivider()
 
@@ -179,7 +194,8 @@ fun MonitorControlPanel(
             fontSize = 20.sp,
             borderWidth = 1.dp,
             borderColor = androidx.compose.ui.graphics.Color.Black,
-            cornerRadius = 4.dp
+            cornerRadius = 4.dp,
+            modifier = Modifier.weight(1f)
         )
         Label(
             text = stringResource(R.string.monitor_hr_format, 160),
@@ -188,9 +204,14 @@ fun MonitorControlPanel(
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             backgroundColor = androidx.compose.ui.graphics.Color.Black,
             fontSize = 20.sp,
-            cornerRadius = 4.dp
+            cornerRadius = 4.dp,
+            modifier = Modifier.weight(1f)
         )
-        Tab(text = stringResource(R.string.monitor_tips), onClick = onTipsClick)
+        Tab(
+            text = stringResource(R.string.monitor_tips),
+            onClick = onTipsClick,
+            modifier = Modifier.weight(1f)
+        )
 
         ControlPanelDivider()
 
@@ -198,18 +219,21 @@ fun MonitorControlPanel(
             icon = Icons.Default.Straighten,
             iconModifier = Modifier.rotate(-45f),
             iconContentDescription = stringResource(R.string.cd_ruler),
-            onClick = onRulerClick
+            onClick = onRulerClick,
+            modifier = Modifier.weight(0.8f)
         )
         Tab(
             icon = Icons.Default.Pause,
             iconContentDescription = stringResource(R.string.cd_pause),
-            onClick = onPauseClick
+            onClick = onPauseClick,
+            modifier = Modifier.weight(0.8f)
         )
         Tab(
             icon = Icons.Default.Settings,
             iconContentDescription = stringResource(R.string.cd_settings),
             onClick = onSettingsClick,
-            borderWidth = 0.dp
+            borderWidth = 0.dp,
+            modifier = Modifier.weight(0.8f)
         )
     }
 }

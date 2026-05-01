@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun Label(
@@ -40,21 +41,23 @@ fun Label(
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .width(IntrinsicSize.Max)
             .defaultMinSize(minWidth = 50.dp)
             .clip(shape)
             .background(backgroundColor)
             .border(borderWidth, borderColor, shape)
-            .padding(horizontal = 8.dp),
+            .padding(horizontal = 4.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(
+        AutoResizeText(
             text = text,
             style = style,
             color = color,
             fontWeight = fontWeight,
             textAlign = textAlign,
-            fontSize = fontSize
+            fontSize = fontSize,
+            maxLines = 1,
+            softWrap = false,
+            minFontSize = 10.sp
         )
     }
 }

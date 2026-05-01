@@ -46,7 +46,6 @@ fun Tab(
     Column(
         modifier = modifier
             .fillMaxHeight(1f)
-            .width(IntrinsicSize.Max)
             .defaultMinSize(minWidth = 35.dp)
             .border(borderWidth, Color.Black, shape)
             .clip(shape)
@@ -68,29 +67,38 @@ fun Tab(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy((-6).dp)
                 ) {
-                    Text(
+                    AutoResizeText(
                         text = text,
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.Black,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp)
+                        maxLines = 1,
+                        softWrap = false,
+                        minFontSize = 9.sp,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 1.dp)
                     )
-                    Text(
+                    AutoResizeText(
                         text = subText,
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
                         color = Color.Black,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp)
+                        maxLines = 1,
+                        softWrap = false,
+                        minFontSize = 7.sp,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 1.dp)
                     )
                 }
             }
             text != null -> {
-                Text(
+                AutoResizeText(
                     text = text,
                     style = MaterialTheme.typography.labelLarge,
                     color = Color.Black,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().padding(4.dp)
+                    maxLines = 1,
+                    softWrap = false,
+                    minFontSize = 10.sp,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 1.dp)
                 )
             }
         }

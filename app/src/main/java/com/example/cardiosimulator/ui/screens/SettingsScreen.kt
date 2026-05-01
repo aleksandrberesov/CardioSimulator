@@ -52,7 +52,7 @@ fun SettingsContent(
         shape = RoundedCornerShape(16.dp),
         tonalElevation = 6.dp,
         modifier = Modifier
-            .width(400.dp)
+            .width(500.dp)
             .padding(16.dp)
     ) {
         Column(
