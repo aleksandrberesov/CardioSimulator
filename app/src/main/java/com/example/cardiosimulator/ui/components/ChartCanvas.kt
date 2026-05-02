@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.cardiosimulator.data.AdcScale
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 
@@ -20,7 +21,7 @@ import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 fun ChartCanvas(
     points: Points,
     modifier: Modifier = Modifier,
-    scaleY: Float = 1f
+    scale: AdcScale = AdcScale()
 ) {
     val dataPoints = points.values
     if (dataPoints.size < 2) return
@@ -29,15 +30,14 @@ fun ChartCanvas(
         modifier = modifier
             .chartArea()
             .drawWithCache {
-                val minVal = dataPoints.minOrNull() ?: 0f
-                val maxVal = dataPoints.maxOrNull() ?: 1f
-                val range = (maxVal - minVal).coerceAtLeast(1f)
-                val stepX = size.width / (dataPoints.size - 1).coerceAtLeast(1)
+                val stepX = scale.horizontalPixelsPerSample
+                val stepY = scale.verticalPixelsPerUnit
+                val baselineY = size.height / 2f
 
                 val path = Path().apply {
                     for (i in dataPoints.indices) {
                         val x = i * stepX
-                        val y = size.height - ((dataPoints[i] - minVal) / range) * size.height * scaleY
+                        val y = baselineY - (dataPoints[i] * stepY)
                         if (i == 0) moveTo(x, y) else lineTo(x, y)
                     }
                 }

@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.cardiosimulator.data.AdcScale
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.ui.components.ChartCanvas
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
@@ -28,6 +29,7 @@ fun Series(
     points: Points,
     modifier: Modifier = Modifier,
     title: String = "",
+    scale: AdcScale = AdcScale()
 ){
     Row(
         modifier = Modifier.seriesArea(),
@@ -41,17 +43,21 @@ fun Series(
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val baseline = size.height / 2f
-                val pulseHeight = 50.dp.toPx()
-                val pulseWidth = 20.dp.toPx()
+                
+                // 1mV is standardly 200 ADC units in our system
+                // 200ms is standardly 50 samples
+                val pulseHeight = 200f * scale.verticalPixelsPerUnit
+                val pulseWidth = 50f * scale.horizontalPixelsPerSample
                 val startX = 8.dp.toPx()
+                val wingWidth = 4.dp.toPx()
 
                 val path = Path().apply {
                     moveTo(startX, baseline)
-                    lineTo(startX + 4.dp.toPx(), baseline)
-                    lineTo(startX + 4.dp.toPx(), baseline - pulseHeight)
-                    lineTo(startX + 4.dp.toPx() + pulseWidth, baseline - pulseHeight)
-                    lineTo(startX + 4.dp.toPx() + pulseWidth, baseline)
-                    lineTo(startX + 4.dp.toPx() + pulseWidth + 4.dp.toPx(), baseline)
+                    lineTo(startX + wingWidth, baseline)
+                    lineTo(startX + wingWidth, baseline - pulseHeight)
+                    lineTo(startX + wingWidth + pulseWidth, baseline - pulseHeight)
+                    lineTo(startX + wingWidth + pulseWidth, baseline)
+                    lineTo(startX + wingWidth + pulseWidth + wingWidth, baseline)
                 }
 
                 drawPath(
@@ -79,7 +85,7 @@ fun Series(
                 .weight(1f)
                 .fillMaxHeight()
         ) {
-            ChartCanvas(points = points, modifier = modifier, scaleY = 1f)
+            ChartCanvas(points = points, modifier = modifier, scale = scale)
         }
     }
 }

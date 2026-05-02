@@ -2,6 +2,7 @@ package com.example.cardiosimulator.domain
 
 import androidx.annotation.StringRes
 import com.example.cardiosimulator.R
+import com.example.cardiosimulator.data.AdcScale
 
 enum class GridScheme(@StringRes val labelRes: Int) {
     Pink(R.string.grid_scheme_pink),
@@ -19,5 +20,6 @@ data class MonitorModeModel(
     val gridScheme: GridScheme = GridScheme.Pink,
     val seriesScheme: SeriesScheme = SeriesScheme.OneColumn,
     val speed: Int = 25,
-    val scale: Float = 1f
+    val scale: Float = 1f,
+    val adcScale: AdcScale = AdcScale()
 )

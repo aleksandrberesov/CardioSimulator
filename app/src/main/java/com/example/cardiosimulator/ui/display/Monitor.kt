@@ -133,7 +133,8 @@ fun Monitor(
                                     Series(
                                         points = leadPoints,
                                         modifier = modifier,
-                                        title = lead?.name ?: (itemIndex + 1).toString()
+                                        title = lead?.name ?: (itemIndex + 1).toString(),
+                                        scale = mode.adcScale
                                     )
                                 }
                             }

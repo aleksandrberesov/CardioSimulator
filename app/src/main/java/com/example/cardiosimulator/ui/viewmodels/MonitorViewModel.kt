@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.example.cardiosimulator.domain.GridScheme
 import com.example.cardiosimulator.domain.MonitorModeModel
 import com.example.cardiosimulator.domain.SeriesScheme
+import com.example.cardiosimulator.data.AdcScale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,10 +27,26 @@ class MonitorViewModel : ViewModel() {
     }
 
     fun setSpeed(speed: Int) {
-        _monitorMode.update { it.copy(speed = speed) }
+        _monitorMode.update { 
+            val horizontalScale = if (speed == 50) 2.0f else 1.0f
+            it.copy(
+                speed = speed,
+                adcScale = it.adcScale.copy(horizontalPixelsPerSample = horizontalScale)
+            )
+        }
     }
 
     fun setScale(scale: Float) {
-        _monitorMode.update { it.copy(scale = scale) }
+        _monitorMode.update { 
+            val verticalScale = 0.5f * scale
+            it.copy(
+                scale = scale,
+                adcScale = it.adcScale.copy(verticalPixelsPerUnit = verticalScale)
+            )
+        }
+    }
+
+    fun setAdcScale(adcScale: AdcScale) {
+        _monitorMode.update { it.copy(adcScale = adcScale) }
     }
 }
