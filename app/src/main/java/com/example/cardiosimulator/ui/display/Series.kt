@@ -1,14 +1,20 @@
 package com.example.cardiosimulator.ui.display
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -23,25 +29,55 @@ fun Series(
     modifier: Modifier = Modifier,
     title: String = "",
 ){
-    Row(modifier = Modifier.seriesArea()) {
+    Row(
+        modifier = Modifier.seriesArea(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Calibration Symbol and Lead Name
+        Box(
+            modifier = Modifier
+                .width(48.dp)
+                .fillMaxHeight()
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val baseline = size.height / 2f
+                val pulseHeight = 50.dp.toPx()
+                val pulseWidth = 20.dp.toPx()
+                val startX = 8.dp.toPx()
+
+                val path = Path().apply {
+                    moveTo(startX, baseline)
+                    lineTo(startX + 4.dp.toPx(), baseline)
+                    lineTo(startX + 4.dp.toPx(), baseline - pulseHeight)
+                    lineTo(startX + 4.dp.toPx() + pulseWidth, baseline - pulseHeight)
+                    lineTo(startX + 4.dp.toPx() + pulseWidth, baseline)
+                    lineTo(startX + 4.dp.toPx() + pulseWidth + 4.dp.toPx(), baseline)
+                }
+
+                drawPath(
+                    path = path,
+                    color = Color.Black,
+                    style = Stroke(width = 1.5.dp.toPx())
+                )
+            }
+
+            Text(
+                text = title,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Serif,
+                fontSize = 16.sp,
+                color = Color.Black,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(top = 45.dp, start = 8.dp) // Positioned under the pulse
+            )
+        }
+
+        // Trace
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
-                .padding(top = 8.dp, start = 8.dp),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Text(
-                text = title,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-                color = Color.Black
-            )
-        }
-        Box(
-            modifier = Modifier
-                .weight(15f),
-            contentAlignment = Alignment.Center
         ) {
             ChartCanvas(points = points, modifier = modifier, scaleY = 1f)
         }
