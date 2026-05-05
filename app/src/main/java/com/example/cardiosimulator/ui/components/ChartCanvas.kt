@@ -13,25 +13,28 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.cardiosimulator.data.AdcScale
+import com.example.cardiosimulator.data.EcgCalibration
+import com.example.cardiosimulator.data.LocalPixelScale
+import com.example.cardiosimulator.data.PixelScale
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
+import androidx.compose.runtime.CompositionLocalProvider
 
 @Composable
 fun ChartCanvas(
     points: Points,
     modifier: Modifier = Modifier,
-    scale: AdcScale = AdcScale()
 ) {
     val dataPoints = points.values
     if (dataPoints.size < 2) return
+    val scale = LocalPixelScale.current
 
     Spacer(
         modifier = modifier
             .chartArea()
             .drawWithCache {
-                val stepX = scale.horizontalPixelsPerSample
-                val stepY = scale.verticalPixelsPerUnit
+                val stepX = scale.pxPerSample
+                val stepY = scale.pxPerAdcCount
                 val baselineY = size.height / 2f
 
                 val path = Path().apply {
@@ -63,10 +66,18 @@ fun ChartCanvasPreview() {
         0f, 0.1f, 0.2f, 0.8f, 1f, 0.5f, 0.2f, 0.1f, 0f,
         -0.1f, -0.2f, -0.8f, -1f, -0.5f, -0.2f, -0.1f, 0f
     ))
+    val previewScale = PixelScale(
+        pxPerMm = 6.3f,
+        paperSpeedMmPerSec = 25f,
+        gainZoomY = 1f,
+        cal = EcgCalibration(),
+    )
     CardioSimulatorTheme {
-        ChartCanvas(
-            points = samplePoints,
-            modifier = Modifier.fillMaxSize().padding(16.dp)
-        )
+        CompositionLocalProvider(LocalPixelScale provides previewScale) {
+            ChartCanvas(
+                points = samplePoints,
+                modifier = Modifier.fillMaxSize().padding(16.dp)
+            )
+        }
     }
 }

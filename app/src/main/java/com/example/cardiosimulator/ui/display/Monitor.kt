@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -20,8 +21,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.cardiosimulator.data.LocalPixelScale
+import com.example.cardiosimulator.data.PixelScale
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.GridScheme
 import com.example.cardiosimulator.domain.Lead
@@ -76,6 +80,20 @@ fun Monitor(
 
     val rows = ceil(mode.count.toFloat() / columns).toInt()
 
+    val density = LocalDensity.current
+    // 1 mm = 160/25.4 dp on Android's mdpi reference; convert to px via display density.
+    // displayScale is a global shrink/zoom factor so the whole picture (grid + trace
+    // + cal pulse) fits the monitor without breaking the mm-based relationships.
+    val pxPerMm = density.density * (160f / 25.4f) * mode.displayScale
+    val pixelScale = remember(pxPerMm, mode.speed, mode.scale, mode.calibration) {
+        PixelScale(
+            pxPerMm = pxPerMm,
+            paperSpeedMmPerSec = mode.speed.toFloat(),
+            gainZoomY = mode.scale,
+            cal = mode.calibration,
+        )
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
         BoxWithConstraints(
             modifier = Modifier
@@ -103,39 +121,40 @@ fun Monitor(
                 )
             }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .transformable(state = state)
-                    .graphicsLayer(
-                        scaleX = scale,
-                        scaleY = scale,
-                        translationX = offset.x,
-                        translationY = offset.y
-                    )
-                    .ekgGrid(mode.gridScheme)
-            ) {
-                repeat(rows) { rowIndex ->
-                    Row(modifier = Modifier.weight(1f)) {
-                        repeat(columns) { colIndex ->
-                            val itemIndex = colIndex * rows + rowIndex
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (itemIndex < mode.count) {
-                                    val lead = LEAD_ORDER.getOrNull(itemIndex)
-                                    val leadPoints = lead?.let { waveformsByLead?.get(it) }
-                                        ?.takeIf { it.values.size >= 2 }
-                                        ?: points
-                                    Series(
-                                        points = leadPoints,
-                                        modifier = modifier,
-                                        title = lead?.name ?: (itemIndex + 1).toString(),
-                                        scale = mode.adcScale
-                                    )
+            CompositionLocalProvider(LocalPixelScale provides pixelScale) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .transformable(state = state)
+                        .graphicsLayer(
+                            scaleX = scale,
+                            scaleY = scale,
+                            translationX = offset.x,
+                            translationY = offset.y
+                        )
+                        .ekgGrid(mode.gridScheme)
+                ) {
+                    repeat(rows) { rowIndex ->
+                        Row(modifier = Modifier.weight(1f)) {
+                            repeat(columns) { colIndex ->
+                                val itemIndex = colIndex * rows + rowIndex
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (itemIndex < mode.count) {
+                                        val lead = LEAD_ORDER.getOrNull(itemIndex)
+                                        val leadPoints = lead?.let { waveformsByLead?.get(it) }
+                                            ?.takeIf { it.values.size >= 2 }
+                                            ?: points
+                                        Series(
+                                            points = leadPoints,
+                                            modifier = modifier,
+                                            title = lead?.name ?: (itemIndex + 1).toString(),
+                                        )
+                                    }
                                 }
                             }
                         }
