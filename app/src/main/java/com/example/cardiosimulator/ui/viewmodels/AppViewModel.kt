@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+import com.example.cardiosimulator.domain.EcgSeries
+import com.example.cardiosimulator.domain.WaveformPart
 import com.example.cardiosimulator.domain.Language
 
 class AppViewModel(
@@ -34,6 +36,12 @@ class AppViewModel(
     private val _rhythms = MutableStateFlow<List<PathologyGroup>>(emptyList())
     val rhythms: StateFlow<List<PathologyGroup>> = _rhythms.asStateFlow()
 
+    private val _allSeries = MutableStateFlow<List<EcgSeries>>(emptyList())
+    val allSeries: StateFlow<List<EcgSeries>> = _allSeries.asStateFlow()
+
+    private val _allParts = MutableStateFlow<List<WaveformPart>>(emptyList())
+    val allParts: StateFlow<List<WaveformPart>> = _allParts.asStateFlow()
+
     private val _selectedRhythm = MutableStateFlow<PathologyGroup?>(null)
     val selectedRhythm: StateFlow<PathologyGroup?> = _selectedRhythm.asStateFlow()
 
@@ -43,11 +51,12 @@ class AppViewModel(
     init {
         ecgRepository?.let { repo ->
             viewModelScope.launch {
-                val list = withContext(Dispatchers.IO) {
+                withContext(Dispatchers.IO) {
                     repo.load()
-                    repo.pathologies()
                 }
-                _rhythms.value = list
+                _rhythms.value = repo.pathologies()
+                _allSeries.value = repo.allSeries()
+                _allParts.value = repo.allParts()
             }
         }
     }

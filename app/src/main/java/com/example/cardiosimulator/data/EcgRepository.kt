@@ -40,7 +40,11 @@ class EcgRepository(private val assets: AssetManager) {
 
     fun series(identy: String): EcgSeries? = seriesIndex.firstOrNull { it.identy == identy }
 
+    fun allSeries(): List<EcgSeries> = seriesIndex
+
     fun part(identy: String): WaveformPart? = partsIndex[identy]
+
+    fun allParts(): List<WaveformPart> = partsIndex.values.toList()
 
     fun partsForSeries(identy: String): List<WaveformPart> =
         series(identy)?.partRefs

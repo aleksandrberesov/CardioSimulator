@@ -92,6 +92,7 @@ fun AppControlPanel(
                         OperatingMode.Testing -> TestingControlPanel(viewModel = viewModel)
                         OperatingMode.Examination -> {}
                         OperatingMode.OSKE -> {}
+                        OperatingMode.Editor -> {}
                     }
                 }
             }

@@ -38,6 +38,7 @@ fun MainScreen(viewModel: AppViewModel){
                 OperatingMode.Testing -> TestingScreen(viewModel = viewModel)
                 OperatingMode.Examination -> ExaminationScreen(viewModel = viewModel)
                 OperatingMode.OSKE -> OSKEScreen(viewModel = viewModel)
+                OperatingMode.Editor -> EditorScreen(viewModel = viewModel)
             }
         }
     }

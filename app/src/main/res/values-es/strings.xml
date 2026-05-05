@@ -6,6 +6,7 @@
     <string name="mode_testing">Prueba</string>
     <string name="mode_examination">Examen</string>
     <string name="mode_oske">ECOE</string>
+    <string name="mode_editor">Editor</string>
 
     <!-- Settings dialog -->
     <string name="settings_title">Ajustes</string>
