@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,7 +20,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.cardiosimulator.data.AdcScale
+import com.example.cardiosimulator.data.EcgCalibration
+import com.example.cardiosimulator.data.LocalPixelScale
+import com.example.cardiosimulator.data.PixelScale
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.ui.components.ChartCanvas
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
@@ -29,8 +32,8 @@ fun Series(
     points: Points,
     modifier: Modifier = Modifier,
     title: String = "",
-    scale: AdcScale = AdcScale()
 ){
+    val scale = LocalPixelScale.current
     Row(
         modifier = Modifier.seriesArea(),
         verticalAlignment = Alignment.CenterVertically
@@ -43,11 +46,10 @@ fun Series(
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val baseline = size.height / 2f
-                
-                // 1mV is standardly 200 ADC units in our system
-                // 200ms is standardly 50 samples
-                val pulseHeight = 200f * scale.verticalPixelsPerUnit
-                val pulseWidth = 50f * scale.horizontalPixelsPerSample
+
+                // Standard ECG calibration pulse: 1 mV tall, 200 ms wide.
+                val pulseHeight = 1f * scale.pxPerMv
+                val pulseWidth = 0.2f * scale.pxPerSec
                 val startX = 8.dp.toPx()
                 val wingWidth = 4.dp.toPx()
 
@@ -75,7 +77,7 @@ fun Series(
                 color = Color.Black,
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .padding(top = 45.dp, start = 8.dp) // Positioned under the pulse
+                    .padding(top = 45.dp, start = 8.dp)
             )
         }
 
@@ -85,7 +87,7 @@ fun Series(
                 .weight(1f)
                 .fillMaxHeight()
         ) {
-            ChartCanvas(points = points, modifier = modifier, scale = scale)
+            ChartCanvas(points = points, modifier = modifier)
         }
     }
 }
@@ -97,13 +99,21 @@ fun SeriesPreview() {
         0f, 0.1f, 0.2f, 0.5f, 1f, 0.5f, 0.2f, 0.1f, 0f,
         -0.1f, -0.2f, -0.5f, -1f, -0.5f, -0.2f, -0.1f, 0f
     ))
+    val previewScale = PixelScale(
+        pxPerMm = 6.3f,
+        paperSpeedMmPerSec = 25f,
+        gainZoomY = 1f,
+        cal = EcgCalibration(),
+    )
     CardioSimulatorTheme {
-        Box(modifier = Modifier.ekgGrid()) {
-            Series(
-                points = samplePoints,
-                title = "I",
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
+        CompositionLocalProvider(LocalPixelScale provides previewScale) {
+            Box(modifier = Modifier.ekgGrid()) {
+                Series(
+                    points = samplePoints,
+                    title = "I",
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
         }
     }
 }
