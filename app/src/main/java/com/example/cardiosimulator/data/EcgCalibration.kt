@@ -6,6 +6,6 @@ package com.example.cardiosimulator.data
  */
 data class EcgCalibration(
     val gainMmPerMv: Float = 10f,
-    val sampleRateHz: Float = 250f,
-    val adcCountsPerMv: Float = 200f,
+    val sampleRateHz: Float = 500f,
+    val adcCountsPerMv: Float = 256f,
 )
