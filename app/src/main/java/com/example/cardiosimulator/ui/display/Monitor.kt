@@ -82,7 +82,9 @@ fun Monitor(
 
     val density = LocalDensity.current
     // 1 mm = 160/25.4 dp on Android's mdpi reference; convert to px via display density.
-    val pxPerMm = density.density * (160f / 25.4f)
+    // displayScale is a global shrink/zoom factor so the whole picture (grid + trace
+    // + cal pulse) fits the monitor without breaking the mm-based relationships.
+    val pxPerMm = density.density * (160f / 25.4f) * mode.displayScale
     val pixelScale = remember(pxPerMm, mode.speed, mode.scale, mode.calibration) {
         PixelScale(
             pxPerMm = pxPerMm,

@@ -37,4 +37,8 @@ class MonitorViewModel : ViewModel() {
     fun setCalibration(calibration: EcgCalibration) {
         _monitorMode.update { it.copy(calibration = calibration) }
     }
+
+    fun setDisplayScale(displayScale: Float) {
+        _monitorMode.update { it.copy(displayScale = displayScale) }
+    }
 }
