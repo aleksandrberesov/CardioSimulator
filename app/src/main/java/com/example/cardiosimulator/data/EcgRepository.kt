@@ -70,7 +70,7 @@ class EcgRepository(private val assets: AssetManager) {
             .mapNotNull { name ->
                 runCatching {
                     assets.open("$dir/$name").use { stream ->
-                        parse(stream.readBytes().toString(Charsets.ISO_8859_1))
+                        parse(stream.readBytes().toString(java.nio.charset.Charset.forName("windows-1251")))
                     }
                 }.getOrNull()
             }

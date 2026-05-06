@@ -81,7 +81,7 @@ data class WaveformPart(
             )
         }
 
-        fun parse(file: File): WaveformPart = parse(file.readText(Charsets.ISO_8859_1))
+        fun parse(file: File): WaveformPart = parse(file.readText(java.nio.charset.Charset.forName("windows-1251")))
     }
 }
 
@@ -115,7 +115,7 @@ data class EcgSeries(
             )
         }
 
-        fun parse(file: File): EcgSeries = parse(file.readText(Charsets.ISO_8859_1))
+        fun parse(file: File): EcgSeries = parse(file.readText(java.nio.charset.Charset.forName("windows-1251")))
     }
 }
 
