@@ -18,11 +18,26 @@ import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
+import com.example.cardiosimulator.ui.viewmodels.DataState
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 
 @Composable
 fun MainScreen(viewModel: AppViewModel){
     val selectedMode by viewModel.selectedOperatingMode.collectAsState()
+    val dataState by viewModel.dataState.collectAsState()
+
+    // If the user has not yet picked a data folder (or the previous one is
+    // unusable), gate the whole app behind the data-source picker. Once
+    // the dataset is Ready, fall through to the normal UI. Loading is
+    // brief enough that we also show the picker (with a spinner) during it.
+    if (dataState is DataState.NotConfigured ||
+        dataState is DataState.Error ||
+        dataState is DataState.Loading
+    ) {
+        DataSourceScreen(viewModel = viewModel, state = dataState)
+        return
+    }
+
     Column(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
         Box(
             modifier = Modifier.weight(2f).topSection(),

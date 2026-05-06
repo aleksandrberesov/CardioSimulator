@@ -5,11 +5,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -126,7 +130,35 @@ fun SettingsContent(
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ECG data folder — lets the user re-pick the source folder.
+            // The picker takes a persistable read permission so the chosen
+            // folder keeps working across reboots.
+            val context = LocalContext.current
+            val pickFolder = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.OpenDocumentTree()
+            ) { uri ->
+                if (uri != null) {
+                    runCatching {
+                        context.contentResolver.takePersistableUriPermission(
+                            uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        )
+                    }
+                    appViewModel.setDataFolder(context, uri)
+                    onDismiss()
+                }
+            }
+            Text(
+                text = stringResource(R.string.data_source_title),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            OutlinedButton(onClick = { pickFolder.launch(null) }) {
+                Text(stringResource(R.string.data_source_change_folder))
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             TextButton(
                 onClick = onDismiss,

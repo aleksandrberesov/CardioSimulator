@@ -1,6 +1,5 @@
 package com.example.cardiosimulator.data
 
-import android.content.res.AssetManager
 import com.example.cardiosimulator.domain.EcgSeries
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.WaveformPart
@@ -11,20 +10,34 @@ data class PathologyGroup(
     val seriesIdentyByLead: Map<Lead, String>,
 )
 
-class EcgRepository(private val assets: AssetManager) {
+class EcgRepository(private var source: EcgSource) {
 
     @Volatile private var seriesIndex: List<EcgSeries> = emptyList()
     @Volatile private var partsIndex: Map<String, WaveformPart> = emptyMap()
     @Volatile private var loaded: Boolean = false
 
+    /** Replace the backing source and force a reload on next [load] call. */
+    fun setSource(newSource: EcgSource) {
+        source = newSource
+        loaded = false
+        seriesIndex = emptyList()
+        partsIndex = emptyMap()
+    }
+
     fun load() {
         if (loaded) return
-        seriesIndex = readAll(SERIES_DIR) { EcgSeries.parse(it) }
-        partsIndex = readAll(PARTS_DIR) { WaveformPart.parse(it) }
+        seriesIndex = source.listSeries()
+            .mapNotNull { name -> source.readSeries(name)?.let { runCatching { EcgSeries.parse(it) }.getOrNull() } }
+        partsIndex = source.listParts()
+            .mapNotNull { name -> source.readPart(name)?.let { runCatching { WaveformPart.parse(it) }.getOrNull() } }
             .filter { it.identy.isNotBlank() }
             .associateBy { it.identy }
         loaded = true
     }
+
+    /** Counts after [load]; useful for surfacing a "loaded N series, M parts" message. */
+    fun seriesCount(): Int = seriesIndex.size
+    fun partsCount(): Int = partsIndex.size
 
     fun pathologies(): List<PathologyGroup> =
         seriesIndex
@@ -64,18 +77,6 @@ class EcgRepository(private val assets: AssetManager) {
         return out
     }
 
-    private fun <T> readAll(dir: String, parse: (String) -> T): List<T> =
-        (assets.list(dir) ?: emptyArray())
-            .asSequence()
-            .mapNotNull { name ->
-                runCatching {
-                    assets.open("$dir/$name").use { stream ->
-                        parse(stream.readBytes().toString(Charsets.ISO_8859_1))
-                    }
-                }.getOrNull()
-            }
-            .toList()
-
     private fun stripTrailingLead(title: String): String {
         for (l in LEAD_SUFFIXES) if (title.endsWith(l, ignoreCase = true)) {
             return title.dropLast(l.length).trimEnd(' ', ',', '-').trim()
@@ -84,8 +85,6 @@ class EcgRepository(private val assets: AssetManager) {
     }
 
     companion object {
-        private const val PARTS_DIR = "Parts"
-        private const val SERIES_DIR = "Series"
         private const val SAMPLE_BASELINE = 1024f
         private val LEAD_SUFFIXES = listOf(
             " aVR", " aVL", " aVF",

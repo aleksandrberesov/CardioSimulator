@@ -48,6 +48,19 @@
     <!-- Testing panel -->
     <string name="testing_question_format">问题 %1$d</string>
 
+    <!-- Data source picker -->
+    <string name="data_source_title">心电图数据</string>
+    <string name="data_source_description">请选择设备上同时包含 \"Series\" 和 \"Parts\" 子文件夹的数据文件夹。</string>
+    <string name="data_source_pick_folder">选择数据文件夹</string>
+    <string name="data_source_change_folder">更改数据文件夹</string>
+    <string name="data_source_loading">正在加载数据…</string>
+    <string name="data_source_loaded_format">已加载 %1$d 个序列，%2$d 个片段</string>
+    <string name="data_source_error_no_subdirs">所选文件夹必须同时包含 \"Series\" 和 \"Parts\" 两个子文件夹。</string>
+    <string name="data_source_error_unreadable">所选文件夹已无法访问。</string>
+    <string name="data_source_error_empty">所选文件夹中未找到心电图文件。</string>
+    <string name="data_source_continue">继续</string>
+    <string name="data_source_retry">选择其他文件夹</string>
+
     <!-- Content descriptions -->
     <string name="cd_settings">设置</string>
     <string name="cd_pause">暂停</string>
