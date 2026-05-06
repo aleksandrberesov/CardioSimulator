@@ -25,9 +25,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.cardiosimulator.R
+import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.EcgSeries
+import com.example.cardiosimulator.domain.OperatingMode
+import com.example.cardiosimulator.domain.OperatingModeModel
+import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 
 @Composable
@@ -44,7 +54,7 @@ fun EditorScreen(viewModel: AppViewModel) {
         ) {
             Column {
                 Text(
-                    text = "ECG Series",
+                    text = stringResource(R.string.editor_title),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(8.dp)
                 )
@@ -70,7 +80,7 @@ fun EditorScreen(viewModel: AppViewModel) {
                 SeriesDetailView(series = selectedSeries!!)
             } else {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Select a series to inspect")
+                    Text(stringResource(R.string.editor_select_hint))
                 }
             }
         }
@@ -91,7 +101,7 @@ fun SeriesItem(series: EcgSeries, isSelected: Boolean, onClick: () -> Unit) {
             color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Unspecified
         )
         Text(
-            text = "Id: ${series.identy}",
+            text = stringResource(R.string.editor_id_label, series.identy),
             style = MaterialTheme.typography.bodySmall,
             color = Color.Gray
         )
@@ -101,14 +111,17 @@ fun SeriesItem(series: EcgSeries, isSelected: Boolean, onClick: () -> Unit) {
 @Composable
 fun SeriesDetailView(series: EcgSeries) {
     Column(modifier = Modifier.padding(16.dp)) {
-        Text(text = "Details: ${series.title}", style = MaterialTheme.typography.headlineSmall)
+        Text(
+            text = stringResource(R.string.editor_details_title, series.title),
+            style = MaterialTheme.typography.headlineSmall
+        )
         Spacer(modifier = Modifier.height(8.dp))
-        Text(text = "Identity: ${series.identy}")
-        Text(text = "Lead: ${series.lead}")
-        Text(text = "Pathology: ${series.pathology ?: "None"}")
+        Text(text = stringResource(R.string.editor_identity_label, series.identy))
+        Text(text = stringResource(R.string.editor_lead_label, series.lead ?: stringResource(R.string.editor_none)))
+        Text(text = stringResource(R.string.editor_pathology_label, series.pathology ?: stringResource(R.string.editor_none)))
 
         Spacer(modifier = Modifier.height(16.dp))
-        Text(text = "Parts (Refs):", style = MaterialTheme.typography.titleMedium)
+        Text(text = stringResource(R.string.editor_parts_title), style = MaterialTheme.typography.titleMedium)
         HorizontalDivider()
         LazyColumn {
             items(series.partRefs) { ref ->
@@ -119,9 +132,34 @@ fun SeriesDetailView(series: EcgSeries) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(text = ref.partIdenty)
-                    Text(text = "Offset: ${ref.offset}", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = stringResource(R.string.editor_offset_label, ref.offset),
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, widthDp = 1000, heightDp = 600)
+@Composable
+fun EditorScreenPreview() {
+    val appBuilder = AppBuilder()
+    appBuilder.addMode(OperatingModeModel(OperatingMode.Editor))
+
+    val previewViewModel: AppViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return AppViewModel(
+                    appState = appBuilder.build()
+                ) as T
+            }
+        }
+    )
+
+    CardioSimulatorTheme {
+        EditorScreen(viewModel = previewViewModel)
     }
 }
