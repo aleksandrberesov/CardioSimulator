@@ -45,7 +45,6 @@ fun MonitorControlPanel(
     onTipsClick: () -> Unit = {},
     onRulerClick: () -> Unit = {},
     onPauseClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {}
 ) {
     val monitorMode by viewModel.monitorMode.collectAsState()
 
@@ -226,13 +225,6 @@ fun MonitorControlPanel(
             icon = Icons.Default.Pause,
             iconContentDescription = stringResource(R.string.cd_pause),
             onClick = onPauseClick,
-            modifier = Modifier.weight(0.8f)
-        )
-        Tab(
-            icon = Icons.Default.Settings,
-            iconContentDescription = stringResource(R.string.cd_settings),
-            onClick = onSettingsClick,
-            borderWidth = 0.dp,
             modifier = Modifier.weight(0.8f)
         )
     }

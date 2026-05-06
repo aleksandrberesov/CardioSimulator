@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Surface
@@ -38,6 +40,7 @@ import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 fun AppControlPanel(
     viewModel: AppViewModel,
     modifier: Modifier = Modifier,
+    onSettingsClick: () -> Unit = {}
 ) {
     var expanded by remember { mutableStateOf(false) }
     val operatingModes = viewModel.operatingModes
@@ -50,14 +53,18 @@ fun AppControlPanel(
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Image(
+                painter = painterResource(id = R.drawable.main_logo),
+                contentDescription = "Company Logo"
+            )
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(10f)
+                    .weight(1f)
                     .padding(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -96,9 +103,11 @@ fun AppControlPanel(
                     }
                 }
             }
-            Image(
-                painter = painterResource(id = R.drawable.main_logo),
-                contentDescription = "Company Logo"
+            Tab(
+                icon = Icons.Default.Settings,
+                iconContentDescription = stringResource(R.string.cd_settings),
+                onClick = onSettingsClick,
+                borderWidth = 0.dp
             )
         }
     }

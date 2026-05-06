@@ -52,7 +52,6 @@ fun Monitor(
     points: Points = Points(emptyList()),
 ){
     val mode by monitorViewModel.monitorMode.collectAsState()
-    val showSettings = remember { mutableStateOf(false) }
 
     var scale by remember { mutableStateOf(mode.scale) }
     var offset by remember { mutableStateOf(Offset.Zero) }
@@ -62,14 +61,6 @@ fun Monitor(
             scale = mode.scale
             offset = Offset.Zero
         }
-    }
-
-    if (showSettings.value) {
-        SettingsDialog(
-            monitorViewModel = monitorViewModel,
-            appViewModel = appViewModel,
-            onDismiss = { showSettings.value = false }
-        )
     }
 
     val columns = when (mode.seriesScheme) {
@@ -168,7 +159,6 @@ fun Monitor(
         ) {
             MonitorControlPanel(
                 viewModel = monitorViewModel,
-                onSettingsClick = { showSettings.value = true }
             )
         }
     }
