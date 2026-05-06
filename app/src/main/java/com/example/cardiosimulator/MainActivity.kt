@@ -10,6 +10,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.cardiosimulator.data.AssetEcgSource
+import com.example.cardiosimulator.data.DataSourcePrefs
 import com.example.cardiosimulator.data.EcgRepository
 import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.OperatingMode
@@ -33,7 +35,12 @@ class MainActivity : AppCompatActivity() {
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         return AppViewModel(
                             appState = appBuilder.build(initialMode = OperatingMode.Teaching),
-                            ecgRepository = EcgRepository(this@MainActivity.assets)
+                            // Repository starts pointed at assets as a harmless default;
+                            // it gets re-pointed at a SAF folder once the user picks one
+                            // (or immediately on launch if a folder was previously picked).
+                            ecgRepository = EcgRepository(AssetEcgSource(this@MainActivity.assets)),
+                            appContext = this@MainActivity.applicationContext,
+                            prefs = DataSourcePrefs(this@MainActivity.applicationContext),
                         ) as T
                     }
                 }

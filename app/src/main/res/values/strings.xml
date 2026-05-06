@@ -48,6 +48,19 @@
     <!-- Testing panel -->
     <string name="testing_question_format">Question %1$d</string>
 
+    <!-- Data source picker -->
+    <string name="data_source_title">ECG Data</string>
+    <string name="data_source_description">Pick a folder on your device that contains \"Series\" and \"Parts\" subfolders with the ECG data files.</string>
+    <string name="data_source_pick_folder">Select data folder</string>
+    <string name="data_source_change_folder">Change data folder</string>
+    <string name="data_source_loading">Loading data…</string>
+    <string name="data_source_loaded_format">Loaded %1$d series, %2$d parts</string>
+    <string name="data_source_error_no_subdirs">The selected folder must contain both \"Series\" and \"Parts\" subfolders.</string>
+    <string name="data_source_error_unreadable">The selected folder is no longer accessible.</string>
+    <string name="data_source_error_empty">No ECG files were found in the selected folder.</string>
+    <string name="data_source_continue">Continue</string>
+    <string name="data_source_retry">Pick another folder</string>
+
     <!-- Content descriptions -->
     <string name="cd_settings">Settings</string>
     <string name="cd_pause">Pause</string>
