@@ -65,4 +65,16 @@
     <string name="cd_settings">Настройки</string>
     <string name="cd_pause">Пауза</string>
     <string name="cd_ruler">Линейка</string>
+
+    <!-- Editor Screen -->
+    <string name="editor_title">Серии ЭКГ</string>
+    <string name="editor_select_hint">Выберите серию для просмотра</string>
+    <string name="editor_id_label">Id: %1$s</string>
+    <string name="editor_details_title">Детали: %1$s</string>
+    <string name="editor_identity_label">Идентификатор: %1$s</string>
+    <string name="editor_lead_label">Отведение: %1$s</string>
+    <string name="editor_pathology_label">Патология: %1$s</string>
+    <string name="editor_none">Нет</string>
+    <string name="editor_parts_title">Части (Refs):</string>
+    <string name="editor_offset_label">Смещение: %1$d</string>
 </resources>

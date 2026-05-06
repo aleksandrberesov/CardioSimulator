@@ -77,6 +77,18 @@ class EcgRepository(private var source: EcgSource) {
         return out
     }
 
+    private fun <T> readAll(dir: String, parse: (String) -> T): List<T> =
+        (assets.list(dir) ?: emptyArray())
+            .asSequence()
+            .mapNotNull { name ->
+                runCatching {
+                    assets.open("$dir/$name").use { stream ->
+                        parse(stream.readBytes().toString(java.nio.charset.Charset.forName("windows-1251")))
+                    }
+                }.getOrNull()
+            }
+            .toList()
+
     private fun stripTrailingLead(title: String): String {
         for (l in LEAD_SUFFIXES) if (title.endsWith(l, ignoreCase = true)) {
             return title.dropLast(l.length).trimEnd(' ', ',', '-').trim()

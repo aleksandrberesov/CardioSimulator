@@ -65,4 +65,16 @@
     <string name="cd_settings">Ajustes</string>
     <string name="cd_pause">Pausar</string>
     <string name="cd_ruler">Regla</string>
+
+    <!-- Editor Screen -->
+    <string name="editor_title">Series de ECG</string>
+    <string name="editor_select_hint">Seleccione una serie para inspeccionar</string>
+    <string name="editor_id_label">Id: %1$s</string>
+    <string name="editor_details_title">Detalles: %1$s</string>
+    <string name="editor_identity_label">Identidad: %1$s</string>
+    <string name="editor_lead_label">Derivación: %1$s</string>
+    <string name="editor_pathology_label">Patología: %1$s</string>
+    <string name="editor_none">Ninguna</string>
+    <string name="editor_parts_title">Partes (Refs):</string>
+    <string name="editor_offset_label">Desplazamiento: %1$d</string>
 </resources>
