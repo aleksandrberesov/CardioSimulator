@@ -31,7 +31,6 @@ fun TestingScreen(viewModel: AppViewModel){
             contentAlignment = Alignment.TopStart
         ) {
             Monitor(
-                appViewModel = viewModel,
                 monitorViewModel = monitorViewModel
             )
         }
