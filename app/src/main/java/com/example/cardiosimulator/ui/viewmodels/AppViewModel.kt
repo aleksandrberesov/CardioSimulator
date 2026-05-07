@@ -4,7 +4,9 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cardiosimulator.data.EcgExport
 import com.example.cardiosimulator.data.EcgRepository
+import com.example.cardiosimulator.data.FtpClient
 import com.example.cardiosimulator.data.PathologyGroup
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.AppStateModel
@@ -20,6 +22,17 @@ import kotlinx.coroutines.withContext
 import com.example.cardiosimulator.domain.EcgSeries
 import com.example.cardiosimulator.domain.WaveformPart
 import com.example.cardiosimulator.domain.Language
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
+
+sealed class FtpSendStatus {
+    object Idle : FtpSendStatus()
+    object Sending : FtpSendStatus()
+    data class Success(val remotePath: String, val bytes: Int) : FtpSendStatus()
+    data class Error(val message: String) : FtpSendStatus()
+}
 
 class AppViewModel(
     private val appState: AppStateModel,
@@ -38,6 +51,21 @@ class AppViewModel(
 
     private val _tcpPort = MutableStateFlow(appState.tcpPort)
     val tcpPort: StateFlow<Int> = _tcpPort.asStateFlow()
+
+    private val _ftpPort = MutableStateFlow(appState.ftpPort)
+    val ftpPort: StateFlow<Int> = _ftpPort.asStateFlow()
+
+    private val _ftpUser = MutableStateFlow(appState.ftpUser)
+    val ftpUser: StateFlow<String> = _ftpUser.asStateFlow()
+
+    private val _ftpPassword = MutableStateFlow(appState.ftpPassword)
+    val ftpPassword: StateFlow<String> = _ftpPassword.asStateFlow()
+
+    private val _ftpRemotePath = MutableStateFlow(appState.ftpRemotePath)
+    val ftpRemotePath: StateFlow<String> = _ftpRemotePath.asStateFlow()
+
+    private val _ftpStatus = MutableStateFlow<FtpSendStatus>(FtpSendStatus.Idle)
+    val ftpStatus: StateFlow<FtpSendStatus> = _ftpStatus.asStateFlow()
 
     private val _rhythms = MutableStateFlow<List<PathologyGroup>>(emptyList())
     val rhythms: StateFlow<List<PathologyGroup>> = _rhythms.asStateFlow()
@@ -89,6 +117,64 @@ class AppViewModel(
         appState.updateTcpConnection(ip, port)
         _tcpIp.value = ip
         _tcpPort.value = port
+    }
+
+    fun updateFtpCredentials(port: Int, user: String, password: String, remotePath: String) {
+        appState.updateFtpCredentials(port, user, password, remotePath)
+        _ftpPort.value = port
+        _ftpUser.value = user
+        _ftpPassword.value = password
+        _ftpRemotePath.value = remotePath
+    }
+
+    fun resetFtpStatus() {
+        _ftpStatus.value = FtpSendStatus.Idle
+    }
+
+    fun sendModelViaFtp() {
+        if (_ftpStatus.value is FtpSendStatus.Sending) return
+        val rhythm = _selectedRhythm.value
+        val waveforms = _waveforms.value
+        if (rhythm == null || waveforms.isEmpty()) {
+            _ftpStatus.value = FtpSendStatus.Error("no_rhythm")
+            return
+        }
+        val host = _tcpIp.value
+        val port = _ftpPort.value
+        val user = _ftpUser.value
+        val password = _ftpPassword.value
+        val remotePath = _ftpRemotePath.value
+        if (host.isBlank() || port <= 0 || remotePath.isBlank()) {
+            _ftpStatus.value = FtpSendStatus.Error("invalid_settings")
+            return
+        }
+
+        _ftpStatus.value = FtpSendStatus.Sending
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val timestamp = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+                        .apply { timeZone = TimeZone.getTimeZone("UTC") }
+                        .format(Date())
+                    val payload = EcgExport.toCsv(
+                        rhythm = rhythm.displayTitle,
+                        timestampIso = timestamp,
+                        waveforms = waveforms,
+                    )
+                    FtpClient(
+                        host = host,
+                        port = port,
+                        username = user,
+                        password = password,
+                    ).upload(remotePath, payload)
+                    payload.size
+                }
+            }
+            _ftpStatus.value = result.fold(
+                onSuccess = { bytes -> FtpSendStatus.Success(remotePath, bytes) },
+                onFailure = { t -> FtpSendStatus.Error(t.message ?: t::class.java.simpleName) },
+            )
+        }
     }
 
     fun selectRhythm(pathology: String) {

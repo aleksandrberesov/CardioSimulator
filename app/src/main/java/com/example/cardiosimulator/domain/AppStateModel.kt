@@ -20,7 +20,11 @@ data class AppStateModel(
     val operatingModes: List<OperatingModeModel>,
     val initialLanguage: Language = Language.EN,
     val initialTcpIp: String = "192.168.1.100",
-    val initialTcpPort: Int = 8080
+    val initialTcpPort: Int = 8080,
+    val initialFtpPort: Int = 21,
+    val initialFtpUser: String = "root",
+    val initialFtpPassword: String = "",
+    val initialFtpRemotePath: String = "/tmp/cardio.csv",
 ) {
     var selectedOperatingMode: OperatingModeModel = initialOperatingMode
         private set
@@ -34,6 +38,18 @@ data class AppStateModel(
     var tcpPort: Int = initialTcpPort
         private set
 
+    var ftpPort: Int = initialFtpPort
+        private set
+
+    var ftpUser: String = initialFtpUser
+        private set
+
+    var ftpPassword: String = initialFtpPassword
+        private set
+
+    var ftpRemotePath: String = initialFtpRemotePath
+        private set
+
     fun updateMode(newMode: OperatingModeModel) {
         selectedOperatingMode = newMode
     }
@@ -45,5 +61,12 @@ data class AppStateModel(
     fun updateTcpConnection(ip: String, port: Int) {
         tcpIp = ip
         tcpPort = port
+    }
+
+    fun updateFtpCredentials(port: Int, user: String, password: String, remotePath: String) {
+        ftpPort = port
+        ftpUser = user
+        ftpPassword = password
+        ftpRemotePath = remotePath
     }
 }

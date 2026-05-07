@@ -13,6 +13,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -31,9 +32,7 @@ import com.example.cardiosimulator.domain.GridScheme
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.SeriesScheme
 import com.example.cardiosimulator.ui.panels.MonitorControlPanel
-import com.example.cardiosimulator.ui.screens.SettingsDialog
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
-import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import kotlin.math.ceil
 
@@ -45,7 +44,6 @@ private val LEAD_ORDER = listOf(
 
 @Composable
 fun Monitor(
-    appViewModel: AppViewModel,
     modifier: Modifier = Modifier,
     monitorViewModel: MonitorViewModel = viewModel(),
     waveformsByLead: Map<Lead, Points>? = null,
@@ -53,7 +51,7 @@ fun Monitor(
 ){
     val mode by monitorViewModel.monitorMode.collectAsState()
 
-    var scale by remember { mutableStateOf(mode.scale) }
+    var scale by remember { mutableFloatStateOf(mode.scale) }
     var offset by remember { mutableStateOf(Offset.Zero) }
 
     LaunchedEffect(mode.scale) {
@@ -63,13 +61,14 @@ fun Monitor(
         }
     }
 
-    val columns = when (mode.seriesScheme) {
+    val maxColumns = when (mode.seriesScheme) {
         SeriesScheme.OneColumn -> 1
         SeriesScheme.TwoColumn -> 2
         SeriesScheme.Grid -> 4
     }
 
-    val rows = ceil(mode.count.toFloat() / columns).toInt()
+    val rows = if (mode.count > 0) ceil(mode.count.toFloat() / maxColumns).toInt() else 0
+    val columns = if (rows > 0) ceil(mode.count.toFloat() / rows).toInt() else 1
 
     val density = LocalDensity.current
     // 1 mm = 160/25.4 dp on Android's mdpi reference; convert to px via display density.
@@ -178,7 +177,6 @@ fun MonitorOneColumn12Preview() {
     CardioSimulatorTheme {
         Monitor(
             points = samplePoints,
-            appViewModel = viewModel(),
             monitorViewModel = vm
         )
     }
@@ -198,13 +196,12 @@ fun MonitorTwoColumn12Preview() {
     CardioSimulatorTheme {
         Monitor(
             points = samplePoints,
-            appViewModel = viewModel(),
             monitorViewModel = vm
         )
     }
 }
 
-@Preview(name = "Grid (4 Col) - 12 Leads", showBackground = true, device = "spec:width=1280dp,height=800dp,orientation=landscape")
+@Preview(name = "Grid (4 Col) - 6 Leads", showBackground = true, device = "spec:width=1280dp,height=800dp,orientation=landscape")
 @Composable
 fun MonitorGrid12Preview() {
     val samplePoints = Points(listOf(
@@ -212,13 +209,12 @@ fun MonitorGrid12Preview() {
         -0.1f, -0.2f, -0.5f, -1f, -0.5f, -0.2f, -0.1f, 0f
     ))
     val vm: MonitorViewModel = viewModel()
-    vm.setSeriesCount(12)
+    vm.setSeriesCount(6)
     vm.setSeriesScheme(SeriesScheme.Grid)
     vm.setGridScheme(GridScheme.Pink)
     CardioSimulatorTheme {
         Monitor(
             points = samplePoints,
-            appViewModel = viewModel(),
             monitorViewModel = vm
         )
     }

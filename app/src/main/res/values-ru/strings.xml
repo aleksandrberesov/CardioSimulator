@@ -15,6 +15,17 @@
     <string name="settings_tcp_title">TCP соединение</string>
     <string name="settings_tcp_ip">IP-адрес</string>
     <string name="settings_tcp_port">Порт</string>
+    <string name="settings_ftp_title">Передача по FTP</string>
+    <string name="settings_ftp_user">Пользователь</string>
+    <string name="settings_ftp_port">Порт</string>
+    <string name="settings_ftp_password">Пароль</string>
+    <string name="settings_ftp_remote_path">Путь на устройстве</string>
+    <string name="settings_ftp_send">ОТПРАВИТЬ НА УСТРОЙСТВО</string>
+    <string name="settings_ftp_status_sending">Отправка…</string>
+    <string name="settings_ftp_status_success">Отправлено %1$d байт в %2$s</string>
+    <string name="settings_ftp_status_error">Ошибка FTP: %1$s</string>
+    <string name="settings_ftp_error_no_rhythm">Сначала выберите ритм.</string>
+    <string name="settings_ftp_error_invalid_settings">Проверьте адрес, порт и путь FTP.</string>
     <string name="settings_close">ЗАКРЫТЬ</string>
 
     <!-- Grid scheme labels -->

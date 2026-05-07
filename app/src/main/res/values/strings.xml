@@ -15,6 +15,17 @@
     <string name="settings_tcp_title">TCP Connection</string>
     <string name="settings_tcp_ip">IP Address</string>
     <string name="settings_tcp_port">Port</string>
+    <string name="settings_ftp_title">FTP Upload</string>
+    <string name="settings_ftp_user">User</string>
+    <string name="settings_ftp_port">Port</string>
+    <string name="settings_ftp_password">Password</string>
+    <string name="settings_ftp_remote_path">Remote Path</string>
+    <string name="settings_ftp_send">SEND TO DEVICE</string>
+    <string name="settings_ftp_status_sending">Sending…</string>
+    <string name="settings_ftp_status_success">Sent %1$d bytes to %2$s</string>
+    <string name="settings_ftp_status_error">FTP error: %1$s</string>
+    <string name="settings_ftp_error_no_rhythm">Select a rhythm first.</string>
+    <string name="settings_ftp_error_invalid_settings">Check FTP host, port and remote path.</string>
     <string name="settings_close">CLOSE</string>
 
     <!-- Grid scheme labels -->
