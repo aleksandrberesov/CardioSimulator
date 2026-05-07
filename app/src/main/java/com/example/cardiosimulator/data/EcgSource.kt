@@ -38,7 +38,7 @@ class AssetEcgSource(
             .getOrDefault(emptyList())
 
     private fun read(path: String): String? = runCatching {
-        assets.open(path).use { it.readBytes().toString(Charsets.ISO_8859_1) }
+        assets.open(path).use { it.readBytes().toString(java.nio.charset.Charset.forName("windows-1251")) }
     }.getOrNull()
 
     companion object {

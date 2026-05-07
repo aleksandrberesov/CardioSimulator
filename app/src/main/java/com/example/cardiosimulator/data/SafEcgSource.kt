@@ -50,7 +50,7 @@ class SafEcgSource(
         val file = dir?.findFile(name) ?: return@runCatching null
         if (!file.isFile || !file.canRead()) return@runCatching null
         context.contentResolver.openInputStream(file.uri)?.use { stream ->
-            stream.readBytes().toString(Charsets.ISO_8859_1)
+            stream.readBytes().toString(java.nio.charset.Charset.forName("windows-1251"))
         }
     }.getOrNull()
 }

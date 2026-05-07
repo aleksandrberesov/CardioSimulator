@@ -35,10 +35,6 @@ class EcgRepository(private var source: EcgSource) {
         loaded = true
     }
 
-    /** Counts after [load]; useful for surfacing a "loaded N series, M parts" message. */
-    fun seriesCount(): Int = seriesIndex.size
-    fun partsCount(): Int = partsIndex.size
-
     fun pathologies(): List<PathologyGroup> =
         seriesIndex
             .asSequence()
@@ -55,14 +51,7 @@ class EcgRepository(private var source: EcgSource) {
 
     fun allSeries(): List<EcgSeries> = seriesIndex
 
-    fun part(identy: String): WaveformPart? = partsIndex[identy]
-
     fun allParts(): List<WaveformPart> = partsIndex.values.toList()
-
-    fun partsForSeries(identy: String): List<WaveformPart> =
-        series(identy)?.partRefs
-            ?.mapNotNull { partsIndex[it.partIdenty] }
-            .orEmpty()
 
     fun assembleWaveform(seriesIdenty: String): List<Float> {
         val series = series(seriesIdenty) ?: return emptyList()
@@ -76,18 +65,6 @@ class EcgRepository(private var source: EcgSource) {
         }
         return out
     }
-
-    private fun <T> readAll(dir: String, parse: (String) -> T): List<T> =
-        (assets.list(dir) ?: emptyArray())
-            .asSequence()
-            .mapNotNull { name ->
-                runCatching {
-                    assets.open("$dir/$name").use { stream ->
-                        parse(stream.readBytes().toString(java.nio.charset.Charset.forName("windows-1251")))
-                    }
-                }.getOrNull()
-            }
-            .toList()
 
     private fun stripTrailingLead(title: String): String {
         for (l in LEAD_SUFFIXES) if (title.endsWith(l, ignoreCase = true)) {
