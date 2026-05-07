@@ -36,7 +36,7 @@ android {
     }
     sourceSets {
         getByName("main") {
-            assets.srcDirs("src/main/assets", rootProject.file(".data"))
+            assets.srcDirs("src/main/assets")
         }
     }
 }

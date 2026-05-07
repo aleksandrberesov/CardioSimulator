@@ -50,16 +50,16 @@
 
     <!-- Data source picker -->
     <string name="data_source_title">Datos ECG</string>
-    <string name="data_source_description">Selecciona en tu dispositivo una carpeta que contenga las subcarpetas \"Series\" y \"Parts\" con los archivos de datos ECG.</string>
-    <string name="data_source_pick_folder">Seleccionar carpeta de datos</string>
-    <string name="data_source_change_folder">Cambiar carpeta de datos</string>
+    <string name="data_source_description">Selecciona en tu dispositivo un archivo ZIP que contenga los datos ECG.</string>
+    <string name="data_source_pick_folder">Seleccionar archivo ZIP</string>
+    <string name="data_source_change_folder">Cambiar archivo ZIP</string>
     <string name="data_source_loading">Cargando datos…</string>
     <string name="data_source_loaded_format">Cargado: %1$d series, %2$d partes</string>
-    <string name="data_source_error_no_subdirs">La carpeta seleccionada debe contener las subcarpetas \"Series\" y \"Parts\".</string>
-    <string name="data_source_error_unreadable">La carpeta seleccionada ya no está accesible.</string>
-    <string name="data_source_error_empty">No se encontraron archivos ECG en la carpeta seleccionada.</string>
+    <string name="data_source_error_no_subdirs">El archivo ZIP seleccionado debe contener las carpetas \"Series\" y \"Parts\".</string>
+    <string name="data_source_error_unreadable">El archivo ZIP seleccionado ya no está accesible.</string>
+    <string name="data_source_error_empty">No se encontraron archivos ECG en el archivo ZIP seleccionado.</string>
     <string name="data_source_continue">Continuar</string>
-    <string name="data_source_retry">Elegir otra carpeta</string>
+    <string name="data_source_retry">Elegir otro ZIP</string>
 
     <!-- Content descriptions -->
     <string name="cd_settings">Ajustes</string>

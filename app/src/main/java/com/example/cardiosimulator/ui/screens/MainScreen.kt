@@ -25,12 +25,12 @@ import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 fun MainScreen(viewModel: AppViewModel){
     val selectedMode by viewModel.selectedOperatingMode.collectAsState()
     val dataState by viewModel.dataState.collectAsState()
+    val isDataConfirmed by viewModel.isDataConfirmed.collectAsState()
 
-    // If the user has not yet picked a data folder (or the previous one is
-    // unusable), gate the whole app behind the data-source picker. Once
-    // the dataset is Ready, fall through to the normal UI. Loading is
-    // brief enough that we also show the picker (with a spinner) during it.
-    if (dataState is DataState.NotConfigured ||
+    // If the user has not yet picked a data archive, or it's loading/erroring,
+    // or they haven't confirmed the summary of the loaded data, show the picker.
+    if (!isDataConfirmed ||
+        dataState is DataState.NotConfigured ||
         dataState is DataState.Error ||
         dataState is DataState.Loading
     ) {

@@ -6,14 +6,16 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.cardiosimulator.data.AssetEcgSource
 import com.example.cardiosimulator.data.DataSourcePrefs
 import com.example.cardiosimulator.data.EcgRepository
 import com.example.cardiosimulator.data.EcgSource
 import com.example.cardiosimulator.data.PathologyGroup
 import com.example.cardiosimulator.data.Points
-import com.example.cardiosimulator.data.SafEcgSource
+import com.example.cardiosimulator.data.FileEcgSource
+import com.example.cardiosimulator.data.ZipDecompressor
 import com.example.cardiosimulator.domain.AppStateModel
+import java.io.File
+import androidx.documentfile.provider.DocumentFile
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.OperatingModeModel
 import kotlinx.coroutines.Dispatchers
@@ -75,6 +77,9 @@ class AppViewModel(
     private val _dataState = MutableStateFlow<DataState>(DataState.NotConfigured)
     val dataState: StateFlow<DataState> = _dataState.asStateFlow()
 
+    private val _isDataConfirmed = MutableStateFlow(false)
+    val isDataConfirmed: StateFlow<Boolean> = _isDataConfirmed.asStateFlow()
+
     init {
         // Restore a previously picked folder, if any. If none is stored, we
         // stay in NotConfigured and the UI will show the picker. The repo
@@ -88,6 +93,11 @@ class AppViewModel(
                 val saved = p.treeUri.first()
                 if (saved != null) {
                     loadFromSaf(ctx, saved)
+                    // If we successfully loaded saved data, don't force the user
+                    // to see the summary screen again.
+                    if (_dataState.value is DataState.Ready) {
+                        _isDataConfirmed.value = true
+                    }
                 }
             }
         } else if (repo != null) {
@@ -145,25 +155,45 @@ class AppViewModel(
      */
     fun setDataFolder(context: Context, uri: Uri) {
         val p = prefs ?: return
+        _isDataConfirmed.value = false
         viewModelScope.launch {
             p.setTreeUri(uri)
-            loadFromSaf(context, uri)
+            loadFromSaf(context, uri, forceUnzip = true)
         }
     }
 
-    private suspend fun loadFromSaf(context: Context, uri: Uri) {
+    fun confirmData() {
+        _isDataConfirmed.value = true
+    }
+
+    private suspend fun loadFromSaf(context: Context, uri: Uri, forceUnzip: Boolean = false) {
         val repo = ecgRepository ?: return
         _dataState.value = DataState.Loading
-        val source = SafEcgSource(context.applicationContext, uri)
-        if (!source.isValid()) {
-            _dataState.value = DataState.Error(DataState.Error.Reason.MissingSubdirs)
-            return
+
+        val targetDir = File(context.filesDir, "unzipped_ecg")
+        val fileSource = FileEcgSource(targetDir)
+
+        // Optimization: if we are NOT forcing an unzip and we already have valid content,
+        // use it. This happens on app startup.
+        if (!forceUnzip && fileSource.isValid()) {
+            repo.setSource(fileSource)
+            if (reload(repo)) return
         }
-        repo.setSource(source)
-        val ok = reload(repo)
-        if (!ok) {
-            _dataState.value = DataState.Error(DataState.Error.Reason.Empty)
+
+        val ok = withContext(Dispatchers.IO) {
+            ZipDecompressor.unzip(context, uri, targetDir)
         }
+
+        if (ok) {
+            // Re-initialize source to find the new directories if they moved
+            val newSource = FileEcgSource(targetDir)
+            if (newSource.isValid()) {
+                repo.setSource(newSource)
+                if (reload(repo)) return
+            }
+        }
+
+        _dataState.value = DataState.Error(DataState.Error.Reason.Empty)
     }
 
     private suspend fun reload(repo: EcgRepository): Boolean {

@@ -39,8 +39,8 @@ fun DataSourceScreen(
 ) {
     val context = LocalContext.current
 
-    val pickFolder = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocumentTree()
+    val pickZipFile = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri != null) {
             // Persist read permission so the URI keeps working after reboot.
@@ -85,7 +85,7 @@ fun DataSourceScreen(
                 }
                 Text(text = msg, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(16.dp))
-                Button(onClick = { pickFolder.launch(null) }) {
+                Button(onClick = { pickZipFile.launch(arrayOf("application/zip", "application/x-zip-compressed")) }) {
                     Text(stringResource(R.string.data_source_retry))
                 }
             }
@@ -97,13 +97,23 @@ fun DataSourceScreen(
                         state.partsCount,
                     )
                 )
-                Spacer(Modifier.height(16.dp))
-                Button(onClick = { pickFolder.launch(null) }) {
+                Spacer(Modifier.height(24.dp))
+                Button(
+                    onClick = { viewModel.confirmData() },
+                    modifier = Modifier.fillMaxWidth(0.6f)
+                ) {
+                    Text(stringResource(R.string.data_source_continue))
+                }
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = { pickZipFile.launch(arrayOf("application/zip", "application/x-zip-compressed")) },
+                    modifier = Modifier.fillMaxWidth(0.6f)
+                ) {
                     Text(stringResource(R.string.data_source_change_folder))
                 }
             }
             DataState.NotConfigured -> {
-                Button(onClick = { pickFolder.launch(null) }) {
+                Button(onClick = { pickZipFile.launch(arrayOf("application/zip", "application/x-zip-compressed")) }) {
                     Text(stringResource(R.string.data_source_pick_folder))
                 }
             }

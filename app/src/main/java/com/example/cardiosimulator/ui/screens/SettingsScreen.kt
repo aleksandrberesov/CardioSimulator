@@ -132,12 +132,12 @@ fun SettingsContent(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // ECG data folder — lets the user re-pick the source folder.
+            // ECG data ZIP archive — lets the user re-pick the source file.
             // The picker takes a persistable read permission so the chosen
-            // folder keeps working across reboots.
+            // file keeps working across reboots.
             val context = LocalContext.current
-            val pickFolder = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.OpenDocumentTree()
+            val pickZipFile = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.OpenDocument()
             ) { uri ->
                 if (uri != null) {
                     runCatching {
@@ -154,7 +154,7 @@ fun SettingsContent(
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-            OutlinedButton(onClick = { pickFolder.launch(null) }) {
+            OutlinedButton(onClick = { pickZipFile.launch(arrayOf("application/zip", "application/x-zip-compressed")) }) {
                 Text(stringResource(R.string.data_source_change_folder))
             }
 
