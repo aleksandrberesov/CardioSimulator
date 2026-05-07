@@ -33,6 +33,12 @@ class AppViewModel(
     private val _selectedOperatingMode = MutableStateFlow(appState.selectedOperatingMode)
     val selectedOperatingMode: StateFlow<OperatingModeModel> = _selectedOperatingMode
 
+    private val _tcpIp = MutableStateFlow(appState.tcpIp)
+    val tcpIp: StateFlow<String> = _tcpIp.asStateFlow()
+
+    private val _tcpPort = MutableStateFlow(appState.tcpPort)
+    val tcpPort: StateFlow<Int> = _tcpPort.asStateFlow()
+
     private val _rhythms = MutableStateFlow<List<PathologyGroup>>(emptyList())
     val rhythms: StateFlow<List<PathologyGroup>> = _rhythms.asStateFlow()
 
@@ -77,6 +83,12 @@ class AppViewModel(
     fun updateOperatingMode(mode: OperatingModeModel) {
         appState.updateMode(mode)
         _selectedOperatingMode.value = mode
+    }
+
+    fun updateTcpConnection(ip: String, port: Int) {
+        appState.updateTcpConnection(ip, port)
+        _tcpIp.value = ip
+        _tcpPort.value = port
     }
 
     fun selectRhythm(pathology: String) {

@@ -18,12 +18,20 @@ enum class Language(val tag: String, val displayName: String) {
 data class AppStateModel(
     val initialOperatingMode: OperatingModeModel,
     val operatingModes: List<OperatingModeModel>,
-    val initialLanguage: Language = Language.EN
+    val initialLanguage: Language = Language.EN,
+    val initialTcpIp: String = "192.168.1.100",
+    val initialTcpPort: Int = 8080
 ) {
     var selectedOperatingMode: OperatingModeModel = initialOperatingMode
         private set
 
     var selectedLanguage: Language = initialLanguage
+        private set
+
+    var tcpIp: String = initialTcpIp
+        private set
+
+    var tcpPort: Int = initialTcpPort
         private set
 
     fun updateMode(newMode: OperatingModeModel) {
@@ -32,5 +40,10 @@ data class AppStateModel(
 
     fun updateLanguage(newLanguage: Language) {
         selectedLanguage = newLanguage
+    }
+
+    fun updateTcpConnection(ip: String, port: Int) {
+        tcpIp = ip
+        tcpPort = port
     }
 }

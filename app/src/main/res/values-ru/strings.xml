@@ -12,6 +12,9 @@
     <string name="settings_title">Настройки</string>
     <string name="settings_color_scheme">Цветовая схема монитора</string>
     <string name="settings_language">Язык</string>
+    <string name="settings_tcp_title">TCP соединение</string>
+    <string name="settings_tcp_ip">IP-адрес</string>
+    <string name="settings_tcp_port">Порт</string>
     <string name="settings_close">ЗАКРЫТЬ</string>
 
     <!-- Grid scheme labels -->
