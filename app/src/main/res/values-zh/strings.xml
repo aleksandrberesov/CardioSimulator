@@ -15,6 +15,17 @@
     <string name="settings_tcp_title">TCP 连接</string>
     <string name="settings_tcp_ip">IP 地址</string>
     <string name="settings_tcp_port">端口</string>
+    <string name="settings_ftp_title">FTP 上传</string>
+    <string name="settings_ftp_user">用户</string>
+    <string name="settings_ftp_port">端口</string>
+    <string name="settings_ftp_password">密码</string>
+    <string name="settings_ftp_remote_path">远程路径</string>
+    <string name="settings_ftp_send">发送到设备</string>
+    <string name="settings_ftp_status_sending">发送中…</string>
+    <string name="settings_ftp_status_success">已发送 %1$d 字节到 %2$s</string>
+    <string name="settings_ftp_status_error">FTP 错误:%1$s</string>
+    <string name="settings_ftp_error_no_rhythm">请先选择心律。</string>
+    <string name="settings_ftp_error_invalid_settings">请检查 FTP 主机、端口和远程路径。</string>
     <string name="settings_close">关闭</string>
 
     <!-- Grid scheme labels -->

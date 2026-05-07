@@ -15,6 +15,17 @@
     <string name="settings_tcp_title">Conexión TCP</string>
     <string name="settings_tcp_ip">Dirección IP</string>
     <string name="settings_tcp_port">Puerto</string>
+    <string name="settings_ftp_title">Envío por FTP</string>
+    <string name="settings_ftp_user">Usuario</string>
+    <string name="settings_ftp_port">Puerto</string>
+    <string name="settings_ftp_password">Contraseña</string>
+    <string name="settings_ftp_remote_path">Ruta remota</string>
+    <string name="settings_ftp_send">ENVIAR AL DISPOSITIVO</string>
+    <string name="settings_ftp_status_sending">Enviando…</string>
+    <string name="settings_ftp_status_success">Enviados %1$d bytes a %2$s</string>
+    <string name="settings_ftp_status_error">Error de FTP: %1$s</string>
+    <string name="settings_ftp_error_no_rhythm">Seleccione primero un ritmo.</string>
+    <string name="settings_ftp_error_invalid_settings">Compruebe el host, puerto y ruta FTP.</string>
     <string name="settings_close">CERRAR</string>
 
     <!-- Grid scheme labels -->
