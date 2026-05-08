@@ -161,7 +161,7 @@ fun DataSourceScreen(
                     items(rhythms) { rhythm ->
                         Column(modifier = Modifier.padding(vertical = 8.dp)) {
                             Text(
-                                text = if (isRussian) rhythm.fileName else rhythm.displayTitle,
+                                text = rhythm.displayTitle.ifBlank { rhythm.fileName },
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Bold
                             )

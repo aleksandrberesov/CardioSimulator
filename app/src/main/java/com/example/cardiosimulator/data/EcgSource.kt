@@ -2,6 +2,7 @@ package com.example.cardiosimulator.data
 
 import android.content.res.AssetManager
 import java.io.File
+import java.nio.charset.Charset
 
 /**
  * Storage-agnostic source of ECG data files. Implementations expose the
@@ -39,7 +40,7 @@ class AssetEcgSource(
             .getOrDefault(emptyList())
 
     private fun read(path: String): String? = runCatching {
-        assets.open(path).use { it.readBytes().toString(java.nio.charset.Charset.forName("windows-1251")) }
+        assets.open(path).use { it.readBytes().decodeEcgText() }
     }.getOrNull()
 
     companion object {
@@ -73,7 +74,7 @@ class FileEcgSource(
 
     private fun read(file: File?): String? = runCatching {
         if (file == null || !file.exists() || !file.canRead()) null
-        else file.readBytes().toString(java.nio.charset.Charset.forName("windows-1251"))
+        else file.readBytes().decodeEcgText()
     }.getOrNull()
 
     fun isValid(): Boolean =
@@ -95,5 +96,20 @@ class FileEcgSource(
             }
         }
         return null
+    }
+}
+
+/**
+ * Decodes a byte array into a string, attempting UTF-8 first and falling back
+ * to windows-1251 if it doesn't look like valid UTF-8. This handles legacy
+ * ECG datasets while supporting modern UTF-8 files.
+ */
+private fun ByteArray.decodeEcgText(): String {
+    val utf8 = Charsets.UTF_8
+    val decoded = toString(utf8)
+    return if (decoded.contains('\uFFFD')) {
+        toString(Charset.forName("windows-1251"))
+    } else {
+        decoded
     }
 }

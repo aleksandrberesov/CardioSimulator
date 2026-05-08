@@ -1,6 +1,7 @@
 package com.example.cardiosimulator.domain
 
 import java.io.File
+import java.nio.charset.Charset
 
 enum class Lead {
     I, II, III, aVR, aVL, aVF, V1, V2, V3, V4, V5, V6;
@@ -81,7 +82,7 @@ data class WaveformPart(
             )
         }
 
-        fun parse(file: File): WaveformPart = parse(file.readText(java.nio.charset.Charset.forName("windows-1251")))
+        fun parse(file: File): WaveformPart = parse(file.readBytes().decodeEcgText())
     }
 }
 
@@ -117,7 +118,21 @@ data class EcgSeries(
             )
         }
 
-        fun parse(file: File): EcgSeries = parse(file.readText(java.nio.charset.Charset.forName("windows-1251")), file.name)
+        fun parse(file: File): EcgSeries = parse(file.readBytes().decodeEcgText(), file.name)
+    }
+}
+
+/**
+ * Decodes a byte array into a string, attempting UTF-8 first and falling back
+ * to windows-1251 if it doesn't look like valid UTF-8.
+ */
+private fun ByteArray.decodeEcgText(): String {
+    val utf8 = Charsets.UTF_8
+    val decoded = toString(utf8)
+    return if (decoded.contains('\uFFFD')) {
+        toString(Charset.forName("windows-1251"))
+    } else {
+        decoded
     }
 }
 
