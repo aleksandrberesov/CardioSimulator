@@ -51,6 +51,23 @@
     <!-- Testing panel -->
     <string name="testing_question_format">Question %1$d</string>
 
+    <!-- Data source picker -->
+    <string name="data_source_title">ECG Data</string>
+    <string name="data_source_description">Select a ZIP archive on your device containing the ECG data.</string>
+    <string name="data_source_pick_folder">Select ZIP archive</string>
+    <string name="data_source_change_folder">Change ZIP archive</string>
+    <string name="data_source_loading">Loading data…</string>
+    <string name="data_source_loaded_format">Loaded %1$d series, %2$d parts</string>
+    <string name="data_source_error_no_subdirs">The selected ZIP file must contain both \"Series\" and \"Parts\" folders.</string>
+    <string name="data_source_error_unreadable">The selected ZIP archive is no longer accessible.</string>
+    <string name="data_source_error_empty">No ECG files were found in the selected ZIP archive.</string>
+    <string name="data_source_continue">Continue</string>
+    <string name="data_source_retry">Pick another ZIP</string>
+    <string name="data_source_show_details">Show Details</string>
+    <string name="data_source_pathologies_title">Loaded Pathologies (%1$d)</string>
+    <string name="data_source_leads_format">Leads: %1$d%2$s</string>
+    <string name="data_source_close">Close</string>
+
     <!-- Content descriptions -->
     <string name="cd_settings">Settings</string>
     <string name="cd_pause">Pause</string>

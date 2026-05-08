@@ -8,9 +8,6 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -21,21 +18,24 @@ import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
-import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
+import com.example.cardiosimulator.ui.viewmodels.DataState
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 
 @Composable
 fun MainScreen(viewModel: AppViewModel){
     val selectedMode by viewModel.selectedOperatingMode.collectAsState()
-    val monitorViewModel: MonitorViewModel = viewModel()
-    var showSettings by remember { mutableStateOf(false) }
+    val dataState by viewModel.dataState.collectAsState()
+    val isDataConfirmed by viewModel.isDataConfirmed.collectAsState()
 
-    if (showSettings) {
-        SettingsDialog(
-            monitorViewModel = monitorViewModel,
-            appViewModel = viewModel,
-            onDismiss = { showSettings = false }
-        )
+    // If the user has not yet picked a data archive, or it's loading/erroring,
+    // or they haven't confirmed the summary of the loaded data, show the picker.
+    if (!isDataConfirmed ||
+        dataState is DataState.NotConfigured ||
+        dataState is DataState.Error ||
+        dataState is DataState.Loading
+    ) {
+        DataSourceScreen(viewModel = viewModel, state = dataState)
+        return
     }
 
     Column(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
@@ -43,10 +43,7 @@ fun MainScreen(viewModel: AppViewModel){
             modifier = Modifier.weight(2f).topSection(),
             contentAlignment = Alignment.Center
         ) {
-            com.example.cardiosimulator.ui.panels.AppControlPanel(
-                viewModel = viewModel,
-                onSettingsClick = { showSettings = true }
-            )
+            com.example.cardiosimulator.ui.panels.AppControlPanel(viewModel = viewModel)
         }
         Box(
             modifier = Modifier.weight(15f).fillMaxWidth()

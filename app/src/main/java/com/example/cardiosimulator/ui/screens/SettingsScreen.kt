@@ -2,21 +2,20 @@ package com.example.cardiosimulator.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -34,20 +33,10 @@ fun SettingsDialog(
     appViewModel: AppViewModel,
     onDismiss: () -> Unit
 ) {
-    val monitorMode by monitorViewModel.monitorMode.collectAsState()
-    val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
-    val tcpIp by appViewModel.tcpIp.collectAsState()
-    val tcpPort by appViewModel.tcpPort.collectAsState()
-
     Dialog(onDismissRequest = onDismiss) {
         SettingsContent(
-            gridScheme = monitorMode.gridScheme,
-            selectedLanguage = selectedLanguage,
-            tcpIp = tcpIp,
-            tcpPort = tcpPort,
-            onGridSchemeChange = { monitorViewModel.setGridScheme(it) },
-            onLanguageChange = { appViewModel.updateLanguage(it) },
-            onTcpChange = { ip, port -> appViewModel.updateTcpConnection(ip, port) },
+            monitorViewModel = monitorViewModel,
+            appViewModel = appViewModel,
             onDismiss = onDismiss
         )
     }
@@ -56,17 +45,12 @@ fun SettingsDialog(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsContent(
-    gridScheme: GridScheme,
-    selectedLanguage: Language,
-    tcpIp: String,
-    tcpPort: Int,
-    onGridSchemeChange: (GridScheme) -> Unit,
-    onLanguageChange: (Language) -> Unit,
-    onTcpChange: (String, Int) -> Unit,
+    monitorViewModel: MonitorViewModel,
+    appViewModel: AppViewModel,
     onDismiss: () -> Unit
 ) {
-    var ipText by remember(tcpIp) { mutableStateOf(tcpIp) }
-    var portText by remember(tcpPort) { mutableStateOf(tcpPort.toString()) }
+    val monitorMode by monitorViewModel.monitorMode.collectAsState()
+    val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
 
     Surface(
         shape = RoundedCornerShape(16.dp),
@@ -97,10 +81,10 @@ fun SettingsContent(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 GridScheme.entries.forEach { scheme ->
-                    val isSelected = gridScheme == scheme
+                    val isSelected = monitorMode.gridScheme == scheme
                     FilterChip(
                         selected = isSelected,
-                        onClick = { onGridSchemeChange(scheme) },
+                        onClick = { monitorViewModel.setGridScheme(scheme) },
                         label = { Text(stringResource(scheme.labelRes)) },
                         leadingIcon = if (isSelected) {
                             {
@@ -131,7 +115,7 @@ fun SettingsContent(
                     val isSelected = selectedLanguage == language
                     FilterChip(
                         selected = isSelected,
-                        onClick = { onLanguageChange(language) },
+                        onClick = { appViewModel.updateLanguage(language) },
                         label = { Text(language.displayName) },
                         leadingIcon = if (isSelected) {
                             {
@@ -148,41 +132,33 @@ fun SettingsContent(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // ECG data ZIP archive — lets the user re-pick the source file.
+            // The picker takes a persistable read permission so the chosen
+            // file keeps working across reboots.
+            val context = LocalContext.current
+            val pickZipFile = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.OpenDocument()
+            ) { uri ->
+                if (uri != null) {
+                    runCatching {
+                        context.contentResolver.takePersistableUriPermission(
+                            uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        )
+                    }
+                    appViewModel.setDataFolder(context, uri)
+                    onDismiss()
+                }
+            }
             Text(
-                text = stringResource(R.string.settings_tcp_title),
+                text = stringResource(R.string.data_source_title),
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = 8.dp)
             )
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                OutlinedTextField(
-                    value = ipText,
-                    onValueChange = {
-                        ipText = it
-                        onTcpChange(it, portText.toIntOrNull() ?: 0)
-                    },
-                    label = { Text(stringResource(R.string.settings_tcp_ip)) },
-                    modifier = Modifier.weight(1.5f),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
-                )
-                OutlinedTextField(
-                    value = portText,
-                    onValueChange = {
-                        portText = it
-                        onTcpChange(ipText, it.toIntOrNull() ?: 0)
-                    },
-                    label = { Text(stringResource(R.string.settings_tcp_port)) },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
+            OutlinedButton(onClick = { pickZipFile.launch(arrayOf("application/zip", "application/x-zip-compressed")) }) {
+                Text(stringResource(R.string.data_source_change_folder))
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             TextButton(
                 onClick = onDismiss,
@@ -194,19 +170,9 @@ fun SettingsContent(
     }
 }
 
-@Preview(showBackground = true, widthDp = 600)
+@Preview(showBackground = true)
 @Composable
 fun SettingsContentPreview() {
     CardioSimulatorTheme {
-        SettingsContent(
-            gridScheme = GridScheme.Pink,
-            selectedLanguage = Language.EN,
-            tcpIp = "192.168.1.100",
-            tcpPort = 8080,
-            onGridSchemeChange = {},
-            onLanguageChange = {},
-            onTcpChange = { _, _ -> },
-            onDismiss = {}
-        )
     }
 }

@@ -1,19 +1,28 @@
 package com.example.cardiosimulator.ui.viewmodels
 
+import android.content.Context
+import android.net.Uri
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cardiosimulator.data.DataSourcePrefs
 import com.example.cardiosimulator.data.EcgRepository
+import com.example.cardiosimulator.data.EcgSource
 import com.example.cardiosimulator.data.PathologyGroup
 import com.example.cardiosimulator.data.Points
+import com.example.cardiosimulator.data.FileEcgSource
+import com.example.cardiosimulator.data.ZipDecompressor
 import com.example.cardiosimulator.domain.AppStateModel
+import java.io.File
+import androidx.documentfile.provider.DocumentFile
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.OperatingModeModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -21,9 +30,26 @@ import com.example.cardiosimulator.domain.EcgSeries
 import com.example.cardiosimulator.domain.WaveformPart
 import com.example.cardiosimulator.domain.Language
 
+/**
+ * High-level state of the user-controlled ECG dataset.
+ *
+ * Lifecycle: NotConfigured -> Loading -> (Ready | Error). Re-picking a
+ * folder cycles back through Loading.
+ */
+sealed class DataState {
+    object NotConfigured : DataState()
+    object Loading : DataState()
+    data class Ready(val seriesCount: Int, val partsCount: Int) : DataState()
+    data class Error(val reason: Reason) : DataState() {
+        enum class Reason { MissingSubdirs, Unreadable, Empty }
+    }
+}
+
 class AppViewModel(
     private val appState: AppStateModel,
     private val ecgRepository: EcgRepository? = null,
+    private val appContext: Context? = null,
+    private val prefs: DataSourcePrefs? = null,
 ) : ViewModel() {
     val operatingModes = appState.operatingModes
 
@@ -54,16 +80,45 @@ class AppViewModel(
     private val _waveforms = MutableStateFlow<Map<Lead, Points>>(emptyMap())
     val waveforms: StateFlow<Map<Lead, Points>> = _waveforms.asStateFlow()
 
+    private val _dataState = MutableStateFlow<DataState>(DataState.NotConfigured)
+    val dataState: StateFlow<DataState> = _dataState.asStateFlow()
+
+    private val _isDataConfirmed = MutableStateFlow(false)
+    val isDataConfirmed: StateFlow<Boolean> = _isDataConfirmed.asStateFlow()
+
     init {
-        ecgRepository?.let { repo ->
+        // Restore a previously picked folder, if any. If none is stored, we
+        // stay in NotConfigured and the UI will show the picker. The repo
+        // may also be unavailable in @Preview — in that case we leave the
+        // state as NotConfigured but UI components can ignore it.
+        val repo = ecgRepository
+        val ctx = appContext
+        val p = prefs
+        if (repo != null && ctx != null && p != null) {
             viewModelScope.launch {
-                withContext(Dispatchers.IO) {
-                    repo.load()
+                val saved = p.treeUri.first()
+                if (saved != null) {
+                    loadFromSaf(ctx, saved)
+                    // If we successfully loaded saved data, don't force the user
+                    // to see the summary screen again.
+                    if (_dataState.value is DataState.Ready) {
+                        _isDataConfirmed.value = true
+                    }
                 }
-                _rhythms.value = repo.pathologies()
-                _allSeries.value = repo.allSeries()
-                _allParts.value = repo.allParts()
             }
+        } else if (repo != null) {
+            // Preview / asset-only path (no prefs available, e.g. @Preview):
+            // load whatever the source has and force-mark the dataset Ready
+            // so the preview doesn't get stuck on the DataSourceScreen when
+            // assets are empty.
+            viewModelScope.launch {
+                reload(repo)
+                _dataState.value = DataState.Ready(_allSeries.value.size, _allParts.value.size)
+            }
+        } else {
+            // No repository at all (rare; pure UI preview). Treat as Ready so
+            // gating composables don't block.
+            _dataState.value = DataState.Ready(0, 0)
         }
     }
 
@@ -97,11 +152,75 @@ class AppViewModel(
         val repo = ecgRepository ?: return
         viewModelScope.launch {
             val map = withContext(Dispatchers.IO) {
-                group.seriesIdentyByLead.mapValues { (_, identy) ->
+                group.seriesIdentityByLead.mapValues { (_, identy) ->
                     Points(repo.assembleWaveform(identy))
                 }
             }
             _waveforms.value = map
+        }
+    }
+
+    /**
+     * Called by [com.example.cardiosimulator.ui.screens.DataSourceScreen]
+     * after the user picks a folder via SAF. Persists the URI, swaps the
+     * repository's source, and reloads.
+     */
+    fun setDataFolder(context: Context, uri: Uri) {
+        val p = prefs ?: return
+        _isDataConfirmed.value = false
+        viewModelScope.launch {
+            p.setTreeUri(uri)
+            loadFromSaf(context, uri, forceUnzip = true)
+        }
+    }
+
+    fun confirmData() {
+        _isDataConfirmed.value = true
+    }
+
+    private suspend fun loadFromSaf(context: Context, uri: Uri, forceUnzip: Boolean = false) {
+        val repo = ecgRepository ?: return
+        _dataState.value = DataState.Loading
+
+        val targetDir = File(context.filesDir, "unzipped_ecg")
+        val fileSource = FileEcgSource(targetDir)
+
+        // Optimization: if we are NOT forcing an unzip and we already have valid content,
+        // use it. This happens on app startup.
+        if (!forceUnzip && fileSource.isValid()) {
+            repo.setSource(fileSource)
+            if (reload(repo)) return
+        }
+
+        val ok = withContext(Dispatchers.IO) {
+            ZipDecompressor.unzip(context, uri, targetDir)
+        }
+
+        if (ok) {
+            // Re-initialize source to find the new directories if they moved
+            val newSource = FileEcgSource(targetDir)
+            if (newSource.isValid()) {
+                repo.setSource(newSource)
+                if (reload(repo)) return
+            }
+        }
+
+        _dataState.value = DataState.Error(DataState.Error.Reason.Empty)
+    }
+
+    private suspend fun reload(repo: EcgRepository): Boolean {
+        withContext(Dispatchers.IO) { repo.load() }
+        val rhythms = repo.pathologies()
+        val series = repo.allSeries()
+        val parts = repo.allParts()
+        _rhythms.value = rhythms
+        _allSeries.value = series
+        _allParts.value = parts
+        return if (series.isEmpty() && parts.isEmpty()) {
+            false
+        } else {
+            _dataState.value = DataState.Ready(series.size, parts.size)
+            true
         }
     }
 }

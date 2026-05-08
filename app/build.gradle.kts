@@ -10,7 +10,7 @@ android {
     defaultConfig {
         applicationId = "com.example.cardiosimulator"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
@@ -36,7 +36,7 @@ android {
     }
     sourceSets {
         getByName("main") {
-            assets.srcDirs("src/main/assets", rootProject.file(".data"))
+            assets.srcDirs("src/main/assets")
         }
     }
 }
@@ -56,6 +56,8 @@ dependencies {
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.compose.runtime)
     implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.androidx.documentfile)
+    implementation(libs.androidx.datastore.preferences)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
