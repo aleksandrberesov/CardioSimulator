@@ -23,6 +23,8 @@
     <string name="tcp_disconnect">Disconnect</string>
     <string name="tcp_status_connected">Connected</string>
     <string name="tcp_status_disconnected">Disconnected</string>
+    <string name="tcp_status_waiting">Waiting…</string>
+    <string name="tcp_status_error">Error</string>
     <string name="cd_tcp_status">TCP Connection Status</string>
 
     <!-- Grid scheme labels -->

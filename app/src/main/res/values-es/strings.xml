@@ -19,6 +19,14 @@
     <string name="settings_tcp_port_error">El puerto debe estar entre 0-65535</string>
     <string name="settings_close">CERRAR</string>
 
+    <string name="tcp_connect">Conectar</string>
+    <string name="tcp_disconnect">Desconectar</string>
+    <string name="tcp_status_connected">Conectado</string>
+    <string name="tcp_status_disconnected">Desconectado</string>
+    <string name="tcp_status_waiting">Esperando…</string>
+    <string name="tcp_status_error">Error</string>
+    <string name="cd_tcp_status">Estado de la conexión TCP</string>
+
     <!-- Grid scheme labels -->
     <string name="grid_scheme_pink">Rosa</string>
     <string name="grid_scheme_blue_gray">Azul/Gris</string>

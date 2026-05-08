@@ -15,10 +15,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -43,6 +46,7 @@ import com.example.cardiosimulator.R
 import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
+import com.example.cardiosimulator.network.TcpConnectionState
 import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
@@ -109,7 +113,22 @@ fun AppControlPanel(
                         OperatingMode.Editor -> {}
                     }
                 }
-                val isConnected by viewModel.isTcpConnected.collectAsState()
+                val connectionState by viewModel.tcpConnectionState.collectAsState()
+                val isConnected = connectionState == TcpConnectionState.Connected
+
+                if (connectionState is TcpConnectionState.Error) {
+                    AlertDialog(
+                        onDismissRequest = { viewModel.dismissTcpError() },
+                        title = { Text(stringResource(R.string.tcp_status_error)) },
+                        text = { Text((connectionState as TcpConnectionState.Error).message) },
+                        confirmButton = {
+                            TextButton(onClick = { viewModel.dismissTcpError() }) {
+                                Text(stringResource(R.string.settings_close))
+                            }
+                        }
+                    )
+                }
+
                 Row(
                     modifier = Modifier.padding(horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -129,15 +148,34 @@ fun AppControlPanel(
                             .padding(horizontal = 4.dp)
                             .width(60.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(12.dp)
-                                .clip(CircleShape)
-                                .background(if (isConnected) Color.Green else Color.Red)
-                                .semantics { contentDescription = "TCP Status Indicator" }
-                        )
+                        if (connectionState == TcpConnectionState.Connecting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(12.dp),
+                                strokeWidth = 2.dp,
+                                color = Color.Gray
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(12.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        when (connectionState) {
+                                            TcpConnectionState.Connected -> Color.Green
+                                            is TcpConnectionState.Error -> Color.Magenta
+                                            else -> Color.Red
+                                        }
+                                    )
+                                    .semantics { contentDescription = "TCP Status Indicator" }
+                            )
+                        }
                         Text(
-                            text = stringResource(if (isConnected) R.string.tcp_status_connected else R.string.tcp_status_disconnected),
+                            text = when (connectionState) {
+                                TcpConnectionState.Connected -> stringResource(R.string.tcp_status_connected)
+                                TcpConnectionState.Connecting -> stringResource(R.string.tcp_status_waiting)
+                                is TcpConnectionState.Error -> stringResource(R.string.tcp_status_error)
+                                else -> stringResource(R.string.tcp_status_disconnected)
+                            },
                             fontSize = 8.sp,
                             color = Color.Gray,
                             lineHeight = 10.sp

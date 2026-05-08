@@ -27,6 +27,11 @@ import kotlinx.coroutines.withContext
 import com.example.cardiosimulator.domain.EcgSeries
 import com.example.cardiosimulator.domain.WaveformPart
 import com.example.cardiosimulator.domain.Language
+import com.example.cardiosimulator.network.TcpConnectionState
+import kotlinx.coroutines.delay
+import java.net.InetSocketAddress
+import java.net.Socket
+import java.io.IOException
 
 /**
  * High-level state of the user-controlled ECG dataset.
@@ -63,8 +68,8 @@ class AppViewModel(
     private val _tcpPort = MutableStateFlow(appState.tcpPort)
     val tcpPort: StateFlow<Int> = _tcpPort.asStateFlow()
 
-    private val _isTcpConnected = MutableStateFlow(false)
-    val isTcpConnected: StateFlow<Boolean> = _isTcpConnected.asStateFlow()
+    private val _tcpConnectionState = MutableStateFlow<TcpConnectionState>(TcpConnectionState.Disconnected)
+    val tcpConnectionState: StateFlow<TcpConnectionState> = _tcpConnectionState.asStateFlow()
 
     private val _rhythms = MutableStateFlow<List<PathologyGroup>>(emptyList())
     val rhythms: StateFlow<List<PathologyGroup>> = _rhythms.asStateFlow()
@@ -148,7 +153,56 @@ class AppViewModel(
     }
 
     fun toggleTcpConnection() {
-        _isTcpConnected.value = !_isTcpConnected.value
+        val currentState = _tcpConnectionState.value
+        if (currentState is TcpConnectionState.Disconnected || currentState is TcpConnectionState.Error) {
+            connectTcp()
+        } else {
+            disconnectTcp()
+        }
+    }
+
+    fun dismissTcpError() {
+        if (_tcpConnectionState.value is TcpConnectionState.Error) {
+            _tcpConnectionState.value = TcpConnectionState.Disconnected
+        }
+    }
+
+    private var tcpSocket: Socket? = null
+    private var connectionJob: kotlinx.coroutines.Job? = null
+
+    private fun connectTcp() {
+        val ip = _tcpIp.value
+        val port = _tcpPort.value
+        connectionJob?.cancel()
+        connectionJob = viewModelScope.launch(Dispatchers.IO) {
+            _tcpConnectionState.value = TcpConnectionState.Connecting
+            try {
+                val socket = Socket()
+                socket.connect(InetSocketAddress(ip, port), 5000)
+                tcpSocket = socket
+                _tcpConnectionState.value = TcpConnectionState.Connected
+            } catch (e: IOException) {
+                _tcpConnectionState.value = TcpConnectionState.Error(e.message ?: "Unknown error")
+                delay(5000)
+                if (_tcpConnectionState.value is TcpConnectionState.Error) {
+                    _tcpConnectionState.value = TcpConnectionState.Disconnected
+                }
+            }
+        }
+    }
+
+    private fun disconnectTcp() {
+        connectionJob?.cancel()
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                tcpSocket?.close()
+            } catch (e: IOException) {
+                // Ignore
+            } finally {
+                tcpSocket = null
+                _tcpConnectionState.value = TcpConnectionState.Disconnected
+            }
+        }
     }
 
     fun selectRhythm(pathology: String) {

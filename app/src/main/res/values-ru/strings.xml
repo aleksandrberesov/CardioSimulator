@@ -19,6 +19,14 @@
     <string name="settings_tcp_port_error">Порт должен быть в диапазоне 0-65535</string>
     <string name="settings_close">ЗАКРЫТЬ</string>
 
+    <string name="tcp_connect">Подключить</string>
+    <string name="tcp_disconnect">Отключить</string>
+    <string name="tcp_status_connected">Подключено</string>
+    <string name="tcp_status_disconnected">Отключено</string>
+    <string name="tcp_status_waiting">Ожидание…</string>
+    <string name="tcp_status_error">Ошибка</string>
+    <string name="cd_tcp_status">Статус TCP соединения</string>
+
     <!-- Grid scheme labels -->
     <string name="grid_scheme_pink">Розовая</string>
     <string name="grid_scheme_blue_gray">Сине-серая</string>

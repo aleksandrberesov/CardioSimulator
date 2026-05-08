@@ -19,6 +19,14 @@
     <string name="settings_tcp_port_error">端口必须在 0-65535 之间</string>
     <string name="settings_close">关闭</string>
 
+    <string name="tcp_connect">连接</string>
+    <string name="tcp_disconnect">断开连接</string>
+    <string name="tcp_status_connected">已连接</string>
+    <string name="tcp_status_disconnected">未连接</string>
+    <string name="tcp_status_waiting">等待中…</string>
+    <string name="tcp_status_error">错误</string>
+    <string name="cd_tcp_status">TCP连接状态</string>
+
     <!-- Grid scheme labels -->
     <string name="grid_scheme_pink">粉色</string>
     <string name="grid_scheme_blue_gray">蓝灰色</string>
