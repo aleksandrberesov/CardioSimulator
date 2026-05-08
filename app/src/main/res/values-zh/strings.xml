@@ -14,7 +14,9 @@
     <string name="settings_language">语言</string>
     <string name="settings_tcp_title">TCP 连接</string>
     <string name="settings_tcp_ip">IP 地址</string>
+    <string name="settings_tcp_ip_error">IP 地址格式无效</string>
     <string name="settings_tcp_port">端口</string>
+    <string name="settings_tcp_port_error">端口必须在 0-65535 之间</string>
     <string name="settings_close">关闭</string>
 
     <!-- Grid scheme labels -->

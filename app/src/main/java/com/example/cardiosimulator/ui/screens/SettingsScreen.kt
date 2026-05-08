@@ -8,14 +8,19 @@ import androidx.compose.material3.*
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -53,6 +58,15 @@ fun SettingsContent(
     val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
     val tcpIp by appViewModel.tcpIp.collectAsState()
     val tcpPort by appViewModel.tcpPort.collectAsState()
+
+    var ipInput by remember(tcpIp) { mutableStateOf(tcpIp) }
+    val ipRegex = remember { Regex("^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$") }
+    val isIpError = ipInput.isNotEmpty() && !ipInput.matches(ipRegex)
+
+    var portInput by remember(tcpPort) { 
+        mutableStateOf(if (tcpPort == 0) "" else tcpPort.toString()) 
+    }
+    val isPortError = portInput.isNotEmpty() && (portInput.toIntOrNull() ?: 70000) > 65535
 
     Surface(
         shape = RoundedCornerShape(16.dp),
@@ -145,21 +159,46 @@ fun SettingsContent(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedTextField(
-                    value = tcpIp,
-                    onValueChange = { appViewModel.updateTcpConnection(it, tcpPort) },
+                    value = ipInput,
+                    onValueChange = { newValue ->
+                        if (newValue.all { it.isDigit() || it == '.' }) {
+                            ipInput = newValue
+                            if (newValue.matches(ipRegex)) {
+                                appViewModel.updateTcpConnection(newValue, tcpPort)
+                            }
+                        }
+                    },
                     label = { Text(stringResource(R.string.settings_tcp_ip)) },
                     modifier = Modifier.weight(2f),
-                    singleLine = true
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    isError = isIpError,
+                    supportingText = if (isIpError) {
+                        { Text(stringResource(R.string.settings_tcp_ip_error)) }
+                    } else null
                 )
                 OutlinedTextField(
-                    value = if (tcpPort == 0) "" else tcpPort.toString(),
-                    onValueChange = {
-                        val newPort = it.toIntOrNull() ?: 0
-                        appViewModel.updateTcpConnection(tcpIp, newPort)
+                    value = portInput,
+                    onValueChange = { newValue ->
+                        if (newValue.isEmpty()) {
+                            portInput = ""
+                            appViewModel.updateTcpConnection(ipInput, 0)
+                        } else if (newValue.all { it.isDigit() } && newValue.length <= 5) {
+                            portInput = newValue
+                            val newPort = newValue.toIntOrNull() ?: 0
+                            if (newPort <= 65535) {
+                                appViewModel.updateTcpConnection(ipInput, newPort)
+                            }
+                        }
                     },
                     label = { Text(stringResource(R.string.settings_tcp_port)) },
                     modifier = Modifier.weight(1f),
-                    singleLine = true
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    isError = isPortError,
+                    supportingText = if (isPortError) {
+                        { Text(stringResource(R.string.settings_tcp_port_error)) }
+                    } else null
                 )
             }
 

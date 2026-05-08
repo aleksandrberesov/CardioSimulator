@@ -14,8 +14,16 @@
     <string name="settings_language">Language</string>
     <string name="settings_tcp_title">TCP Connection</string>
     <string name="settings_tcp_ip">IP Address</string>
+    <string name="settings_tcp_ip_error">Invalid IP Address format</string>
     <string name="settings_tcp_port">Port</string>
+    <string name="settings_tcp_port_error">Port must be 0-65535</string>
     <string name="settings_close">CLOSE</string>
+
+    <string name="tcp_connect">Connect</string>
+    <string name="tcp_disconnect">Disconnect</string>
+    <string name="tcp_status_connected">Connected</string>
+    <string name="tcp_status_disconnected">Disconnected</string>
+    <string name="cd_tcp_status">TCP Connection Status</string>
 
     <!-- Grid scheme labels -->
     <string name="grid_scheme_pink">Pink</string>

@@ -14,7 +14,9 @@
     <string name="settings_language">Язык</string>
     <string name="settings_tcp_title">TCP соединение</string>
     <string name="settings_tcp_ip">IP-адрес</string>
+    <string name="settings_tcp_ip_error">Неверный формат IP-адреса</string>
     <string name="settings_tcp_port">Порт</string>
+    <string name="settings_tcp_port_error">Порт должен быть в диапазоне 0-65535</string>
     <string name="settings_close">ЗАКРЫТЬ</string>
 
     <!-- Grid scheme labels -->

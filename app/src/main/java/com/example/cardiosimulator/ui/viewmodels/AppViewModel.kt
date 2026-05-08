@@ -8,14 +8,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cardiosimulator.data.DataSourcePrefs
 import com.example.cardiosimulator.data.EcgRepository
-import com.example.cardiosimulator.data.EcgSource
 import com.example.cardiosimulator.data.PathologyGroup
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.data.FileEcgSource
 import com.example.cardiosimulator.data.ZipDecompressor
 import com.example.cardiosimulator.domain.AppStateModel
 import java.io.File
-import androidx.documentfile.provider.DocumentFile
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.OperatingModeModel
 import kotlinx.coroutines.Dispatchers
@@ -64,6 +62,9 @@ class AppViewModel(
 
     private val _tcpPort = MutableStateFlow(appState.tcpPort)
     val tcpPort: StateFlow<Int> = _tcpPort.asStateFlow()
+
+    private val _isTcpConnected = MutableStateFlow(false)
+    val isTcpConnected: StateFlow<Boolean> = _isTcpConnected.asStateFlow()
 
     private val _rhythms = MutableStateFlow<List<PathologyGroup>>(emptyList())
     val rhythms: StateFlow<List<PathologyGroup>> = _rhythms.asStateFlow()
@@ -144,6 +145,10 @@ class AppViewModel(
         appState.updateTcpConnection(ip, port)
         _tcpIp.value = ip
         _tcpPort.value = port
+    }
+
+    fun toggleTcpConnection() {
+        _isTcpConnected.value = !_isTcpConnected.value
     }
 
     fun selectRhythm(pathology: String) {

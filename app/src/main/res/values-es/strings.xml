@@ -14,7 +14,9 @@
     <string name="settings_language">Idioma</string>
     <string name="settings_tcp_title">Conexión TCP</string>
     <string name="settings_tcp_ip">Dirección IP</string>
+    <string name="settings_tcp_ip_error">Formato de dirección IP no válido</string>
     <string name="settings_tcp_port">Puerto</string>
+    <string name="settings_tcp_port_error">El puerto debe estar entre 0-65535</string>
     <string name="settings_close">CERRAR</string>
 
     <!-- Grid scheme labels -->
