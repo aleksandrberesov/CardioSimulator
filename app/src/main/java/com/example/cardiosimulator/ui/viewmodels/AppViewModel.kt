@@ -140,7 +140,7 @@ class AppViewModel(
         val repo = ecgRepository ?: return
         viewModelScope.launch {
             val map = withContext(Dispatchers.IO) {
-                group.seriesIdentyByLead.mapValues { (_, identy) ->
+                group.seriesIdentityByLead.mapValues { (_, identy) ->
                     Points(repo.assembleWaveform(identy))
                 }
             }

@@ -7,7 +7,8 @@ import com.example.cardiosimulator.domain.WaveformPart
 data class PathologyGroup(
     val pathology: String,
     val displayTitle: String,
-    val seriesIdentyByLead: Map<Lead, String>,
+    val seriesIdentityByLead: Map<Lead, String>,
+    val fileName: String,
 )
 
 class EcgRepository(private var source: EcgSource) {
@@ -27,7 +28,7 @@ class EcgRepository(private var source: EcgSource) {
     fun load() {
         if (loaded) return
         seriesIndex = source.listSeries()
-            .mapNotNull { name -> source.readSeries(name)?.let { runCatching { EcgSeries.parse(it) }.getOrNull() } }
+            .mapNotNull { name -> source.readSeries(name)?.let { runCatching { EcgSeries.parse(it, name) }.getOrNull() } }
         partsIndex = source.listParts()
             .mapNotNull { name -> source.readPart(name)?.let { runCatching { WaveformPart.parse(it) }.getOrNull() } }
             .filter { it.identy.isNotBlank() }
@@ -42,8 +43,9 @@ class EcgRepository(private var source: EcgSource) {
             .groupBy { it.pathology!! }
             .map { (pathology, list) ->
                 val title = stripTrailingLead(list.first().title)
+                val fileName = stripTrailingLead(list.first().fileName)
                 val byLead = list.mapNotNull { s -> s.lead?.let { it to s.identy } }.toMap()
-                PathologyGroup(pathology, title, byLead)
+                PathologyGroup(pathology, title, byLead, fileName)
             }
             .sortedBy { it.displayTitle.lowercase() }
 

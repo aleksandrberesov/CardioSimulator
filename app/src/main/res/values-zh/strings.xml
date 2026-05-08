@@ -60,6 +60,10 @@
     <string name="data_source_error_empty">所选 ZIP 压缩包中未找到心电图文件。</string>
     <string name="data_source_continue">继续</string>
     <string name="data_source_retry">选择其他 ZIP</string>
+    <string name="data_source_show_details">显示详情</string>
+    <string name="data_source_pathologies_title">已加载病理 (%1$d)</string>
+    <string name="data_source_leads_format">导联: %1$d%2$s</string>
+    <string name="data_source_close">关闭</string>
 
     <!-- Content descriptions -->
     <string name="cd_settings">设置</string>

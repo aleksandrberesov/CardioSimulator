@@ -96,9 +96,10 @@ data class EcgSeries(
     val center: Pair<Float, Float>?,
     val localizationTag: Int?,
     val source: SourceSpec?,
+    val fileName: String = "",
 ) {
     companion object {
-        fun parse(text: String): EcgSeries {
+        fun parse(text: String, fileName: String = ""): EcgSeries {
             val kv = EcgFileFormat.readKeyValues(text)
             val src = kv["source"]?.let { EcgFileFormat.parseSource(it) }
             return EcgSeries(
@@ -112,10 +113,11 @@ data class EcgSeries(
                 center = src?.center,
                 localizationTag = src?.localizationTag,
                 source = src,
+                fileName = fileName,
             )
         }
 
-        fun parse(file: File): EcgSeries = parse(file.readText(java.nio.charset.Charset.forName("windows-1251")))
+        fun parse(file: File): EcgSeries = parse(file.readText(java.nio.charset.Charset.forName("windows-1251")), file.name)
     }
 }
 

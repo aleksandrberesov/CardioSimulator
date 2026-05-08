@@ -60,6 +60,10 @@
     <string name="data_source_error_empty">No ECG files were found in the selected ZIP archive.</string>
     <string name="data_source_continue">Continue</string>
     <string name="data_source_retry">Pick another ZIP</string>
+    <string name="data_source_show_details">Show Details</string>
+    <string name="data_source_pathologies_title">Loaded Pathologies (%1$d)</string>
+    <string name="data_source_leads_format">Leads: %1$d%2$s</string>
+    <string name="data_source_close">Close</string>
 
     <!-- Content descriptions -->
     <string name="cd_settings">Settings</string>
