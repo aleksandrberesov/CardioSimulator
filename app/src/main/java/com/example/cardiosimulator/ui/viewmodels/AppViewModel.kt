@@ -29,6 +29,7 @@ import com.example.cardiosimulator.domain.WaveformPart
 import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.network.TcpConnectionState
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import java.net.InetSocketAddress
 import java.net.Socket
 import java.io.IOException
@@ -52,7 +53,8 @@ class AppViewModel(
     private val appState: AppStateModel,
     private val ecgRepository: EcgRepository? = null,
     private val appContext: Context? = null,
-    private val prefs: DataSourcePrefs? = null,
+    val prefs: DataSourcePrefs? = null,
+    private val tcpReconnectIntervalMs: Long = 5000L,
 ) : ViewModel() {
     val operatingModes = appState.operatingModes
 
@@ -67,6 +69,9 @@ class AppViewModel(
 
     private val _tcpPort = MutableStateFlow(appState.tcpPort)
     val tcpPort: StateFlow<Int> = _tcpPort.asStateFlow()
+
+    private val _isDarkTheme = MutableStateFlow(true)
+    val isDarkTheme: StateFlow<Boolean> = _isDarkTheme.asStateFlow()
 
     private val _tcpConnectionState = MutableStateFlow<TcpConnectionState>(TcpConnectionState.Disconnected)
     val tcpConnectionState: StateFlow<TcpConnectionState> = _tcpConnectionState.asStateFlow()
@@ -102,14 +107,30 @@ class AppViewModel(
         val p = prefs
         if (repo != null && ctx != null && p != null) {
             viewModelScope.launch {
-                val saved = p.treeUri.first()
-                if (saved != null) {
-                    loadFromSaf(ctx, saved)
-                    // If we successfully loaded saved data, don't force the user
-                    // to see the summary screen again.
+                val savedUri = p.treeUri.first()
+                if (savedUri != null) {
+                    loadFromSaf(ctx, savedUri)
                     if (_dataState.value is DataState.Ready) {
                         _isDataConfirmed.value = true
                     }
+                }
+
+                p.languageTag.first()?.let { tag ->
+                    Language.fromTag(tag)?.let { updateLanguage(it, persist = false) }
+                }
+
+                val savedIp = p.tcpIp.first()
+                val savedPort = p.tcpPort.first()
+                if (savedIp != null || savedPort != null) {
+                    val ip = savedIp ?: _tcpIp.value
+                    val port = savedPort ?: _tcpPort.value
+                    _tcpIp.value = ip
+                    _tcpPort.value = port
+                    appState.updateTcpConnection(ip, port)
+                }
+
+                p.isDarkTheme.first()?.let { isDark ->
+                    _isDarkTheme.value = isDark
                 }
             }
         } else if (repo != null) {
@@ -128,11 +149,16 @@ class AppViewModel(
         }
     }
 
-    fun updateLanguage(language: Language) {
+    fun updateLanguage(language: Language, persist: Boolean = true) {
         if (_selectedLanguage.value == language) return
         appState.updateLanguage(language)
         _selectedLanguage.value = language
         AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language.tag))
+        if (persist) {
+            viewModelScope.launch {
+                prefs?.setLanguageTag(language.tag)
+            }
+        }
     }
 
     private fun currentSystemLanguage(default: Language): Language {
@@ -150,6 +176,16 @@ class AppViewModel(
         appState.updateTcpConnection(ip, port)
         _tcpIp.value = ip
         _tcpPort.value = port
+        viewModelScope.launch {
+            prefs?.setTcpConnection(ip, port)
+        }
+    }
+
+    fun updateDarkTheme(isDark: Boolean) {
+        _isDarkTheme.value = isDark
+        viewModelScope.launch {
+            prefs?.setDarkTheme(isDark)
+        }
     }
 
     fun toggleTcpConnection() {
@@ -175,17 +211,29 @@ class AppViewModel(
         val port = _tcpPort.value
         connectionJob?.cancel()
         connectionJob = viewModelScope.launch(Dispatchers.IO) {
-            _tcpConnectionState.value = TcpConnectionState.Connecting
-            try {
+            while (isActive) {
+                _tcpConnectionState.value = TcpConnectionState.Connecting
                 val socket = Socket()
-                socket.connect(InetSocketAddress(ip, port), 5000)
-                tcpSocket = socket
-                _tcpConnectionState.value = TcpConnectionState.Connected
-            } catch (e: IOException) {
-                _tcpConnectionState.value = TcpConnectionState.Error(e.message ?: "Unknown error")
-                delay(5000)
-                if (_tcpConnectionState.value is TcpConnectionState.Error) {
+                try {
+                    socket.connect(InetSocketAddress(ip, port), tcpReconnectIntervalMs.toInt())
+                    tcpSocket = socket
+                    _tcpConnectionState.value = TcpConnectionState.Connected
+                    
+                    val reader = socket.getInputStream().bufferedReader()
+                    while (isActive) {
+                        val line = reader.readLine() ?: break
+                        // Connection is alive, line received
+                    }
+                } catch (e: IOException) {
+                    // Connection lost or failed to connect
+                } finally {
+                    try { socket.close() } catch (_: Exception) {}
+                    if (tcpSocket == socket) tcpSocket = null
+                }
+                
+                if (isActive) {
                     _tcpConnectionState.value = TcpConnectionState.Disconnected
+                    delay(tcpReconnectIntervalMs)
                 }
             }
         }

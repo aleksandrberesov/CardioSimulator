@@ -10,7 +10,10 @@
 
     <!-- Settings dialog -->
     <string name="settings_title">Ajustes</string>
-    <string name="settings_color_scheme">Esquema de color del monitor</string>
+    <string name="settings_color_scheme">Tema de la aplicación</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Oscuro</string>
+    <string name="settings_grid_scheme">Esquema de cuadrícula</string>
     <string name="settings_language">Idioma</string>
     <string name="settings_tcp_title">Conexión TCP</string>
     <string name="settings_tcp_ip">Dirección IP</string>

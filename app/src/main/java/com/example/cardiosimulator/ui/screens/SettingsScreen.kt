@@ -1,9 +1,12 @@
 package com.example.cardiosimulator.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -56,6 +59,7 @@ fun SettingsContent(
 ) {
     val monitorMode by monitorViewModel.monitorMode.collectAsState()
     val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
+    val isDarkTheme by appViewModel.isDarkTheme.collectAsState()
     val tcpIp by appViewModel.tcpIp.collectAsState()
     val tcpPort by appViewModel.tcpPort.collectAsState()
 
@@ -73,36 +77,66 @@ fun SettingsContent(
         tonalElevation = 6.dp,
         modifier = Modifier
             .width(500.dp)
+            .heightIn(max = 600.dp)
             .padding(16.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            Text(
-                text = stringResource(R.string.settings_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
-
-            Text(
-                text = stringResource(R.string.settings_color_scheme),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
+        Column(modifier = Modifier.padding(24.dp)) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                GridScheme.entries.forEach { scheme ->
-                    val isSelected = monitorMode.gridScheme == scheme
+                Text(
+                    text = stringResource(R.string.settings_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(R.string.settings_close)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = stringResource(R.string.settings_color_scheme),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // System theme / Dark / Light
                     FilterChip(
-                        selected = isSelected,
-                        onClick = { monitorViewModel.setGridScheme(scheme) },
-                        label = { Text(stringResource(scheme.labelRes)) },
-                        leadingIcon = if (isSelected) {
+                        selected = !isDarkTheme,
+                        onClick = { appViewModel.updateDarkTheme(false) },
+                        label = { Text(stringResource(R.string.theme_light)) },
+                        leadingIcon = if (!isDarkTheme) {
+                            {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                )
+                            }
+                        } else null
+                    )
+                    FilterChip(
+                        selected = isDarkTheme,
+                        onClick = { appViewModel.updateDarkTheme(true) },
+                        label = { Text(stringResource(R.string.theme_dark)) },
+                        leadingIcon = if (isDarkTheme) {
                             {
                                 Icon(
                                     imageVector = Icons.Default.Check,
@@ -113,124 +147,155 @@ fun SettingsContent(
                         } else null
                     )
                 }
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            Text(
-                text = stringResource(R.string.settings_language),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Language.entries.forEach { language ->
-                    val isSelected = selectedLanguage == language
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { appViewModel.updateLanguage(language) },
-                        label = { Text(language.displayName) },
-                        leadingIcon = if (isSelected) {
-                            {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                )
-                            }
-                        } else null
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = stringResource(R.string.settings_tcp_title),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                OutlinedTextField(
-                    value = ipInput,
-                    onValueChange = { newValue ->
-                        if (newValue.all { it.isDigit() || it == '.' }) {
-                            ipInput = newValue
-                            if (newValue.matches(ipRegex)) {
-                                appViewModel.updateTcpConnection(newValue, tcpPort)
-                            }
-                        }
-                    },
-                    label = { Text(stringResource(R.string.settings_tcp_ip)) },
-                    modifier = Modifier.weight(2f),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    isError = isIpError,
-                    supportingText = if (isIpError) {
-                        { Text(stringResource(R.string.settings_tcp_ip_error)) }
-                    } else null
+                Text(
+                    text = stringResource(R.string.settings_grid_scheme),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 12.dp)
                 )
-                OutlinedTextField(
-                    value = portInput,
-                    onValueChange = { newValue ->
-                        if (newValue.isEmpty()) {
-                            portInput = ""
-                            appViewModel.updateTcpConnection(ipInput, 0)
-                        } else if (newValue.all { it.isDigit() } && newValue.length <= 5) {
-                            portInput = newValue
-                            val newPort = newValue.toIntOrNull() ?: 0
-                            if (newPort <= 65535) {
-                                appViewModel.updateTcpConnection(ipInput, newPort)
-                            }
-                        }
-                    },
-                    label = { Text(stringResource(R.string.settings_tcp_port)) },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    isError = isPortError,
-                    supportingText = if (isPortError) {
-                        { Text(stringResource(R.string.settings_tcp_port_error)) }
-                    } else null
-                )
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // ECG data ZIP archive — lets the user re-pick the source file.
-            // The picker takes a persistable read permission so the chosen
-            // file keeps working across reboots.
-            val context = LocalContext.current
-            val pickZipFile = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.OpenDocument()
-            ) { uri ->
-                if (uri != null) {
-                    runCatching {
-                        context.contentResolver.takePersistableUriPermission(
-                            uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    GridScheme.entries.forEach { scheme ->
+                        val isSelected = monitorMode.gridScheme == scheme
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { monitorViewModel.setGridScheme(scheme) },
+                            label = { Text(stringResource(scheme.labelRes)) },
+                            leadingIcon = if (isSelected) {
+                                {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                                }
+                            } else null
                         )
                     }
-                    appViewModel.setDataFolder(context, uri)
-                    onDismiss()
                 }
-            }
-            Text(
-                text = stringResource(R.string.data_source_title),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            OutlinedButton(onClick = { pickZipFile.launch(arrayOf("application/zip", "application/x-zip-compressed")) }) {
-                Text(stringResource(R.string.data_source_change_folder))
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    text = stringResource(R.string.settings_language),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Language.entries.forEach { language ->
+                        val isSelected = selectedLanguage == language
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { appViewModel.updateLanguage(language) },
+                            label = { Text(language.displayName) },
+                            leadingIcon = if (isSelected) {
+                                {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                                }
+                            } else null
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    text = stringResource(R.string.settings_tcp_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = ipInput,
+                        onValueChange = { newValue ->
+                            if (newValue.all { it.isDigit() || it == '.' }) {
+                                ipInput = newValue
+                                if (newValue.matches(ipRegex)) {
+                                    appViewModel.updateTcpConnection(newValue, tcpPort)
+                                }
+                            }
+                        },
+                        label = { Text(stringResource(R.string.settings_tcp_ip)) },
+                        modifier = Modifier.weight(2f),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        isError = isIpError,
+                        supportingText = if (isIpError) {
+                            { Text(stringResource(R.string.settings_tcp_ip_error)) }
+                        } else null
+                    )
+                    OutlinedTextField(
+                        value = portInput,
+                        onValueChange = { newValue ->
+                            if (newValue.isEmpty()) {
+                                portInput = ""
+                                appViewModel.updateTcpConnection(ipInput, 0)
+                            } else if (newValue.all { it.isDigit() } && newValue.length <= 5) {
+                                portInput = newValue
+                                val newPort = newValue.toIntOrNull() ?: 0
+                                if (newPort <= 65535) {
+                                    appViewModel.updateTcpConnection(ipInput, newPort)
+                                }
+                            }
+                        },
+                        label = { Text(stringResource(R.string.settings_tcp_port)) },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        isError = isPortError,
+                        supportingText = if (isPortError) {
+                            { Text(stringResource(R.string.settings_tcp_port_error)) }
+                        } else null
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // ECG data ZIP archive — lets the user re-pick the source file.
+                // The picker takes a persistable read permission so the chosen
+                // file keeps working across reboots.
+                val context = LocalContext.current
+                val pickZipFile = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.OpenDocument()
+                ) { uri ->
+                    if (uri != null) {
+                        runCatching {
+                            context.contentResolver.takePersistableUriPermission(
+                                uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            )
+                        }
+                        appViewModel.setDataFolder(context, uri)
+                        onDismiss()
+                    }
+                }
+                Text(
+                    text = stringResource(R.string.data_source_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                OutlinedButton(onClick = { pickZipFile.launch(arrayOf("application/zip", "application/x-zip-compressed")) }) {
+                    Text(stringResource(R.string.data_source_change_folder))
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
 
             TextButton(
                 onClick = onDismiss,

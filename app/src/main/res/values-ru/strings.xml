@@ -10,7 +10,10 @@
 
     <!-- Settings dialog -->
     <string name="settings_title">Настройки</string>
-    <string name="settings_color_scheme">Цветовая схема монитора</string>
+    <string name="settings_color_scheme">Тема приложения</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Темная</string>
+    <string name="settings_grid_scheme">Сетка монитора</string>
     <string name="settings_language">Язык</string>
     <string name="settings_tcp_title">TCP соединение</string>
     <string name="settings_tcp_ip">IP-адрес</string>

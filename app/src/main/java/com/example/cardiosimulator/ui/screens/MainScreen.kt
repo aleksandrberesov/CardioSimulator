@@ -32,7 +32,14 @@ fun MainScreen(viewModel: AppViewModel){
     val isDataConfirmed by viewModel.isDataConfirmed.collectAsState()
 
     var showSettings by remember { mutableStateOf(false) }
-    val monitorViewModel: MonitorViewModel = viewModel()
+    val monitorViewModel: MonitorViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return MonitorViewModel(prefs = viewModel.prefs) as T
+            }
+        }
+    )
 
     // If the user has not yet picked a data archive, or it's loading/erroring,
     // or they haven't confirmed the summary of the loaded data, show the picker.

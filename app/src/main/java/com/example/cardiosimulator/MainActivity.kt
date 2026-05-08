@@ -6,6 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -45,7 +47,8 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             )
-            CardioSimulatorTheme {
+            val isDarkTheme by viewModel.isDarkTheme.collectAsState()
+            CardioSimulatorTheme(darkTheme = isDarkTheme) {
                 MainScreen(
                     viewModel = viewModel
                 )
