@@ -58,10 +58,6 @@ fun AppControlPanel(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.main_logo),
-                contentDescription = "Company Logo"
-            )
             Row(
                 modifier = Modifier
                     .weight(1f)
@@ -70,7 +66,7 @@ fun AppControlPanel(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
-                    modifier = Modifier.weight(0.5f).fillMaxWidth()
+                    modifier = Modifier.weight(1.5f).fillMaxWidth()
                 ) {
                     Tab(
                         text = stringResource(selectedOperatingMode.id.titleRes),
@@ -108,6 +104,10 @@ fun AppControlPanel(
                 iconContentDescription = stringResource(R.string.cd_settings),
                 onClick = onSettingsClick,
                 borderWidth = 0.dp
+            )
+            Image(
+                painter = painterResource(id = R.drawable.main_logo),
+                contentDescription = "Company Logo"
             )
         }
     }
