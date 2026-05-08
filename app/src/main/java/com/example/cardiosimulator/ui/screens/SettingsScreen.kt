@@ -51,6 +51,8 @@ fun SettingsContent(
 ) {
     val monitorMode by monitorViewModel.monitorMode.collectAsState()
     val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
+    val tcpIp by appViewModel.tcpIp.collectAsState()
+    val tcpPort by appViewModel.tcpPort.collectAsState()
 
     Surface(
         shape = RoundedCornerShape(16.dp),
@@ -128,6 +130,37 @@ fun SettingsContent(
                         } else null
                     )
                 }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = stringResource(R.string.settings_tcp_title),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = tcpIp,
+                    onValueChange = { appViewModel.updateTcpConnection(it, tcpPort) },
+                    label = { Text(stringResource(R.string.settings_tcp_ip)) },
+                    modifier = Modifier.weight(2f),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = if (tcpPort == 0) "" else tcpPort.toString(),
+                    onValueChange = {
+                        val newPort = it.toIntOrNull() ?: 0
+                        appViewModel.updateTcpConnection(tcpIp, newPort)
+                    },
+                    label = { Text(stringResource(R.string.settings_tcp_port)) },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
