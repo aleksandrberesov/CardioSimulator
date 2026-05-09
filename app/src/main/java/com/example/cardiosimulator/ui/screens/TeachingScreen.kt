@@ -1,5 +1,6 @@
 package com.example.cardiosimulator.ui.screens
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.domain.SeriesScheme
 import com.example.cardiosimulator.ui.display.Monitor
+import com.example.cardiosimulator.ui.panels.MonitorControlPanel
 import com.example.cardiosimulator.ui.panels.RhythmChoosingPanel
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
@@ -42,13 +44,17 @@ fun TeachingScreen(viewModel: AppViewModel){
                 onRhythmSelect = { viewModel.selectRhythm(it.pathology) },
             )
         }
-        Box(
+        Column(
             modifier = Modifier.weight(4f).middleSectionCenter(),
-            contentAlignment = Alignment.Center
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Monitor(
+                modifier = Modifier.weight(1f),
                 monitorViewModel = monitorViewModel,
                 waveformsByLead = waveforms,
+            )
+            MonitorControlPanel(
+                viewModel = monitorViewModel,
                 onStartStopClick = { isRunning ->
                     if (isRunning) {
                         viewModel.sendStartCommand(selectedRhythm?.pathology)

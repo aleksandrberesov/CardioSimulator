@@ -1,22 +1,20 @@
 package com.example.cardiosimulator.ui.screens
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -34,110 +31,79 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.domain.AppBuilder
-import com.example.cardiosimulator.domain.EcgSeries
+import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
+import com.example.cardiosimulator.domain.SeriesScheme
+import com.example.cardiosimulator.ui.components.Tab
+import com.example.cardiosimulator.ui.display.Monitor
+import com.example.cardiosimulator.ui.panels.RhythmChoosingPanel
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
+import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 
 @Composable
-fun EditorScreen(viewModel: AppViewModel) {
-    val allSeries by viewModel.allSeries.collectAsState()
-    var selectedSeries by remember { mutableStateOf<EcgSeries?>(null) }
+fun EditorScreen(
+    viewModel: AppViewModel,
+    monitorViewModel: MonitorViewModel = viewModel()
+) {
+    val rhythms by viewModel.rhythms.collectAsState()
+    val selectedRhythm by viewModel.selectedRhythm.collectAsState()
+    val waveforms by viewModel.waveforms.collectAsState()
+    var selectedLead by remember { mutableStateOf(Lead.II) }
+    LaunchedEffect(Unit) {
+        monitorViewModel.setSeriesCount(1)
+        monitorViewModel.setSeriesScheme(SeriesScheme.OneColumn)
+    }
 
     Row(
         modifier = Modifier.fillMaxSize().systemBarsPadding()
     ) {
-        // Left Panel: Series List
         Box(
-            modifier = Modifier.weight(1.5f).middleSectionLeft(),
-        ) {
-            Column {
-                Text(
-                    text = stringResource(R.string.editor_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(8.dp)
-                )
-                HorizontalDivider()
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(allSeries) { series ->
-                        SeriesItem(
-                            series = series,
-                            isSelected = selectedSeries?.identy == series.identy,
-                            onClick = { selectedSeries = series }
-                        )
-                    }
-                }
-            }
-        }
-
-        // Center Panel: Series Details and Parts
-        Box(
-            modifier = Modifier.weight(3.5f).middleSectionCenter(),
+            modifier = Modifier.weight(1f).middleSectionLeft(),
             contentAlignment = Alignment.TopStart
         ) {
-            if (selectedSeries != null) {
-                SeriesDetailView(series = selectedSeries!!)
-            } else {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(stringResource(R.string.editor_select_hint))
-                }
-            }
+            RhythmChoosingPanel(
+                rhythms = rhythms,
+                selectedPathology = selectedRhythm?.pathology,
+                onRhythmSelect = { viewModel.selectRhythm(it.pathology) },
+            )
         }
-    }
-}
 
-@Composable
-fun SeriesItem(series: EcgSeries, isSelected: Boolean, onClick: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(8.dp)
-    ) {
-        Text(
-            text = series.displayName.ifBlank { series.title },
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Unspecified
-        )
-        Text(
-            text = stringResource(R.string.editor_id_label, series.identy),
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.Gray
-        )
-    }
-}
-
-@Composable
-fun SeriesDetailView(series: EcgSeries) {
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text(
-            text = stringResource(R.string.editor_details_title, series.title),
-            style = MaterialTheme.typography.headlineSmall
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(text = stringResource(R.string.editor_identity_label, series.identy))
-        Text(text = stringResource(R.string.editor_lead_label, series.lead ?: stringResource(R.string.editor_none)))
-        Text(text = stringResource(R.string.editor_pathology_label, series.pathology ?: stringResource(R.string.editor_none)))
-
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(text = stringResource(R.string.editor_parts_title), style = MaterialTheme.typography.titleMedium)
-        HorizontalDivider()
-        LazyColumn {
-            items(series.partRefs) { ref ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(text = ref.partIdenty)
-                    Text(
-                        text = stringResource(R.string.editor_offset_label, ref.offset),
-                        style = MaterialTheme.typography.bodySmall
+        Column(
+            modifier = Modifier.weight(4f).middleSectionCenter(),
+        ) {
+            // Selector for choosing Lead
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Lead.entries.forEach { lead ->
+                    Tab(
+                        text = lead.name,
+                        onClick = { selectedLead = lead },
+                        backgroundColor = if (selectedLead == lead)
+                            MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
+                        modifier = Modifier.width(64.dp)
                     )
                 }
             }
+            Monitor(
+                modifier = Modifier.fillMaxWidth().weight(5f),
+                monitorViewModel = monitorViewModel,
+                waveformsByLead = waveforms,
+            )
+            OutlinedTextField(
+                value = selectedRhythm?.fileName ?: "",
+                onValueChange = {},
+                label = { Text(stringResource(R.string.editor_file_content_label)) },
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                readOnly = true,
+                singleLine = true,
+            )
         }
     }
 }

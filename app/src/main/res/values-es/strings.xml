@@ -19,7 +19,7 @@
     <string name="settings_tcp_ip">Dirección IP</string>
     <string name="settings_tcp_ip_error">Formato de dirección IP no válido</string>
     <string name="settings_tcp_port">Puerto</string>
-    <string name="settings_tcp_port_error">El puerto debe estar entre 0-65535</string>
+    <string name="settings_tcp_port_error">El puerto debe estar entre 0\u201365535</string>
     <string name="settings_close">CERRAR</string>
 
     <string name="tcp_connect">Conectar</string>
@@ -101,4 +101,8 @@
     <string name="editor_none">Ninguna</string>
     <string name="editor_parts_title">Partes (Refs):</string>
     <string name="editor_offset_label">Desplazamiento: %1$d</string>
+    <string name="editor_rhythms_title">Ritmos</string>
+    <string name="editor_file_content_label">Contenido del archivo de la serie seleccionada</string>
+    <string name="editor_select_rhythm_hint">Seleccione un ritmo para inspeccionar</string>
+    <string name="editor_no_data_for_lead">Sin datos para la derivación %1$s</string>
 </resources>

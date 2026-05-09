@@ -19,7 +19,7 @@
     <string name="settings_tcp_ip">IP-адрес</string>
     <string name="settings_tcp_ip_error">Неверный формат IP-адреса</string>
     <string name="settings_tcp_port">Порт</string>
-    <string name="settings_tcp_port_error">Порт должен быть в диапазоне 0-65535</string>
+    <string name="settings_tcp_port_error">Порт должен быть в диапазоне 0\u201365535</string>
     <string name="settings_close">ЗАКРЫТЬ</string>
 
     <string name="tcp_connect">Подключить</string>
@@ -101,4 +101,8 @@
     <string name="editor_none">Нет</string>
     <string name="editor_parts_title">Части (Refs):</string>
     <string name="editor_offset_label">Смещение: %1$d</string>
+    <string name="editor_rhythms_title">Ритмы</string>
+    <string name="editor_file_content_label">Содержимое файла выбранной серии</string>
+    <string name="editor_select_rhythm_hint">Выберите ритм для просмотра</string>
+    <string name="editor_no_data_for_lead">Нет данных для отведения %1$s</string>
 </resources>

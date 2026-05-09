@@ -36,7 +36,7 @@ class MainActivity : AppCompatActivity() {
                     @Suppress("UNCHECKED_CAST")
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         return AppViewModel(
-                            appState = appBuilder.build(initialMode = OperatingMode.Teaching),
+                            appState = appBuilder.build(initialMode = OperatingMode.Editor),
                             // Repository starts pointed at assets as a harmless default;
                             // it gets re-pointed at a SAF folder once the user picks one
                             // (or immediately on launch if a folder was previously picked).

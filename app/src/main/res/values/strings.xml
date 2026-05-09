@@ -19,7 +19,7 @@
     <string name="settings_tcp_ip">IP Address</string>
     <string name="settings_tcp_ip_error">Invalid IP Address format</string>
     <string name="settings_tcp_port">Port</string>
-    <string name="settings_tcp_port_error">Port must be 0-65535</string>
+    <string name="settings_tcp_port_error">Port must be 0\u201365535</string>
     <string name="settings_close">CLOSE</string>
 
     <string name="tcp_connect">Connect</string>
@@ -101,4 +101,8 @@
     <string name="editor_none">None</string>
     <string name="editor_parts_title">Parts (Refs):</string>
     <string name="editor_offset_label">Offset: %1$d</string>
+    <string name="editor_rhythms_title">Rhythms</string>
+    <string name="editor_file_content_label">Selected Series File Content</string>
+    <string name="editor_select_rhythm_hint">Select a rhythm to inspect</string>
+    <string name="editor_no_data_for_lead">No data for lead %1$s</string>
 </resources>

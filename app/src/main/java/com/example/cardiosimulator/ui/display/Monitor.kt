@@ -31,7 +31,6 @@ import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.GridScheme
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.SeriesScheme
-import com.example.cardiosimulator.ui.panels.MonitorControlPanel
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import kotlin.math.ceil
@@ -48,7 +47,6 @@ fun Monitor(
     monitorViewModel: MonitorViewModel = viewModel(),
     waveformsByLead: Map<Lead, Points>? = null,
     points: Points = Points(emptyList()),
-    onStartStopClick: (Boolean) -> Unit = {},
 ){
     val mode by monitorViewModel.monitorMode.collectAsState()
 
@@ -85,82 +83,70 @@ fun Monitor(
         )
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxSize()
-                .weight(10f)
-                .clipToBounds()
-        ) {
-            val containerWidth = constraints.maxWidth.toFloat()
-            val containerHeight = constraints.maxHeight.toFloat()
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .then(modifier)
+            .clipToBounds()
+    ) {
+        val containerWidth = constraints.maxWidth.toFloat()
+        val containerHeight = constraints.maxHeight.toFloat()
 
-            val state = rememberTransformableState { zoomChange, offsetChange, _ ->
-                val newScale = (scale * zoomChange).coerceIn(1f, 5f)
-                if (newScale != scale) {
-                    scale = newScale
-                    monitorViewModel.setScale(newScale)
-                }
-
-                val maxX = (containerWidth * (scale - 1)) / 2
-                val maxY = (containerHeight * (scale - 1)) / 2
-
-                val newOffset = offset + offsetChange
-                offset = Offset(
-                    x = newOffset.x.coerceIn(-maxX, maxX),
-                    y = newOffset.y.coerceIn(-maxY, maxY)
-                )
+        val state = rememberTransformableState { zoomChange, offsetChange, _ ->
+            val newScale = (scale * zoomChange).coerceIn(1f, 5f)
+            if (newScale != scale) {
+                scale = newScale
+                monitorViewModel.setScale(newScale)
             }
 
-            CompositionLocalProvider(LocalPixelScale provides pixelScale) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .transformable(state = state)
-                        .graphicsLayer(
-                            scaleX = scale,
-                            scaleY = scale,
-                            translationX = offset.x,
-                            translationY = offset.y
-                        )
-                        .ekgGrid(mode.gridScheme)
-                ) {
-                    repeat(rows) { rowIndex ->
-                        Row(modifier = Modifier.weight(1f)) {
-                            repeat(columns) { colIndex ->
-                                val itemIndex = colIndex * rows + rowIndex
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxHeight(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (itemIndex < mode.count) {
-                                        val lead = LEAD_ORDER.getOrNull(itemIndex)
-                                        val leadPoints = lead?.let { waveformsByLead?.get(it) }
-                                            ?.takeIf { it.values.size >= 2 }
-                                            ?: points
-                                        Series(
-                                            points = leadPoints,
-                                            modifier = modifier,
-                                            title = lead?.name ?: (itemIndex + 1).toString(),
-                                        )
-                                    }
+            val maxX = (containerWidth * (scale - 1)) / 2
+            val maxY = (containerHeight * (scale - 1)) / 2
+
+            val newOffset = offset + offsetChange
+            offset = Offset(
+                x = newOffset.x.coerceIn(-maxX, maxX),
+                y = newOffset.y.coerceIn(-maxY, maxY)
+            )
+        }
+
+        CompositionLocalProvider(LocalPixelScale provides pixelScale) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .transformable(state = state)
+                    .graphicsLayer(
+                        scaleX = scale,
+                        scaleY = scale,
+                        translationX = offset.x,
+                        translationY = offset.y
+                    )
+                    .ekgGrid(mode.gridScheme)
+            ) {
+                repeat(rows) { rowIndex ->
+                    Row(modifier = Modifier.weight(1f)) {
+                        repeat(columns) { colIndex ->
+                            val itemIndex = colIndex * rows + rowIndex
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (itemIndex < mode.count) {
+                                    val lead = LEAD_ORDER.getOrNull(itemIndex)
+                                    val leadPoints = lead?.let { waveformsByLead?.get(it) }
+                                        ?.takeIf { it.values.size >= 2 }
+                                        ?: points
+                                    Series(
+                                        points = leadPoints,
+                                        title = lead?.name ?: (itemIndex + 1).toString(),
+                                    )
                                 }
                             }
                         }
                     }
                 }
             }
-        }
-        Box(
-            modifier = Modifier.weight(1.0f),
-            contentAlignment = Alignment.Center
-        ) {
-            MonitorControlPanel(
-                viewModel = monitorViewModel,
-                onStartStopClick = onStartStopClick
-            )
         }
     }
 }
