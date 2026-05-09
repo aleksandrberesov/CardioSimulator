@@ -326,12 +326,28 @@ class AppViewModel(
         return name
     }
 
-    fun sendStartCommand() {
+    fun sendStartCommand(pathology: String? = null) {
         val socket = tcpSocket ?: return
         if (_tcpConnectionState.value !is TcpConnectionState.Connected) return
+        
+        val pName = pathology ?: _selectedRhythm.value?.pathology
+
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val msg = TcpMessage.StartCommand(id = java.util.UUID.randomUUID().toString())
+                val paramsMap = mutableMapOf<String, String>()
+                if (pName != null) {
+                    paramsMap["pathology"] = pName
+                }
+                // Also include the display title if we have it
+                _selectedRhythm.value?.displayTitle?.let { 
+                    paramsMap["name"] = it 
+                }
+
+                val msg = TcpMessage.StartCommand(
+                    id = java.util.UUID.randomUUID().toString(),
+                    sampleRate = null,
+                    params = paramsMap
+                )
                 val header = TcpProtocol.encode(msg) + "\n"
                 socket.getOutputStream().write(header.toByteArray(Charsets.UTF_8))
                 socket.getOutputStream().flush()

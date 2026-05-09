@@ -28,8 +28,16 @@ object TcpProtocol {
         message.id?.let { obj.put(KEY_ID, it) }
         when (message) {
             is TcpMessage.StartCommand -> {
-                message.sampleRate?.let { obj.put(KEY_SAMPLE_RATE, it) }
-                if (message.params.isNotEmpty()) obj.put(KEY_PARAMS, JSONObject(message.params))
+                if (message.sampleRate != null) {
+                    obj.put(KEY_SAMPLE_RATE, message.sampleRate)
+                }
+                if (message.params.isNotEmpty()) {
+                    val paramsObj = JSONObject()
+                    message.params.forEach { (k, v) ->
+                        paramsObj.put(k, v)
+                    }
+                    obj.put(KEY_PARAMS, paramsObj)
+                }
             }
             is TcpMessage.StopCommand -> Unit
             is TcpMessage.PointsMessage -> {

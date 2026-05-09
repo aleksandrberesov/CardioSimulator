@@ -51,7 +51,7 @@ fun TeachingScreen(viewModel: AppViewModel){
                 waveformsByLead = waveforms,
                 onStartStopClick = { isRunning ->
                     if (isRunning) {
-                        viewModel.sendStartCommand()
+                        viewModel.sendStartCommand(selectedRhythm?.pathology)
                     } else {
                         viewModel.sendStopCommand()
                     }
