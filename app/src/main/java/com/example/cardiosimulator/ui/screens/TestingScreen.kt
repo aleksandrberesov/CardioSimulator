@@ -7,6 +7,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.example.cardiosimulator.data.Points
+import com.example.cardiosimulator.ui.display.LeadSeriesGrid
+import com.example.cardiosimulator.ui.display.Series
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -32,10 +37,22 @@ fun TestingScreen(viewModel: AppViewModel){
             modifier = Modifier.weight(4f).middleSectionLeft(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            val mode by monitorViewModel.monitorMode.collectAsState()
             Monitor(
                 modifier = Modifier.weight(1f),
                 monitorViewModel = monitorViewModel,
-            )
+            ) { rows, columns ->
+                LeadSeriesGrid(
+                    rows = rows,
+                    columns = columns,
+                    itemCount = mode.count
+                ) { _, lead ->
+                    Series(
+                        points = Points(emptyList<Float>()),
+                        title = lead?.name ?: ""
+                    )
+                }
+            }
             MonitorControlPanel(
                 viewModel = monitorViewModel,
                 onStartStopClick = { isRunning ->

@@ -9,6 +9,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.example.cardiosimulator.data.Points
+import com.example.cardiosimulator.ui.display.LeadSeriesGrid
+import com.example.cardiosimulator.ui.display.Series
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -48,11 +51,25 @@ fun TeachingScreen(viewModel: AppViewModel){
             modifier = Modifier.weight(4f).middleSectionCenter(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            val mode by monitorViewModel.monitorMode.collectAsState()
             Monitor(
                 modifier = Modifier.weight(1f),
                 monitorViewModel = monitorViewModel,
-                waveformsByLead = waveforms,
-            )
+            ) { rows, columns ->
+                LeadSeriesGrid(
+                    rows = rows,
+                    columns = columns,
+                    itemCount = mode.count,
+                ) { _, lead ->
+                    val leadPoints = lead?.let { waveforms[it] }
+                        ?.takeIf { it.values.size >= 2 }
+                        ?: Points(emptyList<Float>())
+                    Series(
+                        points = leadPoints,
+                        title = lead?.name ?: ""
+                    )
+                }
+            }
             MonitorControlPanel(
                 viewModel = monitorViewModel,
                 onStartStopClick = { isRunning ->

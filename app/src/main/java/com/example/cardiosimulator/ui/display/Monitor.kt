@@ -2,11 +2,9 @@ package com.example.cardiosimulator.ui.display
 
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -17,7 +15,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
@@ -29,25 +26,16 @@ import com.example.cardiosimulator.data.LocalPixelScale
 import com.example.cardiosimulator.data.PixelScale
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.GridScheme
-import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.SeriesScheme
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import kotlin.math.ceil
 
-private val LEAD_ORDER = listOf(
-    Lead.I, Lead.II, Lead.III,
-    Lead.aVR, Lead.aVL, Lead.aVF,
-    Lead.V1, Lead.V2, Lead.V3, Lead.V4, Lead.V5, Lead.V6,
-)
-
 @Composable
 fun Monitor(
     modifier: Modifier = Modifier,
     monitorViewModel: MonitorViewModel = viewModel(),
-    waveformsByLead: Map<Lead, Points>? = null,
-    points: Points = Points(emptyList()),
-    leadOrder: List<Lead> = LEAD_ORDER,
+    content: @Composable ColumnScope.(rows: Int, columns: Int) -> Unit
 ){
     val mode by monitorViewModel.monitorMode.collectAsState()
 
@@ -123,30 +111,7 @@ fun Monitor(
                     )
                     .ekgGrid(mode.gridScheme)
             ) {
-                repeat(rows) { rowIndex ->
-                    Row(modifier = Modifier.weight(1f)) {
-                        repeat(columns) { colIndex ->
-                            val itemIndex = colIndex * rows + rowIndex
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (itemIndex < mode.count) {
-                                    val lead = leadOrder.getOrNull(itemIndex)
-                                    val leadPoints = lead?.let { waveformsByLead?.get(it) }
-                                        ?.takeIf { it.values.size >= 2 }
-                                        ?: points
-                                    Series(
-                                        points = leadPoints,
-                                        title = lead?.name ?: (itemIndex + 1).toString(),
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
+                content(rows, columns)
             }
         }
     }
@@ -163,11 +128,22 @@ fun MonitorOneColumn12Preview() {
     vm.setSeriesCount(12)
     vm.setSeriesScheme(SeriesScheme.OneColumn)
     vm.setGridScheme(GridScheme.Pink)
+    val mode by vm.monitorMode.collectAsState()
     CardioSimulatorTheme {
         Monitor(
-            points = samplePoints,
             monitorViewModel = vm
-        )
+        ) { rows, columns ->
+            LeadSeriesGrid(
+                rows = rows,
+                columns = columns,
+                itemCount = mode.count,
+            ) { _, lead ->
+                Series(
+                    points = samplePoints,
+                    title = lead?.name ?: ""
+                )
+            }
+        }
     }
 }
 
@@ -182,11 +158,22 @@ fun MonitorTwoColumn12Preview() {
     vm.setSeriesCount(12)
     vm.setSeriesScheme(SeriesScheme.TwoColumn)
     vm.setGridScheme(GridScheme.BlueGray)
+    val mode by vm.monitorMode.collectAsState()
     CardioSimulatorTheme {
         Monitor(
-            points = samplePoints,
             monitorViewModel = vm
-        )
+        ) { rows, columns ->
+            LeadSeriesGrid(
+                rows = rows,
+                columns = columns,
+                itemCount = mode.count,
+            ) { _, lead ->
+                Series(
+                    points = samplePoints,
+                    title = lead?.name ?: ""
+                )
+            }
+        }
     }
 }
 
@@ -201,10 +188,21 @@ fun MonitorGrid12Preview() {
     vm.setSeriesCount(6)
     vm.setSeriesScheme(SeriesScheme.Grid)
     vm.setGridScheme(GridScheme.Pink)
+    val mode by vm.monitorMode.collectAsState()
     CardioSimulatorTheme {
         Monitor(
-            points = samplePoints,
             monitorViewModel = vm
-        )
+        ) { rows, columns ->
+            LeadSeriesGrid(
+                rows = rows,
+                columns = columns,
+                itemCount = mode.count,
+            ) { _, lead ->
+                Series(
+                    points = samplePoints,
+                    title = lead?.name ?: ""
+                )
+            }
+        }
     }
 }

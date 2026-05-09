@@ -386,6 +386,12 @@ class AppViewModel(
         }
     }
 
+    fun updateWaveform(lead: Lead, points: Points) {
+        val current = _waveforms.value.toMutableMap()
+        current[lead] = points
+        _waveforms.value = current
+    }
+
     /**
      * Called by [com.example.cardiosimulator.ui.screens.DataSourceScreen]
      * after the user picks a folder via SAF. Persists the URI, swaps the

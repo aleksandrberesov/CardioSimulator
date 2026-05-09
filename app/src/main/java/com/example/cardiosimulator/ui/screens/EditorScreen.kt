@@ -30,12 +30,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.R
+import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.domain.SeriesScheme
 import com.example.cardiosimulator.ui.components.Tab
+import com.example.cardiosimulator.ui.display.EditableSerie
+import com.example.cardiosimulator.ui.display.LeadSeriesGrid
 import com.example.cardiosimulator.ui.display.Monitor
 import com.example.cardiosimulator.ui.panels.RhythmChoosingPanel
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
@@ -50,9 +53,10 @@ fun EditorScreen(
     val rhythms by viewModel.rhythms.collectAsState()
     val selectedRhythm by viewModel.selectedRhythm.collectAsState()
     val waveforms by viewModel.waveforms.collectAsState()
-    var selectedLead by remember { mutableStateOf(Lead.II) }
-    LaunchedEffect(Unit) {
-        monitorViewModel.setSeriesCount(1)
+    var selectedLeads by remember { mutableStateOf(setOf(Lead.II)) }
+
+    LaunchedEffect(selectedLeads) {
+        monitorViewModel.setSeriesCount(selectedLeads.size)
         monitorViewModel.setSeriesScheme(SeriesScheme.OneColumn)
     }
 
@@ -73,7 +77,7 @@ fun EditorScreen(
         Column(
             modifier = Modifier.weight(4f).middleSectionCenter(),
         ) {
-            // Selector for choosing Lead
+            // Selector for choosing Leads
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -82,21 +86,44 @@ fun EditorScreen(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Lead.entries.forEach { lead ->
+                    val isSelected = lead in selectedLeads
                     Tab(
                         text = lead.name,
-                        onClick = { selectedLead = lead },
-                        backgroundColor = if (selectedLead == lead)
+                        onClick = {
+                            selectedLeads = if (isSelected) {
+                                if (selectedLeads.size > 1) selectedLeads - lead else selectedLeads
+                            } else {
+                                selectedLeads + lead
+                            }
+                        },
+                        backgroundColor = if (isSelected)
                             MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
                         modifier = Modifier.width(64.dp)
                     )
                 }
             }
+            val mode by monitorViewModel.monitorMode.collectAsState()
             Monitor(
                 modifier = Modifier.fillMaxWidth().weight(5f),
                 monitorViewModel = monitorViewModel,
-                waveformsByLead = waveforms,
-                leadOrder = listOf(selectedLead)
-            )
+            ) { rows, columns ->
+                LeadSeriesGrid(
+                    rows = rows,
+                    columns = columns,
+                    itemCount = selectedLeads.size,
+                    leadOrder = selectedLeads.toList()
+                ) { _, lead ->
+                    if (lead != null) {
+                        val points = waveforms[lead] ?: Points(emptyList<Float>())
+                        EditableSerie(
+                            points = points,
+                            onPointsChange = { viewModel.updateWaveform(lead, it) },
+                            title = lead.name,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
+            }
             OutlinedTextField(
                 value = selectedRhythm?.fileName ?: "",
                 onValueChange = {},
