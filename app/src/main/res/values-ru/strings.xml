@@ -85,6 +85,8 @@
 
     <!-- Content descriptions -->
     <string name="cd_settings">Настройки</string>
+    <string name="cd_start">Старт</string>
+    <string name="cd_stop">Стоп</string>
     <string name="cd_pause">Пауза</string>
     <string name="cd_ruler">Линейка</string>
 

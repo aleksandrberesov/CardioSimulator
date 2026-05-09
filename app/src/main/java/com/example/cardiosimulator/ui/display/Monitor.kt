@@ -48,6 +48,7 @@ fun Monitor(
     monitorViewModel: MonitorViewModel = viewModel(),
     waveformsByLead: Map<Lead, Points>? = null,
     points: Points = Points(emptyList()),
+    onStartStopClick: (Boolean) -> Unit = {},
 ){
     val mode by monitorViewModel.monitorMode.collectAsState()
 
@@ -158,6 +159,7 @@ fun Monitor(
         ) {
             MonitorControlPanel(
                 viewModel = monitorViewModel,
+                onStartStopClick = onStartStopClick
             )
         }
     }

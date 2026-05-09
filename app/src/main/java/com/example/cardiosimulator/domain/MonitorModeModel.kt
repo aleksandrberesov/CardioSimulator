@@ -23,4 +23,5 @@ data class MonitorModeModel(
     val scale: Float = 1f,
     val displayScale: Float = 0.4f,
     val calibration: EcgCalibration = EcgCalibration(),
+    val isRunning: Boolean = false,
 )

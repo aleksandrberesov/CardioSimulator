@@ -80,9 +80,13 @@
     <string name="data_source_pathologies_title">已加载病理 (%1$d)</string>
     <string name="data_source_leads_format">导联: %1$d%2$s</string>
     <string name="data_source_close">关闭</string>
+    <string name="data_source_uploading">正在上传到远程服务器\u2026</string>
+    <string name="data_source_upload_success">成功上传到服务器</string>
 
     <!-- Content descriptions -->
     <string name="cd_settings">设置</string>
+    <string name="cd_start">开始</string>
+    <string name="cd_stop">停止</string>
     <string name="cd_pause">暂停</string>
     <string name="cd_ruler">标尺</string>
 

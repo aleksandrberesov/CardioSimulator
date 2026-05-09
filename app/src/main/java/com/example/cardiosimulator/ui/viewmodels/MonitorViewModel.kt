@@ -61,4 +61,8 @@ class MonitorViewModel(private val prefs: DataSourcePrefs? = null) : ViewModel()
     fun setDisplayScale(displayScale: Float) {
         _monitorMode.update { it.copy(displayScale = displayScale) }
     }
+
+    fun setIsRunning(isRunning: Boolean) {
+        _monitorMode.update { it.copy(isRunning = isRunning) }
+    }
 }

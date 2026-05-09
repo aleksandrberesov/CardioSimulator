@@ -49,6 +49,13 @@ fun TeachingScreen(viewModel: AppViewModel){
             Monitor(
                 monitorViewModel = monitorViewModel,
                 waveformsByLead = waveforms,
+                onStartStopClick = { isRunning ->
+                    if (isRunning) {
+                        viewModel.sendStartCommand()
+                    } else {
+                        viewModel.sendStopCommand()
+                    }
+                }
             )
         }
     }

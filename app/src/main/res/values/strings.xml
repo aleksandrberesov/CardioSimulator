@@ -85,6 +85,8 @@
 
     <!-- Content descriptions -->
     <string name="cd_settings">Settings</string>
+    <string name="cd_start">Start</string>
+    <string name="cd_stop">Stop</string>
     <string name="cd_pause">Pause</string>
     <string name="cd_ruler">Ruler</string>
 

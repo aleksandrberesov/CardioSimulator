@@ -31,7 +31,14 @@ fun TestingScreen(viewModel: AppViewModel){
             contentAlignment = Alignment.TopStart
         ) {
             Monitor(
-                monitorViewModel = monitorViewModel
+                monitorViewModel = monitorViewModel,
+                onStartStopClick = { isRunning ->
+                    if (isRunning) {
+                        viewModel.sendStartCommand()
+                    } else {
+                        viewModel.sendStopCommand()
+                    }
+                }
             )
         }
         Box(

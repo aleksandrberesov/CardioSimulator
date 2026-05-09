@@ -10,7 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.DropdownMenu
@@ -44,7 +45,7 @@ fun MonitorControlPanel(
     modifier: Modifier = Modifier,
     onTipsClick: () -> Unit = {},
     onRulerClick: () -> Unit = {},
-    onPauseClick: () -> Unit = {},
+    onStartStopClick: (Boolean) -> Unit = {},
 ) {
     val monitorMode by viewModel.monitorMode.collectAsState()
 
@@ -222,9 +223,13 @@ fun MonitorControlPanel(
             modifier = Modifier.weight(0.8f)
         )
         Tab(
-            icon = Icons.Default.Pause,
-            iconContentDescription = stringResource(R.string.cd_pause),
-            onClick = onPauseClick,
+            icon = if (monitorMode.isRunning) Icons.Default.Stop else Icons.Default.PlayArrow,
+            iconContentDescription = if (monitorMode.isRunning) stringResource(R.string.cd_stop) else stringResource(R.string.cd_start),
+            onClick = {
+                val newState = !monitorMode.isRunning
+                viewModel.setIsRunning(newState)
+                onStartStopClick(newState)
+            },
             modifier = Modifier.weight(0.8f)
         )
     }

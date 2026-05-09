@@ -80,9 +80,13 @@
     <string name="data_source_pathologies_title">Patologías Cargadas (%1$d)</string>
     <string name="data_source_leads_format">Derivaciones: %1$d%2$s</string>
     <string name="data_source_close">Cerrar</string>
+    <string name="data_source_uploading">Subiendo al servidor remoto\u2026</string>
+    <string name="data_source_upload_success">Subido con éxito al servidor</string>
 
     <!-- Content descriptions -->
     <string name="cd_settings">Ajustes</string>
+    <string name="cd_start">Iniciar</string>
+    <string name="cd_stop">Detener</string>
     <string name="cd_pause">Pausar</string>
     <string name="cd_ruler">Regla</string>
 

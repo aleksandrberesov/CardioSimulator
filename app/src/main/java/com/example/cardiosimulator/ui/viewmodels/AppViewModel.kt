@@ -326,6 +326,36 @@ class AppViewModel(
         return name
     }
 
+    fun sendStartCommand() {
+        val socket = tcpSocket ?: return
+        if (_tcpConnectionState.value !is TcpConnectionState.Connected) return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val msg = TcpMessage.StartCommand(id = java.util.UUID.randomUUID().toString())
+                val header = TcpProtocol.encode(msg) + "\n"
+                socket.getOutputStream().write(header.toByteArray(Charsets.UTF_8))
+                socket.getOutputStream().flush()
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
+
+    fun sendStopCommand() {
+        val socket = tcpSocket ?: return
+        if (_tcpConnectionState.value !is TcpConnectionState.Connected) return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val msg = TcpMessage.StopCommand(id = java.util.UUID.randomUUID().toString())
+                val header = TcpProtocol.encode(msg) + "\n"
+                socket.getOutputStream().write(header.toByteArray(Charsets.UTF_8))
+                socket.getOutputStream().flush()
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
+
     fun selectRhythm(pathology: String) {
         val group = _rhythms.value.firstOrNull { it.pathology == pathology } ?: return
         _selectedRhythm.value = group
