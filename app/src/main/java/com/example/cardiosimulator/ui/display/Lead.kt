@@ -28,14 +28,14 @@ import com.example.cardiosimulator.ui.components.ChartCanvas
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 
 @Composable
-fun Series(
+fun Lead(
     points: Points,
     modifier: Modifier = Modifier,
     title: String = "",
 ){
     val scale = LocalPixelScale.current
     Row(
-        modifier = Modifier.seriesArea(),
+        modifier = Modifier.leadArea(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Calibration Symbol and Lead Name
@@ -94,7 +94,7 @@ fun Series(
 
 @Preview(showBackground = true, widthDp = 600, heightDp = 150)
 @Composable
-fun SeriesPreview() {
+fun LeadPreview() {
     val samplePoints = Points(listOf(
         0f, 0.1f, 0.2f, 0.5f, 1f, 0.5f, 0.2f, 0.1f, 0f,
         -0.1f, -0.2f, -0.5f, -1f, -0.5f, -0.2f, -0.1f, 0f
@@ -108,7 +108,7 @@ fun SeriesPreview() {
     CardioSimulatorTheme {
         CompositionLocalProvider(LocalPixelScale provides previewScale) {
             Box(modifier = Modifier.ekgGrid()) {
-                Series(
+                Lead(
                     points = samplePoints,
                     title = "I",
                     modifier = Modifier.padding(vertical = 8.dp)

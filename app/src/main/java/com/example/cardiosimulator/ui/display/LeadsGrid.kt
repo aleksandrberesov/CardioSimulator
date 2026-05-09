@@ -17,7 +17,7 @@ internal val LEAD_ORDER = listOf(
 )
 
 @Composable
-fun ColumnScope.LeadSeriesGrid(
+fun ColumnScope.LeadsGrid(
     rows: Int,
     columns: Int,
     itemCount: Int,

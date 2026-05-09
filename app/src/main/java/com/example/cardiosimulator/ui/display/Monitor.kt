@@ -133,12 +133,12 @@ fun MonitorOneColumn12Preview() {
         Monitor(
             monitorViewModel = vm
         ) { rows, columns ->
-            LeadSeriesGrid(
+            LeadsGrid(
                 rows = rows,
                 columns = columns,
                 itemCount = mode.count,
             ) { _, lead ->
-                Series(
+                Lead(
                     points = samplePoints,
                     title = lead?.name ?: ""
                 )
@@ -163,12 +163,12 @@ fun MonitorTwoColumn12Preview() {
         Monitor(
             monitorViewModel = vm
         ) { rows, columns ->
-            LeadSeriesGrid(
+            LeadsGrid(
                 rows = rows,
                 columns = columns,
                 itemCount = mode.count,
             ) { _, lead ->
-                Series(
+                Lead(
                     points = samplePoints,
                     title = lead?.name ?: ""
                 )
@@ -193,12 +193,12 @@ fun MonitorGrid12Preview() {
         Monitor(
             monitorViewModel = vm
         ) { rows, columns ->
-            LeadSeriesGrid(
+            LeadsGrid(
                 rows = rows,
                 columns = columns,
                 itemCount = mode.count,
             ) { _, lead ->
-                Series(
+                Lead(
                     points = samplePoints,
                     title = lead?.name ?: ""
                 )

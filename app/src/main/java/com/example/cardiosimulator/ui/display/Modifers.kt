@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.data.LocalPixelScale
 import com.example.cardiosimulator.domain.GridScheme
 
-fun Modifier.seriesArea(): Modifier {
+fun Modifier.leadArea(): Modifier {
     return this
         .fillMaxWidth(1f)
         .fillMaxHeight(1f)

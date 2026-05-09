@@ -10,8 +10,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.example.cardiosimulator.data.Points
-import com.example.cardiosimulator.ui.display.LeadSeriesGrid
-import com.example.cardiosimulator.ui.display.Series
+import com.example.cardiosimulator.ui.display.LeadsGrid
+import com.example.cardiosimulator.ui.display.Lead
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -56,7 +56,7 @@ fun TeachingScreen(viewModel: AppViewModel){
                 modifier = Modifier.weight(1f),
                 monitorViewModel = monitorViewModel,
             ) { rows, columns ->
-                LeadSeriesGrid(
+                LeadsGrid(
                     rows = rows,
                     columns = columns,
                     itemCount = mode.count,
@@ -64,7 +64,7 @@ fun TeachingScreen(viewModel: AppViewModel){
                     val leadPoints = lead?.let { waveforms[it] }
                         ?.takeIf { it.values.size >= 2 }
                         ?: Points(emptyList<Float>())
-                    Series(
+                    Lead(
                         points = leadPoints,
                         title = lead?.name ?: ""
                     )

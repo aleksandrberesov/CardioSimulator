@@ -37,8 +37,8 @@ import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.domain.SeriesScheme
 import com.example.cardiosimulator.ui.components.Tab
-import com.example.cardiosimulator.ui.display.EditableSerie
-import com.example.cardiosimulator.ui.display.LeadSeriesGrid
+import com.example.cardiosimulator.ui.display.EditableLead
+import com.example.cardiosimulator.ui.display.LeadsGrid
 import com.example.cardiosimulator.ui.display.Monitor
 import com.example.cardiosimulator.ui.panels.RhythmChoosingPanel
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
@@ -107,7 +107,7 @@ fun EditorScreen(
                 modifier = Modifier.fillMaxWidth().weight(5f),
                 monitorViewModel = monitorViewModel,
             ) { rows, columns ->
-                LeadSeriesGrid(
+                LeadsGrid(
                     rows = rows,
                     columns = columns,
                     itemCount = selectedLeads.size,
@@ -115,7 +115,7 @@ fun EditorScreen(
                 ) { _, lead ->
                     if (lead != null) {
                         val points = waveforms[lead] ?: Points(emptyList<Float>())
-                        EditableSerie(
+                        EditableLead(
                             points = points,
                             onPointsChange = { viewModel.updateWaveform(lead, it) },
                             title = lead.name,
@@ -124,14 +124,11 @@ fun EditorScreen(
                     }
                 }
             }
-            OutlinedTextField(
-                value = selectedRhythm?.fileName ?: "",
-                onValueChange = {},
-                label = { Text(stringResource(R.string.editor_file_content_label)) },
+            Box(
                 modifier = Modifier.fillMaxWidth().weight(1f),
-                readOnly = true,
-                singleLine = true,
-            )
+            ){
+                
+            }
         }
     }
 }
