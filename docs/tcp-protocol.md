@@ -24,10 +24,10 @@ waveform samples over a TCP connection.
 
 Every message is a JSON object with at minimum a `type` field.
 
-| Field  | Type   | Required | Description                                                                   |
-|--------|--------|----------|-------------------------------------------------------------------------------|
-| `type` | string | yes      | Discriminator. One of `start`, `stop`, `points`. Unknown values are rejected. |
-| `id`   | string | no       | Optional correlation identifier chosen by the sender. Echoed back as-is.      |
+| Field  | Type   | Required | Description                                                                                    |
+|--------|--------|----------|------------------------------------------------------------------------------------------------|
+| `type` | string | yes      | Discriminator. One of `start`, `stop`, `points`, `upload`, `ack`. Unknown values are rejected. |
+| `id`   | string | no       | Optional correlation identifier chosen by the sender. Echoed back as-is.                       |
 
 Senders **MUST** omit optional fields rather than send `null` when they have
 no value. The reference decoder treats missing and JSON `null` identically,
@@ -114,7 +114,52 @@ error.
 
 ---
 
+## Message: `upload`
+
+Transfers a binary file (e.g. a ZIP archive) from the client to the server.
+This message uses **mixed framing**: the JSON header is sent as a normal
+newline-terminated line, and the raw binary payload follows immediately with
+no separator. See [Binary payload framing](#binary-payload-framing).
+
+| Field      | Type    | Required | Description                                                    |
+|------------|---------|----------|----------------------------------------------------------------|
+| `type`     | string  | yes      | Must be `"upload"`.                                            |
+| `id`       | string  | no       | See envelope. Echoed in the `ack` response.                    |
+| `filename` | string  | yes      | Suggested filename. Path separators and unsafe characters are sanitized by the receiver. |
+| `size`     | integer | yes      | Exact byte length of the binary payload that follows the `\n`. |
+
+```json
+{"type":"upload","id":"u1","filename":"data.zip","size":204800}
+```
+
+Immediately after the terminating `\n`, the sender writes exactly `size`
+bytes of raw binary data. No newline or other delimiter follows the payload.
+
+After the payload is fully received and saved the server emits an `ack`.
+
+---
+
+## Message: `ack`
+
+Sent by the server after a successful `upload`. Not sent for other message
+types.
+
+| Field      | Type    | Required | Description                                                                      |
+|------------|---------|----------|----------------------------------------------------------------------------------|
+| `type`     | string  | yes      | Must be `"ack"`.                                                                 |
+| `id`       | string  | no       | Echoed from the corresponding `upload`, if one was provided.                     |
+| `filename` | string  | yes      | The filename under which the file was saved (may differ from the requested name if a collision was resolved). |
+| `bytes`    | integer | yes      | Number of bytes written to disk. Equals the `upload.size` on success.           |
+
+```json
+{"type":"ack","id":"u1","filename":"data.zip","bytes":204800}
+```
+
+---
+
 ## Framing
+
+### JSON frames
 
 - One JSON object per line. The line terminator is `\n`.
 - Blank lines and lines containing only whitespace are skipped by the decoder.
@@ -130,20 +175,43 @@ Example stream (three valid frames separated by a blank line):
 {"type":"stop"}
 ```
 
+### Binary payload framing
+
+The `upload` message uses mixed framing:
+
+```
+<JSON header line>\n<size raw bytes>
+```
+
+1. The sender writes the `upload` JSON object followed by `\n`.
+2. Immediately after (no gap, no extra delimiter) the sender writes exactly
+   `size` bytes of raw binary data.
+3. After the payload the connection returns to normal JSON-per-line framing —
+   the sender may issue further JSON messages on the same connection.
+
+The receiver switches to binary-read mode as soon as it parses the `upload`
+header. Any bytes buffered after the `\n` are treated as the start of the
+payload.
+
 ---
 
 ## Error handling
 
 The reference decoder rejects a frame and raises `TcpProtocolException` when:
 
-| Condition                                | Error message contains   |
-|------------------------------------------|--------------------------|
-| Frame is not valid JSON                  | `Invalid JSON`           |
-| Object has no `type` field               | `Missing required field` |
-| `type` value is not a known message type | `Unknown message type`   |
-| `points` message is missing `values`     | `Missing required field` |
+| Condition                                | Error message contains     |
+|------------------------------------------|----------------------------|
+| Frame is not valid JSON                  | `Invalid JSON`             |
+| Object has no `type` field               | `Missing required field`   |
+| `type` value is not a known message type | `Unknown message type`     |
+| `points` message is missing `values`     | `Missing required field`   |
 | `points.values` contains a non-number    | `Invalid number in values` |
-| `lead` token is not a known lead         | `Unknown lead`           |
+| `lead` token is not a known lead         | `Unknown lead`             |
+| `upload` missing `filename`              | `Missing required field`   |
+| `upload` missing `size`                  | `Missing required field`   |
+| `upload.filename` is empty or unsafe     | connection closed, no ack  |
+| `upload.size` exceeds server limit       | connection closed, no ack  |
+| Binary payload cut short (peer closed)   | connection closed, no ack  |
 
 The decoder is otherwise lenient: it ignores unknown fields, and treats
 missing optional fields and JSON `null` the same way.
@@ -167,7 +235,9 @@ diff frames meaningfully.
 
 ---
 
-## End-to-end example
+## End-to-end examples
+
+### ECG streaming session
 
 A controller drives a simulator through one short session:
 
@@ -177,6 +247,19 @@ A controller drives a simulator through one short session:
 ← {"type":"points","id":"req-1","lead":"I","identy":"abc","offset":3,"values":[0.3,0.4,0.5]}
 → {"type":"stop","id":"req-1"}
 ```
+
+### File upload
+
+A client uploads a ZIP file and receives confirmation:
+
+```
+→ {"type":"upload","id":"u1","filename":"patient-data.zip","size":204800}\n
+→ <204800 raw bytes>
+← {"type":"ack","id":"u1","filename":"patient-data.zip","bytes":204800}
+```
+
+If a file with the same name already exists the server saves under a
+disambiguated name (`patient-data_1.zip`, etc.) and reflects it in `ack.filename`.
 
 The `id` field is a sender-chosen string that the receiver echoes on related
 frames; it has no protocol-level meaning beyond correlation.

@@ -111,6 +111,9 @@ fun DataSourceScreen(
                 }
             }
             is DataState.Ready -> {
+                val isUploading by viewModel.isUploading.collectAsState()
+                val lastAck by viewModel.lastAck.collectAsState()
+
                 Text(
                     text = stringResource(
                         R.string.data_source_loaded_format,
@@ -118,6 +121,21 @@ fun DataSourceScreen(
                         state.partsCount,
                     )
                 )
+                if (isUploading) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.data_source_uploading),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                } else if (lastAck != null) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.data_source_upload_success),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
                 Spacer(Modifier.height(24.dp))
                 Button(
                     onClick = { viewModel.confirmData() },

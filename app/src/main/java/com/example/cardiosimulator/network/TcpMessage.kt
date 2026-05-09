@@ -32,4 +32,22 @@ sealed class TcpMessage {
         override val type: String get() = TYPE
         companion object { const val TYPE = "points" }
     }
+
+    data class UploadMessage(
+        override val id: String? = null,
+        val filename: String,
+        val size: Long,
+    ) : TcpMessage() {
+        override val type: String get() = TYPE
+        companion object { const val TYPE = "upload" }
+    }
+
+    data class AckMessage(
+        override val id: String? = null,
+        val filename: String,
+        val bytes: Long,
+    ) : TcpMessage() {
+        override val type: String get() = TYPE
+        companion object { const val TYPE = "ack" }
+    }
 }

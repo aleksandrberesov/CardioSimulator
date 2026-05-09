@@ -80,6 +80,8 @@
     <string name="data_source_pathologies_title">Загруженные патологии (%1$d)</string>
     <string name="data_source_leads_format">Отведения: %1$d%2$s</string>
     <string name="data_source_close">Закрыть</string>
+    <string name="data_source_uploading">Загрузка на удаленный сервер\u2026</string>
+    <string name="data_source_upload_success">Успешно загружено на сервер</string>
 
     <!-- Content descriptions -->
     <string name="cd_settings">Настройки</string>

@@ -28,11 +28,14 @@ import com.example.cardiosimulator.domain.EcgSeries
 import com.example.cardiosimulator.domain.WaveformPart
 import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.network.TcpConnectionState
+import com.example.cardiosimulator.network.TcpMessage
+import com.example.cardiosimulator.network.TcpProtocol
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import java.net.InetSocketAddress
 import java.net.Socket
 import java.io.IOException
+import android.provider.OpenableColumns
 
 /**
  * High-level state of the user-controlled ECG dataset.
@@ -96,6 +99,12 @@ class AppViewModel(
 
     private val _isDataConfirmed = MutableStateFlow(false)
     val isDataConfirmed: StateFlow<Boolean> = _isDataConfirmed.asStateFlow()
+
+    private val _isUploading = MutableStateFlow(false)
+    val isUploading: StateFlow<Boolean> = _isUploading.asStateFlow()
+
+    private val _lastAck = MutableStateFlow<TcpMessage.AckMessage?>(null)
+    val lastAck: StateFlow<TcpMessage.AckMessage?> = _lastAck.asStateFlow()
 
     init {
         // Restore a previously picked folder, if any. If none is stored, we
@@ -219,10 +228,20 @@ class AppViewModel(
                     tcpSocket = socket
                     _tcpConnectionState.value = TcpConnectionState.Connected
                     
+                    // Auto-upload the current data if available
+                    val currentUri = prefs?.treeUri?.first()
+                    val ctx = appContext
+                    if (currentUri != null && ctx != null) {
+                        uploadZipFile(ctx, currentUri)
+                    }
+
                     val reader = socket.getInputStream().bufferedReader()
                     while (isActive) {
                         val line = reader.readLine() ?: break
-                        // Connection is alive, line received
+                        val message = TcpProtocol.decodeOrNull(line)
+                        if (message is TcpMessage.AckMessage) {
+                            _lastAck.value = message
+                        }
                     }
                 } catch (e: IOException) {
                     // Connection lost or failed to connect
@@ -253,6 +272,60 @@ class AppViewModel(
         }
     }
 
+    private fun uploadZipFile(context: Context, uri: Uri) {
+        val socket = tcpSocket ?: return
+        if (_tcpConnectionState.value !is TcpConnectionState.Connected) return
+
+        viewModelScope.launch(Dispatchers.IO) {
+            _isUploading.value = true
+            _lastAck.value = null
+            try {
+                context.contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
+                    val size = pfd.statSize
+                    val filename = getFileName(context, uri) ?: "data.zip"
+
+                    val uploadMsg = TcpMessage.UploadMessage(
+                        id = java.util.UUID.randomUUID().toString(),
+                        filename = filename,
+                        size = size
+                    )
+
+                    val header = TcpProtocol.encode(uploadMsg) + "\n"
+                    val outputStream = socket.getOutputStream()
+                    outputStream.write(header.toByteArray(Charsets.UTF_8))
+                    outputStream.flush()
+
+                    java.io.FileInputStream(pfd.fileDescriptor).use { inputStream ->
+                        val buffer = ByteArray(8192)
+                        var bytesRead: Int
+                        while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                            outputStream.write(buffer, 0, bytesRead)
+                        }
+                    }
+                    outputStream.flush()
+                }
+            } catch (e: Exception) {
+                // Handle upload error (e.g. log or update state)
+            } finally {
+                _isUploading.value = false
+            }
+        }
+    }
+
+    private fun getFileName(context: Context, uri: Uri): String? {
+        var name: String? = null
+        val cursor = context.contentResolver.query(uri, null, null, null, null)
+        cursor?.use {
+            if (it.moveToFirst()) {
+                val index = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (index != -1) {
+                    name = it.getString(index)
+                }
+            }
+        }
+        return name
+    }
+
     fun selectRhythm(pathology: String) {
         val group = _rhythms.value.firstOrNull { it.pathology == pathology } ?: return
         _selectedRhythm.value = group
@@ -278,6 +351,7 @@ class AppViewModel(
         viewModelScope.launch {
             p.setTreeUri(uri)
             loadFromSaf(context, uri, forceUnzip = true)
+            uploadZipFile(context, uri)
         }
     }
 

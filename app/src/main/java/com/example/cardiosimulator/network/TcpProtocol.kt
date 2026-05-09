@@ -17,6 +17,9 @@ object TcpProtocol {
     private const val KEY_IDENTY = "identy"
     private const val KEY_OFFSET = "offset"
     private const val KEY_VALUES = "values"
+    private const val KEY_FILENAME = "filename"
+    private const val KEY_SIZE = "size"
+    private const val KEY_BYTES = "bytes"
 
     fun encode(message: TcpMessage): String = toJson(message).toString()
 
@@ -34,6 +37,14 @@ object TcpProtocol {
                 message.identy?.let { obj.put(KEY_IDENTY, it) }
                 if (message.offset != 0) obj.put(KEY_OFFSET, message.offset)
                 obj.put(KEY_VALUES, JSONArray(message.values))
+            }
+            is TcpMessage.UploadMessage -> {
+                obj.put(KEY_FILENAME, message.filename)
+                obj.put(KEY_SIZE, message.size)
+            }
+            is TcpMessage.AckMessage -> {
+                obj.put(KEY_FILENAME, message.filename)
+                obj.put(KEY_BYTES, message.bytes)
             }
         }
         return obj
@@ -68,6 +79,20 @@ object TcpProtocol {
                 offset = obj.optInt(KEY_OFFSET, 0),
                 values = parseValues(obj),
             )
+            TcpMessage.UploadMessage.TYPE -> TcpMessage.UploadMessage(
+                id = id,
+                filename = obj.optStringOrNull(KEY_FILENAME)
+                    ?: throw TcpProtocolException("Missing required field: $KEY_FILENAME"),
+                size = obj.optLongOrNull(KEY_SIZE)
+                    ?: throw TcpProtocolException("Missing required field: $KEY_SIZE"),
+            )
+            TcpMessage.AckMessage.TYPE -> TcpMessage.AckMessage(
+                id = id,
+                filename = obj.optStringOrNull(KEY_FILENAME)
+                    ?: throw TcpProtocolException("Missing required field: $KEY_FILENAME"),
+                bytes = obj.optLongOrNull(KEY_BYTES)
+                    ?: throw TcpProtocolException("Missing required field: $KEY_BYTES"),
+            )
             else -> throw TcpProtocolException("Unknown message type: $type")
         }
     }
@@ -92,6 +117,9 @@ object TcpProtocol {
 
     private fun JSONObject.optIntOrNull(key: String): Int? =
         if (has(key) && !isNull(key)) optInt(key) else null
+
+    private fun JSONObject.optLongOrNull(key: String): Long? =
+        if (has(key) && !isNull(key)) optLong(key) else null
 
     private fun JSONObject.toStringMap(): Map<String, String> {
         val out = mutableMapOf<String, String>()
