@@ -95,6 +95,7 @@ fun EditorScreen(
                 modifier = Modifier.fillMaxWidth().weight(5f),
                 monitorViewModel = monitorViewModel,
                 waveformsByLead = waveforms,
+                leadOrder = listOf(selectedLead)
             )
             OutlinedTextField(
                 value = selectedRhythm?.fileName ?: "",

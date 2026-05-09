@@ -47,6 +47,7 @@ fun Monitor(
     monitorViewModel: MonitorViewModel = viewModel(),
     waveformsByLead: Map<Lead, Points>? = null,
     points: Points = Points(emptyList()),
+    leadOrder: List<Lead> = LEAD_ORDER,
 ){
     val mode by monitorViewModel.monitorMode.collectAsState()
 
@@ -133,7 +134,7 @@ fun Monitor(
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (itemIndex < mode.count) {
-                                    val lead = LEAD_ORDER.getOrNull(itemIndex)
+                                    val lead = leadOrder.getOrNull(itemIndex)
                                     val leadPoints = lead?.let { waveformsByLead?.get(it) }
                                         ?.takeIf { it.values.size >= 2 }
                                         ?: points
