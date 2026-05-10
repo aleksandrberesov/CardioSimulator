@@ -1,5 +1,7 @@
 package com.example.cardiosimulator.ui.screens
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,7 +13,6 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -53,11 +54,17 @@ fun EditorScreen(
     val rhythms by viewModel.rhythms.collectAsState()
     val selectedRhythm by viewModel.selectedRhythm.collectAsState()
     val waveforms by viewModel.waveforms.collectAsState()
+    val allSeries by viewModel.allSeries.collectAsState()
+    val allParts by viewModel.allParts.collectAsState()
     var selectedLeads by remember { mutableStateOf(setOf(Lead.II)) }
+    var focusedLead by remember { mutableStateOf<Lead?>(Lead.II) }
 
     LaunchedEffect(selectedLeads) {
         monitorViewModel.setSeriesCount(selectedLeads.size)
         monitorViewModel.setSeriesScheme(SeriesScheme.OneColumn)
+        if (focusedLead !in selectedLeads) {
+            focusedLead = selectedLeads.firstOrNull()
+        }
     }
 
     Row(
@@ -102,7 +109,7 @@ fun EditorScreen(
                     )
                 }
             }
-            val mode by monitorViewModel.monitorMode.collectAsState()
+
             Monitor(
                 modifier = Modifier.fillMaxWidth().weight(5f),
                 monitorViewModel = monitorViewModel,
@@ -115,19 +122,39 @@ fun EditorScreen(
                 ) { _, lead ->
                     if (lead != null) {
                         val points = waveforms[lead] ?: Points(emptyList<Float>())
+                        val isFocused = lead == focusedLead
                         EditableLead(
                             points = points,
                             onPointsChange = { viewModel.updateWaveform(lead, it) },
-                            title = lead.name,
-                            modifier = Modifier.fillMaxSize()
+                            title = lead.name
                         )
                     }
                 }
             }
             Box(
                 modifier = Modifier.fillMaxWidth().weight(1f),
+                contentAlignment = Alignment.CenterStart
             ){
-                
+                val seriesId = selectedRhythm?.seriesIdentityByLead?.get(focusedLead)
+                val series = allSeries.find { it.identy == seriesId }
+                val parts = series?.partRefs?.mapNotNull { ref ->
+                    allParts.find { it.identy == ref.partIdenty }
+                } ?: emptyList()
+
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    parts.forEach { part ->
+                        Tab(
+                            text = part.title,
+                            onClick = { /* Could be used to select/highlight a part */ },
+                            backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier.width(100.dp)
+                        )
+                    }
+                }
             }
         }
     }
