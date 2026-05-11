@@ -46,8 +46,9 @@ fun EditableLead(
     onClick: (() -> Unit)? = null,
 ) {
     EditableLead(
-        parts = listOf(points),
-        onPointsChange = { onPointsChange(it.first()) },
+        partNames = listOf(title),
+        partPoints = listOf(points),
+        onPartPointsChange = { _, newPoints -> onPointsChange(newPoints) },
         modifier = modifier,
         title = title,
         selectedPartIndex = if (selected) 0 else null,
@@ -57,8 +58,9 @@ fun EditableLead(
 
 @Composable
 fun EditableLead(
-    parts: List<Points>,
-    onPointsChange: (List<Points>) -> Unit,
+    partNames: List<String>,
+    partPoints: List<Points>,
+    onPartPointsChange: (Int, Points) -> Unit,
     modifier: Modifier = Modifier,
     title: String = "",
     selectedPartIndex: Int? = null,
@@ -98,7 +100,7 @@ fun EditableLead(
                 .fillMaxHeight()
         ) {
             var currentSampleOffset = 0
-            parts.forEachIndexed { index, part ->
+            partPoints.forEachIndexed { index, part ->
                 val xOffset = with(density) { (currentSampleOffset * scale.pxPerSample).toDp() }
                 val partWidth = with(density) { (part.values.size * scale.pxPerSample).toDp() }
                 val isSelected = index == selectedPartIndex
@@ -128,7 +130,8 @@ fun EditableLead(
 @Preview(showBackground = true, widthDp = 600, heightDp = 150)
 @Composable
 fun EditableLeadPreview() {
-    val sampleParts = listOf(
+    val sampleNames = listOf("P-Wave", "QRS-Complex")
+    val samplePoints = listOf(
         Points(listOf(0f, 0.1f, 0.2f, 0.5f, 1f, 0.5f, 0.2f, 0.1f, 0f)),
         Points(listOf(-0.1f, -0.2f, -0.5f, -1f, -0.5f, -0.2f, -0.1f, 0f))
     )
@@ -143,8 +146,9 @@ fun EditableLeadPreview() {
         CompositionLocalProvider(LocalPixelScale provides previewScale) {
             Box(modifier = Modifier.ekgGrid()) {
                 EditableLead(
-                    parts = sampleParts,
-                    onPointsChange = {},
+                    partNames = sampleNames,
+                    partPoints = samplePoints,
+                    onPartPointsChange = { _, _ -> },
                     selectedPartIndex = selectedIndex,
                     onPartClick = { selectedIndex = it },
                     title = "I",

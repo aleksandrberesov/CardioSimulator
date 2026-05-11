@@ -58,6 +58,7 @@ fun EditorScreen(
     val allParts by viewModel.allParts.collectAsState()
     var selectedLeads by remember { mutableStateOf(setOf(Lead.II)) }
     var focusedLead by remember { mutableStateOf<Lead?>(Lead.II) }
+    var selectedPartIndex by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(selectedLeads) {
         monitorViewModel.setSeriesCount(selectedLeads.size)
@@ -121,12 +122,36 @@ fun EditorScreen(
                     leadOrder = selectedLeads.toList()
                 ) { _, lead ->
                     if (lead != null) {
-                        val points = waveforms[lead] ?: Points(emptyList<Float>())
                         val isFocused = lead == focusedLead
+
+                        val seriesId = selectedRhythm?.seriesIdentityByLead?.get(lead)
+                        val series = allSeries.find { it.identy == seriesId }
+                        val refs = series?.partRefs ?: emptyList()
+
+                        val partNames = mutableListOf<String>()
+                        val partPoints = mutableListOf<Points>()
+
+                        refs.forEach { ref ->
+                            val part = allParts.find { it.identy == ref.partIdenty }
+                            if (part != null) {
+                                partNames += part.title
+                                val amp = if (part.amplitude > 0f) part.amplitude else 1f
+                                partPoints += Points(part.samples.map { (it - 1024f) * amp })
+                            }
+                        }
+
                         EditableLead(
-                            points = points,
-                            onPointsChange = { viewModel.updateWaveform(lead, it) },
-                            title = lead.name
+                            partNames = partNames,
+                            partPoints = partPoints,
+                            onPartPointsChange = { index, newPoints ->
+                                // TODO: Update part points in viewModel
+                            },
+                            title = lead.name,
+                            selectedPartIndex = if (isFocused) selectedPartIndex else null,
+                            onPartClick = {
+                                focusedLead = lead
+                                selectedPartIndex = it
+                            }
                         )
                     }
                 }
@@ -146,11 +171,13 @@ fun EditorScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    parts.forEach { part ->
+                    parts.forEachIndexed { index, part ->
+                        val isSelected = selectedPartIndex == index
                         Tab(
                             text = part.title,
-                            onClick = { /* Could be used to select/highlight a part */ },
-                            backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                            onClick = { selectedPartIndex = index },
+                            backgroundColor = if (isSelected)
+                                MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
                             modifier = Modifier.width(100.dp)
                         )
                     }
