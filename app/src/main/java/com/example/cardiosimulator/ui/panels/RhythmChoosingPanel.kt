@@ -32,6 +32,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.PathologyGroup
+import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.ui.screens.verticalScrollbar
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 
@@ -40,6 +41,7 @@ fun RhythmChoosingPanel(
     modifier: Modifier = Modifier,
     rhythms: List<PathologyGroup> = emptyList(),
     selectedPathology: String? = null,
+    currentLanguage: Language = Language.EN,
     onRhythmSelect: (PathologyGroup) -> Unit = {},
     onSearchQueryChange: (String) -> Unit = {}
 ) {
@@ -90,16 +92,18 @@ fun RhythmChoosingPanel(
                     .verticalScrollbar(rhythmsListState)
             ) {
                 val filtered = rhythms.filter {
-                    it.displayTitle.contains(searchQuery, ignoreCase = true)
+                    val title = if (currentLanguage == Language.RU) it.fileName else it.displayTitle
+                    title.contains(searchQuery, ignoreCase = true)
                 }
                 items(filtered, key = { it.pathology }) { rhythm ->
                     val isSelected = rhythm.pathology == selectedPathology
+                    val title = if (currentLanguage == Language.RU) rhythm.fileName else rhythm.displayTitle
                     Text(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onRhythmSelect(rhythm) }
                             .padding(vertical = 12.dp, horizontal = 4.dp),
-                        text = rhythm.displayTitle,
+                        text = title,
                         color = if (isSelected) Color.Red else Color.Black,
                         style = MaterialTheme.typography.bodyLarge
                     )

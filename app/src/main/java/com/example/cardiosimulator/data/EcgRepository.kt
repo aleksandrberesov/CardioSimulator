@@ -3,6 +3,7 @@ package com.example.cardiosimulator.data
 import com.example.cardiosimulator.domain.EcgSeries
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.WaveformPart
+import java.nio.charset.Charset
 
 data class PathologyGroup(
     val pathology: String,
@@ -42,8 +43,12 @@ class EcgRepository(private var source: EcgSource) {
             .filter { !it.pathology.isNullOrBlank() && it.title.isNotBlank() }
             .groupBy { it.pathology!! }
             .map { (pathology, list) ->
-                val title = stripTrailingLead(list.first().title)
-                val fileName = stripTrailingLead(list.first().fileName)
+                val title = stripTrailingLead(fixEncoding(list.first().title))
+                val rawFileName = list.first().fileName
+                val fileName = stripTrailingLead(fixEncoding(rawFileName.substringBeforeLast('.')
+                    .replace('_', ' ')
+                    .trim()))
+
                 val byLead = list.mapNotNull { s -> s.lead?.let { it to s.identy } }.toMap()
                 PathologyGroup(pathology, title, byLead, fileName)
             }
@@ -69,10 +74,68 @@ class EcgRepository(private var source: EcgSource) {
     }
 
     private fun stripTrailingLead(title: String): String {
-        for (l in LEAD_SUFFIXES) if (title.endsWith(l, ignoreCase = true)) {
-            return title.dropLast(l.length).trimEnd(' ', ',', '-').trim()
+        val delimiters = listOf(" ", "_", "-")
+        for (l in LEAD_SUFFIXES) {
+            val suffix = l.trim()
+            for (d in delimiters) {
+                val fullSuffix = "$d$suffix"
+                if (title.endsWith(fullSuffix, ignoreCase = true)) {
+                    return title.dropLast(fullSuffix.length).trimEnd(' ', ',', '-', '_').trim()
+                }
+            }
+            if (title.endsWith(suffix, ignoreCase = true)) {
+                return title.dropLast(suffix.length).trimEnd(' ', ',', '-', '_').trim()
+            }
         }
         return title
+    }
+
+    /**
+     * Attempts to heal strings that look like they were decoded with the wrong encoding.
+     * Handles common Russian mojibake and encoding artifacts.
+     */
+    private fun fixEncoding(s: String): String {
+        if (s.isEmpty()) return s
+        
+        // Remove null characters and other common control noise that can look like squares
+        val clean = s.replace("\u0000", "").trim()
+        if (clean.isEmpty()) return ""
+
+        val hasCyrillic = clean.any { it in '\u0400'..'\u04FF' }
+        val hasReplacement = clean.contains('\uFFFD')
+
+        // Case 1: CP1251 as ISO-8859-1 (or other single-byte Western encoding)
+        // Cyrillic letters in CP1251 are 0xC0-0xFF, which in ISO-8859-1 are À-ÿ.
+        if (!hasCyrillic && !hasReplacement && clean.any { it in '\u00C0'..'\u00FF' }) {
+            try {
+                val bytes = clean.toByteArray(Charset.forName("ISO-8859-1"))
+                val fixed = String(bytes, Charset.forName("windows-1251"))
+                if (fixed.any { it in '\u0400'..'\u04FF' }) return fixed
+            } catch (e: Exception) { /* ignore */ }
+        }
+
+        // Case 2: UTF-8 as windows-1251 (e.g. "РЎРёРЅСѓСЃ" -> "Синус")
+        if ((hasCyrillic || hasReplacement) && clean.contains('Р') && (clean.contains('Ў') || clean.contains('°'))) {
+            try {
+                val bytes = clean.toByteArray(Charset.forName("windows-1251"))
+                val fixed = String(bytes, Charsets.UTF_8)
+                if (fixed.any { it in '\u0400'..'\u04FF' }) return fixed
+            } catch (e: Exception) { /* ignore */ }
+        }
+
+        // Case 3: CP866 as CP1252/Western (e.g. "æ¿¡Òß«óá´" -> "ц...Тяы...б")
+        // CP866 Russian letters are in 0x80-0xAF and 0xE0-0xEF.
+        // In CP1252 these look like Western accented letters and symbols (¡, «, æ, á, etc.)
+        if (!hasCyrillic && clean.any { it in '¡'..'¯' || it in 'à'..'ï' }) {
+            try {
+                // Try treating as CP1252 (Western) bytes and reading as CP866
+                val bytes = clean.toByteArray(Charset.forName("windows-1252"))
+                val fixed = String(bytes, Charset.forName("IBM866"))
+                if (fixed.any { it in '\u0400'..'\u04FF' }) return fixed
+            } catch (e: Exception) { /* ignore */ }
+        }
+
+        return clean
     }
 
     companion object {

@@ -26,6 +26,7 @@ import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 fun TeachingScreen(viewModel: AppViewModel){
     val monitorViewModel: MonitorViewModel = viewModel()
     val rhythms by viewModel.rhythms.collectAsState()
+    val selectedLanguage by viewModel.selectedLanguage.collectAsState()
     val selectedRhythm by viewModel.selectedRhythm.collectAsState()
     val waveforms by viewModel.waveforms.collectAsState()
 
@@ -44,6 +45,7 @@ fun TeachingScreen(viewModel: AppViewModel){
             RhythmChoosingPanel(
                 rhythms = rhythms,
                 selectedPathology = selectedRhythm?.pathology,
+                currentLanguage = selectedLanguage,
                 onRhythmSelect = { viewModel.selectRhythm(it.pathology) },
             )
         }

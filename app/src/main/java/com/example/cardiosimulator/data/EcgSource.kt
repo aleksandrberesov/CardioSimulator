@@ -2,7 +2,9 @@ package com.example.cardiosimulator.data
 
 import android.content.res.AssetManager
 import java.io.File
+import java.nio.ByteBuffer
 import java.nio.charset.Charset
+import java.nio.charset.CodingErrorAction
 
 /**
  * Storage-agnostic source of ECG data files. Implementations expose the
@@ -100,16 +102,52 @@ class FileEcgSource(
 }
 
 /**
- * Decodes a byte array into a string, attempting UTF-8 first and falling back
- * to windows-1251 if it doesn't look like valid UTF-8. This handles legacy
- * ECG datasets while supporting modern UTF-8 files.
+ * Decodes a byte array into a string, attempting several encodings common in
+ * ECG datasets (UTF-8, windows-1251, CP866). Uses a heuristic to pick the
+ * most likely correct one for Russian text.
  */
 private fun ByteArray.decodeEcgText(): String {
-    val utf8 = Charsets.UTF_8
-    val decoded = toString(utf8)
-    return if (decoded.contains('\uFFFD')) {
-        toString(Charset.forName("windows-1251"))
-    } else {
-        decoded
+    if (isEmpty()) return ""
+
+    // 1. Check for UTF-16 BOMs
+    if (size >= 2) {
+        val b0 = get(0).toInt() and 0xFF
+        val b1 = get(1).toInt() and 0xFF
+        if (b0 == 0xFF && b1 == 0xFE) return String(this, 2, size - 2, Charset.forName("UTF-16LE"))
+        if (b0 == 0xFE && b1 == 0xFF) return String(this, 2, size - 2, Charset.forName("UTF-16BE"))
+    }
+
+    fun countRussian(s: String): Int = s.count { it in '\u0410'..'\u044F' || it == 'ё' || it == 'Ё' }
+
+    // 2. Try UTF-8 strictly
+    val sUtf8 = try {
+        val decoder = Charsets.UTF_8.newDecoder()
+        decoder.onMalformedInput(CodingErrorAction.REPORT)
+        decoder.onUnmappableCharacter(CodingErrorAction.REPORT)
+        decoder.decode(ByteBuffer.wrap(this)).toString()
+    } catch (e: Exception) {
+        null
+    }
+
+    val s1251 = String(this, Charset.forName("windows-1251"))
+    val s866 = String(this, Charset.forName("IBM866"))
+
+    val countUtf8 = sUtf8?.let { countRussian(it) } ?: -1
+    val count1251 = countRussian(s1251)
+    val count866 = countRussian(s866)
+
+    // Heuristic: if UTF-8 succeeded but has almost no Russian, and fallbacks have many,
+    // it's likely mojibake (e.g. 1251 bytes accidentally looking like valid UTF-8 symbols).
+    if (sUtf8 != null && countUtf8 >= count1251 && countUtf8 >= count866) {
+        // Also check if UTF-8 has suspicious amount of random non-Russian/non-Latin scripts
+        val hasSuspiciousChars = sUtf8.any { it in '\u2000'..'\uDFFF' }
+        if (!hasSuspiciousChars) return sUtf8
+    }
+
+    return when {
+        count866 > count1251 && count866 > countUtf8 -> s866
+        count1251 > countUtf8 -> s1251
+        sUtf8 != null -> sUtf8
+        else -> s1251 // Default fallback
     }
 }

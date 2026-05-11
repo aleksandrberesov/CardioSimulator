@@ -52,6 +52,7 @@ fun EditorScreen(
     monitorViewModel: MonitorViewModel = viewModel()
 ) {
     val rhythms by viewModel.rhythms.collectAsState()
+    val selectedLanguage by viewModel.selectedLanguage.collectAsState()
     val selectedRhythm by viewModel.selectedRhythm.collectAsState()
     val waveforms by viewModel.waveforms.collectAsState()
     val allSeries by viewModel.allSeries.collectAsState()
@@ -78,6 +79,7 @@ fun EditorScreen(
             RhythmChoosingPanel(
                 rhythms = rhythms,
                 selectedPathology = selectedRhythm?.pathology,
+                currentLanguage = selectedLanguage,
                 onRhythmSelect = { viewModel.selectRhythm(it.pathology) },
             )
         }
