@@ -20,10 +20,28 @@ import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import androidx.compose.runtime.CompositionLocalProvider
 
+/**
+ * Renders a polyline of [points] across the chart area.
+ *
+ * Two scaling overrides exist for Phase 0a per-part calibration:
+ * - [sampleRateHz] — when > 0, derives `pxPerSample` from this rate instead
+ *   of the global default. Used so records sampled at e.g. 250 Hz render at
+ *   the right speed.
+ * - [samplesPerMv] — when > 0, scales sample values to pixels via this
+ *   factor (RP5's `AMax/AValue`). Used so records exported with non-default
+ *   `max`/`value` render at the right gain.
+ *
+ * When both are omitted the renderer falls back to the legacy global
+ * calibration (still used by [com.example.cardiosimulator.ui.display.Lead]
+ * and asset fixtures).
+ */
 @Composable
 fun ChartCanvas(
     points: Points,
     modifier: Modifier = Modifier,
+    sampleRateHz: Float = 0f,
+    samplesPerMv: Float = 0f,
+    color: Color = Color.Black,
 ) {
     val dataPoints = points.values
     if (dataPoints.size < 2) return
@@ -33,8 +51,10 @@ fun ChartCanvas(
         modifier = modifier
             .chartArea()
             .drawWithCache {
-                val stepX = scale.pxPerSample
-                val stepY = scale.pxPerAdcCount
+                val stepX = if (sampleRateHz > 0f) scale.pxPerSampleFor(sampleRateHz)
+                            else scale.pxPerSample
+                val stepY = if (samplesPerMv > 0f) scale.pxPerSourceUnitFor(samplesPerMv)
+                            else scale.pxPerAdcCount
                 val baselineY = size.height / 2f
 
                 val path = Path().apply {
@@ -47,7 +67,7 @@ fun ChartCanvas(
                 onDrawBehind {
                     drawPath(
                         path = path,
-                        color = Color.Black,
+                        color = color,
                         style = Stroke(
                             width = 2.dp.toPx(),
                             cap = StrokeCap.Round,

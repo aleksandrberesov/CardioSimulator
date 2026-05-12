@@ -60,6 +60,14 @@ class EcgRepository(private var source: EcgSource) {
 
     fun allParts(): List<WaveformPart> = partsIndex.values.toList()
 
+    /**
+     * Concatenates the samples of all parts referenced by [seriesIdenty]
+     * into a single baseline-zeroed float list. Retains the legacy
+     * `amplitude` factor for viewer fixtures that bake their own gain;
+     * see [assembleWaveformParts] for the editor-friendly version that
+     * preserves per-part boundaries and skips the legacy amplitude
+     * multiplication so the renderer can apply per-part `samplesPerMv`.
+     */
     fun assembleWaveform(seriesIdenty: String): List<Float> {
         val series = series(seriesIdenty) ?: return emptyList()
         val out = ArrayList<Float>(series.partRefs.size * 64)
@@ -72,6 +80,23 @@ class EcgRepository(private var source: EcgSource) {
         }
         return out
     }
+
+    /**
+     * Returns the parts of a series in render order, **without** applying
+     * the legacy `amplitude` multiplication. The renderer is expected to
+     * apply per-part `samplesPerMv` (`AMax/AValue`) instead — see
+     * [com.example.cardiosimulator.domain.WaveformPart.samplesPerMv]. This
+     * is the editor-mode path that avoids double-scaling against
+     * `amplitude` and stays consistent with RP5's `Frame.Segments.pas`.
+     */
+    fun assembleWaveformParts(seriesIdenty: String): List<WaveformPart> {
+        val series = series(seriesIdenty) ?: return emptyList()
+        return series.partRefs.mapNotNull { partsIndex[it.partIdenty] }
+    }
+
+    /** Baseline-zeroed samples (no amplitude scaling). */
+    fun baselineZeroedSamples(part: WaveformPart): List<Float> =
+        part.samples.map { (it - SAMPLE_BASELINE).toFloat() }
 
     private fun stripTrailingLead(title: String): String {
         val delimiters = listOf(" ", "_", "-")

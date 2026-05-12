@@ -1,6 +1,6 @@
 # Editor mode — close the gap with RP5EcgEditor
 
-**Status:** proposed
+**Status:** in-progress (initial implementation landed; on-device QA pending)
 **Owner:** a.beresov
 **Started:** 2026-05-11
 **Related issues / PRs:** —

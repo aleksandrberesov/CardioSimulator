@@ -19,6 +19,28 @@ interface EcgSource {
     fun listParts(): List<String>
     fun readSeries(name: String): String?
     fun readPart(name: String): String?
+
+    /**
+     * Writes [text] to a series file named [name]. Returns true on success.
+     * Read-only sources (e.g. [AssetEcgSource]) return false.
+     */
+    fun writeSeries(name: String, text: String): Boolean = false
+
+    /**
+     * Writes [text] to a part file named [name]. Returns true on success.
+     * Read-only sources (e.g. [AssetEcgSource]) return false.
+     */
+    fun writePart(name: String, text: String): Boolean = false
+
+    /** True if this source can be written to. Use to gate Editor UI. */
+    fun isWritable(): Boolean = false
+
+    /**
+     * Root directory of this source on the filesystem, or null if not
+     * file-backed (e.g. assets). Used by the ZIP export to bundle the
+     * current dataset.
+     */
+    fun rootDir(): java.io.File? = null
 }
 
 /**
@@ -57,19 +79,30 @@ class AssetEcgSource(
  * within the given root to account for nested structures in archives.
  */
 class FileEcgSource(
-    rootDir: File,
+    private val root: File,
     seriesDirName: String = AssetEcgSource.SERIES_DIR,
     partsDirName: String = AssetEcgSource.PARTS_DIR,
 ) : EcgSource {
 
-    private val seriesDir: File? = findDir(rootDir, seriesDirName)
-    private val partsDir: File? = findDir(rootDir, partsDirName)
+    private val seriesDir: File? = findDir(root, seriesDirName)
+    private val partsDir: File? = findDir(root, partsDirName)
 
     override fun listSeries(): List<String> = listDir(seriesDir)
     override fun listParts(): List<String> = listDir(partsDir)
 
     override fun readSeries(name: String): String? = read(seriesDir?.let { File(it, name) })
     override fun readPart(name: String): String? = read(partsDir?.let { File(it, name) })
+
+    override fun writeSeries(name: String, text: String): Boolean =
+        write(seriesDir?.let { File(it, name) }, text)
+
+    override fun writePart(name: String, text: String): Boolean =
+        write(partsDir?.let { File(it, name) }, text)
+
+    override fun isWritable(): Boolean =
+        seriesDir != null && seriesDir.canWrite() && partsDir != null && partsDir.canWrite()
+
+    override fun rootDir(): File = root
 
     private fun listDir(dir: File?): List<String> =
         dir?.listFiles { f -> f.isFile }?.map { it.name }.orEmpty()
@@ -78,6 +111,17 @@ class FileEcgSource(
         if (file == null || !file.exists() || !file.canRead()) null
         else file.readBytes().decodeEcgText()
     }.getOrNull()
+
+    private fun write(file: File?, text: String): Boolean = runCatching {
+        if (file == null) return false
+        file.parentFile?.mkdirs()
+        // Write a temp file then atomic-rename to avoid partial writes on
+        // interrupt.
+        val tmp = File(file.parentFile, file.name + ".tmp")
+        tmp.writeBytes(text.toByteArray(Charsets.UTF_8))
+        if (file.exists()) file.delete()
+        tmp.renameTo(file)
+    }.getOrDefault(false)
 
     fun isValid(): Boolean =
         seriesDir != null && seriesDir.isDirectory &&
