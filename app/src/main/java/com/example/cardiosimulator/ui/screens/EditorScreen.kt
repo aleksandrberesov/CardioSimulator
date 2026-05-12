@@ -46,17 +46,20 @@ import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 
+import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
+
 @Composable
 fun EditorScreen(
     viewModel: AppViewModel,
-    monitorViewModel: MonitorViewModel = viewModel()
+    monitorViewModel: MonitorViewModel = viewModel(),
+    rhythmViewModel: RhythmViewModel = viewModel()
 ) {
-    val rhythms by viewModel.rhythms.collectAsState()
+    val rhythms by rhythmViewModel.rhythms.collectAsState()
     val selectedLanguage by viewModel.selectedLanguage.collectAsState()
-    val selectedRhythm by viewModel.selectedRhythm.collectAsState()
-    val waveforms by viewModel.waveforms.collectAsState()
-    val allSeries by viewModel.allSeries.collectAsState()
-    val allParts by viewModel.allParts.collectAsState()
+    val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
+    val waveforms by rhythmViewModel.waveforms.collectAsState()
+    val allSeries by rhythmViewModel.allSeries.collectAsState()
+    val allParts by rhythmViewModel.allParts.collectAsState()
     var selectedLeads by remember { mutableStateOf(setOf(Lead.II)) }
     var focusedLead by remember { mutableStateOf<Lead?>(Lead.II) }
     var selectedPartIndex by remember { mutableStateOf<Int?>(null) }
@@ -80,7 +83,7 @@ fun EditorScreen(
                 rhythms = rhythms,
                 selectedPathology = selectedRhythm?.pathology,
                 currentLanguage = selectedLanguage,
-                onRhythmSelect = { viewModel.selectRhythm(it.pathology) },
+                onRhythmSelect = { rhythmViewModel.selectRhythm(it.pathology) },
             )
         }
 

@@ -21,10 +21,13 @@ import com.example.cardiosimulator.ui.panels.MonitorControlPanel
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 
+import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
+
 @Composable
 fun TestingScreen(
     viewModel: AppViewModel,
-    monitorViewModel: MonitorViewModel = viewModel()
+    monitorViewModel: MonitorViewModel = viewModel(),
+    rhythmViewModel: RhythmViewModel = viewModel()
 ){
 
     LaunchedEffect(Unit) {

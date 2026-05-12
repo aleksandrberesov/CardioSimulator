@@ -9,12 +9,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.cardiosimulator.data.DataSourcePrefs
 import com.example.cardiosimulator.data.EcgRepository
 import com.example.cardiosimulator.data.PathologyGroup
-import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.data.FileEcgSource
 import com.example.cardiosimulator.data.ZipDecompressor
 import com.example.cardiosimulator.domain.AppStateModel
 import java.io.File
-import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.OperatingModeModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,8 +22,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-import com.example.cardiosimulator.domain.EcgSeries
-import com.example.cardiosimulator.domain.WaveformPart
 import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.network.TcpConnectionState
 import com.example.cardiosimulator.network.TcpMessage
@@ -54,7 +50,7 @@ sealed class DataState {
 
 class AppViewModel(
     private val appState: AppStateModel,
-    private val ecgRepository: EcgRepository? = null,
+    val ecgRepository: EcgRepository? = null,
     private val appContext: Context? = null,
     val prefs: DataSourcePrefs? = null,
     private val tcpReconnectIntervalMs: Long = 5000L,
@@ -79,21 +75,6 @@ class AppViewModel(
     private val _tcpConnectionState = MutableStateFlow<TcpConnectionState>(TcpConnectionState.Disconnected)
     val tcpConnectionState: StateFlow<TcpConnectionState> = _tcpConnectionState.asStateFlow()
 
-    private val _rhythms = MutableStateFlow<List<PathologyGroup>>(emptyList())
-    val rhythms: StateFlow<List<PathologyGroup>> = _rhythms.asStateFlow()
-
-    private val _allSeries = MutableStateFlow<List<EcgSeries>>(emptyList())
-    val allSeries: StateFlow<List<EcgSeries>> = _allSeries.asStateFlow()
-
-    private val _allParts = MutableStateFlow<List<WaveformPart>>(emptyList())
-    val allParts: StateFlow<List<WaveformPart>> = _allParts.asStateFlow()
-
-    private val _selectedRhythm = MutableStateFlow<PathologyGroup?>(null)
-    val selectedRhythm: StateFlow<PathologyGroup?> = _selectedRhythm.asStateFlow()
-
-    private val _waveforms = MutableStateFlow<Map<Lead, Points>>(emptyMap())
-    val waveforms: StateFlow<Map<Lead, Points>> = _waveforms.asStateFlow()
-
     private val _dataState = MutableStateFlow<DataState>(DataState.NotConfigured)
     val dataState: StateFlow<DataState> = _dataState.asStateFlow()
 
@@ -105,6 +86,9 @@ class AppViewModel(
 
     private val _lastAck = MutableStateFlow<TcpMessage.AckMessage?>(null)
     val lastAck: StateFlow<TcpMessage.AckMessage?> = _lastAck.asStateFlow()
+
+    private val _rhythms = MutableStateFlow<List<PathologyGroup>>(emptyList())
+    val rhythms: StateFlow<List<PathologyGroup>> = _rhythms.asStateFlow()
 
     init {
         // Restore a previously picked folder, if any. If none is stored, we
@@ -148,8 +132,9 @@ class AppViewModel(
             // so the preview doesn't get stuck on the DataSourceScreen when
             // assets are empty.
             viewModelScope.launch {
-                reload(repo)
-                _dataState.value = DataState.Ready(_allSeries.value.size, _allParts.value.size)
+                if (!reload(repo)) {
+                    _dataState.value = DataState.Ready(0, 0)
+                }
             }
         } else {
             // No repository at all (rare; pure UI preview). Treat as Ready so
@@ -243,7 +228,7 @@ class AppViewModel(
                             _lastAck.value = message
                         }
                     }
-                } catch (e: IOException) {
+                } catch (_: IOException) {
                     // Connection lost or failed to connect
                 } finally {
                     try { socket.close() } catch (_: Exception) {}
@@ -263,7 +248,7 @@ class AppViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 tcpSocket?.close()
-            } catch (e: IOException) {
+            } catch (_: IOException) {
                 // Ignore
             } finally {
                 tcpSocket = null
@@ -304,7 +289,7 @@ class AppViewModel(
                     }
                     outputStream.flush()
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // Handle upload error (e.g. log or update state)
             } finally {
                 _isUploading.value = false
@@ -326,21 +311,18 @@ class AppViewModel(
         return name
     }
 
-    fun sendStartCommand(pathology: String? = null) {
+    fun sendStartCommand(pathology: String? = null, name: String? = null) {
         val socket = tcpSocket ?: return
         if (_tcpConnectionState.value !is TcpConnectionState.Connected) return
         
-        val pName = pathology ?: _selectedRhythm.value?.pathology
-
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val paramsMap = mutableMapOf<String, String>()
-                if (pName != null) {
-                    paramsMap["pathology"] = pName
+                if (pathology != null) {
+                    paramsMap["pathology"] = pathology
                 }
-                // Also include the display title if we have it
-                _selectedRhythm.value?.displayTitle?.let { 
-                    paramsMap["name"] = it 
+                if (name != null) {
+                    paramsMap["name"] = name
                 }
 
                 val msg = TcpMessage.StartCommand(
@@ -351,7 +333,7 @@ class AppViewModel(
                 val header = TcpProtocol.encode(msg) + "\n"
                 socket.getOutputStream().write(header.toByteArray(Charsets.UTF_8))
                 socket.getOutputStream().flush()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // Handle error
             }
         }
@@ -366,30 +348,10 @@ class AppViewModel(
                 val header = TcpProtocol.encode(msg) + "\n"
                 socket.getOutputStream().write(header.toByteArray(Charsets.UTF_8))
                 socket.getOutputStream().flush()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // Handle error
             }
         }
-    }
-
-    fun selectRhythm(pathology: String) {
-        val group = _rhythms.value.firstOrNull { it.pathology == pathology } ?: return
-        _selectedRhythm.value = group
-        val repo = ecgRepository ?: return
-        viewModelScope.launch {
-            val map = withContext(Dispatchers.IO) {
-                group.seriesIdentityByLead.mapValues { (_, identy) ->
-                    Points(repo.assembleWaveform(identy))
-                }
-            }
-            _waveforms.value = map
-        }
-    }
-
-    fun updateWaveform(lead: Lead, points: Points) {
-        val current = _waveforms.value.toMutableMap()
-        current[lead] = points
-        _waveforms.value = current
     }
 
     /**
@@ -443,15 +405,13 @@ class AppViewModel(
 
     private suspend fun reload(repo: EcgRepository): Boolean {
         withContext(Dispatchers.IO) { repo.load() }
-        val rhythms = repo.pathologies()
         val series = repo.allSeries()
         val parts = repo.allParts()
-        _rhythms.value = rhythms
-        _allSeries.value = series
-        _allParts.value = parts
+        val rhythms = repo.pathologies()
         return if (series.isEmpty() && parts.isEmpty()) {
             false
         } else {
+            _rhythms.value = rhythms
             _dataState.value = DataState.Ready(series.size, parts.size)
             true
         }
