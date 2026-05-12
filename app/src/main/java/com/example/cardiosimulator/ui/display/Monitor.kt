@@ -35,6 +35,15 @@ import kotlin.math.ceil
 fun Monitor(
     modifier: Modifier = Modifier,
     monitorViewModel: MonitorViewModel = viewModel(),
+    /**
+     * When non-null, switches to a source-anchored grid sized so that one
+     * small grid square == one source `mm` per RP5's
+     * `AMax/AValue/10 px-per-mm` rule (Frame.Segments.pas:1142). Used by
+     * Editor mode where the user drags anchors and the grid must align
+     * with integer source units. Pass null for viewer modes — they get
+     * the physical-mm grid.
+     */
+    sourceAnchoredCalibration: Pair<Int, Int>? = null,
     content: @Composable ColumnScope.(rows: Int, columns: Int) -> Unit
 ){
     val mode by monitorViewModel.monitorMode.collectAsState()
@@ -63,13 +72,25 @@ fun Monitor(
     // displayScale is a global shrink/zoom factor so the whole picture (grid + trace
     // + cal pulse) fits the monitor without breaking the mm-based relationships.
     val pxPerMm = density.density * (160f / 25.4f) * mode.displayScale
-    val pixelScale = remember(pxPerMm, mode.speed, mode.scale, mode.calibration) {
-        PixelScale(
-            pxPerMm = pxPerMm,
-            paperSpeedMmPerSec = mode.speed.toFloat(),
-            gainZoomY = mode.scale,
-            cal = mode.calibration,
-        )
+    val pixelScale = remember(pxPerMm, mode.speed, mode.scale, mode.calibration, sourceAnchoredCalibration) {
+        if (sourceAnchoredCalibration != null) {
+            val (aMax, aValue) = sourceAnchoredCalibration
+            PixelScale.sourceAnchored(
+                aMax = aMax,
+                aValue = aValue,
+                paperSpeedMmPerSec = mode.speed.toFloat(),
+                gainZoomY = mode.scale,
+                cal = mode.calibration,
+                physicalPxPerMm = pxPerMm,
+            )
+        } else {
+            PixelScale(
+                pxPerMm = pxPerMm,
+                paperSpeedMmPerSec = mode.speed.toFloat(),
+                gainZoomY = mode.scale,
+                cal = mode.calibration,
+            )
+        }
     }
 
     BoxWithConstraints(

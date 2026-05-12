@@ -36,6 +36,17 @@ import com.example.cardiosimulator.ui.components.CalibrationPulse
 import com.example.cardiosimulator.ui.components.ChartCanvas
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 
+/**
+ * Per-part calibration overrides passed to the renderer. When provided,
+ * `pxPerSample` is derived from [sampleRateHz] and `pxPerAdcCount` from
+ * [samplesPerMv] so records with non-default `max`/`value`/`duration`
+ * render at their own gain and speed — see Phase 0a in the plan.
+ */
+data class PartCalibration(
+    val sampleRateHz: Float = 0f,
+    val samplesPerMv: Float = 0f,
+)
+
 @Composable
 fun EditableLead(
     points: Points,
@@ -44,10 +55,12 @@ fun EditableLead(
     title: String = "",
     selected: Boolean = false,
     onClick: (() -> Unit)? = null,
+    calibration: PartCalibration = PartCalibration(),
 ) {
     EditableLead(
         partNames = listOf(title),
         partPoints = listOf(points),
+        partCalibration = listOf(calibration),
         onPartPointsChange = { _, newPoints -> onPointsChange(newPoints) },
         modifier = modifier,
         title = title,
@@ -65,6 +78,7 @@ fun EditableLead(
     title: String = "",
     selectedPartIndex: Int? = null,
     onPartClick: ((Int) -> Unit)? = null,
+    partCalibration: List<PartCalibration> = emptyList(),
 ) {
     val scale = LocalPixelScale.current
     val density = LocalDensity.current
@@ -79,7 +93,14 @@ fun EditableLead(
                 .width(48.dp)
                 .fillMaxHeight()
         ) {
-            CalibrationPulse(modifier = Modifier.fillMaxSize())
+            // Drive the calibration symbol from the first part's per-record
+            // gain so the 1 mV box matches the rendered waveform when the
+            // record uses non-default `max`/`value`.
+            val firstSpm = partCalibration.firstOrNull()?.samplesPerMv ?: 0f
+            CalibrationPulse(
+                modifier = Modifier.fillMaxSize(),
+                samplesPerMv = firstSpm,
+            )
 
             Text(
                 text = title,
@@ -101,8 +122,11 @@ fun EditableLead(
         ) {
             var currentSampleOffset = 0
             partPoints.forEachIndexed { index, part ->
-                val xOffset = with(density) { (currentSampleOffset * scale.pxPerSample).toDp() }
-                val partWidth = with(density) { (part.values.size * scale.pxPerSample).toDp() }
+                val cal = partCalibration.getOrNull(index) ?: PartCalibration()
+                val effPxPerSample = if (cal.sampleRateHz > 0f)
+                    scale.pxPerSampleFor(cal.sampleRateHz) else scale.pxPerSample
+                val xOffset = with(density) { (currentSampleOffset * effPxPerSample).toDp() }
+                val partWidth = with(density) { (part.values.size * effPxPerSample).toDp() }
                 val isSelected = index == selectedPartIndex
 
                 Box(
@@ -118,7 +142,9 @@ fun EditableLead(
                 ) {
                     ChartCanvas(
                         points = part,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
+                        sampleRateHz = cal.sampleRateHz,
+                        samplesPerMv = cal.samplesPerMv,
                     )
                 }
                 currentSampleOffset += part.values.size
