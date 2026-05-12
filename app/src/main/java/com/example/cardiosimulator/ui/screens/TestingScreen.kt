@@ -22,8 +22,10 @@ import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 
 @Composable
-fun TestingScreen(viewModel: AppViewModel){
-    val monitorViewModel: MonitorViewModel = viewModel()
+fun TestingScreen(
+    viewModel: AppViewModel,
+    monitorViewModel: MonitorViewModel = viewModel()
+){
 
     LaunchedEffect(Unit) {
         monitorViewModel.setSeriesCount(12)

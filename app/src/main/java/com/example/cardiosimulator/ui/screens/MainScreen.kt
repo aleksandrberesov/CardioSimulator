@@ -33,6 +33,7 @@ fun MainScreen(viewModel: AppViewModel){
 
     var showSettings by remember { mutableStateOf(false) }
     val monitorViewModel: MonitorViewModel = viewModel(
+        key = selectedMode.id.name,
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -74,11 +75,26 @@ fun MainScreen(viewModel: AppViewModel){
             modifier = Modifier.weight(15f).fillMaxWidth()
         ) {
             when (selectedMode.id) {
-                OperatingMode.Teaching -> TeachingScreen(viewModel = viewModel)
-                OperatingMode.Testing -> TestingScreen(viewModel = viewModel)
-                OperatingMode.Examination -> ExaminationScreen(viewModel = viewModel)
-                OperatingMode.OSKE -> OSKEScreen(viewModel = viewModel)
-                OperatingMode.Editor -> EditorScreen(viewModel = viewModel)
+                OperatingMode.Teaching -> TeachingScreen(
+                    viewModel = viewModel,
+                    monitorViewModel = monitorViewModel
+                )
+                OperatingMode.Testing -> TestingScreen(
+                    viewModel = viewModel,
+                    monitorViewModel = monitorViewModel
+                )
+                OperatingMode.Examination -> ExaminationScreen(
+                    viewModel = viewModel,
+                    monitorViewModel = monitorViewModel
+                )
+                OperatingMode.OSKE -> OSKEScreen(
+                    viewModel = viewModel,
+                    monitorViewModel = monitorViewModel
+                )
+                OperatingMode.Editor -> EditorScreen(
+                    viewModel = viewModel,
+                    monitorViewModel = monitorViewModel
+                )
             }
         }
     }

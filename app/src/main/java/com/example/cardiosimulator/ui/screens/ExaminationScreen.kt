@@ -9,8 +9,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 
+import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
+
 @Composable
-fun ExaminationScreen(viewModel: AppViewModel){
+fun ExaminationScreen(
+    viewModel: AppViewModel,
+    monitorViewModel: MonitorViewModel
+){
     Row(
         modifier = Modifier.fillMaxSize().systemBarsPadding()
     ) {

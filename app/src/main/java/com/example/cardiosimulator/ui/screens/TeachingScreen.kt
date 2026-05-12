@@ -23,8 +23,10 @@ import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 
 @Composable
-fun TeachingScreen(viewModel: AppViewModel){
-    val monitorViewModel: MonitorViewModel = viewModel()
+fun TeachingScreen(
+    viewModel: AppViewModel,
+    monitorViewModel: MonitorViewModel = viewModel()
+){
     val rhythms by viewModel.rhythms.collectAsState()
     val selectedLanguage by viewModel.selectedLanguage.collectAsState()
     val selectedRhythm by viewModel.selectedRhythm.collectAsState()
