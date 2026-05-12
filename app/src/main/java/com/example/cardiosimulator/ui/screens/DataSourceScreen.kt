@@ -27,21 +27,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
+import com.example.cardiosimulator.ui.panels.RhythmChoosingPanel
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.DataState
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -169,33 +166,16 @@ fun DataSourceScreen(
     if (showDetails) {
         val rhythms by viewModel.rhythms.collectAsState()
         val language by viewModel.selectedLanguage.collectAsState()
-        val isRussian = language.tag.startsWith("ru", ignoreCase = true)
 
         AlertDialog(
             onDismissRequest = { showDetails = false },
             title = { Text(stringResource(R.string.data_source_pathologies_title, rhythms.size)) },
             text = {
-                LazyColumn(modifier = Modifier.fillMaxHeight(0.7f)) {
-                    items(rhythms) { rhythm ->
-                        Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                            Text(
-                                text = rhythm.displayTitle.ifBlank { rhythm.fileName },
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-                            val leadCount = rhythm.seriesIdentityByLead.size
-                            val leadsList = rhythm.seriesIdentityByLead.keys.joinToString { it.name }
-                            val leadsDetail = if (leadCount < 12) " ($leadsList)" else ""
-                            
-                            Text(
-                                text = stringResource(R.string.data_source_leads_format, leadCount, leadsDetail),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        HorizontalDivider()
-                    }
-                }
+                RhythmChoosingPanel(
+                    modifier = Modifier.fillMaxHeight(0.7f),
+                    rhythms = rhythms,
+                    currentLanguage = language
+                )
             },
             confirmButton = {
                 TextButton(onClick = { showDetails = false }) {

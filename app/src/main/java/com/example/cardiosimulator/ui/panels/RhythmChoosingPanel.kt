@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -95,7 +96,7 @@ fun RhythmChoosingPanel(
                     val title = if (currentLanguage == Language.RU) it.fileName else it.displayTitle
                     title.contains(searchQuery, ignoreCase = true)
                 }
-                items(filtered, key = { it.pathology }) { rhythm ->
+                itemsIndexed(filtered, key = { _, rhythm -> rhythm.pathology }) { index, rhythm ->
                     val isSelected = rhythm.pathology == selectedPathology
                     val title = if (currentLanguage == Language.RU) rhythm.fileName else rhythm.displayTitle
                     Text(
@@ -107,6 +108,13 @@ fun RhythmChoosingPanel(
                         color = if (isSelected) Color.Red else Color.Black,
                         style = MaterialTheme.typography.bodyLarge
                     )
+                    if (index < filtered.lastIndex) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 4.dp),
+                            thickness = 0.5.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant
+                        )
+                    }
                 }
             }
         }
