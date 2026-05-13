@@ -24,6 +24,8 @@ import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.DataState
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
+import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
+import androidx.compose.runtime.LaunchedEffect
 
 @Composable
 fun MainScreen(viewModel: AppViewModel){
@@ -41,6 +43,22 @@ fun MainScreen(viewModel: AppViewModel){
             }
         }
     )
+
+    val rhythmViewModel: RhythmViewModel = viewModel(
+        key = selectedMode.id.name + "_rhythm",
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return RhythmViewModel(ecgRepository = viewModel.ecgRepository!!) as T
+            }
+        }
+    )
+
+    LaunchedEffect(dataState) {
+        if (dataState is DataState.Ready) {
+            rhythmViewModel.loadData()
+        }
+    }
 
     // If the user has not yet picked a data archive, or it's loading/erroring,
     // or they haven't confirmed the summary of the loaded data, show the picker.
@@ -77,23 +95,28 @@ fun MainScreen(viewModel: AppViewModel){
             when (selectedMode.id) {
                 OperatingMode.Teaching -> TeachingScreen(
                     viewModel = viewModel,
-                    monitorViewModel = monitorViewModel
+                    monitorViewModel = monitorViewModel,
+                    rhythmViewModel = rhythmViewModel
                 )
                 OperatingMode.Testing -> TestingScreen(
                     viewModel = viewModel,
-                    monitorViewModel = monitorViewModel
+                    monitorViewModel = monitorViewModel,
+                    rhythmViewModel = rhythmViewModel
                 )
                 OperatingMode.Examination -> ExaminationScreen(
                     viewModel = viewModel,
-                    monitorViewModel = monitorViewModel
+                    monitorViewModel = monitorViewModel,
+                    rhythmViewModel = rhythmViewModel
                 )
                 OperatingMode.OSKE -> OSKEScreen(
                     viewModel = viewModel,
-                    monitorViewModel = monitorViewModel
+                    monitorViewModel = monitorViewModel,
+                    rhythmViewModel = rhythmViewModel
                 )
                 OperatingMode.Editor -> EditorScreen(
                     viewModel = viewModel,
-                    monitorViewModel = monitorViewModel
+                    monitorViewModel = monitorViewModel,
+                    rhythmViewModel = rhythmViewModel
                 )
             }
         }

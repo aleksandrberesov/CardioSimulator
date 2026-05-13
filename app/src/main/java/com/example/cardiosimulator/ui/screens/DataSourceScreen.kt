@@ -163,10 +163,10 @@ fun DataSourceScreen(
         }
     }
 
-    if (showDetails) {
-        val rhythms by viewModel.rhythms.collectAsState()
-        val language by viewModel.selectedLanguage.collectAsState()
+    val rhythms by viewModel.rhythms.collectAsState()
+    val language by viewModel.selectedLanguage.collectAsState()
 
+    if (showDetails) {
         AlertDialog(
             onDismissRequest = { showDetails = false },
             title = { Text(stringResource(R.string.data_source_pathologies_title, rhythms.size)) },

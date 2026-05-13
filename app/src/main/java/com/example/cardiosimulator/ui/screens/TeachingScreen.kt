@@ -22,15 +22,18 @@ import com.example.cardiosimulator.ui.panels.RhythmChoosingPanel
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 
+import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
+
 @Composable
 fun TeachingScreen(
     viewModel: AppViewModel,
-    monitorViewModel: MonitorViewModel = viewModel()
+    monitorViewModel: MonitorViewModel = viewModel(),
+    rhythmViewModel: RhythmViewModel = viewModel()
 ){
-    val rhythms by viewModel.rhythms.collectAsState()
+    val rhythms by rhythmViewModel.rhythms.collectAsState()
     val selectedLanguage by viewModel.selectedLanguage.collectAsState()
-    val selectedRhythm by viewModel.selectedRhythm.collectAsState()
-    val waveforms by viewModel.waveforms.collectAsState()
+    val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
+    val waveforms by rhythmViewModel.waveforms.collectAsState()
 
     LaunchedEffect(Unit) {
         monitorViewModel.setSeriesCount(12)
@@ -48,7 +51,7 @@ fun TeachingScreen(
                 rhythms = rhythms,
                 selectedPathology = selectedRhythm?.pathology,
                 currentLanguage = selectedLanguage,
-                onRhythmSelect = { viewModel.selectRhythm(it.pathology) },
+                onRhythmSelect = { rhythmViewModel.selectRhythm(it.pathology) },
             )
         }
         Column(
@@ -78,7 +81,7 @@ fun TeachingScreen(
                 viewModel = monitorViewModel,
                 onStartStopClick = { isRunning ->
                     if (isRunning) {
-                        viewModel.sendStartCommand(selectedRhythm?.pathology)
+                        viewModel.sendStartCommand(selectedRhythm?.pathology, selectedRhythm?.displayTitle)
                     } else {
                         viewModel.sendStopCommand()
                     }

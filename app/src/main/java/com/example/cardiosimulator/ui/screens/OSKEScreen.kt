@@ -10,11 +10,13 @@ import androidx.compose.ui.Modifier
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
+import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
 @Composable
 fun OSKEScreen(
     viewModel: AppViewModel,
-    monitorViewModel: MonitorViewModel
+    monitorViewModel: MonitorViewModel,
+    rhythmViewModel: RhythmViewModel
 ){
     Row(
         modifier = Modifier.fillMaxSize().systemBarsPadding()
