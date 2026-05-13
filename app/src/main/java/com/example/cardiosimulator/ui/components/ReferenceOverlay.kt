@@ -28,9 +28,9 @@ import com.example.cardiosimulator.R
  */
 @Composable
 fun ReferenceOverlay(
+    modifier: Modifier = Modifier,
     painter: Painter? = null,
     opacity: Float = 0.3f,
-    modifier: Modifier = Modifier,
 ) {
     if (painter == null) return
     Image(

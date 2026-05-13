@@ -64,7 +64,7 @@ fun PreviewPane(
             .clipToBounds()
             .drawWithCache {
                 val stepX = if (sampleRateHz > 0f) scale.pxPerSampleFor(sampleRateHz) else scale.pxPerSample
-                val stepY = if (samplesPerMv > 0f) scale.pxPerSourceUnitFor(samplesPerMv) else scale.pxPerAdcCount
+                val stepY = if (samplesPerMv > 0f) scale.pxPerAdcCountFor(samplesPerMv) else scale.pxPerAdcCount
                 val baselineY = size.height / 2f
                 val total = points.values.size
                 if (total < 2) {

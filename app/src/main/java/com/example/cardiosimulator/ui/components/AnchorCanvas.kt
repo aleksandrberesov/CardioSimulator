@@ -134,7 +134,7 @@ private fun computeSpace(
     // One source-X unit = one sample at the part's effective rate. Convert
     // to px through the scale's px-per-sample.
     val pxX = if (sampleRateHz > 0f) scale.pxPerSampleFor(sampleRateHz) else scale.pxPerSample
-    val pxY = if (samplesPerMv > 0f) scale.pxPerSourceUnitFor(samplesPerMv) else scale.pxPerAdcCount
+    val pxY = if (samplesPerMv > 0f) scale.pxPerAdcCountFor(samplesPerMv) else scale.pxPerAdcCount
     return AnchorSpace(
         pxPerSourceX = pxX.coerceAtLeast(0.0001f),
         pxPerSourceY = pxY.coerceAtLeast(0.0001f),

@@ -49,7 +49,7 @@ class PixelScale(
      * `samplesPerMv` here is RP5's `AMax/AValue`; with `gainMmPerMv` mm/mV
      * the result is the per-source-unit pixel scale.
      */
-    fun pxPerSourceUnitFor(samplesPerMv: Float): Float =
+    fun pxPerAdcCountFor(samplesPerMv: Float): Float =
         if (samplesPerMv > 0f) pxPerMv / samplesPerMv else pxPerAdcCount
 
     companion object {

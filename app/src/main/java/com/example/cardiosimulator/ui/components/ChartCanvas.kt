@@ -53,7 +53,7 @@ fun ChartCanvas(
             .drawWithCache {
                 val stepX = if (sampleRateHz > 0f) scale.pxPerSampleFor(sampleRateHz)
                             else scale.pxPerSample
-                val stepY = if (samplesPerMv > 0f) scale.pxPerSourceUnitFor(samplesPerMv)
+                val stepY = if (samplesPerMv > 0f) scale.pxPerAdcCountFor(samplesPerMv)
                             else scale.pxPerAdcCount
                 val baselineY = size.height / 2f
 
