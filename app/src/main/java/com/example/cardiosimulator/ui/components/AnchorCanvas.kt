@@ -28,10 +28,9 @@ import com.example.cardiosimulator.domain.bakeAnchors
 /**
  * Source-coordinate -> screen-coordinate mapping for the anchor canvas.
  *
- * `pxPerSourceX` and `pxPerSourceY` come from RP5's grid math
- * (`Frame.Segments.pas:1142`): one source unit on X is `pxPerSec /
- * effectiveSampleRateHz`, one source unit on Y is `pxPerMv / samplesPerMv`
- * — i.e. the editor grid is anchored to source units, not to physical mm.
+ * One source unit on X is `pxPerSec / effectiveSampleRateHz`, one source
+ * unit on Y is `pxPerMv / samplesPerMv` — i.e. the editor grid is anchored
+ * to source units, not to physical mm.
  */
 class AnchorSpace(
     val pxPerSourceX: Float,
@@ -51,9 +50,8 @@ class AnchorSpace(
 
 /**
  * Renders [anchors] as a polyline (baked through curve interpolation) with
- * draggable handles. Mirrors RP5's Segments tab editing: tap an anchor to
- * select; drag to move; long-press the origin (index 0) to drag all
- * anchors together (RP5's `MovePointsBy`).
+ * draggable handles. Tap an anchor to select; drag to move; long-press the
+ * origin (index 0) to drag all anchors together.
  */
 @Composable
 fun AnchorEditableCanvas(

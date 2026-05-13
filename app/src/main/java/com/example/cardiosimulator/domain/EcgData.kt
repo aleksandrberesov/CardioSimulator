@@ -36,9 +36,9 @@ data class AnchorPoint(
 )
 
 /**
- * Block flags ported from RP5's `TPointG.Flags` byte. Currently used in the
- * series block list to mark behaviour: high-frequency, sound, fixed-duration,
- * broken (skip rendering on certain renderers), beat-aware, skip-QRS.
+ * Block flags used in the series block list to mark behaviour: high-frequency,
+ * sound, fixed-duration, broken (skip rendering on certain renderers),
+ * beat-aware, skip-QRS.
  *
  * Serialized as a comma-separated subset of the constants below, prefixed by
  * `flags=` inside a tuple. Empty/missing flags decode to [NONE].
@@ -118,12 +118,12 @@ data class WaveformPart(
     val samples: List<Int>,
     val source: SourceSpec?,
     /**
-     * Per-part `AMax` from RP5 (`max:` inside `source:`). Defaults to RP5's
-     * default of 200 when absent. Together with [aValue], defines the
+     * Per-part `AMax` (from `max:` inside `source:`). Defaults to
+     * 200 when absent. Together with [aValue], defines the
      * source coordinate system: `AMax` source-units == `AValue` mV.
      */
     val aMax: Int = source?.max ?: 200,
-    /** Per-part `AValue` from RP5 (`value:`). Defaults to RP5's default of 2. */
+    /** Per-part `AValue` (from `value:`). Defaults to 2. */
     val aValue: Int = source?.value ?: 2,
 ) {
     /** Effective sample rate (Hz), derived from `samples.size / duration`. */
@@ -134,8 +134,7 @@ data class WaveformPart(
 
     /**
      * How many raw sample units correspond to 1 mV at this record's calibration.
-     * Mirrors RP5's `P.Y * AValue / AMax` mapping (Frame.Segments.pas:522)
-     * but expressed as a sample-per-mV factor for the renderer.
+     * Expressed as a sample-per-mV factor for the renderer.
      */
     val samplesPerMv: Float
         get() = aMax.toFloat() / aValue.coerceAtLeast(1).toFloat()

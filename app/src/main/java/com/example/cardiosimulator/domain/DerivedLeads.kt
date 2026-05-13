@@ -6,9 +6,8 @@ import kotlin.math.sin
 
 /**
  * Linear combinations and angular projections used to derive the missing
- * leads of a 12-lead ECG from a smaller recorded set. Ported from RP5's
- * `Frame.Segments.pas:690` (Einthoven / Goldberger) and `:783` (V-lead
- * angular projection).
+ * leads of a 12-lead ECG from a smaller recorded set using Einthoven /
+ * Goldberger and V-lead angular projection.
  *
  * Inputs and outputs are in source-coordinate units. The caller is
  * responsible for ensuring inputs are aligned in time and sampled at the
@@ -44,14 +43,14 @@ object DerivedLeads {
     /**
      * Angular projection from V2 and V6 onto the missing V-lead positions.
      *
-     * RP5 places the precordial leads at fixed angles on the chest:
+     * The precordial leads are assumed to be at fixed angles on the chest:
      *
      *  V1: 115°,  V2: 94°,   V3: 70°,
      *  V4: 45°,   V5: 23°,   V6: 0°
      *
      * Given V2 and V6 as basis vectors, each other lead's projection is
      * derived by decomposing the angular position into cos/sin components
-     * relative to V2 and V6. See `Frame.Segments.pas:783`.
+     * relative to V2 and V6.
      */
     fun combineV1_V3_V4_V5(leadV2: List<Float>, leadV6: List<Float>, target: Lead): List<Float> {
         if (leadV2.isEmpty() || leadV6.isEmpty()) return emptyList()

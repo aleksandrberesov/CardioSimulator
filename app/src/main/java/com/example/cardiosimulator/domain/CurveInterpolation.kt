@@ -6,9 +6,7 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
- * Easing functions used by [bakeAnchors]. Mirrors RP5's curve enum from
- * `Frame.Segments.pas` (and the implicit easing identity at the LINEAR
- * end).
+ * Easing functions used by [bakeAnchors].
  *
  * `t` is the normalized segment progress in [0, 1].
  * Result is the interpolated factor in [0, 1] which is then mixed with the
@@ -55,11 +53,10 @@ fun bezierY(p0: Float, p1: Float, p2: Float, p3: Float, t: Float): Float {
  * emitted at integer `x` positions between anchors using the curve flag
  * of the *destination* anchor.
  *
- * RP5 packs cubic-Bezier handles as three consecutive anchors marked with
- * `cubic` (the `b` flag in `Frame.Segments.pas:1107`): the middle two
- * anchors are handles, the outer two are endpoints. We detect a triple by
- * looking at three consecutive `CUBIC*` curves and consuming them as one
- * cubic segment. Mirrors RP5's "b" group semantics.
+ * Cubic-Bezier handles are represented as three consecutive anchors marked
+ * with `cubic`: the middle two anchors are handles, the outer two are
+ * endpoints. We detect a triple by looking at three consecutive `CUBIC*`
+ * curves and consuming them as one cubic segment.
  *
  * Returns a list of (x, y) tuples in source coordinates.
  */

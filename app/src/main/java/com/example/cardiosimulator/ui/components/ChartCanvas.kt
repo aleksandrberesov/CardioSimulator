@@ -28,7 +28,7 @@ import androidx.compose.runtime.CompositionLocalProvider
  *   of the global default. Used so records sampled at e.g. 250 Hz render at
  *   the right speed.
  * - [samplesPerMv] — when > 0, scales sample values to pixels via this
- *   factor (RP5's `AMax/AValue`). Used so records exported with non-default
+ *   factor (`AMax/AValue`). Used so records exported with non-default
  *   `max`/`value` render at the right gain.
  *
  * When both are omitted the renderer falls back to the legacy global

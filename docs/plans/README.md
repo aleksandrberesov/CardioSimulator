@@ -61,8 +61,8 @@ Keep this list current when you add or move a plan.
   language switcher (en/ru/zh/es), string extraction, a11y sweep. Code on
   `claude/charming-hertz-d394c5`; awaiting build + on-device QA + clinician
   review of translations before merge.
-- [`2026-05-editor-mode.md`](active/2026-05-editor-mode.md) — close the gap
-  with RP5EcgEditor: round-trip persistence, calibration parity, point/segment
+- [`2026-05-editor-mode.md`](active/2026-05-editor-mode.md) — implementation of
+  the editor mode: round-trip persistence, calibration parity, point/segment
   editor, derived leads, block timeline, preview polish.
   Phased 0 → 0a → 1 → 3 → 2 → 4.
 

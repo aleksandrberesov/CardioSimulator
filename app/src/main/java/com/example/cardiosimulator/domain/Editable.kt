@@ -4,9 +4,6 @@ package com.example.cardiosimulator.domain
  * Mutable counterpart to [WaveformPart] used by the editor. Anchors are the
  * source-of-truth coordinates; [samples] is regenerated on save (or on
  * demand) from the anchor list using the curve interpolation rules.
- *
- * Mirrors RP5's `TPart` semantics: the user edits anchors, the device
- * sample stream is derived.
  */
 data class EditablePart(
     val identy: String,
@@ -37,7 +34,7 @@ data class EditablePart(
         samples?.let { return it }
         if (anchors.isEmpty()) return emptyList()
         // Bake to source-coordinate floats then shift by the 1024 baseline
-        // and clip to int — matches what RP5 stores in `points:` files.
+        // and clip to int.
         val ys = bakeAnchorsToSamples(anchors)
         val baked = ys.map { (it + 1024f).toInt() }
         samples = baked
@@ -165,9 +162,8 @@ data class EditableSeries(
 }
 
 /**
- * Per-record undo stack. Mirrors RP5's `FStackSourcePoints` push-pop model:
- * before every mutation, push a snapshot; undo pops the last snapshot.
- * Capped at [maxDepth] to bound memory.
+ * Per-record undo stack: before every mutation, push a snapshot; undo pops
+ * the last snapshot. Capped at [maxDepth] to bound memory.
  */
 class UndoStack<T>(private val maxDepth: Int = 50) {
     private val stack = ArrayDeque<T>()

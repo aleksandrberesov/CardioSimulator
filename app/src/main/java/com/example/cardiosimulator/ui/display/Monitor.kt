@@ -37,11 +37,10 @@ fun Monitor(
     monitorViewModel: MonitorViewModel = viewModel(),
     /**
      * When non-null, switches to a source-anchored grid sized so that one
-     * small grid square == one source `mm` per RP5's
-     * `AMax/AValue/10 px-per-mm` rule (Frame.Segments.pas:1142). Used by
-     * Editor mode where the user drags anchors and the grid must align
-     * with integer source units. Pass null for viewer modes — they get
-     * the physical-mm grid.
+     * small grid square == one source `mm` per `AMax/AValue/10 px-per-mm`
+     * rule. Used by Editor mode where the user drags anchors and the grid
+     * must align with integer source units. Pass null for viewer modes —
+     * they get the physical-mm grid.
      */
     sourceAnchoredCalibration: Pair<Int, Int>? = null,
     content: @Composable ColumnScope.(rows: Int, columns: Int) -> Unit

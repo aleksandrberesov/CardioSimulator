@@ -22,8 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.domain.EditableSeries
 
 /**
- * Property inspector for a single series. Mirrors RP5's Series property
- * editor on the Blocks tab: title / lead / pathology / params.
+ * Property inspector for a single series: title / lead / pathology / params.
  */
 @Composable
 fun SeriesInspector(

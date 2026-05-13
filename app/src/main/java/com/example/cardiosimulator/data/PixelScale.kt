@@ -46,7 +46,7 @@ class PixelScale(
 
     /**
      * Per-part px-per-source-unit using the part's `samplesPerMv` factor.
-     * `samplesPerMv` here is RP5's `AMax/AValue`; with `gainMmPerMv` mm/mV
+     * `samplesPerMv` is `AMax/AValue`; with `gainMmPerMv` mm/mV
      * the result is the per-source-unit pixel scale.
      */
     fun pxPerAdcCountFor(samplesPerMv: Float): Float =
@@ -56,8 +56,7 @@ class PixelScale(
         /**
          * Convenience builder for Editor mode: replaces [pxPerMm] with a
          * source-anchored value `AMax/AValue/10` so the grid aligns with
-         * one source-unit per small grid square (matches RP5's
-         * `Frame.Segments.pas` grid math at :1142).
+         * one source-unit per small grid square.
          */
         fun sourceAnchored(
             aMax: Int,
@@ -68,11 +67,11 @@ class PixelScale(
             physicalPxPerMm: Float,
         ): PixelScale {
             val safeVal = aValue.coerceAtLeast(1)
-            // RP5: one grid square == 1 source mm == AMax/AValue/10 px.
-            // We still want a sensible *visible* size — RP5 scales by the
-            // display zoom too. We multiply the source-anchored value by
-            // the physical px/mm ratio so the editor grid stays in a
-            // reasonable on-screen size for any reasonable AMax/AValue.
+            // One grid square == 1 source unit == AMax/AValue/10 px.
+            // We still want a sensible *visible* size — we multiply the
+            // source-anchored value by the physical px/mm ratio so the
+            // editor grid stays in a reasonable on-screen size for any
+            // reasonable AMax/AValue.
             val sourcePxPerMm = (aMax.toFloat() / safeVal / 10f) * (physicalPxPerMm / (160f / 25.4f))
             return PixelScale(
                 pxPerMm = sourcePxPerMm.coerceAtLeast(1f),

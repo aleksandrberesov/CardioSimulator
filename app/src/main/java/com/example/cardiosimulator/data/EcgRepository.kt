@@ -87,7 +87,7 @@ class EcgRepository(private var source: EcgSource) {
      * apply per-part `samplesPerMv` (`AMax/AValue`) instead — see
      * [com.example.cardiosimulator.domain.WaveformPart.samplesPerMv]. This
      * is the editor-mode path that avoids double-scaling against
-     * `amplitude` and stays consistent with RP5's `Frame.Segments.pas`.
+     * `amplitude` and stays consistent with the editor calibration logic.
      */
     fun assembleWaveformParts(seriesIdenty: String): List<WaveformPart> {
         val series = series(seriesIdenty) ?: return emptyList()

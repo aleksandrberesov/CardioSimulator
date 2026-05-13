@@ -37,7 +37,7 @@ import com.example.cardiosimulator.domain.EasingCurve
 /**
  * Side panel for editing a single selected [AnchorPoint]. X/Y are in
  * source coordinates; the curve flag controls interpolation from the
- * preceding anchor. Buttons mirror RP5's Segments-tab actions.
+ * preceding anchor.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

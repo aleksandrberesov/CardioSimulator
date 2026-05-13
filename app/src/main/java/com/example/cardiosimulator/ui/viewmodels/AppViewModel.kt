@@ -102,7 +102,7 @@ class AppViewModel(
     //
     // EditablePart / EditableSeries are the mutable working copies the editor
     // mutates. `dirtyParts` / `dirtySeries` track which identies need to be
-    // flushed to disk. `undo*` mirrors RP5's per-record undo stack.
+    // flushed to disk. `undo*` tracks the per-record undo stack.
 
     private val editableParts: MutableMap<String, EditablePart> = mutableMapOf()
     private val editableSeries: MutableMap<String, EditableSeries> = mutableMapOf()
@@ -646,7 +646,6 @@ class AppViewModel(
      * Generate the four limb-derived leads (III, aVR, aVL, aVF) from the
      * I and II parts of [pathology], creating new parts and appending them
      * to the matching series. Skipped silently if I or II is missing.
-     * Mirrors RP5's "Button17Click" at Frame.Blocks.pas:1736.
      */
     fun generateDerivedLimbLeads(pathology: String) {
         val repo = ecgRepository ?: return

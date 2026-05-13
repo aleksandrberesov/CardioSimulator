@@ -33,8 +33,7 @@ import com.example.cardiosimulator.data.Points
 /**
  * HR=60 looping preview pane. Renders [points] as a polyline that scrolls
  * left-to-right at one beat per second. Used by the editor footer to show
- * how the current segment/series sounds at a standard rate. Mirrors RP5's
- * `RecalcTumbPoints` / `RecalcTumbBlocks` sensor-window logic.
+ * how the current segment/series sounds at a standard rate.
  */
 @Composable
 fun PreviewPane(

@@ -1,8 +1,7 @@
 package com.example.cardiosimulator.domain
 
 /**
- * In-app clipboard for anchor lists, mirroring RP5's per-app
- * copy/paste in the Segments tab. Single static slot is enough — the
+ * In-app clipboard for anchor lists. Single static slot is enough — the
  * editor only ever cuts/pastes one selection at a time, and there is no
  * cross-app clipboard interop.
  */
@@ -17,9 +16,8 @@ object AnchorClipboard {
 }
 
 /**
- * Auto-fill helpers ported from RP5's `MakeTitle` / `MakeIdenty`. The
- * title is the human-readable name (`pathology + lead`); identy is the
- * stable key used by serialized data files.
+ * Auto-fill helpers. The title is the human-readable name (`pathology + lead`);
+ * identy is the stable key used by serialized data files.
  */
 object PartNamer {
     fun makeTitle(pathology: String?, lead: Lead?): String {
