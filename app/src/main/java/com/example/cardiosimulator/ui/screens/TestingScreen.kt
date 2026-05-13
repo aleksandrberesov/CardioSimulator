@@ -29,6 +29,8 @@ fun TestingScreen(
     monitorViewModel: MonitorViewModel = viewModel(),
     rhythmViewModel: RhythmViewModel = viewModel()
 ){
+    val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
+    val waveforms by rhythmViewModel.waveforms.collectAsState()
 
     LaunchedEffect(Unit) {
         monitorViewModel.setSeriesCount(12)
@@ -52,8 +54,11 @@ fun TestingScreen(
                     columns = columns,
                     itemCount = mode.count
                 ) { _, lead ->
+                    val leadPoints = lead?.let { waveforms[it] }
+                        ?.takeIf { it.values.size >= 2 }
+                        ?: Points(emptyList<Float>())
                     Lead(
-                        points = Points(emptyList<Float>()),
+                        points = leadPoints,
                         title = lead?.name ?: ""
                     )
                 }
@@ -62,7 +67,7 @@ fun TestingScreen(
                 viewModel = monitorViewModel,
                 onStartStopClick = { isRunning ->
                     if (isRunning) {
-                        viewModel.sendStartCommand()
+                        viewModel.sendStartCommand(selectedRhythm?.pathology, selectedRhythm?.displayTitle)
                     } else {
                         viewModel.sendStopCommand()
                     }

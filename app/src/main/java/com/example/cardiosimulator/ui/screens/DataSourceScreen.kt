@@ -42,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
 /**
  * First-run screen shown when no data folder has been picked yet, or when
@@ -52,6 +53,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 fun DataSourceScreen(
     viewModel: AppViewModel,
+    rhythmViewModel: RhythmViewModel = viewModel(),
     state: DataState,
 ) {
     val context = LocalContext.current
@@ -163,7 +165,7 @@ fun DataSourceScreen(
         }
     }
 
-    val rhythms by viewModel.rhythms.collectAsState()
+    val rhythms by rhythmViewModel.rhythms.collectAsState()
     val language by viewModel.selectedLanguage.collectAsState()
 
     if (showDetails) {

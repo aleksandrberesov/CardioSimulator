@@ -64,18 +64,20 @@ import com.example.cardiosimulator.ui.panels.RhythmChoosingPanel
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
+import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
 @Composable
 fun EditorScreen(
     viewModel: AppViewModel,
     monitorViewModel: MonitorViewModel = viewModel(),
+    rhythmViewModel: RhythmViewModel = viewModel(),
     onLeaveAttempt: (() -> Unit)? = null,
 ) {
-    val rhythms by viewModel.rhythms.collectAsState()
+    val rhythms by rhythmViewModel.rhythms.collectAsState()
     val selectedLanguage by viewModel.selectedLanguage.collectAsState()
-    val selectedRhythm by viewModel.selectedRhythm.collectAsState()
-    val allSeries by viewModel.allSeries.collectAsState()
-    val allParts by viewModel.allParts.collectAsState()
+    val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
+    val allSeries by rhythmViewModel.allSeries.collectAsState()
+    val allParts by rhythmViewModel.allParts.collectAsState()
     val dirtyParts by viewModel.dirtyParts.collectAsState()
     val dirtySeries by viewModel.dirtySeries.collectAsState()
 
@@ -163,7 +165,7 @@ fun EditorScreen(
                     rhythms = rhythms,
                     selectedPathology = selectedRhythm?.pathology,
                     currentLanguage = selectedLanguage,
-                    onRhythmSelect = { viewModel.selectRhythm(it.pathology) },
+                    onRhythmSelect = { rhythmViewModel.selectRhythm(it.pathology) },
                 )
             }
 
@@ -425,24 +427,24 @@ fun EditorScreen(
     }
 }
 
-    @Preview(showBackground = true, widthDp = 1000, heightDp = 600)
-    @Composable
-    fun EditorScreenPreview() {
-        val appBuilder = AppBuilder()
-        appBuilder.addMode(OperatingModeModel(OperatingMode.Editor))
+@Preview(showBackground = true, widthDp = 1000, heightDp = 600)
+@Composable
+fun EditorScreenPreview() {
+    val appBuilder = AppBuilder()
+    appBuilder.addMode(OperatingModeModel(OperatingMode.Editor))
 
-        val previewViewModel: AppViewModel = viewModel(
-            factory = object : ViewModelProvider.Factory {
-                @Suppress("UNCHECKED_CAST")
-                override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return AppViewModel(
-                        appState = appBuilder.build()
-                    ) as T
-                }
+    val previewViewModel: AppViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return AppViewModel(
+                    appState = appBuilder.build()
+                ) as T
             }
-        )
-
-        CardioSimulatorTheme {
-            EditorScreen(viewModel = previewViewModel)
         }
+    )
+
+    CardioSimulatorTheme {
+        EditorScreen(viewModel = previewViewModel)
     }
+}
