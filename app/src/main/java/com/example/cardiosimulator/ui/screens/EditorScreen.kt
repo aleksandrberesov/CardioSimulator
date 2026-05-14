@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -61,6 +62,7 @@ import com.example.cardiosimulator.ui.display.Monitor
 import com.example.cardiosimulator.ui.display.ekgGrid
 import com.example.cardiosimulator.ui.panels.AnchorInspector
 import com.example.cardiosimulator.ui.panels.RhythmChoosingPanel
+import com.example.cardiosimulator.ui.panels.SeriesInspector
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
@@ -329,8 +331,8 @@ fun EditorScreen(
                 }
             }
 
-            // Right rail: anchor inspector
-            Box(
+            // Right rail: anchor & series inspectors
+            Column(
                 modifier = Modifier
                     .width(260.dp)
                     .fillMaxHeight()
@@ -421,6 +423,19 @@ fun EditorScreen(
                             selectedAnchorIndex = null
                         }
                     },
+                    modifier = Modifier.weight(1f)
+                )
+
+                HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
+
+                val es = focusedSeriesId?.let { viewModel.editableSeries(it) }
+                SeriesInspector(
+                    series = es,
+                    onTitleChange = { v -> focusedSeriesId?.let { id -> viewModel.mutateSeries(id) { it.title = v } } },
+                    onDisplayNameChange = { v -> focusedSeriesId?.let { id -> viewModel.mutateSeries(id) { it.displayName = v } } },
+                    onPathologyChange = { v -> focusedSeriesId?.let { id -> viewModel.mutateSeries(id) { it.pathology = v } } },
+                    onParamsChange = { v -> focusedSeriesId?.let { id -> viewModel.mutateSeries(id) { it.params = v } } },
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
