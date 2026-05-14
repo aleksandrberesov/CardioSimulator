@@ -32,6 +32,249 @@ The codebase follows a layered MVVM-with-Compose architecture:
 
 ---
 
+## MVVM Architecture — Detailed Class Connections
+
+### Full dependency graph
+
+Arrows show **constructor injection / direct call / field access** (`──►`).
+Dashed arrows (`╌╌►`) show **StateFlow emissions** consumed via `collectAsState`.
+
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  ANDROID FRAMEWORK                                                           ║
+║                                                                              ║
+║  MainActivity.onCreate                                                       ║
+║     │  creates via AppBuilder.build()                                        ║
+║     ├──────────────────────────────────► AppStateModel                       ║
+║     │      (holds OperatingModeModel list, selected mode, language, tcp)     ║
+║     │                                                                        ║
+║     │  creates directly                                                      ║
+║     ├──────────────────────────────────► EcgRepository(AssetEcgSource)       ║
+║     │                                                                        ║
+║     │  creates directly                                                      ║
+║     ├──────────────────────────────────► DataSourcePrefs(context)            ║
+║     │                                                                        ║
+║     │  creates via Compose viewModel { }                                     ║
+║     └──────────────────────────────────► AppViewModel(appState, repo,        ║
+║                                               ctx, prefs)                   ║
+╚═══════════════════════╤══════════════════════════════════════════════════════╝
+                        │ passes AppViewModel down
+                        ▼
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  VIEWMODEL LAYER                                                             ║
+║                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────┐    ║
+║  │ AppViewModel                                  (central hub)         │    ║
+║  │                                                                     │    ║
+║  │  Injected dependencies:                                             │    ║
+║  │    AppStateModel ◄─ operatingModes, selectedOperatingMode           │    ║
+║  │    EcgRepository ◄─ setSource / load / assemble / pathologies       │    ║
+║  │    DataSourcePrefs ◄─ read/write treeUri, language, tcp, theme      │    ║
+║  │    Context ◄─ SAF resolver, filesDir, DataStore                     │    ║
+║  │                                                                     │    ║
+║  │  Internal collaborators (owned / called):                           │    ║
+║  │    TcpProtocol.encode/decode ──► TcpMessage sealed hierarchy        │    ║
+║  │    java.net.Socket (tcpSocket) ─ connect / read / write             │    ║
+║  │    ZipDecompressor.unzip ──► FileEcgSource → EcgRepository          │    ║
+║  │    ZipCompressor.repack ──► TCP upload / export                     │    ║
+║  │    EditablePart  (mutable working copies, map by identy)            │    ║
+║  │    EditableSeries (mutable working copies, map by identy)           │    ║
+║  │    UndoStack<EditablePart>   (partUndo,   capped snapshot ring)     │    ║
+║  │    UndoStack<EditableSeries> (seriesUndo, capped snapshot ring)     │    ║
+║  │    DerivedLeads.object ──► generate limb/precordial leads           │    ║
+║  │    EcgFileFormat.object ──► serialize parts/series on save          │    ║
+║  │                                                                     │    ║
+║  │  Emitted StateFlows (consumed by UI via collectAsState):            │    ║
+║  │    selectedOperatingMode : StateFlow<OperatingModeModel>            │    ║
+║  │    selectedLanguage      : StateFlow<Language>                      │    ║
+║  │    tcpIp / tcpPort       : StateFlow<String/Int>                    │    ║
+║  │    isDarkTheme           : StateFlow<Boolean>                       │    ║
+║  │    tcpConnectionState    : StateFlow<TcpConnectionState>            │    ║
+║  │    dataState             : StateFlow<DataState>                     │    ║
+║  │    isDataConfirmed       : StateFlow<Boolean>                       │    ║
+║  │    isUploading           : StateFlow<Boolean>                       │    ║
+║  │    lastAck               : StateFlow<TcpMessage.AckMessage?>        │    ║
+║  │    dirtyParts            : StateFlow<Set<String>>                   │    ║
+║  │    dirtySeries           : StateFlow<Set<String>>                   │    ║
+║  └─────────────────────────────────────────────────────────────────────┘    ║
+║                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────┐    ║
+║  │ MonitorViewModel                                                    │    ║
+║  │                                                                     │    ║
+║  │  Injected: DataSourcePrefs? ◄─ read/persist gridScheme             │    ║
+║  │  Domain:   MonitorModeModel (immutable snapshot, copied on update)  │    ║
+║  │            EcgCalibration  (embedded inside MonitorModeModel)       │    ║
+║  │            GridScheme / SeriesScheme enums                          │    ║
+║  │                                                                     │    ║
+║  │  Emits:                                                             │    ║
+║  │    monitorMode : StateFlow<MonitorModeModel>                        │    ║
+║  │      (count · gridScheme · seriesScheme · speed · scale ·           │    ║
+║  │       displayScale · calibration · isRunning)                       │    ║
+║  │                                                                     │    ║
+║  │  Setters (called by UI panels):                                     │    ║
+║  │    setSeriesCount / setSeriesScheme / setGridScheme(persist?)       │    ║
+║  │    setSpeed / setScale / setCalibration / setDisplayScale           │    ║
+║  │    setIsRunning                                                     │    ║
+║  └─────────────────────────────────────────────────────────────────────┘    ║
+║                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────┐    ║
+║  │ RhythmViewModel                                                     │    ║
+║  │                                                                     │    ║
+║  │  Injected: EcgRepository ◄─ pathologies / allSeries / allParts /   │    ║
+║  │                               assembleWaveform                      │    ║
+║  │                                                                     │    ║
+║  │  Emits:                                                             │    ║
+║  │    rhythms         : StateFlow<List<PathologyGroup>>                │    ║
+║  │    selectedRhythm  : StateFlow<PathologyGroup?>                     │    ║
+║  │    waveforms       : StateFlow<Map<Lead, Points>>                   │    ║
+║  │    allSeries       : StateFlow<List<EcgSeries>>                     │    ║
+║  │    allParts        : StateFlow<List<WaveformPart>>                  │    ║
+║  │                                                                     │    ║
+║  │  Actions: loadData() / selectRhythm(pathology) / updateWaveform()  │    ║
+║  └─────────────────────────────────────────────────────────────────────┘    ║
+╚═══════════════════════╤══════════════════════════════════════════════════════╝
+                        │ StateFlows collected by Composables
+                        ▼
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  UI LAYER (Jetpack Compose)                                                  ║
+║                                                                              ║
+║  MainScreen(AppViewModel)                                                    ║
+║    │  creates (keyed by mode)                                                ║
+║    ├──► MonitorViewModel(prefs)                                              ║
+║    │  creates (keyed by mode + "_rhythm")                                    ║
+║    ├──► RhythmViewModel(ecgRepository)                                       ║
+║    │                                                                         ║
+║    │  observes: selectedOperatingMode · dataState · isDataConfirmed          ║
+║    │                                                                         ║
+║    ├── if !isDataConfirmed or Loading/Error/NotConfigured:                   ║
+║    │       DataSourceScreen(AppViewModel, RhythmViewModel, dataState)        ║
+║    │         └─ SAF picker ──► AppViewModel.setDataFolder()                  ║
+║    │                                                                         ║
+║    ├── if showSettings:                                                      ║
+║    │       SettingsDialog(MonitorViewModel, AppViewModel)                    ║
+║    │         └─ reads/writes monitorMode, isDarkTheme, language              ║
+║    │                                                                         ║
+║    ├── AppControlPanel(AppViewModel)                                         ║
+║    │     └─ mode switcher, TCP toggle, language picker                       ║
+║    │                                                                         ║
+║    └── when selectedMode:                                                    ║
+║         Teaching     → TeachingScreen(App, Monitor, Rhythm)                 ║
+║         │   └─ RhythmChoosingPanel(RhythmViewModel)                         ║
+║         │   └─ MonitorControlPanel(AppViewModel, MonitorViewModel)           ║
+║         │   └─ Monitor / LeadsGrid / Lead ◄── waveforms StateFlow           ║
+║         │                                                                   ║
+║         Testing      → TestingScreen(App, Monitor, Rhythm)                  ║
+║         │   └─ TestingControlPanel(AppViewModel, MonitorViewModel)           ║
+║         │   └─ Monitor / LeadsGrid / Lead                                   ║
+║         │                                                                   ║
+║         Examination  → ExaminationScreen(App, Monitor, Rhythm)              ║
+║         OSKE         → OSKEScreen(App, Monitor, Rhythm)                     ║
+║         │   (same panel+display structure as Teaching)                      ║
+║         │                                                                   ║
+║         Editor       → EditorScreen(App, Monitor, Rhythm)                   ║
+║             └─ RhythmChoosingPanel(RhythmViewModel)                         ║
+║             └─ tabs:                                                        ║
+║                  AnchorInspector(AppViewModel)                              ║
+║                  │   └─ drag gestures ──► AppViewModel.mutatePart()         ║
+║                  │   └─ AnchorClipboard.object (cut/paste)                  ║
+║                  SeriesInspector(AppViewModel, RhythmViewModel)             ║
+║                      └─ AppViewModel.mutateSeries()                         ║
+║             └─ display:                                                     ║
+║                  ChartCanvas ◄─ EditablePart.bakedSamples()                 ║
+║                  AnchorHandleOverlay ◄─ EditablePart.anchors                ║
+║                  CalibrationPulse ◄─ LocalPixelScale                        ║
+║                  PreviewPane                                                ║
+║                  BlockTimeline ◄─ EditableSeries.partRefs                   ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
+
+### StateFlow data flow (reactive bindings)
+
+```
+AppViewModel StateFlows           Consumed by
+─────────────────────────────────────────────────────────────────────
+selectedOperatingMode   ──╌╌►  MainScreen (routing), AppControlPanel
+selectedLanguage        ──╌╌►  AppControlPanel, EditorScreen, screens
+tcpConnectionState      ──╌╌►  AppControlPanel, MonitorControlPanel
+dataState               ──╌╌►  MainScreen (guard), DataSourceScreen
+isDataConfirmed         ──╌╌►  MainScreen (guard)
+isDarkTheme             ──╌╌►  CardioSimulatorTheme (wraps Material3)
+tcpIp / tcpPort         ──╌╌►  SettingsDialog
+isUploading             ──╌╌►  EditorScreen (progress indicator)
+lastAck                 ──╌╌►  MonitorControlPanel (feedback display)
+dirtyParts              ──╌╌►  EditorScreen (unsaved indicator)
+dirtySeries             ──╌╌►  EditorScreen (unsaved indicator)
+
+MonitorViewModel StateFlows
+─────────────────────────────────────────────────────────────────────
+monitorMode             ──╌╌►  Monitor (speed, scale, grid, running)
+                               MonitorControlPanel (reflects settings)
+                               SettingsDialog (calibration)
+
+RhythmViewModel StateFlows
+─────────────────────────────────────────────────────────────────────
+rhythms                 ──╌╌►  RhythmChoosingPanel (list)
+selectedRhythm          ──╌╌►  RhythmChoosingPanel (highlight)
+waveforms               ──╌╌►  LeadsGrid → Lead (render Points per lead)
+                               EditorScreen (waveform preview)
+allSeries               ──╌╌►  SeriesInspector (list of series to edit)
+allParts                ──╌╌►  AnchorInspector (list of parts to edit)
+```
+
+### UI component ownership tree
+
+```
+CardioSimulatorTheme
+└── MainScreen
+    ├── [guard] DataSourceScreen
+    │     └── SAF file picker ──► AppViewModel.setDataFolder()
+    ├── [overlay] SettingsDialog
+    │     ├── reads/writes MonitorViewModel.monitorMode
+    │     └── reads/writes AppViewModel.{isDarkTheme, selectedLanguage, tcpIp, tcpPort}
+    ├── AppControlPanel
+    │     ├── reads AppViewModel.{selectedOperatingMode, tcpConnectionState, selectedLanguage}
+    │     └── calls AppViewModel.{setOperatingMode, toggleTcpConnection, setLanguage}
+    └── [mode screen]  ← one of five, keyed by OperatingMode
+          ├── RhythmChoosingPanel          (Teaching / Testing / Editor / OSKE)
+          │     ├── reads  RhythmViewModel.{rhythms, selectedRhythm}
+          │     └── calls  RhythmViewModel.selectRhythm()
+          ├── MonitorControlPanel          (Teaching / Testing / Examination / OSKE)
+          │     ├── reads  AppViewModel.tcpConnectionState, lastAck
+          │     ├── reads  MonitorViewModel.monitorMode
+          │     └── calls  AppViewModel.sendStartCommand / sendStopCommand
+          │                MonitorViewModel.setIsRunning
+          ├── TestingControlPanel          (Testing only)
+          ├── TeachingControlPanel         (Teaching only)
+          ├── Monitor                      ← display
+          │     ├── reads MonitorViewModel.monitorMode (speed, scale, grid, running)
+          │     └── provides LocalPixelScale to subtree
+          ├── LeadsGrid
+          │     └── Lead  ×N
+          │           ├── reads RhythmViewModel.waveforms[lead] → Points
+          │           └── reads LocalPixelScale (PixelScale + EcgCalibration)
+          │
+          └── [Editor only]
+                ├── AnchorInspector
+                │     ├── reads  AppViewModel.{editablePart, dirtyParts}
+                │     ├── calls  AppViewModel.mutatePart / undoPart
+                │     └── uses   AnchorClipboard.object (cut / paste)
+                ├── SeriesInspector
+                │     ├── reads  RhythmViewModel.{allSeries, allParts}
+                │     ├── reads  AppViewModel.dirtySeries
+                │     └── calls  AppViewModel.mutateSeries / undoSeries
+                ├── ChartCanvas
+                │     └── renders EditablePart.bakedSamples() → FloatArray
+                ├── AnchorHandleOverlay
+                │     └── drag ──► AppViewModel.mutatePart { ep.anchors[i] = newAnchor }
+                ├── CalibrationPulse
+                │     └── reads LocalPixelScale
+                ├── PreviewPane
+                └── BlockTimeline
+                      └── reads EditableSeries.partRefs
+```
+
+---
+
 ## 1. Package layout
 
 | Package | Role |
@@ -244,14 +487,14 @@ MainScreen(viewModel: AppViewModel)
 | `TestingScreen` | `RhythmChoosingPanel`, `TestingControlPanel`, `MonitorControlPanel` | `Monitor`, `LeadsGrid`, `Lead` |
 | `ExaminationScreen` | (similar to Teaching) | `Monitor`, `LeadsGrid`, `Lead` |
 | `OSKEScreen` | (similar) | `Monitor`, `LeadsGrid`, `Lead` |
-| `EditorScreen` | `RhythmChoosingPanel`, `AnchorInspector`, `SeriesInspector` (via tabs) | `Monitor`, `EditableLead`, `AnchorEditableCanvas`, `PreviewPane`, `BlockTimeline` |
+| `EditorScreen` | `RhythmChoosingPanel`, `AnchorInspector`, `SeriesInspector` (via tabs) | `Monitor`, `CalibrationPulse`, `ChartCanvas`, `AnchorHandleOverlay`, `PreviewPane`, `BlockTimeline` |
 | `MainScreen` (top bar) | `AppControlPanel` | — |
 
 ### Components (`…ui.components`)
 
 Reusable visual primitives consumed by screens / display:
 
-`AnchorCanvas` (incl. `AnchorEditableCanvas`), `AutoResizeText`, `BlockTimeline`,
+`AnchorCanvas` (`AnchorHandleOverlay`, `AnchorSpace`), `AutoResizeText`, `BlockTimeline`,
 `CalibrationPulse`, `ChartCanvas` (incl. `chartArea`), `ControlPanelDivider`,
 `Label`, `Modifers`, `PreviewPane`, `ReferenceOverlay`, `Tab` / `PaperGridLegend`.
 
@@ -305,13 +548,16 @@ MainActivity
 ### Editing an anchor in Editor mode
 
 ```
-EditorScreen → AnchorEditableCanvas (drag)
+EditorScreen → AnchorHandleOverlay (drag)
    ↓
 AppViewModel.mutatePart(identy) { ep.anchors[i] = newAnchor }
    ↓
 partUndo[identy].push(snapshot)
 ep.samples = null           (invalidate baked cache)
 _dirtyParts += identy
+   ↓
+bakedPoints remember key changes → EditablePart.bakedSamples() rebakes
+   ↓ ChartCanvas(bakedPoints) redraws waveform; AnchorHandleOverlay redraws handles
    ↓
 On save: AppViewModel.saveAll()
    → for each dirty id → EcgFileFormat.writePart(ep.toWaveformPart())
@@ -334,28 +580,75 @@ MonitorControlPanel button
 
 ## 9. Quick class-dependency cheat-sheet
 
+Legend: `──►` = creates / injects / calls  ·  `╌╌►` = emits StateFlow  ·  `◄implements` = interface
+
 ```
+──── CONSTRUCTION / INJECTION ────────────────────────────────────────────────
+
 MainActivity ──► AppBuilder ──► AppStateModel
-            └──► EcgRepository ──► EcgSource (Asset|File)
-            └──► DataSourcePrefs
-            └──► AppViewModel ──► AppStateModel
-                              ├─► EcgRepository
-                              ├─► DataSourcePrefs
-                              ├─► TcpProtocol / TcpMessage / Socket
-                              ├─► ZipDecompressor / ZipCompressor
-                              ├─► EditablePart / EditableSeries / UndoStack
-                              └─► DerivedLeads
+                                └── OperatingModeModel × 5
+            ──► EcgRepository(AssetEcgSource)
+                  ├── EcgSource ◄implements AssetEcgSource (boot)
+                  └── EcgSource ◄implements FileEcgSource  (after SAF pick)
+            ──► DataSourcePrefs
+            ──► AppViewModel(AppStateModel, EcgRepository, Context, DataSourcePrefs)
+                  ├── TcpProtocol.object  ──► TcpMessage (encode/decode)
+                  ├── java.net.Socket     (tcpSocket)
+                  ├── ZipDecompressor.object
+                  ├── ZipCompressor.object
+                  ├── EditablePart        (mutable, per identy)
+                  │     └── CurveInterpolation (bakeAnchorsToSamples)
+                  ├── EditableSeries      (mutable, per identy)
+                  ├── UndoStack<EditablePart>   (partUndo)
+                  ├── UndoStack<EditableSeries> (seriesUndo)
+                  ├── DerivedLeads.object (Einthoven / Goldberger math)
+                  └── EcgFileFormat.object (serialize on save)
 
 MainScreen ──► AppViewModel
-          ├──► MonitorViewModel ──► MonitorModeModel ──► EcgCalibration
-          └──► RhythmViewModel  ──► EcgRepository
-                                     │
-                                     └─► PathologyGroup / Points
+          ──► MonitorViewModel(DataSourcePrefs)
+                └── MonitorModeModel ──► EcgCalibration
+                                    ──► GridScheme / SeriesScheme
+          ──► RhythmViewModel(EcgRepository)
+                └── EcgRepository ──► PathologyGroup
+                                  ──► Points (assembled waveform buffers)
 
-Screen* ──► Panels* ──► ViewModels*
+Screen* ──► Panels*  ──► AppViewModel  (calls mutate / undo / save / TCP)
+                     ──► MonitorViewModel (setSpeed / setScale / setGridScheme)
+                     ──► RhythmViewModel  (selectRhythm / loadData)
 Screen* ──► display.Monitor / Lead / LeadsGrid / EditableLead
-              └──► components.{ChartCanvas, AnchorCanvas, …}
-              └──► LocalPixelScale (PixelScale + EcgCalibration)
+              └── components.{ChartCanvas, AnchorHandleOverlay, CalibrationPulse, …}
+              └── LocalPixelScale (CompositionLocal) ──► PixelScale ──► EcgCalibration
+
+──── STATEFLOW EMISSIONS (╌╌►) ───────────────────────────────────────────────
+
+AppViewModel    ╌╌► selectedOperatingMode  → MainScreen, AppControlPanel
+                ╌╌► selectedLanguage       → AppControlPanel, Screens
+                ╌╌► tcpConnectionState     → AppControlPanel, MonitorControlPanel
+                ╌╌► dataState              → MainScreen (guard), DataSourceScreen
+                ╌╌► isDataConfirmed        → MainScreen (guard)
+                ╌╌► isDarkTheme            → CardioSimulatorTheme
+                ╌╌► dirtyParts             → EditorScreen (unsaved indicator)
+                ╌╌► dirtySeries            → EditorScreen (unsaved indicator)
+                ╌╌► lastAck                → MonitorControlPanel
+                ╌╌► isUploading            → EditorScreen
+
+MonitorViewModel╌╌► monitorMode            → Monitor, MonitorControlPanel, SettingsDialog
+
+RhythmViewModel ╌╌► rhythms                → RhythmChoosingPanel (list)
+                ╌╌► selectedRhythm         → RhythmChoosingPanel (highlight)
+                ╌╌► waveforms              → LeadsGrid → Lead (render per-lead Points)
+                ╌╌► allSeries              → SeriesInspector
+                ╌╌► allParts               → AnchorInspector
+
+──── SINGLETONS (object / process lifetime) ──────────────────────────────────
+
+AnchorClipboard    ← used by AnchorInspector / EditorScreen  (cut / paste)
+PartNamer          ← used by Editor flows  (MakeTitle / MakeIdenty)
+DerivedLeads       ← used by AppViewModel  (12-lead math)
+EcgFileFormat      ← used by WaveformPart.parse / EcgSeries.parse / AppViewModel.saveAll
+TcpProtocol        ← used by AppViewModel  (JSON encode / decode)
+ZipCompressor      ← used by AppViewModel  (export / TCP upload)
+ZipDecompressor    ← used by AppViewModel  (SAF import → filesDir)
 ```
 
 `*` = one of the five `OperatingMode` variants.

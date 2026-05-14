@@ -30,7 +30,7 @@ ZIP file
 [Stage 6]  Pixel scaling: physical units -> screen pixels  (PixelScale)
   |
   v
-[Stage 7]  Path rendering & grid drawing  (ChartCanvas / CalibrationPulse / ekgGrid)
+[Stage 7]  Path rendering & grid drawing  (ChartCanvas / CalibrationPulse / ekgGrid / AnchorHandleOverlay)
 ```
 
 ---
@@ -209,7 +209,7 @@ target_sample[i] = alpha * V2[i] + beta * V6[i]
 
 In the editor, waveform shape is defined by **anchor points** (x, y)
 with easing curves. The `bakeAnchors()` function converts these to
-sample-level data.
+sample-level data. These baked samples are then wrapped in `Points` and fed into the same `ChartCanvas` rendering path as Teaching mode.
 
 ### Easing functions
 
@@ -451,6 +451,12 @@ Layout schemes:
 | OneColumn   | 1       | Rhythm strip    |
 | TwoColumn   | 2       | 6+6 leads       |
 | Grid        | 4       | 3x4 12-lead     |
+
+### 7e. Anchor handles (Editor only)
+
+**File:** `ui/components/AnchorCanvas.kt`
+
+In editor mode, `AnchorHandleOverlay` sits directly over the `ChartCanvas` to provide interactive drag handles for anchor points. It delegates the actual polyline rendering to the shared `ChartCanvas` pipeline, managing only gesture detection and the drawing of circular interaction handles (`HANDLE_HIT_RADIUS_PX`).
 
 ---
 
