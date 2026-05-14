@@ -37,6 +37,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.R
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import com.example.cardiosimulator.data.LocalPixelScale
+import com.example.cardiosimulator.data.PixelScale
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.AnchorClipboard
 import com.example.cardiosimulator.domain.AnchorPoint
@@ -112,6 +116,21 @@ fun EditorScreen(
         Points(raw.map { it - 1024f })
     }
 
+    val density = LocalDensity.current
+    val editorPixelScale = remember(
+        aMaxGlobal, aValueGlobal, monitorMode.speed, monitorMode.scale, monitorMode.calibration, monitorMode.displayScale, density.density
+    ) {
+        val pxPerMm = density.density * (160f / 25.4f) * monitorMode.displayScale
+        PixelScale.sourceAnchored(
+            aMax = aMaxGlobal,
+            aValue = aValueGlobal,
+            paperSpeedMmPerSec = monitorMode.speed.toFloat(),
+            gainZoomY = monitorMode.scale,
+            cal = monitorMode.calibration,
+            physicalPxPerMm = pxPerMm
+        )
+    }
+
     if (showSaveDialog) {
         AlertDialog(
             onDismissRequest = { showSaveDialog = false },
@@ -139,9 +158,10 @@ fun EditorScreen(
         )
     }
 
-    Row(
-        modifier = Modifier.fillMaxSize().systemBarsPadding()
-    ) {
+    CompositionLocalProvider(LocalPixelScale provides editorPixelScale) {
+        Row(
+            modifier = Modifier.fillMaxSize().systemBarsPadding()
+        ) {
             // Left rail: rhythm chooser
             Box(
                 modifier = Modifier.weight(1f).middleSectionLeft(),
@@ -467,6 +487,7 @@ fun EditorScreen(
                 )
             }
         }
+    }
 }
 
 @Preview(showBackground = true, widthDp = 1000, heightDp = 600)
