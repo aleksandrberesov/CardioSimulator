@@ -54,7 +54,7 @@ fun MainScreen(viewModel: AppViewModel){
         }
     )
 
-    LaunchedEffect(dataState) {
+    LaunchedEffect(dataState, rhythmViewModel) {
         if (dataState is DataState.Ready) {
             rhythmViewModel.loadData()
         }
@@ -67,7 +67,7 @@ fun MainScreen(viewModel: AppViewModel){
         dataState is DataState.Error ||
         dataState is DataState.Loading
     ) {
-        DataSourceScreen(viewModel = viewModel, state = dataState)
+        DataSourceScreen(viewModel = viewModel, rhythmViewModel = rhythmViewModel, state = dataState)
         return
     }
 

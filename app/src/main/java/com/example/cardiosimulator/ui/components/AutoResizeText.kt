@@ -43,9 +43,9 @@ fun AutoResizeText(
         } else {
             14f // Default fallback
         }
-        mutableStateOf(initialSize)
+        mutableFloatStateOf(initialSize)
     }
-    var readyToDraw by remember(text, fontSize, style) { mutableStateOf(false) }
+    var readyToDraw by remember(text, fontSize, style) { mutableStateOf(value = false) }
 
     Text(
         text = text,
@@ -75,6 +75,6 @@ fun AutoResizeText(
             } else {
                 readyToDraw = true
             }
-        }
+        },
     )
 }

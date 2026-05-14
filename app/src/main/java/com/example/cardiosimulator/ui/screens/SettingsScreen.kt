@@ -294,6 +294,28 @@ fun SettingsContent(
                     Text(stringResource(R.string.data_source_change_folder))
                 }
 
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Export ZIP: re-packs the in-memory dataset (with edits) to
+                // a user-picked destination. SAF CreateDocument lets the user
+                // choose the file name and folder; no auto-upload.
+                val exportZipLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.CreateDocument("application/zip")
+                ) { uri ->
+                    if (uri != null) appViewModel.exportZip(context, uri)
+                }
+                val dirtyParts by appViewModel.dirtyParts.collectAsState()
+                val dirtySeries by appViewModel.dirtySeries.collectAsState()
+                val hasEdits = dirtyParts.isNotEmpty() || dirtySeries.isNotEmpty()
+                OutlinedButton(onClick = { exportZipLauncher.launch("ecg_export.zip") }) {
+                    Text(
+                        if (hasEdits)
+                            stringResource(R.string.data_source_export_zip_dirty)
+                        else
+                            stringResource(R.string.data_source_export_zip)
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
