@@ -456,7 +456,182 @@ Layout schemes:
 
 **File:** `ui/components/AnchorCanvas.kt`
 
-In editor mode, `AnchorHandleOverlay` sits directly over the `ChartCanvas` to provide interactive drag handles for anchor points. It delegates the actual polyline rendering to the shared `ChartCanvas` pipeline, managing only gesture detection and the drawing of circular interaction handles (`HANDLE_HIT_RADIUS_PX`).
+In editor mode, `AnchorHandleOverlay` sits directly over the `ChartCanvas`
+inside a `Box`, providing interactive drag handles for anchor points. It
+delegates the actual polyline rendering to the shared `ChartCanvas`
+pipeline, managing only gesture detection and the drawing of circular
+interaction handles.
+
+#### AnchorSpace coordinate mapping
+
+The `AnchorSpace` class maps source-coordinate anchors to screen pixels
+and back:
+
+```
+pxPerSourceX = pxPerSampleFor(sampleRateHz)   (or global pxPerSample)
+pxPerSourceY = pxPerAdcCountFor(samplesPerMv) (or global pxPerAdcCount)
+baselineY    = canvas.height / 2
+
+toScreen(anchor):
+    screenX = originX + anchor.x * pxPerSourceX
+    screenY = baselineY - anchor.y * pxPerSourceY
+
+fromScreen(offset):
+    sourceX = (offset.x - originX) / pxPerSourceX
+    sourceY = (baselineY - offset.y) / pxPerSourceY
+```
+
+Both `pxPerSourceX` and `pxPerSourceY` are clamped to a minimum of
+0.0001 to prevent division by zero (`computeSpace()` helper).
+
+#### Handle rendering
+
+`drawHandles()` draws each anchor point as a filled circle with a white
+inner dot:
+
+| Parameter        | Normal handle    | Selected handle         |
+|------------------|------------------|-------------------------|
+| Outer radius     | 5 dp             | 8 dp                    |
+| Inner radius     | outer * 0.4      | outer * 0.4             |
+| Outer color      | `#1976D2` (blue) | `#D32F2F` (red)         |
+| Inner color      | White            | White                   |
+
+#### Gesture semantics
+
+| Gesture                    | Result                                            |
+|----------------------------|---------------------------------------------------|
+| Tap within 36 px of handle | `onAnchorSelected(index)` — select that anchor    |
+| Tap outside any handle     | `onAnchorSelected(null)` — deselect               |
+| Drag handle (index > 0)    | `onAnchorMoved(index, newX, newY)` — move single  |
+| Drag origin handle (idx 0) | `onAllAnchorsMoved(dx, dy)` — translate all        |
+
+Drag deltas are converted from screen pixels to source units before
+being passed to callbacks:
+
+```
+dx_source = delta.x / pxPerSourceX
+dy_source = -delta.y / pxPerSourceY    (Y axis inverted)
+```
+
+#### Constants
+
+| Constant               | Value | Unit | Meaning                          |
+|------------------------|-------|------|----------------------------------|
+| `HANDLE_HIT_RADIUS_PX` | 36    | px   | Tap/drag hit-test radius         |
+| Normal handle radius   | 5     | dp   | Circle drawn for unselected      |
+| Selected handle radius | 8     | dp   | Circle drawn for selected        |
+| Handle color           | `#1976D2` | — | Blue                          |
+| Selected handle color  | `#D32F2F` | — | Red                           |
+
+### 7f. Lead and EditableLead layout
+
+**Files:** `ui/display/Lead.kt`, `ui/display/EditableLead.kt`
+
+Both `Lead` (viewer) and `EditableLead` (editor) share the same layout
+structure. They wrap `ChartCanvas` in a `Row` with two columns:
+
+```
+Row (leadArea: fillMaxWidth, fillMaxHeight)
+  |
+  +-- Box (left column, 48 dp wide)
+  |     CalibrationPulse (1 mV / 200 ms)
+  |     Lead name label (Bold, Serif, 16 sp, padding top=45dp start=8dp)
+  |
+  +-- Box (right column, weight=1f, fillMaxHeight)
+        ChartCanvas(points, sampleRateHz, samplesPerMv)
+```
+
+#### EditableLead: multi-part positioning
+
+`EditableLead` supports multiple waveform parts with independent
+calibration via the `PartCalibration(sampleRateHz, samplesPerMv)` data
+class. Each part is positioned at a cumulative X-offset:
+
+```
+For each part at index i:
+    effPxPerSample = pxPerSampleFor(cal.sampleRateHz)   (or global)
+    xOffset  = currentSampleOffset * effPxPerSample      [px -> dp]
+    partWidth = part.values.size * effPxPerSample         [px -> dp]
+    currentSampleOffset += part.values.size
+```
+
+The selected part gets a `Color.Blue` with alpha 0.1 background and a
+1 dp blue border.
+
+#### EditorScreen: the editor rendering path
+
+**File:** `ui/screens/EditorScreen.kt`
+
+The editor screen connects the full pipeline:
+
+1. **PixelScale creation** — creates a source-anchored scale from the
+   focused part's `aMax`/`aValue`:
+   ```
+   pxPerMm = density * (160/25.4) * displayScale
+   PixelScale.sourceAnchored(aMax, aValue, speed, scale, cal, pxPerMm)
+   ```
+   This is provided via `CompositionLocalProvider(LocalPixelScale provides editorPixelScale)`.
+
+2. **Anchor baking** — pre-bakes anchor points into a flat sample list:
+   ```
+   bakedSamples = focusedEditable.bakedSamples()
+   bakedPoints  = Points(raw.map { it - 1024f })
+   ```
+   The baked samples are wrapped in `Points` and baseline-zeroed by
+   subtracting 1024, matching the viewer pipeline.
+
+3. **Canvas stack** — uses `Monitor` with `sourceAnchoredCalibration`
+   to provide the source-anchored grid, then layers:
+   ```
+   Box
+     +-- ChartCanvas(bakedPoints, sampleRateHz, samplesPerMv)
+     +-- AnchorHandleOverlay(anchors, sampleRateHz, samplesPerMv, ...)
+     +-- PaperGridLegend(speed, gainMmPerMv)
+   ```
+
+### 7g. Preview pane
+
+**File:** `ui/components/PreviewPane.kt`
+
+A looping preview that shows the waveform at a simulated 60 bpm rate.
+Used in the editor footer.
+
+```
+Animation: infiniteRepeatable, period = 1000 ms (60 bpm), LinearEasing
+Circular shift: offset = floor(phase * total_samples)
+
+For each sample i:
+    srcIdx = (i + offset) % total
+    x = i * stepX
+    y = baselineY - (points.values[srcIdx] * stepY)
+```
+
+| Constant         | Value           | Meaning                           |
+|------------------|-----------------|-----------------------------------|
+| Height           | 80 dp           | Fixed pane height                 |
+| Background       | `#F7F7F7`       | Light gray                        |
+| Trace color      | `#388E3C`       | Green                             |
+| Stroke width     | 2 dp            | Same as ChartCanvas               |
+| Animation period | 1000 ms         | 1 beat/second = 60 bpm            |
+
+Scaling uses the same `pxPerSampleFor` / `pxPerAdcCountFor` overrides
+as `ChartCanvas`, so the preview gain and speed match the main canvas.
+
+### 7h. Paper grid legend
+
+**File:** `ui/components/PreviewPane.kt` (lines 104-118)
+
+A small text overlay in the top-left corner of the editor canvas:
+
+```
+"{gainMmPerMv} mm/mV · {paperSpeedMmPerSec} mm/s"
+```
+
+| Constant         | Value                       |
+|------------------|-----------------------------|
+| Background       | White, alpha 0.7            |
+| Padding          | 4 dp horizontal, 2 dp vert  |
+| Typography       | `labelSmall`, DarkGray      |
 
 ---
 
@@ -526,6 +701,19 @@ Result: point at (5.29, 374.8) on the canvas
 | cal pulse width     | 200       | ms               | CalibrationPulse.kt:35   |
 | cal pulse height    | 1         | mV               | CalibrationPulse.kt:13   |
 | zoom range          | 1.0 - 5.0| dimensionless    | Monitor.kt:105           |
+| HANDLE_HIT_RADIUS_PX| 36        | px               | AnchorCanvas.kt:45       |
+| handle radius       | 5         | dp               | AnchorCanvas.kt:71       |
+| selected handle rad | 8         | dp               | AnchorCanvas.kt:71       |
+| handle color        | #1976D2   | (blue)           | AnchorCanvas.kt:99       |
+| selected handle col | #D32F2F   | (red)            | AnchorCanvas.kt:100      |
+| preview height      | 80        | dp               | PreviewPane.kt:61        |
+| preview background  | #F7F7F7   | color            | PreviewPane.kt:62        |
+| preview trace color | #388E3C   | (green)          | PreviewPane.kt:44        |
+| preview anim period | 1000      | ms               | PreviewPane.kt:53        |
+| cal area width      | 48        | dp               | Lead.kt / EditableLead   |
+| lead label fontSize | 16        | sp               | Lead.kt / EditableLead   |
+| selection bg alpha  | 0.1       | dimensionless    | EditableLead.kt:137      |
+| selection border    | 1.0       | dp               | EditableLead.kt:139      |
 
 ---
 
@@ -555,3 +743,14 @@ Result: point at (5.29, 374.8) on the canvas
 | ease(SINE, t)                  | `-(cos(pi*t) - 1) / 2`                               | CurveInterpolation.kt:19 |
 | bezierY(P0,P1,P2,P3,t)        | `(1-t)^3*P0 + 3(1-t)^2*t*P1 + 3(1-t)*t^2*P2 + t^3*P3` | CurveInterpolation.kt:44 |
 | eased interpolation            | `a.y + (b.y - a.y) * ease(curve, t)`                 | CurveInterpolation.kt:97 |
+| anchor `toScreen` X           | `originX + anchor.x * pxPerSourceX`                  | AnchorCanvas.kt:36       |
+| anchor `toScreen` Y           | `baselineY - anchor.y * pxPerSourceY`                | AnchorCanvas.kt:36       |
+| anchor `fromScreen` X         | `(offset.x - originX) / pxPerSourceX`                | AnchorCanvas.kt:39       |
+| anchor `fromScreen` Y         | `(baselineY - offset.y) / pxPerSourceY`              | AnchorCanvas.kt:40       |
+| drag delta to source X        | `delta.x / pxPerSourceX`                             | AnchorCanvas.kt:137      |
+| drag delta to source Y        | `-delta.y / pxPerSourceY`                            | AnchorCanvas.kt:138      |
+| part X-offset (EditableLead)  | `currentSampleOffset * pxPerSampleFor(hz)`           | EditableLead.kt:128      |
+| part width (EditableLead)     | `part.values.size * pxPerSampleFor(hz)`              | EditableLead.kt:129      |
+| preview phase offset          | `floor(phase * total_samples)`                       | PreviewPane.kt:73        |
+| preview src index             | `(i + offset) % total`                               | PreviewPane.kt:76        |
+| editor bake baseline          | `bakedSample - 1024`                                 | EditorScreen.kt:117      |
