@@ -407,14 +407,6 @@ fun EditorScreen(
                                 p.anchors[idx].copy(y = newY)
                         }
                     },
-                    onCurveChange = { c ->
-                        val ep = focusedEditable ?: return@AnchorInspector
-                        val idx = selectedAnchorIndex ?: return@AnchorInspector
-                        viewModel.mutatePart(ep.identy) { p ->
-                            if (idx in p.anchors.indices) p.anchors[idx] =
-                                p.anchors[idx].copy(curve = c)
-                        }
-                    },
                     onInsertBefore = {
                         val ep = focusedEditable ?: return@AnchorInspector
                         val idx = selectedAnchorIndex ?: return@AnchorInspector
@@ -425,7 +417,6 @@ fun EditorScreen(
                                 val newAnchor = AnchorPoint(
                                     x = ((prev?.x ?: a.x) + a.x) / 2f,
                                     y = ((prev?.y ?: a.y) + a.y) / 2f,
-                                    curve = a.curve,
                                 )
                                 p.anchors.add(idx, newAnchor)
                             }
@@ -441,7 +432,6 @@ fun EditorScreen(
                                 val newAnchor = AnchorPoint(
                                     x = (a.x + (next?.x ?: (a.x + 1f))) / 2f,
                                     y = (a.y + (next?.y ?: a.y)) / 2f,
-                                    curve = a.curve,
                                 )
                                 p.anchors.add(idx + 1, newAnchor)
                             }

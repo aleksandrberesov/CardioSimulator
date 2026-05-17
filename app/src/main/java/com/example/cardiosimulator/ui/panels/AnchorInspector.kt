@@ -17,8 +17,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,15 +32,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.domain.AnchorPoint
-import com.example.cardiosimulator.domain.EasingCurve
 import com.example.cardiosimulator.ui.components.Label
 import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 
 /**
  * Side panel for editing a single selected [AnchorPoint]. X/Y are in
- * source coordinates; the curve flag controls interpolation from the
- * preceding anchor.
+ * source coordinates.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,7 +46,6 @@ fun AnchorInspector(
     anchor: AnchorPoint?,
     onEditX: (Float) -> Unit,
     onEditY: (Float) -> Unit,
-    onCurveChange: (EasingCurve) -> Unit,
     onInsertBefore: () -> Unit,
     onInsertAfter: () -> Unit,
     onDelete: () -> Unit,
@@ -123,22 +118,6 @@ fun AnchorInspector(
             )
         }
         Spacer(Modifier.height(8.dp))
-        // Curve dropdown
-        var expanded by remember { mutableStateOf(false) }
-        Tab(
-            text = "${stringResource(R.string.editor_anchor_curve)}: ${anchor.curve.name.lowercase()}",
-            onClick = { expanded = true },
-            modifier = Modifier.fillMaxWidth().height(40.dp)
-        )
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            EasingCurve.entries.forEach { c ->
-                DropdownMenuItem(
-                    text = { Text(c.name.lowercase()) },
-                    onClick = { onCurveChange(c); expanded = false },
-                )
-            }
-        }
-        Spacer(Modifier.height(8.dp))
         Row(
             modifier = Modifier.fillMaxWidth().height(40.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -185,14 +164,12 @@ fun AnchorInspectorSelectedPreview() {
     val sampleAnchor = AnchorPoint(
         x = 100f,
         y = 50f,
-        curve = EasingCurve.SINE
     )
     CardioSimulatorTheme {
         AnchorInspector(
             anchor = sampleAnchor,
             onEditX = {},
             onEditY = {},
-            onCurveChange = {},
             onInsertBefore = {},
             onInsertAfter = {},
             onDelete = {},
@@ -210,7 +187,6 @@ fun AnchorInspectorEmptyPreview() {
             anchor = null,
             onEditX = {},
             onEditY = {},
-            onCurveChange = {},
             onInsertBefore = {},
             onInsertAfter = {},
             onDelete = {},

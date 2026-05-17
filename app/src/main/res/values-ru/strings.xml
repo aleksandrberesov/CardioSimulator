@@ -90,7 +90,6 @@
     <string name="editor_undo">Отменить</string>
     <string name="editor_anchor_x">X</string>
     <string name="editor_anchor_y">Y</string>
-    <string name="editor_anchor_curve">Кривая</string>
     <string name="editor_anchor_insert_before">Вставить до</string>
     <string name="editor_anchor_insert_after">Вставить после</string>
     <string name="editor_anchor_delete">Удалить</string>

@@ -90,7 +90,6 @@
     <string name="editor_undo">Deshacer</string>
     <string name="editor_anchor_x">X</string>
     <string name="editor_anchor_y">Y</string>
-    <string name="editor_anchor_curve">Curva</string>
     <string name="editor_anchor_insert_before">Insertar antes</string>
     <string name="editor_anchor_insert_after">Insertar después</string>
     <string name="editor_anchor_delete">Eliminar</string>

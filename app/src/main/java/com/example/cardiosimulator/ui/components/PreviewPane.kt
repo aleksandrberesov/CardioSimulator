@@ -22,16 +22,14 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.data.LocalPixelScale
 import com.example.cardiosimulator.data.Points
 
 /**
- * HR=60 looping preview pane. Renders [points] as a polyline that scrolls
+ * HR=60 looping preview pane. Renders [points] as discrete dots that scroll
  * left-to-right at one beat per second. Used by the editor footer to show
  * how the current segment/series sounds at a standard rate.
  */
@@ -69,21 +67,23 @@ fun PreviewPane(
                 if (total < 2) {
                     return@drawWithCache onDrawBehind { /* nothing */ }
                 }
-                // Build a path that's shifted left by phase * total samples
+                // Dots are shifted left by phase * total samples so the trace
+                // scrolls; the modulo wraps the sample index, it does not
+                // interpolate.
                 val offset = (phase * total).toInt()
-                val path = Path().apply {
-                    for (i in 0 until total) {
-                        val srcIdx = (i + offset) % total
-                        val x = i * stepX
-                        val y = baselineY - (points.values[srcIdx] * stepY)
-                        if (i == 0) moveTo(x, y) else lineTo(x, y)
-                    }
+                val dots = ArrayList<Offset>(total)
+                for (i in 0 until total) {
+                    val srcIdx = (i + offset) % total
+                    dots += Offset(i * stepX, baselineY - (points.values[srcIdx] * stepY))
                 }
+                val dotWidth = 2.dp.toPx()
                 onDrawBehind {
-                    drawPath(
-                        path = path,
+                    drawPoints(
+                        points = dots,
+                        pointMode = PointMode.Points,
                         color = color,
-                        style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
+                        strokeWidth = dotWidth,
+                        cap = StrokeCap.Round,
                     )
                 }
             }

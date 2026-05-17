@@ -24,13 +24,13 @@ ZIP file
 [Stage 4]  Derived-lead synthesis  (DerivedLeads)
   |
   v
-[Stage 5]  Anchor interpolation (editor path only)  (CurveInterpolation)
+[Stage 5]  Anchor baking: straight-line fill (editor path only)  (AnchorBaking)
   |
   v
 [Stage 6]  Pixel scaling: physical units -> screen pixels  (PixelScale)
   |
   v
-[Stage 7]  Path rendering & grid drawing  (ChartCanvas / CalibrationPulse / ekgGrid / AnchorHandleOverlay)
+[Stage 7]  Dot rendering & grid drawing  (ChartCanvas / CalibrationPulse / ekgGrid / AnchorHandleOverlay)
 ```
 
 ---
@@ -95,8 +95,9 @@ Each file is plain text with `key:value` lines. The parser
 ### Source spec (inside `source:`)
 
 Semicolon-separated `key:value` pairs. Parenthesised tuples inside
-`points:` are either **anchor points** `(x, y, curve)` or **series
-block refs** `(x, y, partIdenty, offset [, flags])`.
+`points:` are either **anchor points** `(x, y)` or **series
+block refs** `(x, y, partIdenty, offset [, flags])`. A legacy third
+anchor field (an easing-curve token) is accepted but ignored on load.
 
 Key calibration fields:
 
@@ -203,57 +204,31 @@ target_sample[i] = alpha * V2[i] + beta * V6[i]
 
 ---
 
-## Stage 5 -- Anchor interpolation (editor only)
+## Stage 5 -- Anchor baking (editor only)
 
-**File:** `domain/CurveInterpolation.kt`
+**File:** `domain/AnchorBaking.kt`
 
-In the editor, waveform shape is defined by **anchor points** (x, y)
-with easing curves. The `bakeAnchors()` function converts these to
-sample-level data. These baked samples are then wrapped in `Points` and fed into the same `ChartCanvas` rendering path as Teaching mode.
+In the editor, waveform shape is defined by **anchor points** (x, y).
+The `bakeAnchorsToSamples()` function expands these sparse anchors into a
+dense sample list by connecting consecutive anchors with **straight line
+segments** -- there is no easing or curve shaping. The baked samples are
+then wrapped in `Points` and fed into the same `ChartCanvas` rendering
+path as Teaching mode.
 
-### Easing functions
+### Straight-line fill
 
-All easing functions map normalised progress `t in [0, 1]` to output `[0, 1]`:
-
-| Curve         | Formula                                                        |
-|---------------|----------------------------------------------------------------|
-| `LINEAR`      | `t`                                                            |
-| `SINE`        | `-(cos(pi*t) - 1) / 2`                                        |
-| `SINE_IN`     | `1 - cos(t * pi/2)`                                           |
-| `SINE_OUT`    | `sin(t * pi/2)`                                                |
-| `QUAD`        | `t<0.5: 2*t^2`, else `1 - (-2t+2)^2 / 2`                     |
-| `QUAD_IN`     | `t^2`                                                          |
-| `QUAD_OUT`    | `1 - (1-t)^2`                                                 |
-| `CUBIC`       | `t<0.5: 4*t^3`, else `1 - (-2t+2)^3 / 2`                     |
-| `CUBIC_IN`    | `t^3`                                                          |
-| `CUBIC_OUT`   | `1 - (1-t)^3`                                                 |
-| `QUART`       | `t<0.5: 8*t^4`, else `1 - (-2t+2)^4 / 2`                     |
-| `QUART_IN`    | `t^4`                                                          |
-| `QUART_OUT`   | `1 - (1-t)^4`                                                 |
-| `CIRC`        | `t<0.5: (1-sqrt(1-(2t)^2))/2`, else `(sqrt(1-(-2t+2)^2)+1)/2`|
-| `CIRC_IN`     | `1 - sqrt(1 - t^2)`                                           |
-| `CIRC_OUT`    | `sqrt(1 - (t-1)^2)`                                           |
-
-### Cubic Bezier segments
-
-Three consecutive anchors with `CUBIC*` curves are consumed as one Bezier
-segment with 4 control points (start, handle1, handle2, end):
+Anchors are sorted by X. For each consecutive pair (a -> b), one Y sample
+is emitted at every integer X position from `a.x` to `b.x`:
 
 ```
-y(t) = (1-t)^3 * P0 + 3*(1-t)^2*t * P1 + 3*(1-t)*t^2 * P2 + t^3 * P3
+span = max(b.x - a.x, 1)
+t    = (x - a.x) / span
+y    = a.y + (b.y - a.y) * t
 ```
 
-### Plain eased segments
-
-For non-Bezier pairs (a -> b), the interpolation is:
-
-```
-k = ease(b.curve, t)
-x = a.x + t * span
-y = a.y + (b.y - a.y) * k
-```
-
-Samples are emitted at integer x positions between anchors.
+This linear fill is the minimum transform needed to turn sparse anchors
+into the dense per-sample array that the `.ecg` file format and the
+renderer expect.
 
 ---
 
@@ -355,13 +330,14 @@ This keeps anchor dragging snapped to integer source units.
 
 ---
 
-## Stage 7 -- Path rendering
+## Stage 7 -- Dot rendering
 
-### 7a. Waveform polyline
+### 7a. Waveform dots
 
 **File:** `ui/components/ChartCanvas.kt`
 
-For each lead, the baseline-zeroed sample array is drawn as a polyline:
+For each lead, the baseline-zeroed sample array is drawn as discrete
+dots, one dot per sample, with no connecting lines:
 
 ```
 baselineY = canvas.height / 2
@@ -378,10 +354,9 @@ where:
 The Y axis is **inverted**: positive millivolts go UP on screen
 (subtracted from baseline).
 
-Path rendering uses:
-- Stroke width: **2 dp**
-- Stroke cap: `Round`
-- Stroke join: `Round`
+Dot rendering uses `drawPoints(PointMode.Points, ...)`:
+- Dot width: **2 dp**
+- Dot cap: `Round`
 
 ### 7b. Calibration pulse
 
@@ -458,7 +433,7 @@ Layout schemes:
 
 In editor mode, `AnchorHandleOverlay` sits directly over the `ChartCanvas`
 inside a `Box`, providing interactive drag handles for anchor points. It
-delegates the actual polyline rendering to the shared `ChartCanvas`
+delegates the actual waveform rendering to the shared `ChartCanvas`
 pipeline, managing only gesture detection and the drawing of circular
 interaction handles.
 
@@ -611,7 +586,7 @@ For each sample i:
 | Height           | 80 dp           | Fixed pane height                 |
 | Background       | `#F7F7F7`       | Light gray                        |
 | Trace color      | `#388E3C`       | Green                             |
-| Stroke width     | 2 dp            | Same as ChartCanvas               |
+| Dot width        | 2 dp            | Same as ChartCanvas               |
 | Animation period | 1000 ms         | 1 beat/second = 60 bpm            |
 
 Scaling uses the same `pxPerSampleFor` / `pxPerAdcCountFor` overrides
@@ -696,7 +671,7 @@ Result: point at (5.29, 374.8) on the canvas
 | large grid          | 5         | mm               | PixelScale.kt:38         |
 | thin stroke         | 0.5       | dp               | Modifers.kt:42           |
 | thick stroke        | 1.5       | dp               | Modifers.kt:43           |
-| waveform stroke     | 2.0       | dp               | ChartCanvas.kt:72        |
+| waveform dot width  | 2.0       | dp               | ChartCanvas.kt           |
 | cal pulse stroke    | 1.5       | dp               | CalibrationPulse.kt:19   |
 | cal pulse width     | 200       | ms               | CalibrationPulse.kt:35   |
 | cal pulse height    | 1         | mV               | CalibrationPulse.kt:13   |
@@ -740,9 +715,7 @@ Result: point at (5.29, 374.8) on the canvas
 | `aVL`                          | `(2*I - II) / 2`                                     | DerivedLeads.kt:36   |
 | `aVF`                          | `(2*II - I) / 2`                                     | DerivedLeads.kt:37   |
 | V-lead projection              | `alpha*V2[i] + beta*V6[i]`                           | DerivedLeads.kt:80   |
-| ease(SINE, t)                  | `-(cos(pi*t) - 1) / 2`                               | CurveInterpolation.kt:19 |
-| bezierY(P0,P1,P2,P3,t)        | `(1-t)^3*P0 + 3(1-t)^2*t*P1 + 3(1-t)*t^2*P2 + t^3*P3` | CurveInterpolation.kt:44 |
-| eased interpolation            | `a.y + (b.y - a.y) * ease(curve, t)`                 | CurveInterpolation.kt:97 |
+| anchor straight-line fill      | `a.y + (b.y - a.y) * (x - a.x) / span`               | AnchorBaking.kt          |
 | anchor `toScreen` X           | `originX + anchor.x * pxPerSourceX`                  | AnchorCanvas.kt:36       |
 | anchor `toScreen` Y           | `baselineY - anchor.y * pxPerSourceY`                | AnchorCanvas.kt:36       |
 | anchor `fromScreen` X         | `(offset.x - originX) / pxPerSourceX`                | AnchorCanvas.kt:39       |

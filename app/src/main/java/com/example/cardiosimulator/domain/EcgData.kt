@@ -14,25 +14,9 @@ enum class Lead {
     }
 }
 
-enum class EasingCurve {
-    LINEAR, SINE, SINE_IN, SINE_OUT,
-    QUAD, QUAD_IN, QUAD_OUT,
-    CUBIC, CUBIC_IN, CUBIC_OUT,
-    QUART, QUART_IN, QUART_OUT,
-    CIRC, CIRC_IN, CIRC_OUT;
-
-    companion object {
-        fun fromToken(raw: String?): EasingCurve = when (val t = raw?.trim()?.lowercase()) {
-            null, "" -> LINEAR
-            else -> entries.firstOrNull { it.name.equals(t.replace('-', '_'), ignoreCase = true) } ?: LINEAR
-        }
-    }
-}
-
 data class AnchorPoint(
     val x: Float,
     val y: Float,
-    val curve: EasingCurve = EasingCurve.LINEAR,
 )
 
 /**
@@ -293,10 +277,10 @@ internal object EcgFileFormat {
                     } ?: BlockFlags.NONE,
                 )
             } else {
+                // A third tuple field (legacy easing-curve token) is ignored.
                 anchors += AnchorPoint(
                     x = parseDecimal(parts.getOrNull(0)) ?: 0f,
                     y = parseDecimal(parts.getOrNull(1)) ?: 0f,
-                    curve = EasingCurve.fromToken(parts.getOrNull(2)),
                 )
             }
         }
@@ -398,8 +382,7 @@ internal object EcgFileFormat {
                 if (tupleBuf.isNotEmpty()) tupleBuf.append(',')
                 tupleBuf.append('(')
                     .append(formatDecimal(a.x)).append(',')
-                    .append(formatDecimal(a.y)).append(',')
-                    .append(easingToken(a.curve))
+                    .append(formatDecimal(a.y))
                     .append(')')
             }
         }
@@ -424,9 +407,6 @@ internal object EcgFileFormat {
         }
         return sb.toString()
     }
-
-    private fun easingToken(c: EasingCurve): String =
-        c.name.lowercase().replace('_', '-')
 
     fun writePart(part: WaveformPart): String =
         writeKeyValues(linkedMapOf(
