@@ -3,7 +3,8 @@ package com.example.cardiosimulator.domain
 /**
  * Mutable counterpart to [WaveformPart] used by the editor. Anchors are the
  * source-of-truth coordinates; [samples] is regenerated on save (or on
- * demand) from the anchor list using the curve interpolation rules.
+ * demand) from the anchor list by connecting anchors with straight line
+ * segments.
  */
 data class EditablePart(
     val identy: String,

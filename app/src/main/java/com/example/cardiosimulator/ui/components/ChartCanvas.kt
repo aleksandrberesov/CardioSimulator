@@ -6,11 +6,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.data.EcgCalibration
@@ -21,7 +20,7 @@ import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import androidx.compose.runtime.CompositionLocalProvider
 
 /**
- * Renders a polyline of [points] across the chart area.
+ * Renders [points] as a series of discrete dots across the chart area.
  *
  * Two scaling overrides exist for Phase 0a per-part calibration:
  * - [sampleRateHz] — when > 0, derives `pxPerSample` from this rate instead
@@ -57,22 +56,18 @@ fun ChartCanvas(
                             else scale.pxPerAdcCount
                 val baselineY = size.height / 2f
 
-                val path = Path().apply {
-                    for (i in dataPoints.indices) {
-                        val x = i * stepX
-                        val y = baselineY - (dataPoints[i] * stepY)
-                        if (i == 0) moveTo(x, y) else lineTo(x, y)
-                    }
+                val dots = ArrayList<Offset>(dataPoints.size)
+                for (i in dataPoints.indices) {
+                    dots += Offset(i * stepX, baselineY - (dataPoints[i] * stepY))
                 }
+                val dotWidth = 2.dp.toPx()
                 onDrawBehind {
-                    drawPath(
-                        path = path,
+                    drawPoints(
+                        points = dots,
+                        pointMode = PointMode.Points,
                         color = color,
-                        style = Stroke(
-                            width = 2.dp.toPx(),
-                            cap = StrokeCap.Round,
-                            join = StrokeJoin.Round
-                        )
+                        strokeWidth = dotWidth,
+                        cap = StrokeCap.Round,
                     )
                 }
             }

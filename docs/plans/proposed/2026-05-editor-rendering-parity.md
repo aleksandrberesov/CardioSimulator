@@ -5,6 +5,12 @@
 **Started:** 2026-05-13
 **Related issues / PRs:** —
 
+> **Update 2026-05-17 — interpolation removed.** Editor and Teaching
+> waveforms now render as discrete dots (`drawPoints`), not a polyline,
+> and anchor baking is a plain straight-line fill (`bakeAnchorsToSamples`
+> in `AnchorBaking.kt`) with no easing or Bezier. References to "polyline"
+> and `bakeAnchors()` below predate that change.
+
 ## Goal
 
 Teaching and Editor modes currently use two completely different rendering pipelines to draw

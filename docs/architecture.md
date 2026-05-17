@@ -280,7 +280,7 @@ CardioSimulatorTheme
 | Package | Role |
 |---|---|
 | `com.example.cardiosimulator` | `MainActivity` — Compose entry point |
-| `…domain` | Pure-Kotlin models: app state, ECG data, editor mutation, derived leads, easing curves |
+| `…domain` | Pure-Kotlin models: app state, ECG data, editor mutation, derived leads, anchor baking |
 | `…data` | Storage / persistence: `EcgRepository`, `EcgSource` family, `DataSourcePrefs`, ZIP I/O, calibration, pixel scaling |
 | `…network` | TCP layer: `TcpProtocol` (encode/decode), `TcpMessage` sealed hierarchy, `TcpConnectionState` |
 | `…ui.viewmodels` | Three `ViewModel`s: `AppViewModel`, `MonitorViewModel`, `RhythmViewModel` |
@@ -313,8 +313,7 @@ These types are the “source of truth” the UI and view-models manipulate.
 | Type | Kind | Role |
 |---|---|---|
 | `Lead` | enum | 12-lead identifiers (`I`, `II`, …, `V6`) |
-| `EasingCurve` | enum | Anchor segment easing (LINEAR/SINE/QUAD/CUBIC/QUART/CIRC variants) |
-| `AnchorPoint` | data class | `(x, y, curve)` — editor source-of-truth |
+| `AnchorPoint` | data class | `(x, y)` — editor source-of-truth |
 | `BlockFlags` | value class | Bitmask flags on a `SeriesPartRef` (FREQUENTLY, WITHSOUND, …) |
 | `SourceSpec` | data class | Parsed `source:` block: lead/pathology/max/value/center/anchors/seriesRefs |
 | `SeriesPartRef` | data class | Reference from a series to a part with `(x,y,partIdenty,offset,flags)` |
@@ -331,7 +330,7 @@ These types are the “source of truth” the UI and view-models manipulate.
 | `UndoStack<T>` | Capped per-record snapshot stack | `AppViewModel.partUndo` / `seriesUndo` |
 | `AnchorClipboard` | App-wide `object` (singleton) for cut/paste of anchor lists | `EditorScreen`, `AnchorInspector` |
 | `PartNamer` | App-wide `object` for `MakeTitle` / `MakeIdenty` helpers | Editor flows |
-| `CurveInterpolation` (top-level `ease()`, `bakeAnchorsToSamples()`) | Pure functions baking anchors → samples | `EditablePart.bakedSamples()` |
+| `AnchorBaking` (top-level `bakeAnchorsToSamples()`) | Straight-line baking of anchors → samples | `EditablePart.bakedSamples()` |
 | `DerivedLeads` | `object` — Einthoven/Goldberger + V-projection math | `AppViewModel.generateDerivedLimbLeads()` / `generateDerivedPrecordialLeads()` |
 
 ---
@@ -597,7 +596,7 @@ MainActivity ──► AppBuilder ──► AppStateModel
                   ├── ZipDecompressor.object
                   ├── ZipCompressor.object
                   ├── EditablePart        (mutable, per identy)
-                  │     └── CurveInterpolation (bakeAnchorsToSamples)
+                  │     └── AnchorBaking (bakeAnchorsToSamples)
                   ├── EditableSeries      (mutable, per identy)
                   ├── UndoStack<EditablePart>   (partUndo)
                   ├── UndoStack<EditableSeries> (seriesUndo)
