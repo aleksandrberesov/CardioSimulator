@@ -104,23 +104,25 @@ fun bakeAnchors(anchors: List<AnchorPoint>): List<Pair<Float, Float>> {
 
 /**
  * Convenience: bake anchors directly to a list of Y samples at integer X
- * positions starting at the first anchor's X. Used by the editor's
- * preview path where the renderer wants a flat sample list to feed into
- * [com.example.cardiosimulator.ui.components.ChartCanvas].
+ * positions starting at 0. Used by the editor's preview path where the
+ * renderer wants a flat sample list that aligns with the coordinate system
+ * of [com.example.cardiosimulator.ui.components.ChartCanvas].
  */
 fun bakeAnchorsToSamples(anchors: List<AnchorPoint>): List<Float> {
     val pts = bakeAnchors(anchors)
     if (pts.isEmpty()) return emptyList()
-    val minX = pts.first().first.toInt()
-    val maxX = pts.last().first.toInt()
-    if (maxX <= minX) return pts.map { it.second }
-    val out = FloatArray(maxX - minX + 1)
+    val maxX = pts.maxOf { it.first }.toInt()
+    if (maxX < 0) return emptyList()
+
+    val out = FloatArray(maxX + 1)
     val filled = BooleanArray(out.size)
     // First pass: assign by nearest integer x.
     for ((x, y) in pts) {
-        val ix = (x.toInt() - minX).coerceIn(0, out.size - 1)
-        out[ix] = y
-        filled[ix] = true
+        val ix = x.toInt()
+        if (ix in out.indices) {
+            out[ix] = y
+            filled[ix] = true
+        }
     }
     // Second pass: linear-fill any gaps.
     var lastFilled = -1
@@ -134,6 +136,10 @@ fun bakeAnchorsToSamples(anchors: List<AnchorPoint>): List<Float> {
                     val t = (k - lastFilled).toFloat() / span
                     out[k] = y0 + (y1 - y0) * t
                 }
+            } else if (lastFilled == -1 && i > 0) {
+                // Gap at the beginning: fill with the first known value
+                val y1 = out[i]
+                for (k in 0 until i) out[k] = y1
             }
             lastFilled = i
         }

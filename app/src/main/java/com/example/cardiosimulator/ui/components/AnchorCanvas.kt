@@ -7,7 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import kotlin.math.roundToInt
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -34,12 +36,6 @@ class AnchorSpace(
 ) {
     fun toScreen(a: AnchorPoint): Offset =
         Offset(originX + a.x * pxPerSourceX, baselineY - a.y * pxPerSourceY)
-
-    fun fromScreen(o: Offset): Pair<Float, Float> {
-        val x = (o.x - originX) / pxPerSourceX
-        val y = (baselineY - o.y) / pxPerSourceY
-        return x to y
-    }
 }
 
 internal const val HANDLE_HIT_RADIUS_PX = 36f
@@ -103,46 +99,75 @@ fun AnchorHandleOverlay(
     var canvasSize by remember { mutableStateOf(Offset.Zero) }
     var dragOriginAll by remember { mutableStateOf(false) }
 
+    // Use rememberUpdatedState to avoid restarting pointerInput when state changes
+    val currentAnchors by rememberUpdatedState(anchors)
+    val currentSelectedIndex by rememberUpdatedState(selectedIndex)
+    val currentScale by rememberUpdatedState(scale)
+    val currentSampleRateHz by rememberUpdatedState(sampleRateHz)
+    val currentSamplesPerMv by rememberUpdatedState(samplesPerMv)
+    val currentOnAnchorSelected by rememberUpdatedState(onAnchorSelected)
+    val currentOnAnchorMoved by rememberUpdatedState(onAnchorMoved)
+    val currentOnAllAnchorsMoved by rememberUpdatedState(onAllAnchorsMoved)
+
     Canvas(
         modifier = modifier
             .fillMaxSize()
-            .pointerInput(anchors) {
+            .pointerInput(Unit) {
                 detectTapGestures { tap ->
                     if (canvasSize == Offset.Zero) return@detectTapGestures
-                    val space = computeSpace(scale, sampleRateHz, samplesPerMv, canvasSize.y)
-                    val hit = anchors.indexOfFirst { a ->
+                    val space = computeSpace(
+                        currentScale,
+                        currentSampleRateHz,
+                        currentSamplesPerMv,
+                        canvasSize.y
+                    )
+                    val hit = currentAnchors.indexOfFirst { a ->
                         val s = space.toScreen(a)
                         (s - tap).getDistance() <= HANDLE_HIT_RADIUS_PX
                     }
-                    onAnchorSelected(if (hit >= 0) hit else null)
+                    currentOnAnchorSelected(if (hit >= 0) hit else null)
                 }
             }
-            .pointerInput(anchors, selectedIndex) {
+            .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = { start ->
                         if (canvasSize == Offset.Zero) return@detectDragGestures
-                        val space = computeSpace(scale, sampleRateHz, samplesPerMv, canvasSize.y)
-                        val hit = anchors.indexOfFirst { a ->
+                        val space = computeSpace(
+                            currentScale,
+                            currentSampleRateHz,
+                            currentSamplesPerMv,
+                            canvasSize.y
+                        )
+                        val hit = currentAnchors.indexOfFirst { a ->
                             val s = space.toScreen(a)
                             (s - start).getDistance() <= HANDLE_HIT_RADIUS_PX
                         }
                         if (hit == 0) dragOriginAll = true
-                        if (hit >= 0) onAnchorSelected(hit)
+                        if (hit >= 0) currentOnAnchorSelected(hit)
                     },
                     onDragEnd = { dragOriginAll = false },
                     onDragCancel = { dragOriginAll = false },
                 ) { change, delta ->
                     change.consume()
-                    val space = computeSpace(scale, sampleRateHz, samplesPerMv, canvasSize.y)
+                    val space = computeSpace(
+                        currentScale,
+                        currentSampleRateHz,
+                        currentSamplesPerMv,
+                        canvasSize.y
+                    )
                     val dx = delta.x / space.pxPerSourceX
                     val dy = -delta.y / space.pxPerSourceY
                     if (dragOriginAll) {
-                        onAllAnchorsMoved(dx, dy)
+                        currentOnAllAnchorsMoved(dx, dy)
                     } else {
-                        val idx = selectedIndex ?: return@detectDragGestures
-                        if (idx in anchors.indices) {
-                            val a = anchors[idx]
-                            onAnchorMoved(idx, a.x + dx, a.y + dy)
+                        val idx = currentSelectedIndex ?: return@detectDragGestures
+                        if (idx in currentAnchors.indices) {
+                            val a = currentAnchors[idx]
+                            // Snap X to integer during drag to keep it aligned with the sample
+                            // grid, preventing visual detachment from the baked waveform.
+                            val nx = (a.x + dx).roundToInt().toFloat().coerceAtLeast(0f)
+                            val ny = a.y + dy
+                            currentOnAnchorMoved(idx, nx, ny)
                         }
                     }
                 }
@@ -150,6 +175,6 @@ fun AnchorHandleOverlay(
     ) {
         canvasSize = Offset(size.width, size.height)
         val space = computeSpace(scale, sampleRateHz, samplesPerMv, size.height)
-        drawHandles(anchors, space, handleColor, selectedHandleColor, selectedIndex)
+        drawHandles(currentAnchors, space, handleColor, selectedHandleColor, currentSelectedIndex)
     }
 }
