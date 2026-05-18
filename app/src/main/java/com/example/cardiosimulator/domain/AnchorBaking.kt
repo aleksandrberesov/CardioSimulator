@@ -1,6 +1,15 @@
 package com.example.cardiosimulator.domain
 
 /**
+ * Results of baking sparse anchors into a dense sample list.
+ */
+data class BakedWaveform(
+    val samples: List<Float>,        // baseline-relative source units
+    val originX: Int,                // source-X of samples[0] (== minX)
+    val anchorSampleIndex: List<Int>,// original-order anchor k -> index into samples
+)
+
+/**
  * Bakes a list of [anchors] into a dense sample list by connecting
  * consecutive anchors with straight line segments.
  *
@@ -15,16 +24,23 @@ package com.example.cardiosimulator.domain
  * ([com.example.cardiosimulator.ui.components.ChartCanvas]) plots one
  * sample per integer X.
  */
-fun bakeAnchorsToSamples(anchors: List<AnchorPoint>): List<Float> {
-    if (anchors.isEmpty()) return emptyList()
-    if (anchors.size == 1) return listOf(anchors.first().y)
+fun bakeAnchorsToSamples(anchors: List<AnchorPoint>): BakedWaveform {
+    if (anchors.isEmpty()) return BakedWaveform(emptyList(), 0, emptyList())
+    if (anchors.size == 1) return BakedWaveform(listOf(anchors.first().y), anchors.first().x.toInt(), listOf(0))
 
     // Anchors are authored left-to-right; sort defensively by X so an anchor
     // dragged past a neighbour still bakes monotonically.
-    val sorted = anchors.sortedBy { it.x }
+    val sortedWithOriginalIndex = anchors.mapIndexed { index, anchor -> index to anchor }
+        .sortedBy { it.second.x }
+    val sorted = sortedWithOriginalIndex.map { it.second }
+
     val minX = sorted.first().x.toInt()
     val maxX = sorted.last().x.toInt()
-    if (maxX <= minX) return listOf(sorted.first().y)
+
+    if (maxX <= minX) {
+        val anchorSampleIndex = anchors.map { 0 }
+        return BakedWaveform(listOf(sorted.first().y), minX, anchorSampleIndex)
+    }
 
     val out = FloatArray(maxX - minX + 1)
     for (i in 0 until sorted.size - 1) {
@@ -39,5 +55,10 @@ fun bakeAnchorsToSamples(anchors: List<AnchorPoint>): List<Float> {
             out[idx] = a.y + (b.y - a.y) * t
         }
     }
-    return out.toList()
+
+    val anchorSampleIndex = anchors.map { anchor ->
+        (anchor.x.toInt() - minX).coerceIn(out.indices)
+    }
+
+    return BakedWaveform(out.toList(), minX, anchorSampleIndex)
 }

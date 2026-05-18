@@ -36,10 +36,10 @@ data class EditablePart(
         if (anchors.isEmpty()) return emptyList()
         // Bake to source-coordinate floats then shift by the 1024 baseline
         // and clip to int.
-        val ys = bakeAnchorsToSamples(anchors)
-        val baked = ys.map { (it + 1024f).toInt() }
-        samples = baked
-        return baked
+        val baked = bakeAnchorsToSamples(anchors)
+        val intSamples = baked.samples.map { (it + 1024f).toInt() }
+        samples = intSamples
+        return intSamples
     }
 
     fun toWaveformPart(): WaveformPart = WaveformPart(

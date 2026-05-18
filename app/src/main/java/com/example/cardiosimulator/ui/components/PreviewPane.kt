@@ -68,24 +68,16 @@ fun PreviewPane(
                 if (total < 2) {
                     return@drawWithCache onDrawBehind { /* nothing */ }
                 }
+
                 // Dots are shifted left by phase * total samples so the trace
                 // scrolls; the modulo wraps the sample index, it does not
                 // interpolate.
                 val offset = (phase * total).toInt()
-                val dots = ArrayList<Offset>(total)
-                for (i in 0 until total) {
-                    val srcIdx = (i + offset) % total
-                    dots += Offset(i * stepX, baselineY - (points.values[srcIdx] * stepY))
-                }
-                val strokeWidth = 1.5.dp.toPx()
+                val rotatedValues = List(total) { i -> points.values[(i + offset) % total] }
+                val dots = projectDots(rotatedValues, originX = 0, stepX, stepY, baselineY)
+
                 onDrawBehind {
-                    drawPoints(
-                        points = dots,
-                        pointMode = PointMode.Polygon,
-                        color = color,
-                        strokeWidth = strokeWidth,
-                        cap = StrokeCap.Round,
-                    )
+                    drawDots(dots, color)
                 }
             }
     ) {

@@ -46,9 +46,9 @@ import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.domain.SeriesScheme
-import com.example.cardiosimulator.ui.components.AnchorHandleOverlay
+import com.example.cardiosimulator.domain.bakeAnchorsToSamples
+import com.example.cardiosimulator.ui.components.AnchorChart
 import com.example.cardiosimulator.ui.components.CalibrationPulse
-import com.example.cardiosimulator.ui.components.ChartCanvas
 import com.example.cardiosimulator.ui.components.PaperGridLegend
 import com.example.cardiosimulator.ui.components.PreviewPane
 import com.example.cardiosimulator.ui.components.Tab
@@ -98,9 +98,12 @@ fun EditorScreen(
     val aMaxGlobal = focusedEditable?.aMax ?: focusedSeries?.aMax ?: 200
     val aValueGlobal = focusedEditable?.aValue ?: focusedSeries?.aValue ?: 2
 
-    val bakedPoints = remember(focusedEditable?.identy, anchors) {
-        val raw = focusedEditable?.bakedSamples() ?: emptyList()
-        Points(raw.map { it - 1024f })
+    val bakedWaveform = remember(focusedEditable?.identy, anchors) {
+        focusedEditable?.let { bakeAnchorsToSamples(it.anchors) }
+    }
+
+    val bakedPoints = remember(bakedWaveform) {
+        Points(bakedWaveform?.samples ?: emptyList())
     }
 
     val density = LocalDensity.current
@@ -218,16 +221,9 @@ fun EditorScreen(
                                                 .weight(1f)
                                                 .fillMaxHeight(),
                                         ) {
-                                            if (bakedPoints.values.size >= 2) {
-                                                ChartCanvas(
-                                                    points = bakedPoints,
-                                                    modifier = Modifier.fillMaxSize(),
-                                                    sampleRateHz = focusedPart.effectiveSampleRateHz,
-                                                    samplesPerMv = focusedEditable.samplesPerMv,
-                                                )
-                                            }
-                                            if (anchors.isNotEmpty()) {
-                                                AnchorHandleOverlay(
+                                            if (bakedWaveform != null) {
+                                                AnchorChart(
+                                                    baked = bakedWaveform,
                                                     anchors = anchors,
                                                     sampleRateHz = focusedPart.effectiveSampleRateHz,
                                                     samplesPerMv = focusedEditable.samplesPerMv,

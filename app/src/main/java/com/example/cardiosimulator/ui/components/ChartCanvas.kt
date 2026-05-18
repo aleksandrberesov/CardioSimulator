@@ -19,6 +19,35 @@ import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import androidx.compose.runtime.CompositionLocalProvider
 
+import androidx.compose.ui.graphics.drawscope.DrawScope
+
+/**
+ * Shared projection from source units to screen pixels.
+ */
+fun projectDots(
+    values: List<Float>,
+    originX: Int,
+    stepX: Float,
+    stepY: Float,
+    baselineY: Float
+): List<Offset> = values.mapIndexed { i, v ->
+    Offset((originX + i) * stepX, baselineY - v * stepY)
+}
+
+/**
+ * Shared drawing routine for the waveform line.
+ */
+fun DrawScope.drawDots(dots: List<Offset>, color: Color) {
+    if (dots.size < 2) return
+    drawPoints(
+        points = dots,
+        pointMode = PointMode.Polygon,
+        color = color,
+        strokeWidth = 1.5.dp.toPx(),
+        cap = StrokeCap.Round,
+    )
+}
+
 /**
  * Renders [points] as a continuous line across the chart area.
  *
@@ -56,19 +85,9 @@ fun ChartCanvas(
                             else scale.pxPerAdcCount
                 val baselineY = size.height / 2f
 
-                val dots = ArrayList<Offset>(dataPoints.size)
-                for (i in dataPoints.indices) {
-                    dots += Offset(i * stepX, baselineY - (dataPoints[i] * stepY))
-                }
-                val strokeWidth = 1.5.dp.toPx()
+                val dots = projectDots(dataPoints, originX = 0, stepX, stepY, baselineY)
                 onDrawBehind {
-                    drawPoints(
-                        points = dots,
-                        pointMode = PointMode.Polygon,
-                        color = color,
-                        strokeWidth = strokeWidth,
-                        cap = StrokeCap.Round,
-                    )
+                    drawDots(dots, color)
                 }
             }
     )
