@@ -20,7 +20,7 @@ import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import androidx.compose.runtime.CompositionLocalProvider
 
 /**
- * Renders [points] as a series of discrete dots across the chart area.
+ * Renders [points] as a continuous line across the chart area.
  *
  * Two scaling overrides exist for Phase 0a per-part calibration:
  * - [sampleRateHz] — when > 0, derives `pxPerSample` from this rate instead
@@ -60,13 +60,13 @@ fun ChartCanvas(
                 for (i in dataPoints.indices) {
                     dots += Offset(i * stepX, baselineY - (dataPoints[i] * stepY))
                 }
-                val dotWidth = 2.dp.toPx()
+                val strokeWidth = 1.5.dp.toPx()
                 onDrawBehind {
                     drawPoints(
                         points = dots,
-                        pointMode = PointMode.Points,
+                        pointMode = PointMode.Polygon,
                         color = color,
-                        strokeWidth = dotWidth,
+                        strokeWidth = strokeWidth,
                         cap = StrokeCap.Round,
                     )
                 }

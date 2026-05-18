@@ -45,13 +45,16 @@ internal fun computeSpace(
     sampleRateHz: Float,
     samplesPerMv: Float,
     height: Float,
+    anchors: List<AnchorPoint>,
 ): AnchorSpace {
     val pxX = if (sampleRateHz > 0f) scale.pxPerSampleFor(sampleRateHz) else scale.pxPerSample
     val pxY = if (samplesPerMv > 0f) scale.pxPerAdcCountFor(samplesPerMv) else scale.pxPerAdcCount
+    val minX = if (anchors.isNotEmpty()) anchors.minOf { it.x } else 0f
     return AnchorSpace(
         pxPerSourceX = pxX.coerceAtLeast(0.0001f),
         pxPerSourceY = pxY.coerceAtLeast(0.0001f),
         baselineY = height / 2f,
+        originX = -minX * pxX
     )
 }
 
@@ -119,7 +122,8 @@ fun AnchorHandleOverlay(
                         currentScale,
                         currentSampleRateHz,
                         currentSamplesPerMv,
-                        canvasSize.y
+                        canvasSize.y,
+                        currentAnchors
                     )
                     val hit = currentAnchors.indexOfFirst { a ->
                         val s = space.toScreen(a)
@@ -136,7 +140,8 @@ fun AnchorHandleOverlay(
                             currentScale,
                             currentSampleRateHz,
                             currentSamplesPerMv,
-                            canvasSize.y
+                            canvasSize.y,
+                            currentAnchors
                         )
                         val hit = currentAnchors.indexOfFirst { a ->
                             val s = space.toScreen(a)
@@ -153,7 +158,8 @@ fun AnchorHandleOverlay(
                         currentScale,
                         currentSampleRateHz,
                         currentSamplesPerMv,
-                        canvasSize.y
+                        canvasSize.y,
+                        currentAnchors
                     )
                     val dx = delta.x / space.pxPerSourceX
                     val dy = -delta.y / space.pxPerSourceY
@@ -174,7 +180,7 @@ fun AnchorHandleOverlay(
             }
     ) {
         canvasSize = Offset(size.width, size.height)
-        val space = computeSpace(scale, sampleRateHz, samplesPerMv, size.height)
+        val space = computeSpace(scale, sampleRateHz, samplesPerMv, size.height, currentAnchors)
         drawHandles(currentAnchors, space, handleColor, selectedHandleColor, currentSelectedIndex)
     }
 }

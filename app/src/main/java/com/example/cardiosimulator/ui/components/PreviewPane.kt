@@ -9,6 +9,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -29,7 +30,7 @@ import com.example.cardiosimulator.data.LocalPixelScale
 import com.example.cardiosimulator.data.Points
 
 /**
- * HR=60 looping preview pane. Renders [points] as discrete dots that scroll
+ * HR=60 looping preview pane. Renders [points] as a continuous line that scrolls
  * left-to-right at one beat per second. Used by the editor footer to show
  * how the current segment/series sounds at a standard rate.
  */
@@ -56,7 +57,7 @@ fun PreviewPane(
 
     Box(
         modifier = modifier
-            .height(80.dp)
+            .fillMaxWidth()
             .background(Color(0xFFF7F7F7))
             .clipToBounds()
             .drawWithCache {
@@ -76,20 +77,20 @@ fun PreviewPane(
                     val srcIdx = (i + offset) % total
                     dots += Offset(i * stepX, baselineY - (points.values[srcIdx] * stepY))
                 }
-                val dotWidth = 2.dp.toPx()
+                val strokeWidth = 1.5.dp.toPx()
                 onDrawBehind {
                     drawPoints(
                         points = dots,
-                        pointMode = PointMode.Points,
+                        pointMode = PointMode.Polygon,
                         color = color,
-                        strokeWidth = dotWidth,
+                        strokeWidth = strokeWidth,
                         cap = StrokeCap.Round,
                     )
                 }
             }
     ) {
         Text(
-            text = "Preview @ 60 bpm",
+            text = "Preview",
             style = MaterialTheme.typography.labelSmall,
             color = Color.DarkGray,
             modifier = Modifier.align(Alignment.TopStart).padding(4.dp),

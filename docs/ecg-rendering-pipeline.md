@@ -30,7 +30,7 @@ ZIP file
 [Stage 6]  Pixel scaling: physical units -> screen pixels  (PixelScale)
   |
   v
-[Stage 7]  Dot rendering & grid drawing  (ChartCanvas / CalibrationPulse / ekgGrid / AnchorHandleOverlay)
+[Stage 7]  Line rendering & grid drawing  (ChartCanvas / CalibrationPulse / ekgGrid / AnchorHandleOverlay)
 ```
 
 ---
@@ -330,14 +330,14 @@ This keeps anchor dragging snapped to integer source units.
 
 ---
 
-## Stage 7 -- Dot rendering
+## Stage 7 -- Line rendering
 
-### 7a. Waveform dots
+### 7a. Waveform lines
 
 **File:** `ui/components/ChartCanvas.kt`
 
-For each lead, the baseline-zeroed sample array is drawn as discrete
-dots, one dot per sample, with no connecting lines:
+For each lead, the baseline-zeroed sample array is drawn as a continuous
+connected path (polyline):
 
 ```
 baselineY = canvas.height / 2
@@ -354,9 +354,9 @@ where:
 The Y axis is **inverted**: positive millivolts go UP on screen
 (subtracted from baseline).
 
-Dot rendering uses `drawPoints(PointMode.Points, ...)`:
-- Dot width: **2 dp**
-- Dot cap: `Round`
+Line rendering uses `drawPoints(PointMode.Polygon, ...)`:
+- Stroke width: **1.5 dp**
+- Stroke cap: `Round`
 
 ### 7b. Calibration pulse
 
@@ -586,7 +586,7 @@ For each sample i:
 | Height           | 80 dp           | Fixed pane height                 |
 | Background       | `#F7F7F7`       | Light gray                        |
 | Trace color      | `#388E3C`       | Green                             |
-| Dot width        | 2 dp            | Same as ChartCanvas               |
+| Stroke width     | 1.5 dp          | Same as ChartCanvas               |
 | Animation period | 1000 ms         | 1 beat/second = 60 bpm            |
 
 Scaling uses the same `pxPerSampleFor` / `pxPerAdcCountFor` overrides
@@ -671,7 +671,7 @@ Result: point at (5.29, 374.8) on the canvas
 | large grid          | 5         | mm               | PixelScale.kt:38         |
 | thin stroke         | 0.5       | dp               | Modifers.kt:42           |
 | thick stroke        | 1.5       | dp               | Modifers.kt:43           |
-| waveform dot width  | 2.0       | dp               | ChartCanvas.kt           |
+| waveform line width  | 1.5       | dp               | ChartCanvas.kt           |
 | cal pulse stroke    | 1.5       | dp               | CalibrationPulse.kt:19   |
 | cal pulse width     | 200       | ms               | CalibrationPulse.kt:35   |
 | cal pulse height    | 1         | mV               | CalibrationPulse.kt:13   |

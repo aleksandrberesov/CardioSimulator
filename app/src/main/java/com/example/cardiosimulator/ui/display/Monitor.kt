@@ -78,7 +78,7 @@ fun Monitor(
                 aMax = aMax,
                 aValue = aValue,
                 paperSpeedMmPerSec = mode.speed.toFloat(),
-                gainZoomY = mode.scale,
+                gainZoomY = 1.0f,
                 cal = mode.calibration,
                 physicalPxPerMm = pxPerMm,
             )
@@ -86,7 +86,7 @@ fun Monitor(
             PixelScale(
                 pxPerMm = pxPerMm,
                 paperSpeedMmPerSec = mode.speed.toFloat(),
-                gainZoomY = mode.scale,
+                gainZoomY = 1.0f,
                 cal = mode.calibration,
             )
         }
