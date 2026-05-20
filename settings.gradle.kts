@@ -24,4 +24,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Cardio Simulator"
 include(":app")
+include(":core")
  

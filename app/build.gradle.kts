@@ -42,6 +42,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":core"))
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -59,7 +60,6 @@ dependencies {
     implementation(libs.androidx.documentfile)
     implementation(libs.androidx.datastore.preferences)
     testImplementation(libs.junit)
-    testImplementation(libs.org.json)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

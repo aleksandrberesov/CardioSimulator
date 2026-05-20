@@ -5,15 +5,6 @@ import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.nio.charset.CodingErrorAction
 
-enum class Lead {
-    I, II, III, aVR, aVL, aVF, V1, V2, V3, V4, V5, V6;
-
-    companion object {
-        fun fromToken(raw: String): Lead? =
-            entries.firstOrNull { it.name.equals(raw.trim(), ignoreCase = true) }
-    }
-}
-
 data class AnchorPoint(
     val x: Float,
     val y: Float,
