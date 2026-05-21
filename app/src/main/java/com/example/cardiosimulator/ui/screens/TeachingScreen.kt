@@ -1,7 +1,7 @@
 package com.example.cardiosimulator.ui.screens
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -9,27 +9,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import com.example.cardiosimulator.data.Points
-import com.example.cardiosimulator.ui.display.LeadsGrid
-import com.example.cardiosimulator.ui.display.Lead
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.SeriesScheme
+import com.example.cardiosimulator.ui.display.Lead
+import com.example.cardiosimulator.ui.display.LeadsGrid
 import com.example.cardiosimulator.ui.display.Monitor
 import com.example.cardiosimulator.ui.panels.MonitorControlPanel
 import com.example.cardiosimulator.ui.panels.RhythmChoosingPanel
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
-
 import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
 @Composable
 fun TeachingScreen(
     viewModel: AppViewModel,
     monitorViewModel: MonitorViewModel = viewModel(),
-    rhythmViewModel: RhythmViewModel = viewModel()
-){
+    rhythmViewModel: RhythmViewModel = viewModel(),
+) {
     val rhythms by rhythmViewModel.rhythms.collectAsState()
     val selectedLanguage by viewModel.selectedLanguage.collectAsState()
     val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
@@ -40,23 +39,21 @@ fun TeachingScreen(
         monitorViewModel.setSeriesScheme(SeriesScheme.Grid)
     }
 
-    Row(
-        modifier = Modifier.fillMaxSize().systemBarsPadding()
-    ) {
+    Row(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
         Box(
             modifier = Modifier.weight(1f).middleSectionLeft(),
-            contentAlignment = Alignment.TopStart
+            contentAlignment = Alignment.TopStart,
         ) {
             RhythmChoosingPanel(
                 rhythms = rhythms,
-                selectedPathology = selectedRhythm?.pathology,
+                selectedId = selectedRhythm?.id,
                 currentLanguage = selectedLanguage,
-                onRhythmSelect = { rhythmViewModel.selectRhythm(it.pathology) },
+                onRhythmSelect = { rhythmViewModel.selectRhythm(it.id) },
             )
         }
         Column(
             modifier = Modifier.weight(4f).middleSectionCenter(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             val mode by monitorViewModel.monitorMode.collectAsState()
             Monitor(
@@ -73,7 +70,7 @@ fun TeachingScreen(
                         ?: Points(emptyList<Float>())
                     Lead(
                         points = leadPoints,
-                        title = lead?.name ?: ""
+                        title = lead?.name ?: "",
                     )
                 }
             }
@@ -81,11 +78,11 @@ fun TeachingScreen(
                 viewModel = monitorViewModel,
                 onStartStopClick = { isRunning ->
                     if (isRunning) {
-                        viewModel.sendStartCommand(selectedRhythm?.pathology, selectedRhythm?.displayTitle)
+                        viewModel.sendStartCommand(selectedRhythm?.id, selectedRhythm?.titleEn)
                     } else {
                         viewModel.sendStopCommand()
                     }
-                }
+                },
             )
         }
     }

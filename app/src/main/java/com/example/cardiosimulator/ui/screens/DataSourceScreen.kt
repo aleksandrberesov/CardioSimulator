@@ -6,24 +6,35 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import com.example.cardiosimulator.R
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.cardiosimulator.R
 import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
@@ -31,24 +42,13 @@ import com.example.cardiosimulator.ui.panels.RhythmChoosingPanel
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.DataState
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
 /**
- * First-run screen shown when no data folder has been picked yet, or when
- * the previously picked folder is no longer usable. Launches the system
- * `OPEN_DOCUMENT_TREE` chooser, takes a persistable read permission for
- * the resulting URI, and hands it to the view model to load.
+ * First-run screen shown when no Pathologies.zip has been picked yet, or
+ * when the previously picked file is no longer usable. Launches the
+ * system OPEN_DOCUMENT chooser, takes a persistable read permission for
+ * the resulting URI, and hands it to the view model to extract and load.
  */
 @Composable
 fun DataSourceScreen(
@@ -60,10 +60,9 @@ fun DataSourceScreen(
     var showDetails by remember { mutableStateOf(false) }
 
     val pickZipFile = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
+        contract = ActivityResultContracts.OpenDocument(),
     ) { uri ->
         if (uri != null) {
-            // Persist read permission so the URI keeps working after reboot.
             val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
             runCatching { context.contentResolver.takePersistableUriPermission(uri, flags) }
             viewModel.setDataFolder(context, uri)
@@ -96,69 +95,44 @@ fun DataSourceScreen(
             }
             is DataState.Error -> {
                 val msg = when (state.reason) {
-                    DataState.Error.Reason.MissingSubdirs ->
-                        stringResource(R.string.data_source_error_no_subdirs)
                     DataState.Error.Reason.Unreadable ->
                         stringResource(R.string.data_source_error_unreadable)
                     DataState.Error.Reason.Empty ->
                         stringResource(R.string.data_source_error_empty)
+                    DataState.Error.Reason.BadManifest ->
+                        stringResource(R.string.data_source_error_bad_manifest)
                 }
                 Text(text = msg, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(16.dp))
-                Button(onClick = { pickZipFile.launch(arrayOf("application/zip", "application/x-zip-compressed")) }) {
+                Button(onClick = { pickZipFile.launch(ZIP_MIME) }) {
                     Text(stringResource(R.string.data_source_retry))
                 }
             }
             is DataState.Ready -> {
-                val isUploading by viewModel.isUploading.collectAsState()
-                val lastAck by viewModel.lastAck.collectAsState()
-
                 Text(
                     text = stringResource(
                         R.string.data_source_loaded_format,
-                        state.seriesCount,
-                        state.partsCount,
-                    )
+                        state.pathologyCount,
+                    ),
                 )
-                if (isUploading) {
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = stringResource(R.string.data_source_uploading),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.secondary,
-                    )
-                } else if (lastAck != null) {
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = stringResource(R.string.data_source_upload_success),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
                 Spacer(Modifier.height(24.dp))
                 Button(
                     onClick = { viewModel.confirmData() },
-                    modifier = Modifier.fillMaxWidth(0.6f)
-                ) {
-                    Text(stringResource(R.string.data_source_continue))
-                }
+                    modifier = Modifier.fillMaxWidth(0.6f),
+                ) { Text(stringResource(R.string.data_source_continue)) }
                 Spacer(Modifier.height(8.dp))
                 Button(
                     onClick = { showDetails = true },
-                    modifier = Modifier.fillMaxWidth(0.6f)
-                ) {
-                    Text(stringResource(R.string.data_source_show_details))
-                }
+                    modifier = Modifier.fillMaxWidth(0.6f),
+                ) { Text(stringResource(R.string.data_source_show_details)) }
                 Spacer(Modifier.height(8.dp))
                 Button(
-                    onClick = { pickZipFile.launch(arrayOf("application/zip", "application/x-zip-compressed")) },
-                    modifier = Modifier.fillMaxWidth(0.6f)
-                ) {
-                    Text(stringResource(R.string.data_source_change_folder))
-                }
+                    onClick = { pickZipFile.launch(ZIP_MIME) },
+                    modifier = Modifier.fillMaxWidth(0.6f),
+                ) { Text(stringResource(R.string.data_source_change_folder)) }
             }
             DataState.NotConfigured -> {
-                Button(onClick = { pickZipFile.launch(arrayOf("application/zip", "application/x-zip-compressed")) }) {
+                Button(onClick = { pickZipFile.launch(ZIP_MIME) }) {
                     Text(stringResource(R.string.data_source_pick_folder))
                 }
             }
@@ -176,17 +150,19 @@ fun DataSourceScreen(
                 RhythmChoosingPanel(
                     modifier = Modifier.fillMaxHeight(0.7f),
                     rhythms = rhythms,
-                    currentLanguage = language
+                    currentLanguage = language,
                 )
             },
             confirmButton = {
                 TextButton(onClick = { showDetails = false }) {
                     Text(stringResource(R.string.data_source_close))
                 }
-            }
+            },
         )
     }
 }
+
+private val ZIP_MIME = arrayOf("application/zip", "application/x-zip-compressed")
 
 @Composable
 private fun previewAppViewModel(): AppViewModel {
@@ -195,12 +171,10 @@ private fun previewAppViewModel(): AppViewModel {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return AppViewModel(
-                    AppBuilder()
-                        .addMode(OperatingModeModel(OperatingMode.Teaching))
-                        .build()
+                    AppBuilder().addMode(OperatingModeModel(OperatingMode.Teaching)).build(),
                 ) as T
             }
-        }
+        },
     )
 }
 
@@ -226,7 +200,7 @@ fun DataSourceScreenReadyPreview() {
     CardioSimulatorTheme {
         DataSourceScreen(
             viewModel = previewAppViewModel(),
-            state = DataState.Ready(seriesCount = 124, partsCount = 450)
+            state = DataState.Ready(pathologyCount = 56),
         )
     }
 }
@@ -237,7 +211,7 @@ fun DataSourceScreenErrorPreview() {
     CardioSimulatorTheme {
         DataSourceScreen(
             viewModel = previewAppViewModel(),
-            state = DataState.Error(DataState.Error.Reason.Empty)
+            state = DataState.Error(DataState.Error.Reason.Empty),
         )
     }
 }

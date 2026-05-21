@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,35 +31,31 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.R
-import com.example.cardiosimulator.data.PathologyGroup
 import com.example.cardiosimulator.domain.Language
+import com.example.cardiosimulator.domain.PathologyEntry
 import com.example.cardiosimulator.ui.screens.verticalScrollbar
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 
 @Composable
 fun RhythmChoosingPanel(
     modifier: Modifier = Modifier,
-    rhythms: List<PathologyGroup> = emptyList(),
-    selectedPathology: String? = null,
+    rhythms: List<PathologyEntry> = emptyList(),
+    selectedId: String? = null,
     currentLanguage: Language = Language.EN,
-    onRhythmSelect: (PathologyGroup) -> Unit = {},
-    onSearchQueryChange: (String) -> Unit = {}
+    onRhythmSelect: (PathologyEntry) -> Unit = {},
+    onSearchQueryChange: (String) -> Unit = {},
 ) {
     var searchQuery by remember { mutableStateOf("") }
-
-    val rhythmsListState = rememberLazyListState()
+    val listState = rememberLazyListState()
 
     Column(
         modifier = modifier
             .fillMaxWidth()
             .fillMaxHeight()
             .padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().weight(1f),
-            //horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = {
@@ -69,36 +64,41 @@ fun RhythmChoosingPanel(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = TextStyle(color = Color.Black),
-                placeholder = { Text(stringResource(R.string.rhythm_search_placeholder), color = Color.Black) },
+                placeholder = {
+                    Text(stringResource(R.string.rhythm_search_placeholder), color = Color.Black)
+                },
                 leadingIcon = {
                     Icon(
                         tint = Color.Black,
                         imageVector = Icons.Default.Search,
-                        contentDescription = stringResource(R.string.rhythm_search_content_description)
+                        contentDescription = stringResource(R.string.rhythm_search_content_description),
                     )
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
             )
         }
         Row(
             modifier = Modifier.fillMaxWidth().weight(5f),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             LazyColumn(
-                state = rhythmsListState,
+                state = listState,
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight()
-                    .verticalScrollbar(rhythmsListState)
+                    .verticalScrollbar(listState),
             ) {
                 val filtered = rhythms.filter {
-                    val title = if (currentLanguage == Language.RU) it.fileName else it.displayTitle
+                    val title = if (currentLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn
                     title.contains(searchQuery, ignoreCase = true)
                 }
-                itemsIndexed(filtered, key = { _, rhythm -> rhythm.pathology }) { index, rhythm ->
-                    val isSelected = rhythm.pathology == selectedPathology
-                    val title = if (currentLanguage == Language.RU) rhythm.fileName else rhythm.displayTitle
+                itemsIndexed(filtered, key = { _, r -> r.id }) { index, rhythm ->
+                    val isSelected = rhythm.id == selectedId
+                    val title = if (currentLanguage == Language.RU)
+                        rhythm.nameRu ?: rhythm.titleEn
+                    else
+                        rhythm.titleEn
                     Text(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -106,13 +106,13 @@ fun RhythmChoosingPanel(
                             .padding(vertical = 12.dp, horizontal = 4.dp),
                         text = title,
                         color = if (isSelected) Color.Red else Color.Black,
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyLarge,
                     )
                     if (index < filtered.lastIndex) {
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 4.dp),
                             thickness = 0.5.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant
+                            color = MaterialTheme.colorScheme.outlineVariant,
                         )
                     }
                 }
@@ -125,8 +125,6 @@ fun RhythmChoosingPanel(
 @Composable
 fun RhythmChoosingPanelPreview() {
     CardioSimulatorTheme {
-        Surface {
-            RhythmChoosingPanel()
-        }
+        Surface { RhythmChoosingPanel() }
     }
 }

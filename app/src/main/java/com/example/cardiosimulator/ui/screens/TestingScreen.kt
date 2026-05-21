@@ -9,26 +9,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import com.example.cardiosimulator.data.Points
-import com.example.cardiosimulator.ui.display.LeadsGrid
-import com.example.cardiosimulator.ui.display.Lead
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.SeriesScheme
+import com.example.cardiosimulator.ui.display.Lead
+import com.example.cardiosimulator.ui.display.LeadsGrid
 import com.example.cardiosimulator.ui.display.Monitor
 import com.example.cardiosimulator.ui.panels.MonitorControlPanel
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
-
 import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
 @Composable
 fun TestingScreen(
     viewModel: AppViewModel,
     monitorViewModel: MonitorViewModel = viewModel(),
-    rhythmViewModel: RhythmViewModel = viewModel()
-){
+    rhythmViewModel: RhythmViewModel = viewModel(),
+) {
     val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
     val waveforms by rhythmViewModel.waveforms.collectAsState()
 
@@ -37,12 +36,10 @@ fun TestingScreen(
         monitorViewModel.setSeriesScheme(SeriesScheme.Grid)
     }
 
-    Row(
-        modifier = Modifier.fillMaxSize().systemBarsPadding()
-    ) {
+    Row(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
         Column(
             modifier = Modifier.weight(4f).middleSectionLeft(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             val mode by monitorViewModel.monitorMode.collectAsState()
             Monitor(
@@ -52,14 +49,14 @@ fun TestingScreen(
                 LeadsGrid(
                     rows = rows,
                     columns = columns,
-                    itemCount = mode.count
+                    itemCount = mode.count,
                 ) { _, lead ->
                     val leadPoints = lead?.let { waveforms[it] }
                         ?.takeIf { it.values.size >= 2 }
                         ?: Points(emptyList<Float>())
                     Lead(
                         points = leadPoints,
-                        title = lead?.name ?: ""
+                        title = lead?.name ?: "",
                     )
                 }
             }
@@ -67,18 +64,16 @@ fun TestingScreen(
                 viewModel = monitorViewModel,
                 onStartStopClick = { isRunning ->
                     if (isRunning) {
-                        viewModel.sendStartCommand(selectedRhythm?.pathology, selectedRhythm?.displayTitle)
+                        viewModel.sendStartCommand(selectedRhythm?.id, selectedRhythm?.titleEn)
                     } else {
                         viewModel.sendStopCommand()
                     }
-                }
+                },
             )
         }
         Box(
             modifier = Modifier.weight(1f).middleSectionCenter(),
-            contentAlignment = Alignment.Center
-        ) {
-
-        }
+            contentAlignment = Alignment.Center,
+        ) {}
     }
 }

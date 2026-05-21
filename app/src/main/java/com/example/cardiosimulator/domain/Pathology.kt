@@ -8,10 +8,17 @@ package com.example.cardiosimulator.domain
  * - All 12 standard leads inside (one exception: `emd` ships only 6 limb leads).
  * - Raw ADC samples, baseline-centered on 1024.
  * - No anchors, no part/series indirection, no per-record calibration.
- *
- * [Lead] still lives in [EcgData] for the migration window; Phase 5 of the
- * architecture migration moves it here and deletes [EcgData].
  */
+
+/** 12-lead vocabulary used across the dataset, manifest, and renderer. */
+enum class Lead {
+    I, II, III, aVR, aVL, aVF, V1, V2, V3, V4, V5, V6;
+
+    companion object {
+        fun fromToken(raw: String): Lead? =
+            entries.firstOrNull { it.name.equals(raw.trim(), ignoreCase = true) }
+    }
+}
 
 /** Manifest header keys; [version] must be validated before consuming the rest. */
 data class PathologyManifest(

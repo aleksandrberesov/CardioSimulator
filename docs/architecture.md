@@ -7,9 +7,9 @@ documented in [data-structure.md](data-structure.md): one `.dat` file
 per pathology, all 12 leads inside, raw ADC samples — no anchors, no
 part/series indirection, no per-record calibration.
 
-The codebase is a layered MVVM-with-Compose viewer for that dataset.
-There is no editor in the target architecture; edits to the dataset
-are an upstream concern of `build_pathologies.py`, not of the app.
+The codebase is a layered MVVM-with-Compose viewer and editor for that
+dataset. The editor renders through the **same** `Points → ChartCanvas`
+pipeline as the viewer, using per-sample drag handles.
 
 ```
                 ┌─────────────────────────────────────┐
@@ -21,7 +21,7 @@ are an upstream concern of `build_pathologies.py`, not of the app.
                 ┌──────────────▼──────────────────────┐
                 │           ViewModels                │
                 │  AppViewModel · MonitorViewModel ·  │
-                │  RhythmViewModel                    │
+                │  RhythmViewModel · EditorViewModel  │
                 └──────────────┬──────────────────────┘
                                │
         ┌──────────────────────┼──────────────────────┐
@@ -126,6 +126,23 @@ Dashed arrows (`╌╌►`) show **StateFlow emissions** consumed via `collectAs
 ║  │                                                                     │    ║
 ║  │  Actions: loadManifest() / selectRhythm(id) / refresh()             │    ║
 ║  └─────────────────────────────────────────────────────────────────────┘    ║
+║                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────┐    ║
+║  │ EditorViewModel                                                     │    ║
+║  │                                                                     │    ║
+║  │  Injected: EcgRepository ◄─ readPathology / writePathology          │    ║
+║  │                                                                     │    ║
+║  │  Holds:                                                             │    ║
+║  │    targetFile : MutableState<PathologyFile?> (full edit target)     │    ║
+║  │                                                                     │    ║
+║  │  Emits:                                                             │    ║
+║  │    focusedLead : StateFlow<Lead>                                    │    ║
+║  │    dirtyLeads  : StateFlow<Set<Lead>>                               │    ║
+║  │    isSaving    : StateFlow<Boolean>                                 │    ║
+║  │                                                                     │    ║
+║  │  Actions: selectPathology(id) / selectLead(lead) /                  │    ║
+║  │           setSample(lead, index, value) / revertLead(lead) / save() │    ║
+║  └─────────────────────────────────────────────────────────────────────┘    ║
 ╚═══════════════════════╤══════════════════════════════════════════════════════╝
                         │ StateFlows collected by Composables
                         ▼
@@ -137,6 +154,8 @@ Dashed arrows (`╌╌►`) show **StateFlow emissions** consumed via `collectAs
 ║    ├──► MonitorViewModel(prefs)                                              ║
 ║    │  creates (keyed by mode + "_rhythm")                                    ║
 ║    ├──► RhythmViewModel(ecgRepository)                                       ║
+║    │  creates (keyed by mode + "_editor")                                    ║
+║    ├──► EditorViewModel(ecgRepository)                                       ║
 ║    │                                                                         ║
 ║    │  observes: selectedOperatingMode · dataState · isDataConfirmed          ║
 ║    │                                                                         ║
@@ -157,12 +176,17 @@ Dashed arrows (`╌╌►`) show **StateFlow emissions** consumed via `collectAs
 ║         │   └─ MonitorControlPanel(AppViewModel, MonitorViewModel)           ║
 ║         │   └─ Monitor / LeadsGrid / Lead ◄── waveforms StateFlow            ║
 ║         │                                                                    ║
+║         Editor       → EditorScreen(App, Monitor, Rhythm, Editor)            ║
+║         │   └─ RhythmChoosingPanel(RhythmViewModel)                          ║
+║         │   └─ Monitor / EditableLead                                        ║
+║         │        └─ ChartCanvas + SampleHandleOverlay                        ║
+║         │                                                                    ║
 ║         Testing      → TestingScreen(App, Monitor, Rhythm)                   ║
 ║         │   └─ TestingControlPanel(AppViewModel, MonitorViewModel)           ║
 ║         │   └─ Monitor / LeadsGrid / Lead                                    ║
 ║         │                                                                    ║
 ║         Examination  → ExaminationScreen(App, Monitor, Rhythm)               ║
-║         OSKE         → OSKEScreen(App, Monitor, Rhythm)                      ║
+║         OSKE         → OSKEScreen(       viewModel, monitorViewModel, Rhythm)║
 ║             (same panel+display structure as Teaching)                       ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 ```
@@ -192,6 +216,12 @@ RhythmViewModel StateFlows
 rhythms                 ──╌╌►  RhythmChoosingPanel (list)
 selectedRhythm          ──╌╌►  RhythmChoosingPanel (highlight)
 waveforms               ──╌╌►  LeadsGrid → Lead (render Points per lead)
+
+EditorViewModel StateFlows
+─────────────────────────────────────────────────────────────────────
+focusedLead             ──╌╌►  EditorScreen (lead tabs selector)
+dirtyLeads              ──╌╌►  EditorScreen (toolbar Save/Revert display)
+targetFile              ──╌╌►  Monitor → EditableLead (edit buffer)
 ```
 
 ### UI component ownership tree
@@ -207,10 +237,10 @@ CardioSimulatorTheme
     ├── AppControlPanel
     │     ├── reads AppViewModel.{selectedOperatingMode, tcpConnectionState, selectedLanguage}
     │     └── calls AppViewModel.{setOperatingMode, toggleTcpConnection, setLanguage}
-    └── [mode screen]  ← one of four, keyed by OperatingMode
+    └── [mode screen]  ← one of five, keyed by OperatingMode
           ├── RhythmChoosingPanel
           │     ├── reads  RhythmViewModel.{rhythms, selectedRhythm}
-          │     └── calls  RhythmViewModel.selectRhythm()
+          │     └── calls  RhythmViewModel.selectRhythm() / EditorViewModel.selectPathology()
           ├── MonitorControlPanel
           │     ├── reads  AppViewModel.tcpConnectionState, lastAck
           │     ├── reads  MonitorViewModel.monitorMode
@@ -221,10 +251,14 @@ CardioSimulatorTheme
           ├── Monitor                      ← display
           │     ├── reads MonitorViewModel.monitorMode (speed, scale, grid, running)
           │     └── provides LocalPixelScale to subtree
-          └── LeadsGrid
-                └── Lead  ×N
-                      ├── reads RhythmViewModel.waveforms[lead] → Points
-                      └── reads LocalPixelScale (PixelScale + EcgCalibration)
+          ├── LeadsGrid
+          │     └── Lead  ×N
+          │           ├── reads RhythmViewModel.waveforms[lead] → Points
+          │           └── reads LocalPixelScale (PixelScale + EcgCalibration)
+          └── EditableLead
+                ├── reads EditorViewModel.targetFile[lead] → LeadStream
+                ├── reads LocalPixelScale
+                └── components.{ChartCanvas, SampleHandleOverlay}
 ```
 
 ---
@@ -237,11 +271,11 @@ CardioSimulatorTheme
 | `…domain` | Pure-Kotlin models: app state, pathology / lead models, derived-lead math |
 | `…data` | Storage / persistence: `EcgRepository`, `EcgSource` family, `DataSourcePrefs`, ZIP I/O, calibration, pixel scaling |
 | `…network` | TCP layer: `TcpProtocol` (encode/decode), `TcpMessage` sealed hierarchy, `TcpConnectionState` |
-| `…ui.viewmodels` | Three `ViewModel`s: `AppViewModel`, `MonitorViewModel`, `RhythmViewModel` |
+| `…ui.viewmodels` | Four `ViewModel`s: `AppViewModel`, `MonitorViewModel`, `RhythmViewModel`, `EditorViewModel` |
 | `…ui.screens` | Top-level Composables, one per `OperatingMode` + `MainScreen` + `DataSourceScreen` + `SettingsScreen` |
 | `…ui.panels` | Side / control panels reused across screens |
-| `…ui.display` | Waveform render Composables: `Monitor`, `Lead`, `LeadsGrid` |
-| `…ui.components` | Lower-level visual building blocks (chart canvas, grid, labels) |
+| `…ui.display` | Waveform render Composables: `Monitor`, `Lead`, `EditableLead`, `LeadsGrid` |
+| `…ui.components` | Lower-level visual building blocks (chart canvas, grid, sample handles) |
 | `…ui.theme` | Material3 theme, colors, typography |
 | `…ui.utils` | Misc helpers |
 
@@ -256,7 +290,7 @@ These types are the source of truth the UI and view-models manipulate.
 
 | Type | Kind | Role | Depends on |
 |---|---|---|---|
-| `OperatingMode` | enum | `Teaching`, `Testing`, `Examination`, `OSKE` | — |
+| `OperatingMode` | enum | `Teaching`, `Testing`, `Examination`, `OSKE`, `Editor` | — |
 | `OperatingModeModel` | data class | One entry per `OperatingMode` (id + description) | `OperatingMode` |
 | `AppBuilder` | class | Builder collecting `OperatingModeModel`s, produces `AppStateModel` | `OperatingModeModel`, `AppStateModel` |
 | `AppStateModel` | data class (mutable) | Holds selected mode, language, TCP target | `OperatingModeModel`, `Language` |
@@ -305,300 +339,12 @@ for the on-disk grammar.
 └─────────────┘  └────────────────┘
 ```
 
-Both sources are **read-only** — the app only consumes pathologies; it
-does not produce them. Producing pathologies is the job of
-`Data/build_pathologies.py`.
-
 | Type | Role | Notes |
 |---|---|---|
 | `EcgSource` | Interface: `readManifest() / readPathology(id) / listPathologies()` | Storage-agnostic |
-| `AssetEcgSource` | Reads `Pathologies/` from APK assets (or directly from the bundled zip) | Default at boot |
-| `FileEcgSource` | Reads from a directory in app `filesDir/pathologies` populated by `ZipExtractor` | Selected after the user picks a custom ZIP via SAF |
-| `EcgRepository` | Holds the current `EcgSource`, caches the manifest, lazily reads pathology files on demand, and exposes baseline-zeroed `Points` per `(pathology, lead)` |
-
-### `EcgRepository` API surface
-
-```kotlin
-class EcgRepository(source: EcgSource) {
-    fun setSource(newSource: EcgSource)         // swap & invalidate caches
-    fun loadManifest()                          // eager: read manifest.txt
-    fun pathologies(): List<PathologyEntry>     // from manifest, sorted by title
-    fun readPathology(id: String): PathologyFile?   // lazy: open the .dat file
-    fun leadWaveform(id: String, lead: Lead): Points?
-}
-```
-
-`leadWaveform` is the single entry point the renderer consumes: it
-returns the baseline-zeroed `Points` for one lead of one pathology,
-optionally synthesizing the lead via `DerivedLeads` if the file does
-not contain it.
-
-### Persistence
-
-| Type | Role |
-|---|---|
-| `DataSourcePrefs` | DataStore wrapper: `treeUri`, `languageTag`, `tcpIp`, `tcpPort`, `isDarkTheme`, `gridScheme` |
-| `ZipExtractor` | `object` — unzips a SAF `Uri` (a `Pathologies.zip`) into `filesDir/pathologies`. The new ZIP is flat UTF-8 throughout, so no charset detection is needed |
-
-### Calibration / scaling
-
-| Type | Role |
-|---|---|
-| `EcgCalibration` | Physical constants: gain (mm/mV), sample rate (Hz), ADC counts/mV. The new dataset format does **not** encode any of these — they are fixed by the playback engine, so `EcgCalibration` is the single source of truth |
-| `PixelScale` | Derives `pxPerMm / pxPerMv / pxPerSec / pxPerSample / pxPerAdcCount` from `EcgCalibration` + display density |
-| `LocalPixelScale` | `CompositionLocal` providing `PixelScale` down the Compose tree |
-| `Points` | Wrapper around `List<Float>` (sample buffer ready for display) |
-
----
-
-## 4. Network layer (`…network`)
-
-| Type | Role |
-|---|---|
-| `TcpConnectionState` | Sealed: `Disconnected` / `Connecting` / `Connected` / `Error(msg)` |
-| `TcpMessage` | Sealed hierarchy: `StartCommand`, `StopCommand`, `PointsMessage`, `AckMessage` |
-| `TcpProtocol` | `object` — JSON encode/decode + line-framing helper; throws `TcpProtocolException` |
-| `TcpProtocolException` | Wraps invalid JSON or missing fields |
-
-The TCP socket itself lives inside `AppViewModel.connectionJob` /
-`tcpSocket`; the network package is a pure protocol module. See
-[tcp-protocol.md](tcp-protocol.md) for the wire format.
-
----
-
-## 5. View-model layer (`…ui.viewmodels`)
-
-### AppViewModel — the central hub
-
-`AppViewModel(appState, ecgRepository?, appContext?, prefs?, tcpReconnectIntervalMs)`
-
-Holds:
-- App-wide `StateFlow`s: `selectedLanguage`, `selectedOperatingMode`,
-  `tcpIp / tcpPort`, `isDarkTheme`, `tcpConnectionState`, `dataState`,
-  `isDataConfirmed`, `lastAck`.
-- TCP socket lifecycle: `connectTcp / disconnectTcp / toggleTcpConnection / dismissTcpError`.
-- Data-source lifecycle: `setDataZip → loadFromSaf → ZipExtractor.extract → FileEcgSource → EcgRepository.setSource → loadManifest`.
-
-Dependencies in (constructor):
-- `AppStateModel` (domain)
-- `EcgRepository` (data)
-- `DataSourcePrefs` (data)
-- Android `Context` (only for SAF / DataStore / filesDir)
-
-Dependencies out:
-- emits to UI via `StateFlow`
-- talks to `TcpProtocol`, `TcpMessage`
-
-### MonitorViewModel
-
-`MonitorViewModel(prefs?)`
-
-- One `StateFlow<MonitorModeModel>`.
-- Setters: `setSeriesCount / setSeriesScheme / setGridScheme / setSpeed / setScale / setCalibration / setDisplayScale / setIsRunning`.
-- Persists `gridScheme` through `DataSourcePrefs`.
-- Re-created per `OperatingMode` (keyed by `selectedMode.id.name` in `MainScreen`).
-
-### RhythmViewModel
-
-`RhythmViewModel(ecgRepository)`
-
-- `StateFlow`s: `rhythms` (`List<PathologyEntry>`), `selectedRhythm`
-  (`PathologyEntry?`), `waveforms` (`Map<Lead, Points>`).
-- `loadManifest()` pulls the pathology index from `EcgRepository`.
-- `selectRhythm(id)` lazily reads the pathology `.dat`, baseline-zeroes
-  each lead, fills in missing leads via `DerivedLeads`, and publishes
-  the result as `waveforms`.
-- Recreated per `OperatingMode` keyed by `"<mode>_rhythm"`.
-
----
-
-## 6. UI layer (Compose)
-
-### Activity / entry point
-
-```
-MainActivity.onCreate
- ├─ AppBuilder().addMode(...).build(initial = Teaching)  ──▶ AppStateModel
- ├─ EcgRepository(AssetEcgSource(assets))                ──▶ default repo
- ├─ DataSourcePrefs(context)                             ──▶ persistence
- └─ AppViewModel(appState, repo, ctx, prefs)
-       │
-       ▼
-   CardioSimulatorTheme(darkTheme=…)
-       │
-       ▼
-   MainScreen(viewModel)
-```
-
-### MainScreen routing
-
-```
-MainScreen(viewModel: AppViewModel)
- ├─ create MonitorViewModel (keyed by mode)
- ├─ create RhythmViewModel  (keyed by mode + "_rhythm")
- ├─ if !isDataConfirmed | NotConfigured | Loading | Error →
- │      DataSourceScreen(viewModel, rhythmViewModel, state)
- │
- ├─ if showSettings → SettingsDialog(monitorViewModel, appViewModel)
- │
- ├─ AppControlPanel(viewModel, onSettingsClick)
- └─ when (selectedMode.id):
-        Teaching     → TeachingScreen(   viewModel, monitorViewModel, rhythmViewModel)
-        Testing      → TestingScreen(    viewModel, monitorViewModel, rhythmViewModel)
-        Examination  → ExaminationScreen(viewModel, monitorViewModel, rhythmViewModel)
-        OSKE         → OSKEScreen(       viewModel, monitorViewModel, rhythmViewModel)
-```
-
-### Screen → panel / display map
-
-| Screen | Uses panels | Uses display |
-|---|---|---|
-| `DataSourceScreen` | (SAF picker) | — |
-| `SettingsScreen` / `SettingsDialog` | (settings widgets) | — |
-| `TeachingScreen` | `RhythmChoosingPanel`, `MonitorControlPanel` | `Monitor`, `LeadsGrid`, `Lead` |
-| `TestingScreen` | `RhythmChoosingPanel`, `TestingControlPanel`, `MonitorControlPanel` | `Monitor`, `LeadsGrid`, `Lead` |
-| `ExaminationScreen` | (similar to Teaching) | `Monitor`, `LeadsGrid`, `Lead` |
-| `OSKEScreen` | (similar) | `Monitor`, `LeadsGrid`, `Lead` |
-| `MainScreen` (top bar) | `AppControlPanel` | — |
-
-### Components (`…ui.components`)
-
-Reusable visual primitives consumed by screens / display:
-
-`AutoResizeText`, `CalibrationPulse`, `ChartCanvas` (incl. `chartArea`),
-`ControlPanelDivider`, `Label`, `Modifers`, `Tab` / `PaperGridLegend`.
-
-### Display (`…ui.display`)
-
-`Monitor` — paper grid + scrolling chrome, takes a `MonitorViewModel`.
-`LeadsGrid` — arranges N `Lead` cells in row × column grid.
-`Lead` — renders one lead's `Points` (view-only).
-`ekgGrid` / `Modifers` — modifier helpers for the paper grid.
-
-### Theme (`…ui.theme`)
-
-`CardioSimulatorTheme` (Composable) — wraps Material3 with `Color`, `Type`.
-
----
-
-## 7. Lifetime / instance summary
-
-| Instance | Created in | Lifetime |
-|---|---|---|
-| `MainActivity` | Android framework | Process |
-| `AppStateModel` | `AppBuilder.build()` inside `MainActivity.onCreate` | Activity instance |
-| `EcgRepository` | `MainActivity.onCreate` (starts wrapping `AssetEcgSource`, later swapped to `FileEcgSource`) | Activity instance |
-| `DataSourcePrefs` | `MainActivity.onCreate` | Activity instance |
-| `AppViewModel` | Compose `viewModel { … }` factory | Outlives configuration changes |
-| `MonitorViewModel` | `MainScreen`, keyed per `OperatingMode` | Recreated when mode changes |
-| `RhythmViewModel` | `MainScreen`, keyed per `OperatingMode` | Recreated when mode changes |
-| TCP `Socket` + `connectionJob` | `AppViewModel.connectTcp()` | Until `disconnectTcp` / VM clear |
-| `DerivedLeads`, `TcpProtocol`, `ZipExtractor` | `object` singletons | Process |
-
----
-
-## 8. Data-flow walkthroughs
-
-### App launch with previously chosen ZIP
-
-```
-MainActivity
-  → AppViewModel.init { prefs.treeUri.first() }
-  → AppViewModel.loadFromSaf(ctx, savedUri)
-      → if FileEcgSource(targetDir).isValid() reuse it
-      → else ZipExtractor.extract(ctx, uri, targetDir)
-      → EcgRepository.setSource(FileEcgSource(targetDir))
-      → EcgRepository.loadManifest()
-  → _dataState = Ready(pathologyCount)
-  → MainScreen sees Ready → dispatches to mode screen
-```
-
-### Selecting a pathology
-
-```
-RhythmChoosingPanel tap on "Atrial tachycardia"
-  → RhythmViewModel.selectRhythm("tachpm")
-       → EcgRepository.readPathology("tachpm")  ──► PathologyFile
-       → for each Lead L:
-            samples = file.leads[L]?.samples
-                    ?: DerivedLeads.synthesize(L, file.leads)
-            points  = Points(samples.map { (it - 1024).toFloat() })
-       → _waveforms.value = mapOf(L → Points, ...)
-  → LeadsGrid → Lead reads waveforms[lead] → ChartCanvas redraws
-```
-
-### Sending a Start command over TCP
-
-```
-MonitorControlPanel button
-   → AppViewModel.sendStartCommand(pathologyId)
-        TcpMessage.StartCommand{id, params}
-        TcpProtocol.encode(msg) + "\n"
-        socket.outputStream.write(...)
-   → server replies with line → TcpProtocol.decodeOrNull(line)
-        if AckMessage → _lastAck.value = msg
-```
-
----
-
-## 9. Quick class-dependency cheat-sheet
-
-Legend: `──►` = creates / injects / calls  ·  `╌╌►` = emits StateFlow  ·  `◄implements` = interface
-
-```
-──── CONSTRUCTION / INJECTION ────────────────────────────────────────────────
-
-MainActivity ──► AppBuilder ──► AppStateModel
-                                └── OperatingModeModel × 4
-            ──► EcgRepository(AssetEcgSource)
-                  ├── EcgSource ◄implements AssetEcgSource (boot)
-                  └── EcgSource ◄implements FileEcgSource  (after SAF pick)
-            ──► DataSourcePrefs
-            ──► AppViewModel(AppStateModel, EcgRepository, Context, DataSourcePrefs)
-                  ├── TcpProtocol.object  ──► TcpMessage (encode/decode)
-                  ├── java.net.Socket     (tcpSocket)
-                  ├── ZipExtractor.object
-                  └── DerivedLeads.object (limb / V-lead math)
-
-MainScreen ──► AppViewModel
-          ──► MonitorViewModel(DataSourcePrefs)
-                └── MonitorModeModel ──► EcgCalibration
-                                    ──► GridScheme / SeriesScheme
-          ──► RhythmViewModel(EcgRepository)
-                └── EcgRepository ──► PathologyEntry / PathologyFile
-                                  ──► Points (baseline-zeroed lead buffers)
-
-Screen* ──► Panels*  ──► AppViewModel  (mode switch / TCP)
-                     ──► MonitorViewModel (setSpeed / setScale / setGridScheme)
-                     ──► RhythmViewModel  (selectRhythm / loadManifest)
-Screen* ──► display.Monitor / Lead / LeadsGrid
-              └── components.{ChartCanvas, CalibrationPulse, …}
-              └── LocalPixelScale (CompositionLocal) ──► PixelScale ──► EcgCalibration
-
-──── STATEFLOW EMISSIONS (╌╌►) ───────────────────────────────────────────────
-
-AppViewModel    ╌╌► selectedOperatingMode  → MainScreen, AppControlPanel
-                ╌╌► selectedLanguage       → AppControlPanel, Screens
-                ╌╌► tcpConnectionState     → AppControlPanel, MonitorControlPanel
-                ╌╌► dataState              → MainScreen (guard), DataSourceScreen
-                ╌╌► isDataConfirmed        → MainScreen (guard)
-                ╌╌► isDarkTheme            → CardioSimulatorTheme
-                ╌╌► lastAck                → MonitorControlPanel
-
-MonitorViewModel╌╌► monitorMode            → Monitor, MonitorControlPanel, SettingsDialog
-
-RhythmViewModel ╌╌► rhythms                → RhythmChoosingPanel (list)
-                ╌╌► selectedRhythm         → RhythmChoosingPanel (highlight)
-                ╌╌► waveforms              → LeadsGrid → Lead (render per-lead Points)
-
-──── SINGLETONS (object / process lifetime) ──────────────────────────────────
-
-DerivedLeads       ← used by RhythmViewModel (fill missing leads)
-TcpProtocol        ← used by AppViewModel    (JSON encode / decode)
-ZipExtractor       ← used by AppViewModel    (SAF import → filesDir)
-```
-
-`*` = one of the four `OperatingMode` variants.
+| `AssetEcgSource` | Reads `Pathologies/` from APK assets (or directly from the bundled zip) | Default at boot; read-only |
+| `FileEcgSource` | Reads from/writes to a directory in app `filesDir/pathologies`. | Writable source for Editor |
+| `EcgRepository` | Holds the current `EcgSource`, caches the manifest, and lazily reads/writes pathology files. |
 
 ---
 
@@ -607,8 +353,8 @@ ZipExtractor       ← used by AppViewModel    (SAF import → filesDir)
 For readers familiar with the previous Parts/Series-based design, the
 target architecture removes the following:
 
-- **Editor mode** and its screen (`EditorScreen`, `AnchorInspector`,
-  `SeriesInspector`, `EditorViewModel`).
+- **Legacy Editor** anchor-based design (replaced by the raw-sample
+  `EditorScreen` & `SampleHandleOverlay`).
 - **Editable working copies**: `EditablePart`, `EditableSeries`,
   `UndoStack<T>`, `AnchorClipboard`, `PartNamer`.
 - **Anchor model**: `AnchorPoint`, `SourceSpec`, `bakeAnchorsToSamples`,
@@ -619,16 +365,12 @@ target architecture removes the following:
 - **Per-record calibration**: `aMax` / `aValue` / `duration` /
   `samplesPerMv` / `effectiveSampleRateHz` and the
   `pxPerSampleFor` / `pxPerAdcCountFor` overrides on `PixelScale`.
-- **Writable sources**: `EcgSource.writeSeries / writePart / isWritable`,
-  `ZipCompressor`, `dirtyParts` / `dirtySeries` tracking, manual
-  upload.
 - **Charset detection**: `decodeEcgText`, `EcgRepository.fixEncoding`,
   multi-charset zip extraction — the new format is strictly UTF-8.
 
-What remains: a viewer that loads a `Pathologies.zip`, presents a list
-of pathologies, renders 12 leads on a paper-grid monitor, supports four
-operating modes (Teaching, Testing, Examination, OSKE), and streams
-playback commands over TCP.
+What remains: a viewer and a raw-sample editor that load a
+`Pathologies.zip`, presents a list of pathologies, renders 12 leads on
+a paper-grid monitor, and streams playback commands over TCP.
 
 ---
 

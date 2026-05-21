@@ -30,7 +30,7 @@ fun CalibrationPulse(
         val baseline = size.height / 2f
 
         // Standard ECG calibration pulse: 1 mV tall, 200 ms wide.
-        val pulseHeight = if (samplesPerMv > 0f) scale.pxPerAdcCountFor(samplesPerMv) * samplesPerMv
+        val pulseHeight = if (samplesPerMv > 0f) scale.pxPerAdcCount * samplesPerMv
                           else 1f * scale.pxPerMv
         val pulseWidth = 0.2f * scale.pxPerSec
         val startX = 8.dp.toPx()

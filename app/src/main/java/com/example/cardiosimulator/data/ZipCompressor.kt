@@ -8,9 +8,7 @@ import java.util.zip.ZipOutputStream
 
 /**
  * Builds a ZIP archive from a directory and writes it to a SAF-provided
- * [Uri]. Mirrors [ZipDecompressor.unzip] but in the opposite direction —
- * used by the "Export ZIP" action so the user can grab an updated copy of
- * the edited dataset.
+ * [Uri].
  */
 object ZipCompressor {
 

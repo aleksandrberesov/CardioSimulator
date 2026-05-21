@@ -50,25 +50,12 @@ fun DrawScope.drawDots(dots: List<Offset>, color: Color) {
 
 /**
  * Renders [points] as a continuous line across the chart area.
- *
- * Two scaling overrides exist for Phase 0a per-part calibration:
- * - [sampleRateHz] — when > 0, derives `pxPerSample` from this rate instead
- *   of the global default. Used so records sampled at e.g. 250 Hz render at
- *   the right speed.
- * - [samplesPerMv] — when > 0, scales sample values to pixels via this
- *   factor (`AMax/AValue`). Used so records exported with non-default
- *   `max`/`value` render at the right gain.
- *
- * When both are omitted the renderer falls back to the legacy global
- * calibration (still used by [com.example.cardiosimulator.ui.display.Lead]
- * and asset fixtures).
+ * Internally reads [LocalPixelScale.current] for projection.
  */
 @Composable
 fun ChartCanvas(
     points: Points,
     modifier: Modifier = Modifier,
-    sampleRateHz: Float = 0f,
-    samplesPerMv: Float = 0f,
     color: Color = Color.Black,
 ) {
     val dataPoints = points.values
@@ -79,10 +66,8 @@ fun ChartCanvas(
         modifier = modifier
             .chartArea()
             .drawWithCache {
-                val stepX = if (sampleRateHz > 0f) scale.pxPerSampleFor(sampleRateHz)
-                            else scale.pxPerSample
-                val stepY = if (samplesPerMv > 0f) scale.pxPerAdcCountFor(samplesPerMv)
-                            else scale.pxPerAdcCount
+                val stepX = scale.pxPerSample
+                val stepY = scale.pxPerAdcCount
                 val baselineY = size.height / 2f
 
                 val dots = projectDots(dataPoints, originX = 0, stepX, stepY, baselineY)

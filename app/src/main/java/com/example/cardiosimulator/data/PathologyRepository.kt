@@ -39,6 +39,19 @@ class PathologyRepository(private var source: PathologySource) {
     fun readPathology(id: String): PathologyFile? = source.readPathology(id)
 
     /**
+     * Persists [file] back to the source. Only supported if the current source
+     * is a [FilePathologySource]. Returns true on success.
+     */
+    fun writePathology(file: PathologyFile): Boolean {
+        val s = source
+        return if (s is FilePathologySource) {
+            s.writePathology(file, manifest?.leadOrder)
+        } else {
+            false
+        }
+    }
+
+    /**
      * Returns the baseline-zeroed [Points] for one lead of one pathology,
      * synthesizing the lead via [DerivedLeads] if the file does not ship
      * it. Returns null when neither a direct lead nor a derivable basis

@@ -32,14 +32,15 @@ Pathologies.zip
   │
   ▼
 [Stage 5]  Line rendering          (ChartCanvas / CalibrationPulse / ekgGrid)
+  │        [Editor only]           (SampleHandleOverlay)
 ```
 
 What is **no longer** in the pipeline:
 
 - Charset detection for filenames and file contents — the new format
   is strictly UTF-8 throughout.
-- Anchor baking (`bakeAnchorsToSamples`) — there is no editor; samples
-  are stored directly.
+- Anchor baking (`bakeAnchorsToSamples`) — the editor now edits raw ADC
+  samples directly through the same projection.
 - Per-record calibration overrides — `AMax` / `AValue` / `duration` no
   longer exist in the data file. The playback engine's
   `EcgCalibration` is the single source of truth.
@@ -313,8 +314,7 @@ pxPerAdcCount = pxPerMv / adcCountsPerMv
 | smallGridStepPx  | 2.52                          | 2.52 px      |
 | largeGridStepPx  | 2.52 * 5                      | 12.6 px      |
 
-There is no per-part `pxPerSampleFor(hz)` / `pxPerAdcCountFor(spmv)`
-override — every pathology renders against the same `PixelScale`.
+Every pathology renders against the same `PixelScale`.
 
 ---
 
@@ -359,7 +359,20 @@ Shape:  baseline → wing (4 dp) → up pulseHeight → across pulseWidth → do
 - Wing width: **4 dp**
 - Start offset: **8 dp** from left edge
 
-### 5c. ECG grid
+### 5c. Editor handles
+
+**File:** `ui/components/SampleHandleOverlay.kt`
+
+In Editor mode, an overlay draws draggable handles on top of the
+rendered waveform. Projection uses the same `x[i]`, `y[i]` formulas
+from § 5a.
+
+- **Stride:** handles are subsampled to maintain a minimum visual
+  spacing (default 8 dp).
+- **Interaction:** vertical drag on any region snaps to the nearest
+  sample and translates Δy → ΔADC units via `1/pxPerAdcCount`.
+
+### 5d. ECG grid
 
 **File:** `ui/display/Modifers.kt`
 
@@ -375,61 +388,19 @@ largeStep = pxPerMm * 5    (= largeGridStepPx)
 | Stroke    | 0.5 dp     | 1.5 dp     |
 | Interval  | 1 mm       | 5 mm       |
 
-Grid color schemes:
-
-| Scheme   | Background | Small lines | Large lines |
-|----------|------------|-------------|-------------|
-| Pink     | #FFF5F5    | #FDE4E4     | #F9BDBD     |
-| BlueGray | #F0F4F7    | #DDE4E9     | #BCC6CF     |
-
-Both vertical and horizontal lines are drawn independently in four
-passes: V-small, V-large, H-small, H-large.
-
-### 5d. Viewport zoom and pan
+### 5e. Viewport zoom and pan
 
 **File:** `ui/display/Monitor.kt`
 
 The `Monitor` composable wraps the grid + leads in a `graphicsLayer`
-transform that supports pinch-zoom and drag:
+transform that supports pinch-zoom and drag.
 
-```
-scaleX = scaleY = scale        (range: 1.0 to 5.0)
-translationX = offset.x        (clamped to prevent overscroll)
-translationY = offset.y
+### 5f. Lead layout
 
-maxX = containerWidth  * (scale - 1) / 2
-maxY = containerHeight * (scale - 1) / 2
-```
+**Files:** `ui/display/Lead.kt`, `ui/display/EditableLead.kt`
 
-Layout schemes:
-
-| Scheme    | Columns | Typical use   |
-|-----------|---------|---------------|
-| OneColumn | 1       | Rhythm strip  |
-| TwoColumn | 2       | 6+6 leads     |
-| Grid      | 4       | 3×4 12-lead   |
-
-### 5e. Lead layout
-
-**File:** `ui/display/Lead.kt`
-
-Each `Lead` cell wraps `ChartCanvas` in a `Row` with two columns:
-
-```
-Row (leadArea: fillMaxWidth, fillMaxHeight)
-  │
-  ├── Box (left column, 48 dp wide)
-  │     CalibrationPulse (1 mV / 200 ms)
-  │     Lead name label (Bold, Serif, 16 sp, padding top = 45 dp start = 8 dp)
-  │
-  └── Box (right column, weight = 1f, fillMaxHeight)
-        ChartCanvas(points)
-```
-
-`ChartCanvas` takes only a `Points` argument now — the previous
-`(points, sampleRateHz, samplesPerMv)` signature is gone because the
-sample rate and gain are dataset-wide constants pulled from
-`LocalPixelScale`.
+Each `Lead` cell wraps `ChartCanvas` in a `Row` with two columns.
+`EditableLead` further overlays `SampleHandleOverlay`.
 
 ---
 
@@ -468,8 +439,6 @@ Step 5: Y position
   y = 400 - (100 * 0.098) = 400 - 9.8 = 390.2 px
 
 Result: point at (5.29, 390.2) on the canvas
-  → ≈0.39 mV deflection above baseline
-  → at 84 ms from the start (42 samples at 500 Hz)
 ```
 
 ---
@@ -491,6 +460,7 @@ Result: point at (5.29, 390.2) on the canvas
 | thin stroke       | 0.5       | dp               | Modifers.kt               |
 | thick stroke      | 1.5       | dp               | Modifers.kt               |
 | waveform line     | 1.5       | dp               | ChartCanvas.kt            |
+| handle stride min | 8         | dp               | SampleHandleOverlay.kt    |
 | cal pulse stroke  | 1.5       | dp               | CalibrationPulse.kt       |
 | cal pulse width   | 200       | ms               | CalibrationPulse.kt       |
 | cal pulse height  | 1         | mV               | CalibrationPulse.kt       |
@@ -500,50 +470,18 @@ Result: point at (5.29, 390.2) on the canvas
 
 ---
 
-## Summary of all formulas
-
-| Formula                  | Definition                                | File                 |
-|--------------------------|-------------------------------------------|----------------------|
-| `pxPerMm`                | `density * (160/25.4) * displayScale`     | Monitor.kt           |
-| `pxPerMv`                | `gainMmPerMv * pxPerMm * gainZoomY`       | PixelScale.kt        |
-| `pxPerSec`               | `paperSpeedMmPerSec * pxPerMm`            | PixelScale.kt        |
-| `pxPerSample`            | `pxPerSec / sampleRateHz`                 | PixelScale.kt        |
-| `pxPerAdcCount`          | `pxPerMv / adcCountsPerMv`                | PixelScale.kt        |
-| `baselineZeroed`         | `sample - 1024`                           | EcgRepository.kt     |
-| `x[i]` (screen)          | `i * pxPerSample`                         | ChartCanvas.kt       |
-| `y[i]` (screen)          | `baselineY - (sample[i] * pxPerAdcCount)` | ChartCanvas.kt       |
-| `III`                    | `II - I`                                  | DerivedLeads.kt      |
-| `aVR`                    | `-(I + II) / 2`                           | DerivedLeads.kt      |
-| `aVL`                    | `(2*I - II) / 2`                          | DerivedLeads.kt      |
-| `aVF`                    | `(2*II - I) / 2`                          | DerivedLeads.kt      |
-| V-lead projection        | `alpha*V2[i] + beta*V6[i]`                | DerivedLeads.kt      |
-
----
-
 ## What changed from the legacy pipeline
 
 For readers familiar with the previous Parts/Series-based pipeline:
 
-- **Charset detection (Stage 1 of the legacy pipeline)** is gone. The
-  new ZIP is UTF-8 throughout; `decodeEcgText` and the
-  `EcgRepository.fixEncoding` heuristic are no longer needed.
-- **Two parser passes** (Parts + Series, with `source:` block and
-  `(x,y,id,offset,flags)` refs) collapse into a single pathology-file
-  parser.
+- **Charset detection** is gone. The new ZIP is UTF-8 throughout.
+- **Two parser passes** (Parts + Series) collapse into a single
+  pathology-file parser.
 - **Waveform assembly** is no longer "concatenate the parts of a
-  series" — each lead is already a contiguous stream in the `.dat`
-  file. `assembleWaveform` and `assembleWaveformParts` are replaced by
-  `leadWaveform(id, lead)`.
-- **Anchor baking** (`bakeAnchorsToSamples`) is gone. There is no
-  editor in the target architecture; samples are stored directly.
-- **Per-part calibration** is gone. The `aMax` / `aValue` / `duration`
-  fields are not in the new format, so `pxPerSampleFor(hz)` and
-  `pxPerAdcCountFor(spmv)` overrides are not needed. Every pathology
-  renders against the same dataset-wide `EcgCalibration`.
-- **Editor-only overlays** (`AnchorHandleOverlay`, `PreviewPane`,
-  `BlockTimeline`, `PaperGridLegend`, source-anchored
-  `PixelScale.sourceAnchored`) are gone along with the editor mode.
-
-What is preserved: derived-lead math (still useful for the `emd`
-pathology), the paper-grid rendering, the calibration pulse, the
-millimetre-anchored `PixelScale`, and the viewport zoom/pan behaviour.
+  series" — each lead is already a contiguous stream.
+- **Anchor baking** is gone. The editor edits raw samples directly.
+- **Per-part calibration** is gone. Every pathology renders against the
+  same dataset-wide `EcgCalibration`.
+- **Legacy Editor UI** (BlockTimeline, AnchorCanvas, PreviewPane) is
+  replaced by the unified `Lead → ChartCanvas` path with
+  `SampleHandleOverlay`.

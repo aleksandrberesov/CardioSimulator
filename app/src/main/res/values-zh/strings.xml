@@ -70,7 +70,8 @@
     <string name="data_source_pick_folder">选择 ZIP 压缩包</string>
     <string name="data_source_change_folder">更改 ZIP 压缩包</string>
     <string name="data_source_loading">正在加载数据…</string>
-    <string name="data_source_loaded_format">已加载 %1$d 个序列，%2$d 个片段</string>
+    <string name="data_source_loaded_format">已加载 %1$d 个病理</string>
+    <string name="data_source_error_bad_manifest">ZIP 压缩包包含无效或缺失的清单文件。</string>
     <string name="data_source_error_no_subdirs">所选 ZIP 文件必须包含 \"Series\" 和 \"Parts\" 两个文件夹。</string>
     <string name="data_source_error_unreadable">所选 ZIP 压缩包已无法访问。</string>
     <string name="data_source_error_empty">所选 ZIP 压缩包中未找到心电图文件。</string>

@@ -93,7 +93,8 @@
     <string name="editor_flag_skipqrs">Skip QRS</string>
     <string name="editor_upload_edited">Upload to server</string>
     <string name="data_source_loading">Loading data…</string>
-    <string name="data_source_loaded_format">Loaded %1$d series, %2$d parts</string>
+    <string name="data_source_loaded_format">Loaded %1$d pathologies</string>
+    <string name="data_source_error_bad_manifest">The ZIP archive contains an invalid or missing manifest file.</string>
     <string name="data_source_error_no_subdirs">The selected ZIP file must contain both \"Series\" and \"Parts\" folders.</string>
     <string name="data_source_error_unreadable">The selected ZIP archive is no longer accessible.</string>
     <string name="data_source_error_empty">No ECG files were found in the selected ZIP archive.</string>
