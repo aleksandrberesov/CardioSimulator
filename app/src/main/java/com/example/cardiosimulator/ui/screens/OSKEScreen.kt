@@ -14,7 +14,7 @@ import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
 @Composable
 fun OSKEScreen(
-    viewModel: AppViewModel,
+    appViewModel: AppViewModel,
     monitorViewModel: MonitorViewModel,
     rhythmViewModel: RhythmViewModel
 ){

@@ -14,7 +14,7 @@ import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
 @Composable
 fun ExaminationScreen(
-    viewModel: AppViewModel,
+    appViewModel: AppViewModel,
     monitorViewModel: MonitorViewModel,
     rhythmViewModel: RhythmViewModel
 ){

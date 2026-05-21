@@ -23,7 +23,7 @@ import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
  */
 @Composable
 fun EditorScreen(
-    viewModel: AppViewModel,
+    appViewModel: AppViewModel,
     monitorViewModel: MonitorViewModel = viewModel(),
     rhythmViewModel: RhythmViewModel = viewModel(),
     editorViewModel: EditorViewModel = viewModel(),
@@ -32,7 +32,7 @@ fun EditorScreen(
     val focusedLead by editorViewModel.focusedLead.collectAsState()
     val dirtyLeads by editorViewModel.dirtyLeads.collectAsState()
     val rhythms by rhythmViewModel.rhythms.collectAsState()
-    val selectedLanguage by viewModel.selectedLanguage.collectAsState()
+    val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
 
     Row(modifier = Modifier.fillMaxSize()) {
         // Left Panel: Rhythm List

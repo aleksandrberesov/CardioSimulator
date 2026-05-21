@@ -36,8 +36,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.domain.AppBuilder
+import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
+import com.example.cardiosimulator.domain.PathologyEntry
 import com.example.cardiosimulator.ui.panels.RhythmChoosingPanel
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
@@ -52,8 +54,15 @@ import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
  */
 @Composable
 fun DataSourceScreen(
-    viewModel: AppViewModel,
-    rhythmViewModel: RhythmViewModel = viewModel(),
+    appViewModel: AppViewModel,
+    rhythmViewModel: RhythmViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return RhythmViewModel(repository = appViewModel.repository!!) as T
+            }
+        }
+    ),
     state: DataState,
 ) {
     val context = LocalContext.current
@@ -65,7 +74,7 @@ fun DataSourceScreen(
         if (uri != null) {
             val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
             runCatching { context.contentResolver.takePersistableUriPermission(uri, flags) }
-            viewModel.setDataFolder(context, uri)
+            appViewModel.setDataFolder(context, uri)
         }
     }
 
@@ -117,7 +126,7 @@ fun DataSourceScreen(
                 )
                 Spacer(Modifier.height(24.dp))
                 Button(
-                    onClick = { viewModel.confirmData() },
+                    onClick = { appViewModel.confirmData() },
                     modifier = Modifier.fillMaxWidth(0.6f),
                 ) { Text(stringResource(R.string.data_source_continue)) }
                 Spacer(Modifier.height(8.dp))
@@ -140,7 +149,7 @@ fun DataSourceScreen(
     }
 
     val rhythms by rhythmViewModel.rhythms.collectAsState()
-    val language by viewModel.selectedLanguage.collectAsState()
+    val language by appViewModel.selectedLanguage.collectAsState()
 
     if (showDetails) {
         AlertDialog(
@@ -182,7 +191,7 @@ private fun previewAppViewModel(): AppViewModel {
 @Composable
 fun DataSourceScreenNotConfiguredPreview() {
     CardioSimulatorTheme {
-        DataSourceScreen(viewModel = previewAppViewModel(), state = DataState.NotConfigured)
+        DataSourceScreen(appViewModel = previewAppViewModel(), state = DataState.NotConfigured)
     }
 }
 
@@ -190,7 +199,7 @@ fun DataSourceScreenNotConfiguredPreview() {
 @Composable
 fun DataSourceScreenLoadingPreview() {
     CardioSimulatorTheme {
-        DataSourceScreen(viewModel = previewAppViewModel(), state = DataState.Loading)
+        DataSourceScreen(appViewModel = previewAppViewModel(), state = DataState.Loading)
     }
 }
 
@@ -199,7 +208,7 @@ fun DataSourceScreenLoadingPreview() {
 fun DataSourceScreenReadyPreview() {
     CardioSimulatorTheme {
         DataSourceScreen(
-            viewModel = previewAppViewModel(),
+            appViewModel = previewAppViewModel(),
             state = DataState.Ready(pathologyCount = 56),
         )
     }
@@ -210,7 +219,7 @@ fun DataSourceScreenReadyPreview() {
 fun DataSourceScreenErrorPreview() {
     CardioSimulatorTheme {
         DataSourceScreen(
-            viewModel = previewAppViewModel(),
+            appViewModel = previewAppViewModel(),
             state = DataState.Error(DataState.Error.Reason.Empty),
         )
     }

@@ -50,7 +50,7 @@ class MainActivity : AppCompatActivity() {
             )
             val isDarkTheme by viewModel.isDarkTheme.collectAsState()
             CardioSimulatorTheme(darkTheme = isDarkTheme) {
-                MainScreen(viewModel = viewModel)
+                MainScreen(appViewModel = viewModel)
             }
         }
     }
@@ -73,6 +73,6 @@ fun MainPreview() {
         },
     )
     CardioSimulatorTheme {
-        MainScreen(viewModel = previewViewModel)
+        MainScreen(appViewModel = previewViewModel)
     }
 }

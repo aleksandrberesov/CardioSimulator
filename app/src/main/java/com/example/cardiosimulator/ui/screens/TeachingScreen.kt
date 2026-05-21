@@ -13,8 +13,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.data.Points
+import com.example.cardiosimulator.domain.Lead as DomainLead
 import com.example.cardiosimulator.domain.SeriesScheme
-import com.example.cardiosimulator.ui.display.Lead
+import com.example.cardiosimulator.ui.display.Lead as LeadView
 import com.example.cardiosimulator.ui.display.LeadsGrid
 import com.example.cardiosimulator.ui.display.Monitor
 import com.example.cardiosimulator.ui.panels.MonitorControlPanel
@@ -25,12 +26,12 @@ import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
 @Composable
 fun TeachingScreen(
-    viewModel: AppViewModel,
+    appViewModel: AppViewModel,
     monitorViewModel: MonitorViewModel = viewModel(),
     rhythmViewModel: RhythmViewModel = viewModel(),
 ) {
     val rhythms by rhythmViewModel.rhythms.collectAsState()
-    val selectedLanguage by viewModel.selectedLanguage.collectAsState()
+    val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
     val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
     val waveforms by rhythmViewModel.waveforms.collectAsState()
 
@@ -68,7 +69,7 @@ fun TeachingScreen(
                     val leadPoints = lead?.let { waveforms[it] }
                         ?.takeIf { it.values.size >= 2 }
                         ?: Points(emptyList<Float>())
-                    Lead(
+                    LeadView(
                         points = leadPoints,
                         title = lead?.name ?: "",
                     )
@@ -78,9 +79,9 @@ fun TeachingScreen(
                 viewModel = monitorViewModel,
                 onStartStopClick = { isRunning ->
                     if (isRunning) {
-                        viewModel.sendStartCommand(selectedRhythm?.id, selectedRhythm?.titleEn)
+                        appViewModel.sendStartCommand(selectedRhythm?.id, selectedRhythm?.titleEn)
                     } else {
-                        viewModel.sendStopCommand()
+                        appViewModel.sendStopCommand()
                     }
                 },
             )

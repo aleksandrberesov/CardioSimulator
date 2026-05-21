@@ -29,10 +29,10 @@ import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
 @Composable
-fun MainScreen(viewModel: AppViewModel) {
-    val selectedMode by viewModel.selectedOperatingMode.collectAsState()
-    val dataState by viewModel.dataState.collectAsState()
-    val isDataConfirmed by viewModel.isDataConfirmed.collectAsState()
+fun MainScreen(appViewModel: AppViewModel) {
+    val selectedMode by appViewModel.selectedOperatingMode.collectAsState()
+    val dataState by appViewModel.dataState.collectAsState()
+    val isDataConfirmed by appViewModel.isDataConfirmed.collectAsState()
 
     var showSettings by remember { mutableStateOf(false) }
     val monitorViewModel: MonitorViewModel = viewModel(
@@ -40,7 +40,7 @@ fun MainScreen(viewModel: AppViewModel) {
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return MonitorViewModel(prefs = viewModel.prefs) as T
+                return MonitorViewModel(prefs = appViewModel.prefs) as T
             }
         }
     )
@@ -50,7 +50,7 @@ fun MainScreen(viewModel: AppViewModel) {
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return RhythmViewModel(repository = viewModel.repository!!) as T
+                return RhythmViewModel(repository = appViewModel.repository!!) as T
             }
         }
     )
@@ -60,7 +60,7 @@ fun MainScreen(viewModel: AppViewModel) {
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return EditorViewModel(repository = viewModel.repository!!) as T
+                return EditorViewModel(repository = appViewModel.repository!!) as T
             }
         }
     )
@@ -76,14 +76,14 @@ fun MainScreen(viewModel: AppViewModel) {
         dataState is DataState.Error ||
         dataState is DataState.Loading
     ) {
-        DataSourceScreen(viewModel = viewModel, rhythmViewModel = rhythmViewModel, state = dataState)
+        DataSourceScreen(appViewModel = appViewModel, rhythmViewModel = rhythmViewModel, state = dataState)
         return
     }
 
     if (showSettings) {
         SettingsDialog(
             monitorViewModel = monitorViewModel,
-            appViewModel = viewModel,
+            appViewModel = appViewModel,
             onDismiss = { showSettings = false }
         )
     }
@@ -94,34 +94,34 @@ fun MainScreen(viewModel: AppViewModel) {
             contentAlignment = Alignment.Center
         ) {
             com.example.cardiosimulator.ui.panels.AppControlPanel(
-                viewModel = viewModel,
+                viewModel = appViewModel,
                 onSettingsClick = { showSettings = true }
             )
         }
         Box(modifier = Modifier.weight(15f).fillMaxWidth()) {
             when (selectedMode.id) {
                 OperatingMode.Teaching -> TeachingScreen(
-                    viewModel = viewModel,
+                    appViewModel = appViewModel,
                     monitorViewModel = monitorViewModel,
                     rhythmViewModel = rhythmViewModel,
                 )
                 OperatingMode.Testing -> TestingScreen(
-                    viewModel = viewModel,
+                    appViewModel = appViewModel,
                     monitorViewModel = monitorViewModel,
                     rhythmViewModel = rhythmViewModel,
                 )
                 OperatingMode.Examination -> ExaminationScreen(
-                    viewModel = viewModel,
+                    appViewModel = appViewModel,
                     monitorViewModel = monitorViewModel,
                     rhythmViewModel = rhythmViewModel,
                 )
                 OperatingMode.OSKE -> OSKEScreen(
-                    viewModel = viewModel,
+                    appViewModel = appViewModel,
                     monitorViewModel = monitorViewModel,
                     rhythmViewModel = rhythmViewModel,
                 )
                 OperatingMode.Editor -> EditorScreen(
-                    viewModel = viewModel,
+                    appViewModel = appViewModel,
                     monitorViewModel = monitorViewModel,
                     rhythmViewModel = rhythmViewModel,
                     editorViewModel = editorViewModel,
@@ -150,6 +150,6 @@ fun MainScreenPreview() {
     )
 
     CardioSimulatorTheme {
-        MainScreen(viewModel = previewViewModel)
+        MainScreen(appViewModel = previewViewModel)
     }
 }
