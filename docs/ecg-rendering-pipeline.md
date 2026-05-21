@@ -1,170 +1,197 @@
 # ECG Rendering Pipeline: From ZIP to Screen
 
-This document describes how raw ECG data stored in a ZIP archive is
-transformed into visual waveform paths on the Android screen. The pipeline
-has **7 distinct stages**, each with its own constants and formulas.
+This document describes how the pathology dataset documented in
+[data-structure.md](data-structure.md) (one `.dat` file per pathology,
+all 12 leads inside, raw ADC samples) is transformed into visual
+waveform paths on the Android screen.
+
+It describes the **target rendering pipeline**, organized around the
+new flat data format. The pipeline has **5 stages**; the legacy
+anchor-baking and per-part-calibration stages from the Parts/Series
+era are gone.
 
 ---
 
 ## Pipeline overview
 
 ```
-ZIP file
-  |
-  v
-[Stage 1]  Unzip & charset detection  (ZipDecompressor)
-  |
-  v
-[Stage 2]  File parsing: key-value text -> domain model  (EcgSource / EcgFileFormat)
-  |
-  v
-[Stage 3]  Waveform assembly & baseline zeroing  (EcgRepository)
-  |
-  v
-[Stage 4]  Derived-lead synthesis  (DerivedLeads)
-  |
-  v
-[Stage 5]  Anchor baking: straight-line fill (editor path only)  (AnchorBaking)
-  |
-  v
-[Stage 6]  Pixel scaling: physical units -> screen pixels  (PixelScale)
-  |
-  v
-[Stage 7]  Line rendering & grid drawing  (ChartCanvas / CalibrationPulse / ekgGrid / AnchorHandleOverlay)
+Pathologies.zip
+  │
+  ▼
+[Stage 1]  ZIP extraction          (ZipExtractor)
+  │
+  ▼
+[Stage 2]  Manifest + .dat parsing (EcgSource → PathologyFile)
+  │
+  ▼
+[Stage 3]  Baseline zeroing &      (EcgRepository.leadWaveform)
+           derived-lead synthesis   ─ DerivedLeads (if a lead is missing)
+  │
+  ▼
+[Stage 4]  Pixel scaling           (PixelScale + EcgCalibration)
+  │
+  ▼
+[Stage 5]  Line rendering          (ChartCanvas / CalibrationPulse / ekgGrid)
 ```
+
+What is **no longer** in the pipeline:
+
+- Charset detection for filenames and file contents — the new format
+  is strictly UTF-8 throughout.
+- Anchor baking (`bakeAnchorsToSamples`) — there is no editor; samples
+  are stored directly.
+- Per-record calibration overrides — `AMax` / `AValue` / `duration` no
+  longer exist in the data file. The playback engine's
+  `EcgCalibration` is the single source of truth.
+- Multi-part X-offset layout (`EditableLead`) — each lead is a single
+  contiguous stream.
 
 ---
 
-## Stage 1 -- ZIP extraction
+## Stage 1 — ZIP extraction
 
-**File:** `data/ZipDecompressor.kt`
+**File:** `data/ZipExtractor.kt`
 
-The ZIP archive contains two directories:
-- `Series/` -- series descriptor files (one per ECG lead/rhythm)
-- `Parts/` -- waveform-part files (raw sample data)
+The user-selected `Pathologies.zip` (or the asset-bundled equivalent)
+contains:
 
-### Charset detection
+- `manifest.txt` — dataset header + per-pathology index.
+- `<pathology>.dat` — one file per pathology, 56 in the v1.0 dataset.
 
-ZIP entry names often contain Cyrillic text encoded in legacy charsets.
-The decompressor tries three candidate encodings and picks the one that
-produces the most Russian characters (U+0410..U+044F, plus yo/Yo):
+Layout is flat (no subdirectories), encoding is UTF-8 throughout, line
+endings are LF. The extractor copies entries into
+`filesDir/pathologies/` without any encoding heuristics: the new format
+is intentionally homogeneous so there is nothing to detect.
 
-| Priority | Charset         |
-|----------|-----------------|
-| 1        | UTF-8           |
-| 2        | IBM866 (CP866)  |
-| 3        | windows-1251    |
+```
+Pathologies.zip
+├── manifest.txt
+├── 1abblock.dat
+├── 2abblock1.dat
+├── …
+└── wpwrightlat.dat
+                   ──extract──►   filesDir/pathologies/
+                                  ├── manifest.txt
+                                  ├── 1abblock.dat
+                                  └── …
+```
 
-The winning charset is used for the actual extraction pass.
-
-### File-content decoding
-
-Individual `.txt` files inside the archive go through a second
-charset-detection pass (`decodeEcgText()` in `EcgSource.kt` and
-`EcgData.kt`):
-
-1. Check for UTF-16 BOM (FF FE or FE FF).
-2. Try strict UTF-8.
-3. Decode with windows-1251 and IBM866 in parallel.
-4. Count Russian characters in each candidate; pick the winner.
+The asset-backed source can skip this stage entirely — it reads the
+same layout from `assets/Pathologies/`.
 
 ---
 
-## Stage 2 -- File parsing
+## Stage 2 — Manifest + `.dat` parsing
 
-**Files:** `domain/EcgData.kt`, `data/EcgSource.kt`
+**Files:** `data/EcgSource.kt`, `domain/PathologyFile.kt`
 
-### Data files format
+### 2.1 Manifest
 
-Each file is plain text with `key:value` lines. The parser
-(`EcgFileFormat.readKeyValues`) splits on the first colon per line.
+`EcgSource.readManifest()` is called once after each source swap. It
+parses `manifest.txt` into a `PathologyManifest`:
 
-### Part file (`Parts/`)
+```kotlin
+data class PathologyManifest(
+    val version: String,            // "1.0"
+    val baseline: Int,              // 1024
+    val leadOrder: List<Lead>,      // I, II, III, aVR, aVL, aVF, V1..V6
+    val entries: List<PathologyEntry>,
+)
 
-| Key         | Type          | Meaning                                             |
-|-------------|---------------|-----------------------------------------------------|
-| `identy`    | String        | Unique part identifier                              |
-| `title`     | String        | Display name                                        |
-| `lead`      | Lead enum     | I, II, III, aVR, aVL, aVF, V1..V6                  |
-| `pathology` | String        | Diagnosis label                                     |
-| `amplitude` | Float         | Legacy gain multiplier (viewer path only)           |
-| `duration`  | Int (ms)      | Total waveform duration in milliseconds             |
-| `points`    | CSV of Int    | Raw ADC sample values (integer, baseline ~1024)     |
-| `source`    | SourceSpec    | Semicolon-delimited metadata (see below)            |
-
-### Source spec (inside `source:`)
-
-Semicolon-separated `key:value` pairs. Parenthesised tuples inside
-`points:` are either **anchor points** `(x, y)` or **series
-block refs** `(x, y, partIdenty, offset [, flags])`. A legacy third
-anchor field (an easing-curve token) is accepted but ignored on load.
-
-Key calibration fields:
-
-| Field   | Default | Meaning                                   |
-|---------|---------|-------------------------------------------|
-| `max`   | 200     | `AMax` -- full-scale source-unit range    |
-| `value` | 2       | `AValue` -- equivalent millivolt range    |
-
-### Derived values on WaveformPart
-
-```
-effectiveSampleRateHz = samples.size / (duration / 1000)    [Hz]
-
-samplesPerMv          = AMax / AValue                       [source-units / mV]
+data class PathologyEntry(
+    val id: String,                 // "tachpm"
+    val titleEn: String,            // "Atrial tachycardia, and pacemaker migration"
+    val nameRu: String?,            // "Предсердная тахикардия и миграция водителя ритма"
+    val leadsCount: Int,            // 12 (or 6 for emd)
+    val fileName: String,           // "tachpm.dat"
+)
 ```
 
-With defaults: `samplesPerMv = 200 / 2 = 100` source-units per mV.
+The manifest's `version` field MUST be validated before any further
+reads — older or newer formats are rejected with an explicit error
+rather than parsed loosely.
 
-### Series file (`Series/`)
+### 2.2 Pathology files
 
-References a sequence of parts via `SeriesPartRef(x, y, partIdenty, offset, flags)`.
-Also carries its own `aMax`/`aValue` for series-level calibration.
+`EcgSource.readPathology(id)` is called lazily, only when the user
+selects a rhythm. The `.dat` parser walks the file top-to-bottom:
+
+| Section | Keys | Notes |
+|---|---|---|
+| Header | `pathology`, `title`, `name`, `leads` | One block, terminated by a blank line. |
+| Lead block × N | `lead`, `count`, `points` | One block per lead, separated by blank lines. |
+
+```kotlin
+data class PathologyFile(
+    val id: String,
+    val titleEn: String,
+    val nameRu: String?,
+    val leads: Map<Lead, LeadStream>,
+)
+
+data class LeadStream(
+    val lead: Lead,
+    val samples: IntArray,      // raw ADC, baseline-centered on 1024
+)
+```
+
+`points:` is parsed as a comma-separated `IntArray`. The parser checks
+that `samples.size == count` and that `lead` is a member of
+`Lead.values()`. Missing leads (only `emd` today, which lacks V1–V6) are
+simply absent from the map — there is no placeholder.
+
+### 2.3 Removed concepts
+
+The new format removes everything that previously lived in the
+parser:
+
+- No `source:` block, no `SourceSpec`, no `(x, y)` anchor tuples.
+- No `(x, y, partIdenty, offset, flags)` series block refs.
+- No `amplitude`, `duration`, `max`, `value` fields.
+- No `Series/` directory and no `SeriesPartRef`.
 
 ---
 
-## Stage 3 -- Waveform assembly
+## Stage 3 — Baseline zeroing & derived-lead synthesis
 
 **File:** `data/EcgRepository.kt`
 
-### Constants
+### 3.1 Baseline zeroing
 
-| Constant            | Value    | Meaning                                  |
-|---------------------|----------|------------------------------------------|
-| `SAMPLE_BASELINE`   | 1024.0   | ADC zero-point offset                    |
-
-### Viewer path (`assembleWaveform`)
-
-Concatenates all parts of a series into a single float list. Per sample:
+The single transform applied per sample:
 
 ```
-output[i] = (sample[i] - 1024) * amplitude
+output[i] = sample[i] - 1024
 ```
 
-where `amplitude` is the legacy per-part gain factor (defaults to 1.0
-when absent).
+`1024` is the dataset-level baseline declared by `manifest.txt`
+(`baseline:1024`). The renderer expects baseline-zeroed floats, so this
+happens at the repository boundary:
 
-### Editor path (`assembleWaveformParts` + `baselineZeroedSamples`)
+```kotlin
+fun leadWaveform(id: String, lead: Lead): Points? {
+    val file = readPathology(id) ?: return null
+    val src  = file.leads[lead]?.samples
+            ?: DerivedLeads.synthesize(lead, file.leads)   // §3.2
+            ?: return null
+    return Points(FloatArray(src.size) { i -> (src[i] - SAMPLE_BASELINE).toFloat() })
+}
 
-Returns parts separately, without the legacy `amplitude` multiplication.
-The renderer applies per-part `samplesPerMv` instead:
-
+companion object { private const val SAMPLE_BASELINE = 1024 }
 ```
-baselineZeroed[i] = sample[i] - 1024
-```
 
-The per-part `samplesPerMv` is passed to `ChartCanvas` so the renderer
-can use `pxPerAdcCountFor(samplesPerMv)` for correct gain.
+There is no `amplitude` multiplier — the new format guarantees a uniform
+gain across the corpus.
 
----
-
-## Stage 4 -- Derived-lead synthesis
+### 3.2 Derived-lead synthesis
 
 **File:** `domain/DerivedLeads.kt`
 
-When only a subset of leads is recorded, the missing ones are computed.
+When a pathology ships only a subset of leads (today: `emd`, which has
+I, II, III, aVR, aVL, aVF but no V1–V6), missing leads are computed
+from the present ones.
 
-### From leads I and II (Einthoven / Goldberger)
+#### From leads I and II (Einthoven / Goldberger)
 
 ```
 III  =  II - I
@@ -175,7 +202,7 @@ aVF  =  (2*II - I) / 2
 
 Operates sample-by-sample. Inputs are truncated to the shorter length.
 
-### From leads V2 and V6 (angular projection)
+#### From leads V2 and V6 (angular projection)
 
 Precordial leads are modelled at fixed angles on the chest:
 
@@ -202,51 +229,32 @@ beta  = (cos(V2a) * sin(a) - cos(a) * sin(V2a)) / det
 target_sample[i] = alpha * V2[i] + beta * V6[i]
 ```
 
----
-
-## Stage 5 -- Anchor baking (editor only)
-
-**File:** `domain/AnchorBaking.kt`
-
-In the editor, waveform shape is defined by **anchor points** (x, y).
-The `bakeAnchorsToSamples()` function expands these sparse anchors into a
-dense sample list by connecting consecutive anchors with **straight line
-segments** -- there is no easing or curve shaping. The baked samples are
-then wrapped in `Points` and fed into the same `ChartCanvas` rendering
-path as Teaching mode.
-
-### Straight-line fill
-
-Anchors are sorted by X. For each consecutive pair (a -> b), one Y sample
-is emitted at every integer X position from `a.x` to `b.x`:
-
-```
-span = max(b.x - a.x, 1)
-t    = (x - a.x) / span
-y    = a.y + (b.y - a.y) * t
-```
-
-This linear fill is the minimum transform needed to turn sparse anchors
-into the dense per-sample array that the `.ecg` file format and the
-renderer expect.
+If neither basis pair is available (e.g., the requested lead is V1 but
+the file ships only limb leads), `synthesize` returns `null` and the UI
+shows that lead as empty.
 
 ---
 
-## Stage 6 -- Pixel scaling
+## Stage 4 — Pixel scaling
 
 **Files:** `data/PixelScale.kt`, `data/EcgCalibration.kt`, `ui/display/Monitor.kt`
 
-This is the core of the coordinate mapping. A single anchor value
-`pxPerMm` (pixels per millimetre) derives every other scale.
+This stage is the coordinate mapping from baseline-zeroed ADC samples
+to screen pixels. With the new fixed-calibration format, every
+pathology uses the same `EcgCalibration` — there are no per-record
+overrides.
 
 ### Calibration constants
 
 ```kotlin
 // EcgCalibration.kt
 gainMmPerMv    = 10.0    // standard ECG gain: 10 mm per millivolt
-sampleRateHz   = 500.0   // default sample rate (Hz)
+sampleRateHz   = 500.0   // dataset-wide sample rate (Hz)
 adcCountsPerMv = 256.0   // ADC units per millivolt
 ```
+
+`sampleRateHz` is the value chosen by the playback engine; it is **not**
+stored in any `.dat` file and is treated as a project-wide constant.
 
 ### MonitorModeModel defaults
 
@@ -268,9 +276,9 @@ where:
 - `160 / 25.4` = conversion from Android dp to mm (160 dp = 1 inch, 1 inch = 25.4 mm)
 - `displayScale` = global zoom factor (default 0.4)
 
-| Term            | Value (at mdpi, displayScale=0.4)              |
-|-----------------|-------------------------------------------------|
-| `160 / 25.4`   | 6.2992 dp/mm                                    |
+| Term            | Value (at mdpi, displayScale = 0.4)             |
+|-----------------|--------------------------------------------------|
+| `160 / 25.4`    | 6.2992 dp/mm                                     |
 | `density`       | 1.0                                              |
 | `displayScale`  | 0.4                                              |
 | **pxPerMm**     | **2.5197 px/mm**                                 |
@@ -280,76 +288,52 @@ where:
 All formulas below use the constants from `EcgCalibration` and `MonitorModeModel`:
 
 ```
-pxPerMv      = gainMmPerMv * pxPerMm * gainZoomY
-             = 10 * pxPerMm * scale
+pxPerMv       = gainMmPerMv * pxPerMm * gainZoomY
+              = 10 * pxPerMm * scale
 
-pxPerSec     = paperSpeedMmPerSec * pxPerMm
-             = 25 * pxPerMm
+pxPerSec      = paperSpeedMmPerSec * pxPerMm
+              = 25 * pxPerMm
 
-pxPerSample  = pxPerSec / sampleRateHz
-             = (25 * pxPerMm) / 500
+pxPerSample   = pxPerSec / sampleRateHz
+              = (25 * pxPerMm) / 500
 
 pxPerAdcCount = pxPerMv / adcCountsPerMv
               = (10 * pxPerMm * scale) / 256
-```
-
-### Per-part overrides
-
-When a part has its own `AMax`/`AValue`/`duration`:
-
-```
-pxPerSampleFor(hz)     = pxPerSec / hz
-                        (e.g., for 250 Hz: pxPerSec / 250)
-
-pxPerAdcCountFor(spmv) = pxPerMv / samplesPerMv
-                        (e.g., for AMax=200, AValue=2: pxPerMv / 100)
 ```
 
 ### Numeric example (mdpi, default settings)
 
 | Value            | Formula                       | Result       |
 |------------------|-------------------------------|--------------|
-| pxPerMm          | 1.0 * 6.2992 * 0.4           | 2.52 px/mm   |
-| pxPerMv          | 10 * 2.52 * 1.0              | 25.2 px/mV   |
-| pxPerSec         | 25 * 2.52                    | 63.0 px/s    |
-| pxPerSample      | 63.0 / 500                   | 0.126 px     |
-| pxPerAdcCount    | 25.2 / 256                   | 0.098 px/ADC |
-| smallGridStepPx  | 2.52                         | 2.52 px      |
-| largeGridStepPx  | 2.52 * 5                     | 12.6 px      |
+| pxPerMm          | 1.0 * 6.2992 * 0.4            | 2.52 px/mm   |
+| pxPerMv          | 10 * 2.52 * 1.0               | 25.2 px/mV   |
+| pxPerSec         | 25 * 2.52                     | 63.0 px/s    |
+| pxPerSample      | 63.0 / 500                    | 0.126 px     |
+| pxPerAdcCount    | 25.2 / 256                    | 0.098 px/ADC |
+| smallGridStepPx  | 2.52                          | 2.52 px      |
+| largeGridStepPx  | 2.52 * 5                      | 12.6 px      |
 
-### Editor source-anchored mode
-
-In editor mode, the grid is aligned to source coordinate units instead
-of physical mm. One small grid square equals one source unit:
-
-```
-sourcePxPerMm = (AMax / AValue / 10) * (physicalPxPerMm / (160 / 25.4))
-```
-
-This keeps anchor dragging snapped to integer source units.
+There is no per-part `pxPerSampleFor(hz)` / `pxPerAdcCountFor(spmv)`
+override — every pathology renders against the same `PixelScale`.
 
 ---
 
-## Stage 7 -- Line rendering
+## Stage 5 — Line rendering
 
-### 7a. Waveform lines
+### 5a. Waveform lines
 
 **File:** `ui/components/ChartCanvas.kt`
 
-For each lead, the baseline-zeroed sample array is drawn as a continuous
-connected path (polyline):
+For each lead, the baseline-zeroed sample array is drawn as a
+continuous connected path (polyline):
 
 ```
 baselineY = canvas.height / 2
 
 For each sample i:
-    x[i] = i * stepX
-    y[i] = baselineY - (sample[i] * stepY)
+    x[i] = i * pxPerSample
+    y[i] = baselineY - (sample[i] * pxPerAdcCount)
 ```
-
-where:
-- `stepX = pxPerSampleFor(sampleRateHz)` (or global `pxPerSample`)
-- `stepY = pxPerAdcCountFor(samplesPerMv)` (or global `pxPerAdcCount`)
 
 The Y axis is **inverted**: positive millivolts go UP on screen
 (subtracted from baseline).
@@ -358,26 +342,24 @@ Line rendering uses `drawPoints(PointMode.Polygon, ...)`:
 - Stroke width: **1.5 dp**
 - Stroke cap: `Round`
 
-### 7b. Calibration pulse
+### 5b. Calibration pulse
 
 **File:** `ui/components/CalibrationPulse.kt`
 
 Standard ECG calibration: a rectangular pulse **1 mV tall, 200 ms wide**.
 
 ```
-pulseHeight = pxPerAdcCountFor(samplesPerMv) * samplesPerMv   (per-part mode)
-            = 1.0 * pxPerMv                                   (global mode)
-
+pulseHeight = 1.0 * pxPerMv
 pulseWidth  = 0.2 * pxPerSec
 
-Shape:  baseline --> wing (4dp) --> up pulseHeight --> across pulseWidth --> down --> wing (4dp)
+Shape:  baseline → wing (4 dp) → up pulseHeight → across pulseWidth → down → wing (4 dp)
 ```
 
 - Stroke width: **1.5 dp**
 - Wing width: **4 dp**
 - Start offset: **8 dp** from left edge
 
-### 7c. ECG grid
+### 5c. ECG grid
 
 **File:** `ui/display/Modifers.kt`
 
@@ -388,10 +370,10 @@ smallStep = pxPerMm        (= smallGridStepPx)
 largeStep = pxPerMm * 5    (= largeGridStepPx)
 ```
 
-| Parameter   | Small grid | Large grid |
-|-------------|------------|------------|
-| Stroke      | 0.5 dp     | 1.5 dp     |
-| Interval    | 1 mm       | 5 mm       |
+| Parameter | Small grid | Large grid |
+|-----------|------------|------------|
+| Stroke    | 0.5 dp     | 1.5 dp     |
+| Interval  | 1 mm       | 5 mm       |
 
 Grid color schemes:
 
@@ -403,11 +385,11 @@ Grid color schemes:
 Both vertical and horizontal lines are drawn independently in four
 passes: V-small, V-large, H-small, H-large.
 
-### 7d. Viewport zoom and pan
+### 5d. Viewport zoom and pan
 
 **File:** `ui/display/Monitor.kt`
 
-The `Monitor` composable wraps the grid+leads in a `graphicsLayer`
+The `Monitor` composable wraps the grid + leads in a `graphicsLayer`
 transform that supports pinch-zoom and drag:
 
 ```
@@ -415,315 +397,153 @@ scaleX = scaleY = scale        (range: 1.0 to 5.0)
 translationX = offset.x        (clamped to prevent overscroll)
 translationY = offset.y
 
-maxX = containerWidth * (scale - 1) / 2
+maxX = containerWidth  * (scale - 1) / 2
 maxY = containerHeight * (scale - 1) / 2
 ```
 
 Layout schemes:
 
-| Scheme      | Columns | Typical use     |
-|-------------|---------|-----------------|
-| OneColumn   | 1       | Rhythm strip    |
-| TwoColumn   | 2       | 6+6 leads       |
-| Grid        | 4       | 3x4 12-lead     |
+| Scheme    | Columns | Typical use   |
+|-----------|---------|---------------|
+| OneColumn | 1       | Rhythm strip  |
+| TwoColumn | 2       | 6+6 leads     |
+| Grid      | 4       | 3×4 12-lead   |
 
-### 7e. Anchor handles (Editor only)
+### 5e. Lead layout
 
-**File:** `ui/components/AnchorCanvas.kt`
+**File:** `ui/display/Lead.kt`
 
-In editor mode, `AnchorHandleOverlay` sits directly over the `ChartCanvas`
-inside a `Box`, providing interactive drag handles for anchor points. It
-delegates the actual waveform rendering to the shared `ChartCanvas`
-pipeline, managing only gesture detection and the drawing of circular
-interaction handles.
-
-#### AnchorSpace coordinate mapping
-
-The `AnchorSpace` class maps source-coordinate anchors to screen pixels
-and back:
-
-```
-pxPerSourceX = pxPerSampleFor(sampleRateHz)   (or global pxPerSample)
-pxPerSourceY = pxPerAdcCountFor(samplesPerMv) (or global pxPerAdcCount)
-baselineY    = canvas.height / 2
-
-toScreen(anchor):
-    screenX = originX + anchor.x * pxPerSourceX
-    screenY = baselineY - anchor.y * pxPerSourceY
-
-fromScreen(offset):
-    sourceX = (offset.x - originX) / pxPerSourceX
-    sourceY = (baselineY - offset.y) / pxPerSourceY
-```
-
-Both `pxPerSourceX` and `pxPerSourceY` are clamped to a minimum of
-0.0001 to prevent division by zero (`computeSpace()` helper).
-
-#### Handle rendering
-
-`drawHandles()` draws each anchor point as a filled circle with a white
-inner dot:
-
-| Parameter        | Normal handle    | Selected handle         |
-|------------------|------------------|-------------------------|
-| Outer radius     | 5 dp             | 8 dp                    |
-| Inner radius     | outer * 0.4      | outer * 0.4             |
-| Outer color      | `#1976D2` (blue) | `#D32F2F` (red)         |
-| Inner color      | White            | White                   |
-
-#### Gesture semantics
-
-| Gesture                    | Result                                            |
-|----------------------------|---------------------------------------------------|
-| Tap within 36 px of handle | `onAnchorSelected(index)` — select that anchor    |
-| Tap outside any handle     | `onAnchorSelected(null)` — deselect               |
-| Drag handle (index > 0)    | `onAnchorMoved(index, newX, newY)` — move single  |
-| Drag origin handle (idx 0) | `onAllAnchorsMoved(dx, dy)` — translate all        |
-
-Drag deltas are converted from screen pixels to source units before
-being passed to callbacks:
-
-```
-dx_source = delta.x / pxPerSourceX
-dy_source = -delta.y / pxPerSourceY    (Y axis inverted)
-```
-
-#### Constants
-
-| Constant               | Value | Unit | Meaning                          |
-|------------------------|-------|------|----------------------------------|
-| `HANDLE_HIT_RADIUS_PX` | 36    | px   | Tap/drag hit-test radius         |
-| Normal handle radius   | 5     | dp   | Circle drawn for unselected      |
-| Selected handle radius | 8     | dp   | Circle drawn for selected        |
-| Handle color           | `#1976D2` | — | Blue                          |
-| Selected handle color  | `#D32F2F` | — | Red                           |
-
-### 7f. Lead and EditableLead layout
-
-**Files:** `ui/display/Lead.kt`, `ui/display/EditableLead.kt`
-
-Both `Lead` (viewer) and `EditableLead` (editor) share the same layout
-structure. They wrap `ChartCanvas` in a `Row` with two columns:
+Each `Lead` cell wraps `ChartCanvas` in a `Row` with two columns:
 
 ```
 Row (leadArea: fillMaxWidth, fillMaxHeight)
-  |
-  +-- Box (left column, 48 dp wide)
-  |     CalibrationPulse (1 mV / 200 ms)
-  |     Lead name label (Bold, Serif, 16 sp, padding top=45dp start=8dp)
-  |
-  +-- Box (right column, weight=1f, fillMaxHeight)
-        ChartCanvas(points, sampleRateHz, samplesPerMv)
+  │
+  ├── Box (left column, 48 dp wide)
+  │     CalibrationPulse (1 mV / 200 ms)
+  │     Lead name label (Bold, Serif, 16 sp, padding top = 45 dp start = 8 dp)
+  │
+  └── Box (right column, weight = 1f, fillMaxHeight)
+        ChartCanvas(points)
 ```
 
-#### EditableLead: multi-part positioning
-
-`EditableLead` supports multiple waveform parts with independent
-calibration via the `PartCalibration(sampleRateHz, samplesPerMv)` data
-class. Each part is positioned at a cumulative X-offset:
-
-```
-For each part at index i:
-    effPxPerSample = pxPerSampleFor(cal.sampleRateHz)   (or global)
-    xOffset  = currentSampleOffset * effPxPerSample      [px -> dp]
-    partWidth = part.values.size * effPxPerSample         [px -> dp]
-    currentSampleOffset += part.values.size
-```
-
-The selected part gets a `Color.Blue` with alpha 0.1 background and a
-1 dp blue border.
-
-#### EditorScreen: the editor rendering path
-
-**File:** `ui/screens/EditorScreen.kt`
-
-The editor screen connects the full pipeline:
-
-1. **PixelScale creation** — creates a source-anchored scale from the
-   focused part's `aMax`/`aValue`:
-   ```
-   pxPerMm = density * (160/25.4) * displayScale
-   PixelScale.sourceAnchored(aMax, aValue, speed, scale, cal, pxPerMm)
-   ```
-   This is provided via `CompositionLocalProvider(LocalPixelScale provides editorPixelScale)`.
-
-2. **Anchor baking** — pre-bakes anchor points into a flat sample list:
-   ```
-   bakedSamples = focusedEditable.bakedSamples()
-   bakedPoints  = Points(raw.map { it - 1024f })
-   ```
-   The baked samples are wrapped in `Points` and baseline-zeroed by
-   subtracting 1024, matching the viewer pipeline.
-
-3. **Canvas stack** — uses `Monitor` with `sourceAnchoredCalibration`
-   to provide the source-anchored grid, then layers:
-   ```
-   Box
-     +-- ChartCanvas(bakedPoints, sampleRateHz, samplesPerMv)
-     +-- AnchorHandleOverlay(anchors, sampleRateHz, samplesPerMv, ...)
-     +-- PaperGridLegend(speed, gainMmPerMv)
-   ```
-
-### 7g. Preview pane
-
-**File:** `ui/components/PreviewPane.kt`
-
-A looping preview that shows the waveform at a simulated 60 bpm rate.
-Used in the editor footer.
-
-```
-Animation: infiniteRepeatable, period = 1000 ms (60 bpm), LinearEasing
-Circular shift: offset = floor(phase * total_samples)
-
-For each sample i:
-    srcIdx = (i + offset) % total
-    x = i * stepX
-    y = baselineY - (points.values[srcIdx] * stepY)
-```
-
-| Constant         | Value           | Meaning                           |
-|------------------|-----------------|-----------------------------------|
-| Height           | 80 dp           | Fixed pane height                 |
-| Background       | `#F7F7F7`       | Light gray                        |
-| Trace color      | `#388E3C`       | Green                             |
-| Stroke width     | 1.5 dp          | Same as ChartCanvas               |
-| Animation period | 1000 ms         | 1 beat/second = 60 bpm            |
-
-Scaling uses the same `pxPerSampleFor` / `pxPerAdcCountFor` overrides
-as `ChartCanvas`, so the preview gain and speed match the main canvas.
-
-### 7h. Paper grid legend
-
-**File:** `ui/components/PreviewPane.kt` (lines 104-118)
-
-A small text overlay in the top-left corner of the editor canvas:
-
-```
-"{gainMmPerMv} mm/mV · {paperSpeedMmPerSec} mm/s"
-```
-
-| Constant         | Value                       |
-|------------------|-----------------------------|
-| Background       | White, alpha 0.7            |
-| Padding          | 4 dp horizontal, 2 dp vert  |
-| Typography       | `labelSmall`, DarkGray      |
+`ChartCanvas` takes only a `Points` argument now — the previous
+`(points, sampleRateHz, samplesPerMv)` signature is gone because the
+sample rate and gain are dataset-wide constants pulled from
+`LocalPixelScale`.
 
 ---
 
 ## Complete transformation chain (single sample)
 
-Tracing one raw integer sample from the ZIP file to a pixel coordinate:
+Tracing one raw integer sample from the `.dat` file to a pixel coordinate:
 
 ```
 Given:
-  raw_sample = 1124           (integer from points: field)
-  SAMPLE_BASELINE = 1024
-  AMax = 200, AValue = 2
-  samplesPerMv = 200/2 = 100
-  gainMmPerMv = 10 mm/mV
-  pxPerMm = 2.52 px/mm (example)
-  gainZoomY = 1.0
-  sample_index = 42
+  raw_sample      = 1124          (integer from points: field)
+  baseline        = 1024
+  adcCountsPerMv  = 256
+  gainMmPerMv     = 10 mm/mV
+  pxPerMm         = 2.52 px/mm     (example)
+  gainZoomY       = 1.0
+  sample_index    = 42
+  sampleRateHz    = 500
 
 Step 1: Baseline zeroing
-  zeroed = 1124 - 1024 = 100 source-units
+  zeroed = 1124 - 1024 = 100 ADC units
 
-Step 2: Source-units to millivolts (conceptual)
-  mV = 100 / 100 = 1.0 mV
+Step 2: ADC units to millivolts (conceptual)
+  mV = 100 / 256 ≈ 0.391 mV
 
 Step 3: Pixel scaling
-  pxPerMv = 10 * 2.52 * 1.0 = 25.2 px/mV
-  pxPerAdcCount = 25.2 / 100 = 0.252 px/source-unit
-  stepY = 0.252
+  pxPerMv       = 10 * 2.52 * 1.0  = 25.2  px/mV
+  pxPerAdcCount = 25.2 / 256       = 0.098 px/ADC
 
 Step 4: X position
-  pxPerSec = 25 * 2.52 = 63.0 px/s
-  effectiveSampleRateHz = 500 Hz
-  stepX = 63.0 / 500 = 0.126 px/sample
+  pxPerSec    = 25 * 2.52   = 63.0   px/s
+  pxPerSample = 63.0 / 500  = 0.126  px/sample
   x = 42 * 0.126 = 5.292 px
 
 Step 5: Y position
-  baselineY = canvas.height / 2  (e.g., 400 px)
-  y = 400 - (100 * 0.252) = 400 - 25.2 = 374.8 px
+  baselineY = canvas.height / 2          (e.g., 400 px)
+  y = 400 - (100 * 0.098) = 400 - 9.8 = 390.2 px
 
-Result: point at (5.29, 374.8) on the canvas
-  -> 1.0 mV deflection above baseline
-  -> at 84 ms from the start (42 samples at 500 Hz)
+Result: point at (5.29, 390.2) on the canvas
+  → ≈0.39 mV deflection above baseline
+  → at 84 ms from the start (42 samples at 500 Hz)
 ```
 
 ---
 
 ## Summary of all constants
 
-| Constant            | Value     | Unit             | Source file              |
-|---------------------|-----------|------------------|--------------------------|
-| SAMPLE_BASELINE     | 1024      | ADC units        | EcgRepository.kt:167     |
-| gainMmPerMv         | 10        | mm/mV            | EcgCalibration.kt:8      |
-| sampleRateHz        | 500       | Hz               | EcgCalibration.kt:9      |
-| adcCountsPerMv      | 256       | ADC/mV           | EcgCalibration.kt:10     |
-| AMax (default)      | 200       | source-units     | EcgData.kt:125           |
-| AValue (default)    | 2         | mV               | EcgData.kt:127           |
-| paperSpeed          | 25        | mm/s             | MonitorModeModel.kt:22   |
-| displayScale        | 0.4       | dimensionless    | MonitorModeModel.kt:24   |
-| gainZoomY           | 1.0       | dimensionless    | MonitorModeModel.kt:23   |
-| dp-to-mm factor     | 160/25.4  | dp/mm (= 6.2992) | Monitor.kt:73            |
-| small grid          | 1         | mm               | PixelScale.kt:37         |
-| large grid          | 5         | mm               | PixelScale.kt:38         |
-| thin stroke         | 0.5       | dp               | Modifers.kt:42           |
-| thick stroke        | 1.5       | dp               | Modifers.kt:43           |
-| waveform line width  | 1.5       | dp               | ChartCanvas.kt           |
-| cal pulse stroke    | 1.5       | dp               | CalibrationPulse.kt:19   |
-| cal pulse width     | 200       | ms               | CalibrationPulse.kt:35   |
-| cal pulse height    | 1         | mV               | CalibrationPulse.kt:13   |
-| zoom range          | 1.0 - 5.0| dimensionless    | Monitor.kt:105           |
-| HANDLE_HIT_RADIUS_PX| 36        | px               | AnchorCanvas.kt:45       |
-| handle radius       | 5         | dp               | AnchorCanvas.kt:71       |
-| selected handle rad | 8         | dp               | AnchorCanvas.kt:71       |
-| handle color        | #1976D2   | (blue)           | AnchorCanvas.kt:99       |
-| selected handle col | #D32F2F   | (red)            | AnchorCanvas.kt:100      |
-| preview height      | 80        | dp               | PreviewPane.kt:61        |
-| preview background  | #F7F7F7   | color            | PreviewPane.kt:62        |
-| preview trace color | #388E3C   | (green)          | PreviewPane.kt:44        |
-| preview anim period | 1000      | ms               | PreviewPane.kt:53        |
-| cal area width      | 48        | dp               | Lead.kt / EditableLead   |
-| lead label fontSize | 16        | sp               | Lead.kt / EditableLead   |
-| selection bg alpha  | 0.1       | dimensionless    | EditableLead.kt:137      |
-| selection border    | 1.0       | dp               | EditableLead.kt:139      |
+| Constant          | Value     | Unit             | Source file               |
+|-------------------|-----------|------------------|---------------------------|
+| baseline          | 1024      | ADC units        | manifest.txt + EcgRepository |
+| gainMmPerMv       | 10        | mm/mV            | EcgCalibration.kt         |
+| sampleRateHz      | 500       | Hz               | EcgCalibration.kt         |
+| adcCountsPerMv    | 256       | ADC/mV           | EcgCalibration.kt         |
+| paperSpeed        | 25        | mm/s             | MonitorModeModel.kt       |
+| displayScale      | 0.4       | dimensionless    | MonitorModeModel.kt       |
+| gainZoomY         | 1.0       | dimensionless    | MonitorModeModel.kt       |
+| dp-to-mm factor   | 160/25.4  | dp/mm (= 6.2992) | Monitor.kt                |
+| small grid        | 1         | mm               | PixelScale.kt             |
+| large grid        | 5         | mm               | PixelScale.kt             |
+| thin stroke       | 0.5       | dp               | Modifers.kt               |
+| thick stroke      | 1.5       | dp               | Modifers.kt               |
+| waveform line     | 1.5       | dp               | ChartCanvas.kt            |
+| cal pulse stroke  | 1.5       | dp               | CalibrationPulse.kt       |
+| cal pulse width   | 200       | ms               | CalibrationPulse.kt       |
+| cal pulse height  | 1         | mV               | CalibrationPulse.kt       |
+| zoom range        | 1.0 – 5.0 | dimensionless    | Monitor.kt                |
+| cal area width    | 48        | dp               | Lead.kt                   |
+| lead label size   | 16        | sp               | Lead.kt                   |
 
 ---
 
 ## Summary of all formulas
 
-| Formula                         | Definition                                           | File                 |
-|---------------------------------|------------------------------------------------------|----------------------|
-| `pxPerMm`                      | `density * (160/25.4) * displayScale`                | Monitor.kt:73        |
-| `pxPerMv`                      | `gainMmPerMv * pxPerMm * gainZoomY`                  | PixelScale.kt:31     |
-| `pxPerSec`                     | `paperSpeedMmPerSec * pxPerMm`                       | PixelScale.kt:32     |
-| `pxPerSample`                  | `pxPerSec / sampleRateHz`                            | PixelScale.kt:34     |
-| `pxPerAdcCount`                | `pxPerMv / adcCountsPerMv`                           | PixelScale.kt:36     |
-| `pxPerSampleFor(hz)`           | `pxPerSec / hz`                                      | PixelScale.kt:44     |
-| `pxPerAdcCountFor(spmv)`       | `pxPerMv / spmv`                                     | PixelScale.kt:52     |
-| `samplesPerMv`                 | `AMax / AValue`                                      | EcgData.kt:139-140   |
-| `effectiveSampleRateHz`        | `samples.size / (duration / 1000)`                   | EcgData.kt:130-133   |
-| `baselineZeroed`               | `sample - 1024`                                      | EcgRepository.kt:98  |
-| `viewerSample`                 | `(sample - 1024) * amplitude`                        | EcgRepository.kt:78  |
-| `x[i]` (screen)                | `i * stepX`                                          | ChartCanvas.kt:62    |
-| `y[i]` (screen)                | `baselineY - (sample[i] * stepY)`                    | ChartCanvas.kt:63    |
-| `sourcePxPerMm` (editor)       | `(AMax/AValue/10) * (physPxPerMm / (160/25.4))`      | PixelScale.kt:75     |
-| `III`                          | `II - I`                                             | DerivedLeads.kt:34   |
-| `aVR`                          | `-(I + II) / 2`                                      | DerivedLeads.kt:35   |
-| `aVL`                          | `(2*I - II) / 2`                                     | DerivedLeads.kt:36   |
-| `aVF`                          | `(2*II - I) / 2`                                     | DerivedLeads.kt:37   |
-| V-lead projection              | `alpha*V2[i] + beta*V6[i]`                           | DerivedLeads.kt:80   |
-| anchor straight-line fill      | `a.y + (b.y - a.y) * (x - a.x) / span`               | AnchorBaking.kt          |
-| anchor `toScreen` X           | `originX + anchor.x * pxPerSourceX`                  | AnchorCanvas.kt:36       |
-| anchor `toScreen` Y           | `baselineY - anchor.y * pxPerSourceY`                | AnchorCanvas.kt:36       |
-| anchor `fromScreen` X         | `(offset.x - originX) / pxPerSourceX`                | AnchorCanvas.kt:39       |
-| anchor `fromScreen` Y         | `(baselineY - offset.y) / pxPerSourceY`              | AnchorCanvas.kt:40       |
-| drag delta to source X        | `delta.x / pxPerSourceX`                             | AnchorCanvas.kt:137      |
-| drag delta to source Y        | `-delta.y / pxPerSourceY`                            | AnchorCanvas.kt:138      |
-| part X-offset (EditableLead)  | `currentSampleOffset * pxPerSampleFor(hz)`           | EditableLead.kt:128      |
-| part width (EditableLead)     | `part.values.size * pxPerSampleFor(hz)`              | EditableLead.kt:129      |
-| preview phase offset          | `floor(phase * total_samples)`                       | PreviewPane.kt:73        |
-| preview src index             | `(i + offset) % total`                               | PreviewPane.kt:76        |
-| editor bake baseline          | `bakedSample - 1024`                                 | EditorScreen.kt:117      |
+| Formula                  | Definition                                | File                 |
+|--------------------------|-------------------------------------------|----------------------|
+| `pxPerMm`                | `density * (160/25.4) * displayScale`     | Monitor.kt           |
+| `pxPerMv`                | `gainMmPerMv * pxPerMm * gainZoomY`       | PixelScale.kt        |
+| `pxPerSec`               | `paperSpeedMmPerSec * pxPerMm`            | PixelScale.kt        |
+| `pxPerSample`            | `pxPerSec / sampleRateHz`                 | PixelScale.kt        |
+| `pxPerAdcCount`          | `pxPerMv / adcCountsPerMv`                | PixelScale.kt        |
+| `baselineZeroed`         | `sample - 1024`                           | EcgRepository.kt     |
+| `x[i]` (screen)          | `i * pxPerSample`                         | ChartCanvas.kt       |
+| `y[i]` (screen)          | `baselineY - (sample[i] * pxPerAdcCount)` | ChartCanvas.kt       |
+| `III`                    | `II - I`                                  | DerivedLeads.kt      |
+| `aVR`                    | `-(I + II) / 2`                           | DerivedLeads.kt      |
+| `aVL`                    | `(2*I - II) / 2`                          | DerivedLeads.kt      |
+| `aVF`                    | `(2*II - I) / 2`                          | DerivedLeads.kt      |
+| V-lead projection        | `alpha*V2[i] + beta*V6[i]`                | DerivedLeads.kt      |
+
+---
+
+## What changed from the legacy pipeline
+
+For readers familiar with the previous Parts/Series-based pipeline:
+
+- **Charset detection (Stage 1 of the legacy pipeline)** is gone. The
+  new ZIP is UTF-8 throughout; `decodeEcgText` and the
+  `EcgRepository.fixEncoding` heuristic are no longer needed.
+- **Two parser passes** (Parts + Series, with `source:` block and
+  `(x,y,id,offset,flags)` refs) collapse into a single pathology-file
+  parser.
+- **Waveform assembly** is no longer "concatenate the parts of a
+  series" — each lead is already a contiguous stream in the `.dat`
+  file. `assembleWaveform` and `assembleWaveformParts` are replaced by
+  `leadWaveform(id, lead)`.
+- **Anchor baking** (`bakeAnchorsToSamples`) is gone. There is no
+  editor in the target architecture; samples are stored directly.
+- **Per-part calibration** is gone. The `aMax` / `aValue` / `duration`
+  fields are not in the new format, so `pxPerSampleFor(hz)` and
+  `pxPerAdcCountFor(spmv)` overrides are not needed. Every pathology
+  renders against the same dataset-wide `EcgCalibration`.
+- **Editor-only overlays** (`AnchorHandleOverlay`, `PreviewPane`,
+  `BlockTimeline`, `PaperGridLegend`, source-anchored
+  `PixelScale.sourceAnchored`) are gone along with the editor mode.
+
+What is preserved: derived-lead math (still useful for the `emd`
+pathology), the paper-grid rendering, the calibration pulse, the
+millimetre-anchored `PixelScale`, and the viewport zoom/pan behaviour.
