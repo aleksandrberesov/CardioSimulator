@@ -37,6 +37,25 @@ class RhythmViewModel(
             val entries = withContext(Dispatchers.IO) { repository.pathologies() }
             _rhythms.value = entries
             _selectedRhythm.value?.let { current -> selectRhythm(current.id) }
+
+            // Enrichment: If manifest entries are missing Russian names, try to 
+            // peek-read them from the .dat files.
+            val missingNames = entries.filter { it.nameRu.isNullOrBlank() }
+            if (missingNames.isNotEmpty()) {
+                withContext(Dispatchers.IO) {
+                    val enriched = entries.map { entry ->
+                        if (entry.nameRu.isNullOrBlank()) {
+                            val file = repository.readPathology(entry.id)
+                            if (file?.nameRu != null) {
+                                entry.copy(nameRu = file.nameRu)
+                            } else entry
+                        } else entry
+                    }
+                    withContext(Dispatchers.Main) {
+                        _rhythms.value = enriched
+                    }
+                }
+            }
         }
     }
 

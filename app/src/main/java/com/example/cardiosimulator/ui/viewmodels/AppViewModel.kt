@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
@@ -100,6 +101,8 @@ class AppViewModel(
 
     private val _lastAck = MutableStateFlow<TcpMessage.AckMessage?>(null)
     val lastAck: StateFlow<TcpMessage.AckMessage?> = _lastAck.asStateFlow()
+
+    private val tcpSendMutex = kotlinx.coroutines.sync.Mutex()
 
     init {
         val repo = repository
@@ -209,6 +212,8 @@ class AppViewModel(
                     tcpSocket = socket
                     _tcpConnectionState.value = TcpConnectionState.Connected
 
+                    sendUploadArchive()
+
                     val reader = socket.getInputStream().bufferedReader()
                     while (isActive) {
                         val line = reader.readLine() ?: break
@@ -246,19 +251,22 @@ class AppViewModel(
         if (_tcpConnectionState.value !is TcpConnectionState.Connected) return
 
         viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val paramsMap = mutableMapOf<String, String>()
-                if (pathology != null) paramsMap["pathology"] = pathology
-                if (name != null) paramsMap["name"] = name
-                val msg = TcpMessage.StartCommand(
-                    id = java.util.UUID.randomUUID().toString(),
-                    sampleRate = null,
-                    params = paramsMap,
-                )
-                val header = TcpProtocol.encode(msg) + "\n"
-                socket.getOutputStream().write(header.toByteArray(Charsets.UTF_8))
-                socket.getOutputStream().flush()
-            } catch (_: Exception) {}
+            tcpSendMutex.withLock {
+                try {
+                    val paramsMap = mutableMapOf<String, String>()
+                    if (pathology != null) paramsMap["pathology"] = pathology
+                    if (name != null) paramsMap["name"] = name
+                    val msg = TcpMessage.StartCommand(
+                        id = java.util.UUID.randomUUID().toString(),
+                        sampleRate = null,
+                        params = paramsMap,
+                    )
+                    val header = TcpProtocol.encode(msg) + "\n"
+                    socket.getOutputStream().write(header.toByteArray(Charsets.UTF_8))
+                    socket.getOutputStream().flush()
+                } catch (_: Exception) {
+                }
+            }
         }
     }
 
@@ -266,12 +274,44 @@ class AppViewModel(
         val socket = tcpSocket ?: return
         if (_tcpConnectionState.value !is TcpConnectionState.Connected) return
         viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val msg = TcpMessage.StopCommand(id = java.util.UUID.randomUUID().toString())
-                val header = TcpProtocol.encode(msg) + "\n"
-                socket.getOutputStream().write(header.toByteArray(Charsets.UTF_8))
-                socket.getOutputStream().flush()
-            } catch (_: Exception) {}
+            tcpSendMutex.withLock {
+                try {
+                    val msg = TcpMessage.StopCommand(id = java.util.UUID.randomUUID().toString())
+                    val header = TcpProtocol.encode(msg) + "\n"
+                    socket.getOutputStream().write(header.toByteArray(Charsets.UTF_8))
+                    socket.getOutputStream().flush()
+                } catch (_: Exception) {
+                }
+            }
+        }
+    }
+
+    private fun sendUploadArchive() {
+        val socket = tcpSocket ?: return
+        val ctx = appContext ?: return
+        val sourceDir = File(ctx.filesDir, PATHOLOGIES_DIR)
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val zipFile = ZipCompressor.zipToCache(ctx, sourceDir, "upload.zip") ?: return@launch
+            tcpSendMutex.withLock {
+                try {
+                    val msg = TcpMessage.UploadMessage(
+                        id = java.util.UUID.randomUUID().toString(),
+                        filename = "Pathologies.zip",
+                        size = zipFile.length()
+                    )
+                    val header = TcpProtocol.encode(msg) + "\n"
+                    val out = socket.getOutputStream()
+                    out.write(header.toByteArray(Charsets.UTF_8))
+                    zipFile.inputStream().use { input ->
+                        input.copyTo(out)
+                    }
+                    out.flush()
+                } catch (_: Exception) {
+                } finally {
+                    zipFile.delete()
+                }
+            }
         }
     }
 

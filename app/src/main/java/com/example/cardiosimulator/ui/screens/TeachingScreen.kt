@@ -31,7 +31,6 @@ fun TeachingScreen(
     rhythmViewModel: RhythmViewModel = viewModel(),
 ) {
     val rhythms by rhythmViewModel.rhythms.collectAsState()
-    val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
     val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
     val waveforms by rhythmViewModel.waveforms.collectAsState()
 
@@ -46,9 +45,9 @@ fun TeachingScreen(
             contentAlignment = Alignment.TopStart,
         ) {
             RhythmChoosingPanel(
+                appViewModel = appViewModel,
                 rhythms = rhythms,
                 selectedId = selectedRhythm?.id,
-                currentLanguage = selectedLanguage,
                 onRhythmSelect = { rhythmViewModel.selectRhythm(it.id) },
             )
         }

@@ -20,6 +20,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,21 +31,30 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.R
+import com.example.cardiosimulator.domain.AppBuilder
+import com.example.cardiosimulator.domain.AppStateModel
 import com.example.cardiosimulator.domain.Language
+import com.example.cardiosimulator.domain.OperatingMode
+import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.domain.PathologyEntry
 import com.example.cardiosimulator.ui.screens.verticalScrollbar
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
+import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 
 @Composable
 fun RhythmChoosingPanel(
+    appViewModel: AppViewModel,
     modifier: Modifier = Modifier,
     rhythms: List<PathologyEntry> = emptyList(),
     selectedId: String? = null,
-    currentLanguage: Language = Language.EN,
     onRhythmSelect: (PathologyEntry) -> Unit = {},
     onSearchQueryChange: (String) -> Unit = {},
 ) {
+    val currentLanguage by appViewModel.selectedLanguage.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
@@ -124,7 +134,17 @@ fun RhythmChoosingPanel(
 @Preview(showBackground = true)
 @Composable
 fun RhythmChoosingPanelPreview() {
+    val previewAppViewModel: AppViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return AppViewModel(
+                    AppBuilder().addMode(OperatingModeModel(OperatingMode.Teaching)).build(),
+                ) as T
+            }
+        },
+    )
     CardioSimulatorTheme {
-        Surface { RhythmChoosingPanel() }
+        Surface { RhythmChoosingPanel(appViewModel = previewAppViewModel) }
     }
 }

@@ -149,7 +149,6 @@ fun DataSourceScreen(
     }
 
     val rhythms by rhythmViewModel.rhythms.collectAsState()
-    val language by appViewModel.selectedLanguage.collectAsState()
 
     if (showDetails) {
         AlertDialog(
@@ -157,9 +156,9 @@ fun DataSourceScreen(
             title = { Text(stringResource(R.string.data_source_pathologies_title, rhythms.size)) },
             text = {
                 RhythmChoosingPanel(
+                    appViewModel = appViewModel,
                     modifier = Modifier.fillMaxHeight(0.7f),
                     rhythms = rhythms,
-                    currentLanguage = language,
                 )
             },
             confirmButton = {

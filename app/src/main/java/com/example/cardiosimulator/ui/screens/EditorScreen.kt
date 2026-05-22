@@ -42,9 +42,9 @@ fun EditorScreen(
             tonalElevation = 2.dp
         ) {
             RhythmChoosingPanel(
+                appViewModel = appViewModel,
                 rhythms = rhythms,
                 selectedId = targetFile?.id,
-                currentLanguage = selectedLanguage,
                 onRhythmSelect = { editorViewModel.selectPathology(it.id) }
             )
         }
@@ -62,8 +62,15 @@ fun EditorScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    val displayTitle = targetFile?.let {
+                        if (selectedLanguage == com.example.cardiosimulator.domain.Language.RU) 
+                            it.nameRu ?: it.titleEn 
+                        else 
+                            it.titleEn
+                    } ?: "No pathology selected"
+                    
                     Text(
-                        text = targetFile?.titleEn ?: "No pathology selected",
+                        text = displayTitle,
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.weight(1f)
                     )
