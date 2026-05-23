@@ -19,6 +19,7 @@ import com.example.cardiosimulator.ui.display.Lead as LeadView
 import com.example.cardiosimulator.ui.display.LeadsGrid
 import com.example.cardiosimulator.ui.display.Monitor
 import com.example.cardiosimulator.ui.panels.MonitorControlPanel
+import com.example.cardiosimulator.ui.panels.RhythmChoosingDrawer
 import com.example.cardiosimulator.ui.panels.RhythmChoosingPanel
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
@@ -39,20 +40,9 @@ fun TeachingScreen(
         monitorViewModel.setSeriesScheme(SeriesScheme.Grid)
     }
 
-    Row(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
-        Box(
-            modifier = Modifier.weight(1f).middleSectionLeft(),
-            contentAlignment = Alignment.TopStart,
-        ) {
-            RhythmChoosingPanel(
-                appViewModel = appViewModel,
-                rhythms = rhythms,
-                selectedId = selectedRhythm?.id,
-                onRhythmSelect = { rhythmViewModel.selectRhythm(it.id) },
-            )
-        }
+    Box(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
         Column(
-            modifier = Modifier.weight(4f).middleSectionCenter(),
+            modifier = Modifier.fillMaxSize().middleSectionCenter(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             val mode by monitorViewModel.monitorMode.collectAsState()
@@ -74,16 +64,14 @@ fun TeachingScreen(
                     )
                 }
             }
-            MonitorControlPanel(
-                viewModel = monitorViewModel,
-                onStartStopClick = { isRunning ->
-                    if (isRunning) {
-                        appViewModel.sendStartCommand(selectedRhythm?.id, selectedRhythm?.titleEn)
-                    } else {
-                        appViewModel.sendStopCommand()
-                    }
-                },
-            )
         }
+
+        RhythmChoosingDrawer(
+            appViewModel = appViewModel,
+            rhythms = rhythms,
+            selectedId = selectedRhythm?.id,
+            onRhythmSelect = { rhythmViewModel.selectRhythm(it.id) },
+            modifier = Modifier.align(Alignment.CenterStart)
+        )
     }
 }

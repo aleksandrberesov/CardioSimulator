@@ -52,7 +52,7 @@ fun MonitorControlPanel(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp)
+            .padding(0.dp)
             .height(IntrinsicSize.Min),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically

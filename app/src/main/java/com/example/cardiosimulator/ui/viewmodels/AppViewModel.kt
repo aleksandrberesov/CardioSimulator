@@ -93,15 +93,6 @@ class AppViewModel(
     private val _isDataConfirmed = MutableStateFlow(false)
     val isDataConfirmed: StateFlow<Boolean> = _isDataConfirmed.asStateFlow()
 
-    private val _dirtyParts = MutableStateFlow<Set<String>>(emptySet())
-    val dirtyParts: StateFlow<Set<String>> = _dirtyParts.asStateFlow()
-
-    private val _dirtySeries = MutableStateFlow<Set<String>>(emptySet())
-    val dirtySeries: StateFlow<Set<String>> = _dirtySeries.asStateFlow()
-
-    private val _lastAck = MutableStateFlow<TcpMessage.AckMessage?>(null)
-    val lastAck: StateFlow<TcpMessage.AckMessage?> = _lastAck.asStateFlow()
-
     private val tcpSendMutex = kotlinx.coroutines.sync.Mutex()
 
     init {
@@ -214,13 +205,10 @@ class AppViewModel(
 
                     sendUploadArchive()
 
+                    // Drain incoming frames so a socket EOF (disconnect) is detected.
                     val reader = socket.getInputStream().bufferedReader()
                     while (isActive) {
-                        val line = reader.readLine() ?: break
-                        val message = TcpProtocol.decodeOrNull(line)
-                        if (message is TcpMessage.AckMessage) {
-                            _lastAck.value = message
-                        }
+                        reader.readLine() ?: break
                     }
                 } catch (_: IOException) {
                     // Connection lost or failed to connect

@@ -20,7 +20,7 @@ and Spanish.
 - ~13+ user-visible strings hardcoded in Compose across `SettingsScreen`,
   `BaseScreen`, `MonitorControlPanel`, `RhythmChoosingPanel`,
   `TestingControlPanel`.
-- `MainScreen` and `AppControlPanel` switched on the operating mode's
+- `MainScreen` and `TopControlPanel` switched on the operating mode's
   *localized* title — would break the moment the title got translated.
 - `minSdk = 24`, so per-app language API needed the AppCompat back-port.
 
@@ -48,7 +48,7 @@ and Spanish.
 ### Phase 2 — Extract hardcoded strings + stable IDs
 - Introduce `OperatingMode` enum with `@StringRes titleRes`. Switch
   `OperatingModeModel` to `id: OperatingMode`. Replace string-based `when`
-  in `MainScreen` and `AppControlPanel`.
+  in `MainScreen` and `TopControlPanel`.
 - Add `@StringRes` to `GridScheme`.
 - Move every user-visible literal into `res/values/strings.xml` with format
   strings for units (`%1$d mm/s`, etc.).

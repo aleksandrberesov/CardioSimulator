@@ -1,12 +1,16 @@
 package com.example.cardiosimulator.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material3.*
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -20,12 +24,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.domain.GridScheme
@@ -33,6 +42,7 @@ import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 
 import com.example.cardiosimulator.domain.Language
+import com.example.cardiosimulator.network.TcpConnectionState
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 
 @Composable
@@ -62,6 +72,21 @@ fun SettingsContent(
     val isDarkTheme by appViewModel.isDarkTheme.collectAsState()
     val tcpIp by appViewModel.tcpIp.collectAsState()
     val tcpPort by appViewModel.tcpPort.collectAsState()
+    val connectionState by appViewModel.tcpConnectionState.collectAsState()
+    val isConnected = connectionState == TcpConnectionState.Connected
+
+    if (connectionState is TcpConnectionState.Error) {
+        AlertDialog(
+            onDismissRequest = { appViewModel.dismissTcpError() },
+            title = { Text(stringResource(R.string.tcp_status_error)) },
+            text = { Text((connectionState as TcpConnectionState.Error).message) },
+            confirmButton = {
+                TextButton(onClick = { appViewModel.dismissTcpError() }) {
+                    Text(stringResource(R.string.settings_close))
+                }
+            }
+        )
+    }
 
     var ipInput by remember(tcpIp) { mutableStateOf(tcpIp) }
     val ipRegex = remember { Regex("^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$") }
@@ -220,7 +245,8 @@ fun SettingsContent(
 
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     OutlinedTextField(
                         value = ipInput,
@@ -264,6 +290,57 @@ fun SettingsContent(
                             { Text(stringResource(R.string.settings_tcp_port_error)) }
                         } else null
                     )
+                    IconButton(
+                        onClick = { appViewModel.toggleTcpConnection() },
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isConnected) Icons.Default.LinkOff else Icons.Default.Link,
+                            contentDescription = stringResource(
+                                if (isConnected) R.string.tcp_disconnect else R.string.tcp_connect
+                            )
+                        )
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                            .width(60.dp)
+                    ) {
+                        if (connectionState == TcpConnectionState.Connecting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(12.dp),
+                                strokeWidth = 2.dp,
+                                color = Color.Gray
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(12.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        when (connectionState) {
+                                            TcpConnectionState.Connected -> Color.Green
+                                            is TcpConnectionState.Error -> Color.Magenta
+                                            else -> Color.Red
+                                        }
+                                    )
+                                    .semantics { contentDescription = "TCP Status Indicator" }
+                            )
+                        }
+                        Text(
+                            text = when (connectionState) {
+                                TcpConnectionState.Connected -> stringResource(R.string.tcp_status_connected)
+                                TcpConnectionState.Connecting -> stringResource(R.string.tcp_status_waiting)
+                                is TcpConnectionState.Error -> stringResource(R.string.tcp_status_error)
+                                else -> stringResource(R.string.tcp_status_disconnected)
+                            },
+                            fontSize = 8.sp,
+                            color = Color.Gray,
+                            lineHeight = 10.sp
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -304,16 +381,8 @@ fun SettingsContent(
                 ) { uri ->
                     if (uri != null) appViewModel.exportZip(context, uri)
                 }
-                val dirtyParts by appViewModel.dirtyParts.collectAsState()
-                val dirtySeries by appViewModel.dirtySeries.collectAsState()
-                val hasEdits = dirtyParts.isNotEmpty() || dirtySeries.isNotEmpty()
                 OutlinedButton(onClick = { exportZipLauncher.launch("ecg_export.zip") }) {
-                    Text(
-                        if (hasEdits)
-                            stringResource(R.string.data_source_export_zip_dirty)
-                        else
-                            stringResource(R.string.data_source_export_zip)
-                    )
+                    Text(stringResource(R.string.data_source_export_zip))
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))

@@ -24,6 +24,13 @@ fun Modifier.topSection(): Modifier {
         .fillMaxWidth()
 }
 
+fun Modifier.bottomSection(): Modifier {
+    return this
+        .background(Color.LightGray)
+        .padding(8.dp)
+        .fillMaxWidth()
+}
+
 fun Modifier.middleSectionLeft(): Modifier {
     return this
         .background(Color.LightGray)

@@ -11,6 +11,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.ui.display.EditableLead
 import com.example.cardiosimulator.ui.display.Monitor
+import com.example.cardiosimulator.ui.panels.RhythmChoosingDrawer
 import com.example.cardiosimulator.ui.panels.RhythmChoosingPanel
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.EditorViewModel
@@ -34,23 +35,9 @@ fun EditorScreen(
     val rhythms by rhythmViewModel.rhythms.collectAsState()
     val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
 
-    Row(modifier = Modifier.fillMaxSize()) {
-        // Left Panel: Rhythm List
-        Surface(
-            modifier = Modifier.width(300.dp).fillMaxHeight(),
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            tonalElevation = 2.dp
-        ) {
-            RhythmChoosingPanel(
-                appViewModel = appViewModel,
-                rhythms = rhythms,
-                selectedId = targetFile?.id,
-                onRhythmSelect = { editorViewModel.selectPathology(it.id) }
-            )
-        }
-
+    Box(modifier = Modifier.fillMaxSize()) {
         // Main Area
-        Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
+        Column(modifier = Modifier.fillMaxSize()) {
             // Toolbar
             Surface(
                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -136,5 +123,14 @@ fun EditorScreen(
                 }
             }
         }
+
+        // Left Panel: Rhythm List (Drawer)
+        RhythmChoosingDrawer(
+            appViewModel = appViewModel,
+            rhythms = rhythms,
+            selectedId = targetFile?.id,
+            onRhythmSelect = { editorViewModel.selectPathology(it.id) },
+            modifier = Modifier.align(Alignment.CenterStart)
+        )
     }
 }
