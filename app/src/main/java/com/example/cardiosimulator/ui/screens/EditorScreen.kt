@@ -164,9 +164,6 @@ fun EditorScreen(
                                     baseline = baseline,
                                     selectedIndex = selectedIndex,
                                     onIndexSelected = { editorViewModel.selectIndex(it) },
-                                    onSampleChanged = { i, v -> 
-                                        editorViewModel.setSample(focusedLead, i, v)
-                                    },
                                     modifier = Modifier.weight(1f)
                                 )
 
