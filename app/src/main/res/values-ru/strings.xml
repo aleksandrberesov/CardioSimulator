@@ -48,6 +48,7 @@
     <string name="monitor_columns_grid_short">Сетка</string>
     <string name="monitor_speed_unit">мм/с</string>
     <string name="monitor_speed_format">%1$d мм/с</string>
+    <string name="monitor_speed_title">Скорость</string>
     <string name="monitor_count_format">%1$d\u00D7</string>
     <string name="monitor_scale_format">%1$d%%</string>
     <string name="monitor_electrodes">Электроды</string>

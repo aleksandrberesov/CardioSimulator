@@ -36,6 +36,7 @@ fun EditorScreen(
 ) {
     val targetFile by editorViewModel.targetFile
     val focusedLead by editorViewModel.focusedLead.collectAsState()
+    val selectedIndex by editorViewModel.selectedIndex.collectAsState()
     val dirtyLeads by editorViewModel.dirtyLeads.collectAsState()
     val isMetadataDirty by editorViewModel.isMetadataDirty.collectAsState()
     val rhythms by rhythmViewModel.rhythms.collectAsState()
@@ -161,6 +162,8 @@ fun EditorScreen(
                                 EditableLead(
                                     stream = stream,
                                     baseline = baseline,
+                                    selectedIndex = selectedIndex,
+                                    onIndexSelected = { editorViewModel.selectIndex(it) },
                                     onSampleChanged = { i, v -> 
                                         editorViewModel.setSample(focusedLead, i, v)
                                     },

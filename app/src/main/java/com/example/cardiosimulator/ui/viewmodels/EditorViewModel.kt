@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.cardiosimulator.data.DataSourcePrefs
 import com.example.cardiosimulator.data.PathologyRepository
 import com.example.cardiosimulator.domain.Lead
-import com.example.cardiosimulator.domain.LeadStream
 import com.example.cardiosimulator.domain.PathologyFile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +37,9 @@ class EditorViewModel(
     private val _focusedLead = MutableStateFlow(Lead.II)
     val focusedLead: StateFlow<Lead> = _focusedLead.asStateFlow()
 
+    private val _selectedIndex = MutableStateFlow(0)
+    val selectedIndex: StateFlow<Int> = _selectedIndex.asStateFlow()
+
     private val _dirtyLeads = MutableStateFlow<Set<Lead>>(emptySet())
     val dirtyLeads: StateFlow<Set<Lead>> = _dirtyLeads.asStateFlow()
 
@@ -54,6 +56,7 @@ class EditorViewModel(
             _dirtyLeads.value = emptySet()
             _isMetadataDirty.value = false
             _focusedLead.value = Lead.II
+            _selectedIndex.value = 0
             if (persist) {
                 prefs?.setLastEditorRhythmId(id)
             }
@@ -62,6 +65,45 @@ class EditorViewModel(
 
     fun selectLead(lead: Lead) {
         _focusedLead.value = lead
+        _selectedIndex.value = 0
+    }
+
+    fun selectIndex(index: Int) {
+        val stream = _targetFile.value?.leads?.get(_focusedLead.value) ?: return
+        if (index in stream.samples.indices) {
+            _selectedIndex.value = index
+        }
+    }
+
+    fun selectNext() {
+        val stream = _targetFile.value?.leads?.get(_focusedLead.value) ?: return
+        if (_selectedIndex.value < stream.samples.size - 1) {
+            _selectedIndex.value++
+        }
+    }
+
+    fun selectPrevious() {
+        if (_selectedIndex.value > 0) {
+            _selectedIndex.value--
+        }
+    }
+
+    fun moveSelectedUp() {
+        val lead = _focusedLead.value
+        val stream = _targetFile.value?.leads?.get(lead) ?: return
+        val index = _selectedIndex.value
+        if (index in stream.samples.indices) {
+            setSample(lead, index, stream.samples[index] + 1)
+        }
+    }
+
+    fun moveSelectedDown() {
+        val lead = _focusedLead.value
+        val stream = _targetFile.value?.leads?.get(lead) ?: return
+        val index = _selectedIndex.value
+        if (index in stream.samples.indices) {
+            setSample(lead, index, stream.samples[index] - 1)
+        }
     }
 
     fun setSample(lead: Lead, index: Int, adcValue: Int) {

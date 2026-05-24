@@ -24,6 +24,8 @@ fun SampleHandleOverlay(
     baseline: Int,
     onSampleChanged: (index: Int, newValue: Int) -> Unit,
     modifier: Modifier = Modifier,
+    selectedIndex: Int? = null,
+    onIndexSelected: ((Int) -> Unit)? = null,
     handleColor: Color = Color.Blue.copy(alpha = 0.5f)
 ) {
     val scale = LocalPixelScale.current
@@ -32,6 +34,7 @@ fun SampleHandleOverlay(
     // Minimum visual spacing between handles to avoid clutter.
     val minHandleSpacingPx = with(density) { 8.dp.toPx() }
     val handleRadiusPx = with(density) { 3.dp.toPx() }
+    val selectedRadiusPx = with(density) { 5.dp.toPx() }
 
     val stepX = scale.pxPerSample
     val stepY = scale.pxPerAdcCount
@@ -48,6 +51,10 @@ fun SampleHandleOverlay(
             .fillMaxSize()
             .pointerInput(samples, stride, stepX, stepY) {
                 detectDragGestures(
+                    onDragStart = { offset ->
+                        val sampleIndex = (offset.x / stepX).roundToInt().coerceIn(samples.indices)
+                        onIndexSelected?.invoke(sampleIndex)
+                    },
                     onDrag = { change, dragAmount ->
                         change.consume()
                         val x = change.position.x
@@ -61,6 +68,7 @@ fun SampleHandleOverlay(
                         if (deltaAdc != 0) {
                             onSampleChanged(sampleIndex, currentAdc + deltaAdc)
                         }
+                        onIndexSelected?.invoke(sampleIndex)
                     }
                 )
             }
@@ -72,9 +80,23 @@ fun SampleHandleOverlay(
             val x = i * stepX
             val y = baselineY - (sample - baseline) * stepY
             
+            val isSelected = i == selectedIndex
+            
             drawCircle(
-                color = handleColor,
-                radius = handleRadiusPx,
+                color = if (isSelected) Color.Red else handleColor,
+                radius = if (isSelected) selectedRadiusPx else handleRadiusPx,
+                center = Offset(x, y)
+            )
+        }
+        
+        // Ensure selected handle is drawn on top if it's not on a stride boundary
+        if (selectedIndex != null && selectedIndex % stride != 0 && selectedIndex in samples.indices) {
+            val sample = samples[selectedIndex]
+            val x = selectedIndex * stepX
+            val y = baselineY - (sample - baseline) * stepY
+            drawCircle(
+                color = Color.Red,
+                radius = selectedRadiusPx,
                 center = Offset(x, y)
             )
         }

@@ -22,6 +22,7 @@ import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.panels.BottomControlPanel
+import com.example.cardiosimulator.ui.panels.EditorControlPanel
 import com.example.cardiosimulator.ui.panels.MonitorControlPanel
 import com.example.cardiosimulator.ui.panels.TopControlPanel
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
@@ -152,17 +153,26 @@ fun MainScreen(appViewModel: AppViewModel) {
             BottomControlPanel(
                 onSettingsClick = { showSettings = true }
             ) {
-                if (selectedMode.id == OperatingMode.Teaching) {
-                    MonitorControlPanel(
-                        viewModel = monitorViewModel,
-                        onStartStopClick = { isRunning ->
-                            if (isRunning) {
-                                appViewModel.sendStartCommand(selectedRhythm?.id, selectedRhythm?.titleEn)
-                            } else {
-                                appViewModel.sendStopCommand()
-                            }
-                        },
-                    )
+                when (selectedMode.id) {
+                    OperatingMode.Teaching -> {
+                        MonitorControlPanel(
+                            viewModel = monitorViewModel,
+                            onStartStopClick = { isRunning ->
+                                if (isRunning) {
+                                    appViewModel.sendStartCommand(selectedRhythm?.id, selectedRhythm?.titleEn)
+                                } else {
+                                    appViewModel.sendStopCommand()
+                                }
+                            },
+                        )
+                    }
+                    OperatingMode.Editor -> {
+                        EditorControlPanel(
+                            editorViewModel = editorViewModel,
+                            monitorViewModel = monitorViewModel
+                        )
+                    }
+                    else -> {}
                 }
             }
         }

@@ -48,6 +48,7 @@
     <string name="monitor_columns_grid_short">网格</string>
     <string name="monitor_speed_unit">毫米/秒</string>
     <string name="monitor_speed_format">%1$d 毫米/秒</string>
+    <string name="monitor_speed_title">速度</string>
     <string name="monitor_count_format">%1$d\u00D7</string>
     <string name="monitor_scale_format">%1$d%%</string>
     <string name="monitor_electrodes">电极</string>

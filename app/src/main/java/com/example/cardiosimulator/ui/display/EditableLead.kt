@@ -30,6 +30,8 @@ fun EditableLead(
     baseline: Int,
     onSampleChanged: (index: Int, newValue: Int) -> Unit,
     modifier: Modifier = Modifier,
+    selectedIndex: Int? = null,
+    onIndexSelected: ((Int) -> Unit)? = null,
     title: String = stream.lead.name
 ) {
     // Convert raw ADC to baseline-zeroed floats for the unified renderer.
@@ -71,6 +73,8 @@ fun EditableLead(
                 samples = stream.samples,
                 baseline = baseline,
                 onSampleChanged = onSampleChanged,
+                selectedIndex = selectedIndex,
+                onIndexSelected = onIndexSelected,
                 modifier = Modifier.fillMaxSize()
             )
         }
