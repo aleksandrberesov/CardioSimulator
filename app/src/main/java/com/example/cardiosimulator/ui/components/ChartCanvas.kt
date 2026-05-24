@@ -4,13 +4,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PointMode
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.data.EcgCalibration
@@ -18,34 +20,37 @@ import com.example.cardiosimulator.data.LocalPixelScale
 import com.example.cardiosimulator.data.PixelScale
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
-import androidx.compose.runtime.CompositionLocalProvider
-
-import androidx.compose.ui.graphics.drawscope.DrawScope
 
 /**
  * Shared projection from source units to screen pixels.
+ * Builds a [Path] for efficient rendering.
  */
-fun projectDots(
+fun projectPath(
     values: List<Float>,
-    originX: Int,
     stepX: Float,
     stepY: Float,
     baselineY: Float
-): List<Offset> = values.mapIndexed { i, v ->
-    Offset((originX + i) * stepX, baselineY - v * stepY)
+): Path {
+    val path = Path()
+    if (values.isEmpty()) return path
+    path.moveTo(0f, baselineY - values[0] * stepY)
+    for (i in 1 until values.size) {
+        path.lineTo(i * stepX, baselineY - values[i] * stepY)
+    }
+    return path
 }
 
 /**
- * Shared drawing routine for the waveform line.
+ * Shared drawing routine for the waveform line using a cached Path.
  */
-fun DrawScope.drawDots(dots: List<Offset>, color: Color) {
-    if (dots.size < 2) return
-    drawPoints(
-        points = dots,
-        pointMode = PointMode.Polygon,
+fun DrawScope.drawWaveform(path: Path, color: Color) {
+    drawPath(
+        path = path,
         color = color,
-        strokeWidth = 1.5.dp.toPx(),
-        cap = StrokeCap.Round,
+        style = Stroke(
+            width = 1.5.dp.toPx(),
+            cap = StrokeCap.Round
+        )
     )
 }
 
@@ -72,9 +77,10 @@ fun ChartCanvas(
                 val stepY = scale.pxPerAdcCount
                 val baselineY = size.height / 2f
 
-                val dots = projectDots(dataPoints, originX = 0, stepX, stepY, baselineY)
+                val path = projectPath(dataPoints, stepX, stepY, baselineY)
+                
                 onDrawBehind {
-                    drawDots(dots, color)
+                    drawWaveform(path, color)
                 }
             }
     )

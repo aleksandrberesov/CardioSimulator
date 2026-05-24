@@ -97,6 +97,13 @@ fun SettingsContent(
     }
     val isPortError = portInput.isNotEmpty() && (portInput.toIntOrNull() ?: 70000) > 65535
 
+    androidx.compose.runtime.LaunchedEffect(ipInput, portInput) {
+        if (!isIpError && !isPortError && ipInput.isNotEmpty() && portInput.isNotEmpty()) {
+            kotlinx.coroutines.delay(1000)
+            appViewModel.updateTcpConnection(ipInput, portInput.toIntOrNull() ?: 0)
+        }
+    }
+
     Surface(
         shape = RoundedCornerShape(16.dp),
         tonalElevation = 6.dp,
@@ -253,9 +260,6 @@ fun SettingsContent(
                         onValueChange = { newValue ->
                             if (newValue.all { it.isDigit() || it == '.' }) {
                                 ipInput = newValue
-                                if (newValue.matches(ipRegex)) {
-                                    appViewModel.updateTcpConnection(newValue, tcpPort)
-                                }
                             }
                         },
                         label = { Text(stringResource(R.string.settings_tcp_ip)) },
@@ -272,13 +276,8 @@ fun SettingsContent(
                         onValueChange = { newValue ->
                             if (newValue.isEmpty()) {
                                 portInput = ""
-                                appViewModel.updateTcpConnection(ipInput, 0)
                             } else if (newValue.all { it.isDigit() } && newValue.length <= 5) {
                                 portInput = newValue
-                                val newPort = newValue.toIntOrNull() ?: 0
-                                if (newPort <= 65535) {
-                                    appViewModel.updateTcpConnection(ipInput, newPort)
-                                }
                             }
                         },
                         label = { Text(stringResource(R.string.settings_tcp_port)) },
@@ -291,7 +290,12 @@ fun SettingsContent(
                         } else null
                     )
                     IconButton(
-                        onClick = { appViewModel.toggleTcpConnection() },
+                        onClick = { 
+                            if (!isIpError && !isPortError) {
+                                appViewModel.updateTcpConnection(ipInput, portInput.toIntOrNull() ?: 0)
+                                appViewModel.toggleTcpConnection()
+                            }
+                        },
                         modifier = Modifier.padding(top = 8.dp)
                     ) {
                         Icon(

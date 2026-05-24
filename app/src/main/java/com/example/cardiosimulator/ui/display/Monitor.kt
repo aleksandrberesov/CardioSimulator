@@ -63,7 +63,7 @@ fun Monitor(
     // displayScale is a global shrink/zoom factor so the whole picture (grid + trace
     // + cal pulse) fits the monitor without breaking the mm-based relationships.
     val pxPerMm = density.density * (160f / 25.4f) * mode.displayScale
-    val pixelScale = remember(pxPerMm, mode.speed, mode.scale, mode.calibration) {
+    val pixelScale = remember(pxPerMm, mode.speed, mode.calibration) {
         PixelScale(
             pxPerMm = pxPerMm,
             paperSpeedMmPerSec = mode.speed.toFloat(),
@@ -82,11 +82,7 @@ fun Monitor(
         val containerHeight = constraints.maxHeight.toFloat()
 
         val state = rememberTransformableState { zoomChange, offsetChange, _ ->
-            val newScale = (scale * zoomChange).coerceIn(1f, 5f)
-            if (newScale != scale) {
-                scale = newScale
-                monitorViewModel.setScale(newScale)
-            }
+            scale = (scale * zoomChange).coerceIn(1f, 5f)
 
             val maxX = (containerWidth * (scale - 1)) / 2
             val maxY = (containerHeight * (scale - 1)) / 2
@@ -96,6 +92,11 @@ fun Monitor(
                 x = newOffset.x.coerceIn(-maxX, maxX),
                 y = newOffset.y.coerceIn(-maxY, maxY)
             )
+        }
+
+        LaunchedEffect(scale) {
+            kotlinx.coroutines.delay(500)
+            monitorViewModel.setScale(scale)
         }
 
         CompositionLocalProvider(LocalPixelScale provides pixelScale) {

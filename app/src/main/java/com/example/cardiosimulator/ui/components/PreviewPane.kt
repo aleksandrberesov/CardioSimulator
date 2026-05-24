@@ -65,7 +65,7 @@ fun PreviewPane(
                 val stepY = scale.pxPerAdcCount
                 val baselineY = size.height / 2f
 
-                val dots = projectDots(points.values, originX = 0, stepX, stepY, baselineY)
+                val path = projectPath(points.values, stepX, stepY, baselineY)
 
                 onDrawBehind {
                     val xOffset = -phase * periodPx
@@ -75,7 +75,7 @@ fun PreviewPane(
                         withTransform({
                             translate(left = xOffset + i * periodPx)
                         }) {
-                            drawDots(dots, color)
+                            drawWaveform(path, color)
                         }
                     }
                 }

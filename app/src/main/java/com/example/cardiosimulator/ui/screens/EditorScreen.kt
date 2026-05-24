@@ -75,9 +75,8 @@ fun EditorScreen(
             }
 
             // Lead Tabs
-            ScrollableTabRow(
+            TabRow(
                 selectedTabIndex = Lead.entries.indexOf(focusedLead),
-                edgePadding = 16.dp,
                 containerColor = MaterialTheme.colorScheme.surface
             ) {
                 Lead.entries.forEach { lead ->
@@ -87,6 +86,8 @@ fun EditorScreen(
                         text = {
                             Text(
                                 text = lead.name,
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1,
                                 color = if (dirtyLeads.contains(lead)) Color.Red else Color.Unspecified
                             )
                         }
@@ -101,7 +102,10 @@ fun EditorScreen(
                     val stream = file.leads[focusedLead]
                     val baseline = rhythmViewModel.repository.manifest()?.baseline ?: 1024
                     
-                    Monitor(monitorViewModel = monitorViewModel) { _, _ ->
+                    Monitor(
+                        modifier = Modifier.padding(start = 24.dp),
+                        monitorViewModel = monitorViewModel
+                    ) { _, _ ->
                         if (stream != null) {
                             Box(modifier = Modifier.fillMaxSize()) {
                                 EditableLead(

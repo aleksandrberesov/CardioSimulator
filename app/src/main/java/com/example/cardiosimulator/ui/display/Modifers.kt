@@ -12,6 +12,10 @@ import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.data.LocalPixelScale
 import com.example.cardiosimulator.domain.GridScheme
 
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+
 fun Modifier.leadArea(): Modifier {
     return this
         .fillMaxWidth(1f)
@@ -38,53 +42,46 @@ fun Modifier.ekgGrid(scheme: GridScheme = GridScheme.Pink): Modifier = composed 
 
     this
         .background(backgroundColor)
-        .drawBehind {
+        .drawWithCache {
             val thinStroke = 0.5.dp.toPx()
             val thickStroke = 1.5.dp.toPx()
 
-            // Vertical small lines
+            val smallPath = Path()
+            val largePath = Path()
+
+            // Vertical lines
             var x = 0f
+            var i = 0
             while (x <= size.width) {
-                drawLine(
-                    color = smallGridColor,
-                    start = Offset(x, 0f),
-                    end = Offset(x, size.height),
-                    strokeWidth = thinStroke,
-                )
+                if (i % 5 == 0) {
+                    largePath.moveTo(x, 0f)
+                    largePath.lineTo(x, size.height)
+                } else {
+                    smallPath.moveTo(x, 0f)
+                    smallPath.lineTo(x, size.height)
+                }
                 x += smallStep
+                i++
             }
-            // Vertical major lines (every 5 mm)
-            x = 0f
-            while (x <= size.width) {
-                drawLine(
-                    color = largeGridColor,
-                    start = Offset(x, 0f),
-                    end = Offset(x, size.height),
-                    strokeWidth = thickStroke,
-                )
-                x += largeStep
-            }
-            // Horizontal small lines
+
+            // Horizontal lines
             var y = 0f
+            var j = 0
             while (y <= size.height) {
-                drawLine(
-                    color = smallGridColor,
-                    start = Offset(0f, y),
-                    end = Offset(size.width, y),
-                    strokeWidth = thinStroke,
-                )
+                if (j % 5 == 0) {
+                    largePath.moveTo(0f, y)
+                    largePath.lineTo(size.width, y)
+                } else {
+                    smallPath.moveTo(0f, y)
+                    smallPath.lineTo(size.width, y)
+                }
                 y += smallStep
+                j++
             }
-            // Horizontal major lines (every 5 mm)
-            y = 0f
-            while (y <= size.height) {
-                drawLine(
-                    color = largeGridColor,
-                    start = Offset(0f, y),
-                    end = Offset(size.width, y),
-                    strokeWidth = thickStroke,
-                )
-                y += largeStep
+
+            onDrawBehind {
+                drawPath(smallPath, smallGridColor, style = Stroke(thinStroke))
+                drawPath(largePath, largeGridColor, style = Stroke(thickStroke))
             }
         }
 }

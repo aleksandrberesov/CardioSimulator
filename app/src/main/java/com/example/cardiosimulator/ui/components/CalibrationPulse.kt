@@ -9,6 +9,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.data.LocalPixelScale
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.draw.drawWithCache
+
 /**
  * A standard ECG calibration pulse: 1 mV tall, 200 ms wide.
  */
@@ -19,7 +22,7 @@ fun CalibrationPulse(
     strokeWidthDp: Float = 1.5f,
 ) {
     val scale = LocalPixelScale.current
-    Canvas(modifier = modifier) {
+    Spacer(modifier = modifier.drawWithCache {
         val baseline = size.height / 2f
 
         // Standard ECG calibration pulse: 1 mV tall, 200 ms wide.
@@ -37,10 +40,12 @@ fun CalibrationPulse(
             lineTo(startX + wingWidth + pulseWidth + wingWidth, baseline)
         }
 
-        drawPath(
-            path = path,
-            color = color,
-            style = Stroke(width = strokeWidthDp.dp.toPx())
-        )
-    }
+        onDrawBehind {
+            drawPath(
+                path = path,
+                color = color,
+                style = Stroke(width = strokeWidthDp.dp.toPx())
+            )
+        }
+    })
 }
