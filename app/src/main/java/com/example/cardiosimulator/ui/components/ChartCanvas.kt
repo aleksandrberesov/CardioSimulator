@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -65,6 +66,7 @@ fun ChartCanvas(
     Spacer(
         modifier = modifier
             .chartArea()
+            .clipToBounds()
             .drawWithCache {
                 val stepX = scale.pxPerSample
                 val stepY = scale.pxPerAdcCount

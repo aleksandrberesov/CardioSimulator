@@ -17,8 +17,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import android.annotation.SuppressLint
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.cardiosimulator.R
 import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
+import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 
 val educationPrograms = listOf(
     "Program 1", "Program 2", "Program 3", "Program 4", "Program 5", "Program 6",
@@ -27,7 +35,11 @@ val educationPrograms = listOf(
 @Composable
 fun TeachingControlPanel(
     modifier: Modifier = Modifier,
+    monitorViewModel: MonitorViewModel = viewModel(),
+    onStartStopClick: (Boolean) -> Unit = {},
 ) {
+    val monitorMode by monitorViewModel.monitorMode.collectAsState()
+
     Row(
         modifier = modifier.height(IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically
@@ -54,6 +66,17 @@ fun TeachingControlPanel(
                 )
             }
         }
+
+        Tab(
+            icon = if (monitorMode.isRunning) Icons.Default.Stop else Icons.Default.PlayArrow,
+            iconContentDescription = if (monitorMode.isRunning) stringResource(R.string.cd_stop) else stringResource(R.string.cd_start),
+            onClick = {
+                val newState = !monitorMode.isRunning
+                monitorViewModel.setIsRunning(newState)
+                onStartStopClick(newState)
+            },
+            modifier = Modifier.padding(horizontal = 4.dp)
+        )
     }
 }
 

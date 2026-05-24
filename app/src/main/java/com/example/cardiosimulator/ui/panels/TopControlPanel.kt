@@ -33,11 +33,14 @@ import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
+import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 
 @Composable
 fun TopControlPanel(
     viewModel: AppViewModel,
-    modifier: Modifier = Modifier
+    monitorViewModel: MonitorViewModel = viewModel(),
+    modifier: Modifier = Modifier,
+    onStartStopClick: (Boolean) -> Unit = {},
 ) {
     var expanded by remember { mutableStateOf(false) }
     val operatingModes = viewModel.operatingModes
@@ -46,7 +49,7 @@ fun TopControlPanel(
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = Color.White,
-        tonalElevation = 3.dp
+        tonalElevation = 0.dp
     ) {
         Row(
             modifier = Modifier
@@ -88,7 +91,10 @@ fun TopControlPanel(
                     modifier = Modifier.weight(5f).fillMaxWidth()
                 ){
                     when (selectedOperatingMode.id) {
-                        OperatingMode.Teaching -> TeachingControlPanel()
+                        OperatingMode.Teaching -> TeachingControlPanel(
+                            monitorViewModel = monitorViewModel,
+                            onStartStopClick = onStartStopClick
+                        )
                         OperatingMode.Testing -> TestingControlPanel(viewModel = viewModel)
                         OperatingMode.Examination -> {}
                         OperatingMode.OSKE -> {}

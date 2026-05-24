@@ -61,6 +61,7 @@ fun TeachingScreen(
                     LeadView(
                         points = leadPoints,
                         title = lead?.name ?: "",
+                        isRunning = mode.isRunning,
                     )
                 }
             }

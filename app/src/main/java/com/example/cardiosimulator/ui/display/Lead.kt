@@ -23,6 +23,7 @@ import com.example.cardiosimulator.data.PixelScale
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.ui.components.CalibrationPulse
 import com.example.cardiosimulator.ui.components.ChartCanvas
+import com.example.cardiosimulator.ui.components.PreviewPane
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 
 @Composable
@@ -30,9 +31,10 @@ fun Lead(
     points: Points,
     modifier: Modifier = Modifier,
     title: String = "",
+    isRunning: Boolean = false,
 ){
     Row(
-        modifier = Modifier.leadArea(),
+        modifier = modifier.leadArea(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Calibration Symbol and Lead Name
@@ -61,7 +63,11 @@ fun Lead(
                 .weight(1f)
                 .fillMaxHeight()
         ) {
-            ChartCanvas(points = points, modifier = modifier)
+            PreviewPane(
+                points = points,
+                modifier = Modifier.fillMaxSize(),
+                isRunning = isRunning
+            )
         }
     }
 }

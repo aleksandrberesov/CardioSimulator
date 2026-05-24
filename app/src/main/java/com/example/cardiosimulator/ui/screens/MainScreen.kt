@@ -98,7 +98,15 @@ fun MainScreen(appViewModel: AppViewModel) {
             contentAlignment = Alignment.Center
         ) {
             TopControlPanel(
-                viewModel = appViewModel
+                viewModel = appViewModel,
+                monitorViewModel = monitorViewModel,
+                onStartStopClick = { isRunning ->
+                    if (isRunning) {
+                        appViewModel.sendStartCommand(selectedRhythm?.id, selectedRhythm?.titleEn)
+                    } else {
+                        appViewModel.sendStopCommand()
+                    }
+                }
             )
         }
         Box(modifier = Modifier.weight(15f).fillMaxWidth()) {

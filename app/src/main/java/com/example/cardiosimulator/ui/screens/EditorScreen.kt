@@ -10,6 +10,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.Lead
+import androidx.compose.ui.platform.LocalDensity
+import com.example.cardiosimulator.data.EcgCalibration
+import com.example.cardiosimulator.data.LocalPixelScale
+import com.example.cardiosimulator.data.PixelScale
 import com.example.cardiosimulator.ui.components.PreviewPane
 import com.example.cardiosimulator.ui.display.EditableLead
 import com.example.cardiosimulator.ui.display.Monitor
@@ -140,10 +144,22 @@ fun EditorScreen(
                         val points = remember(stream, baseline) {
                             Points(stream.samples.map { (it - baseline).toFloat() })
                         }
-                        PreviewPane(
-                            points = points,
-                            modifier = Modifier.fillMaxSize()
-                        )
+                        val density = LocalDensity.current
+                        val pxPerMm = density.density * (160f / 25.4f)
+                        val previewScale = remember(pxPerMm) {
+                            PixelScale(
+                                pxPerMm = pxPerMm,
+                                paperSpeedMmPerSec = 25f,
+                                gainZoomY = 1.0f,
+                                cal = EcgCalibration(),
+                            )
+                        }
+                        CompositionLocalProvider(LocalPixelScale provides previewScale) {
+                            PreviewPane(
+                                points = points,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
                     }
                 } else {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

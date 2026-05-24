@@ -4,12 +4,9 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
@@ -31,30 +28,23 @@ fun PreviewPane(
     points: Points,
     modifier: Modifier = Modifier,
     color: Color = Color.Black,
+    isRunning: Boolean = true,
 ) {
-    val density = LocalDensity.current
-    val pxPerMm = density.density * (160f / 25.4f)
-    val previewScale = remember(pxPerMm) {
-        PixelScale(
-            pxPerMm = pxPerMm,
-            paperSpeedMmPerSec = 25f,
-            gainZoomY = 1.0f,
-            cal = EcgCalibration(),
-        )
-    }
+    if (points.values.size < 2) return
+    val scale = LocalPixelScale.current
 
-    val pxPerSec = previewScale.pxPerSec
-    val stepX = previewScale.pxPerSample
+    val pxPerSec = scale.pxPerSec
+    val stepX = scale.pxPerSample
     val dataWidthPx = points.values.size * stepX
-    
+
     // Calculate loop duration: at least 1 second (HR=60), or longer if data exceeds 1s.
-    // This keeps the horizontal speed constant at 25mm/s.
+    // This keeps the horizontal speed constant at the speed defined in scale.
     val durationMs = max(1000, (dataWidthPx / pxPerSec * 1000).toInt())
     val periodPx = durationMs / 1000f * pxPerSec
 
-    CompositionLocalProvider(LocalPixelScale provides previewScale) {
-        val infiniteTransition = rememberInfiniteTransition(label = "PreviewScroll")
-        val phase by infiniteTransition.animateFloat(
+    val infiniteTransition = rememberInfiniteTransition(label = "PreviewScroll")
+    val phase by if (isRunning) {
+        infiniteTransition.animateFloat(
             initialValue = 0f,
             targetValue = 1f,
             animationSpec = infiniteRepeatable(
@@ -63,45 +53,34 @@ fun PreviewPane(
             ),
             label = "ScrollPhase"
         )
+    } else {
+        remember { mutableFloatStateOf(0f) }
+    }
 
-        Spacer(
-            modifier = modifier
-                .drawWithCache {
-                    val stepY = previewScale.pxPerAdcCount
-                    val baselineY = size.height / 2f
-                    
-                    // Use a Path for smoother rendering and to avoid "sets of dots" artifacts
-                    val path = Path()
-                    if (points.values.isNotEmpty()) {
-                        path.moveTo(0f, baselineY - points.values[0] * stepY)
-                        for (i in 1 until points.values.size) {
-                            path.lineTo(i * stepX, baselineY - points.values[i] * stepY)
-                        }
-                    }
+    Spacer(
+        modifier = modifier
+            .chartArea()
+            .clipToBounds()
+            .drawWithCache {
+                val stepY = scale.pxPerAdcCount
+                val baselineY = size.height / 2f
 
-                    onDrawBehind {
-                        val xOffset = phase * periodPx
-                        val iterations = (size.width / periodPx).toInt() + 2
-                        
-                        for (i in -1..iterations) {
-                            withTransform({
-                                translate(left = xOffset + (i - 1) * periodPx)
-                            }) {
-                                drawPath(
-                                    path = path,
-                                    color = color,
-                                    style = Stroke(
-                                        width = 1.5.dp.toPx(),
-                                        cap = StrokeCap.Round,
-                                        join = StrokeJoin.Round
-                                    )
-                                )
-                            }
+                val dots = projectDots(points.values, originX = 0, stepX, stepY, baselineY)
+
+                onDrawBehind {
+                    val xOffset = -phase * periodPx
+                    val iterations = (size.width / periodPx).toInt() + 2
+
+                    for (i in 0..iterations) {
+                        withTransform({
+                            translate(left = xOffset + i * periodPx)
+                        }) {
+                            drawDots(dots, color)
                         }
                     }
                 }
-        )
-    }
+            }
+    )
 }
 
 @Preview(showBackground = true, widthDp = 400, heightDp = 100)
@@ -118,10 +97,18 @@ fun PreviewPanePreview() {
         samples.add(v)
     }
     
+    val previewScale = PixelScale(
+        pxPerMm = 6.3f,
+        paperSpeedMmPerSec = 25f,
+        gainZoomY = 1f,
+        cal = EcgCalibration(),
+    )
     CardioSimulatorTheme {
-        PreviewPane(
-            points = Points(samples),
-            modifier = Modifier.fillMaxWidth().height(100.dp)
-        )
+        CompositionLocalProvider(LocalPixelScale provides previewScale) {
+            PreviewPane(
+                points = Points(samples),
+                modifier = Modifier.fillMaxWidth().height(100.dp)
+            )
+        }
     }
 }

@@ -58,6 +58,7 @@ fun TestingScreen(
                     LeadView(
                         points = leadPoints,
                         title = lead?.name ?: "",
+                        isRunning = mode.isRunning,
                     )
                 }
             }
