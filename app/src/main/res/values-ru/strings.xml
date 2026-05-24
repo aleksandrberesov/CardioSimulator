@@ -134,4 +134,45 @@
     <string name="editor_rename_label">Новое имя</string>
     <string name="editor_rename_ok">ОК</string>
     <string name="editor_rename_cancel">Отмена</string>
+    <string name="editor_set_time_title">Установить время (мс)</string>
+    <string name="editor_time_unit">мс</string>
+    <string name="editor_time_format">%1$d мс</string>
+    <string name="editor_set_adc_title">Установить значение АЦП</string>
+    <string name="editor_adc_label">АЦП</string>
+    <string name="editor_adc_format">АЦП: %1$s</string>
+
+    <string name="editor_significant_points">Значимые точки</string>
+    <string name="editor_sample_label">Точка: %1$d</string>
+    <string name="editor_p_wave">Зубец P</string>
+    <string name="editor_qrs_complex">Комплекс QRS</string>
+    <string name="editor_t_wave">Зубец T</string>
+    <string name="editor_select_point_hint">Выберите точку на графике, чтобы отметить ее</string>
+    <string name="editor_no_pathology_selected">Патология не выбрана</string>
+    <string name="editor_revert_lead_btn">Сбросить отведение</string>
+    <string name="editor_lead_not_present">Отведение %1$s отсутствует в файле.</string>
+    <string name="editor_select_from_panel_hint">Выберите патологию на панели слева для редактирования.</string>
+    <string name="cd_rename">Переименовать</string>
+    <string name="cd_hide_rhythms">Скрыть ритмы</string>
+    <string name="cd_show_rhythms">Показать ритмы</string>
+
+    <string name="ecg_point_p_start">P начало</string>
+    <string name="ecg_point_p_peak">P пик</string>
+    <string name="ecg_point_p_end">P конец</string>
+    <string name="ecg_point_q_peak">Q пик</string>
+    <string name="ecg_point_r_peak">R пик</string>
+    <string name="ecg_point_s_peak">S пик</string>
+    <string name="ecg_point_qrs_start">QRS начало</string>
+    <string name="ecg_point_qrs_end">QRS конец</string>
+    <string name="ecg_point_t_start">T начало</string>
+    <string name="ecg_point_t_peak">T пик</string>
+    <string name="ecg_point_t_end">T конец</string>
+
+    <string name="ecg_interval_p">P</string>
+    <string name="ecg_interval_qrs">QRS</string>
+    <string name="ecg_interval_t">T</string>
+    <string name="ecg_interval_pr">PR</string>
+    <string name="ecg_interval_st">ST</string>
+    <string name="ecg_interval_qt">QT</string>
+    <string name="ecg_interval_rr">R-R</string>
+    <string name="ecg_rr_value_format">R-R: %1$.3f с</string>
 </resources>

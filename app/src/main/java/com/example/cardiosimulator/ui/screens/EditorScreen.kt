@@ -27,6 +27,24 @@ import com.example.cardiosimulator.ui.viewmodels.EditorViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
+@Composable
+fun EcgPointType.toDisplayString(): String {
+    val resId = when (this) {
+        EcgPointType.P_START -> R.string.ecg_point_p_start
+        EcgPointType.P_PEAK -> R.string.ecg_point_p_peak
+        EcgPointType.P_END -> R.string.ecg_point_p_end
+        EcgPointType.Q_PEAK -> R.string.ecg_point_q_peak
+        EcgPointType.R_PEAK -> R.string.ecg_point_r_peak
+        EcgPointType.S_PEAK -> R.string.ecg_point_s_peak
+        EcgPointType.QRS_START -> R.string.ecg_point_qrs_start
+        EcgPointType.QRS_END -> R.string.ecg_point_qrs_end
+        EcgPointType.T_START -> R.string.ecg_point_t_start
+        EcgPointType.T_PEAK -> R.string.ecg_point_t_peak
+        EcgPointType.T_END -> R.string.ecg_point_t_end
+    }
+    return stringResource(resId)
+}
+
 /**
  * A side panel for marking significant ECG points on the selected sample.
  */
@@ -34,12 +52,13 @@ import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 fun SignificantPointPanel(
     significantPoints: List<SignificantPoint>,
     selectedIndex: Int?,
+    sampleRate: Float,
     onPointToggle: (Int, EcgPointType) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
         modifier = modifier
-            .width(120.dp)
+            .width(150.dp) // Slightly wider for intervals
             .fillMaxHeight(),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         tonalElevation = 2.dp
@@ -50,7 +69,7 @@ fun SignificantPointPanel(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = "Significant Points",
+                text = stringResource(R.string.editor_significant_points),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -59,19 +78,19 @@ fun SignificantPointPanel(
 
             if (selectedIndex != null) {
                 Text(
-                    text = "Sample: $selectedIndex",
+                    text = stringResource(R.string.editor_sample_label, selectedIndex),
                     style = MaterialTheme.typography.bodySmall
                 )
 
                 // Group points by wave type for better organization
                 val waves = listOf(
-                    "P Wave" to listOf(EcgPointType.P_START, EcgPointType.P_PEAK, EcgPointType.P_END),
-                    "QRS Complex" to listOf(EcgPointType.QRS_START, EcgPointType.Q_PEAK, EcgPointType.R_PEAK, EcgPointType.S_PEAK, EcgPointType.QRS_END),
-                    "T Wave" to listOf(EcgPointType.T_START, EcgPointType.T_PEAK, EcgPointType.T_END)
+                    stringResource(R.string.editor_p_wave) to listOf(EcgPointType.P_START, EcgPointType.P_PEAK, EcgPointType.P_END),
+                    stringResource(R.string.editor_qrs_complex) to listOf(EcgPointType.QRS_START, EcgPointType.Q_PEAK, EcgPointType.R_PEAK, EcgPointType.S_PEAK, EcgPointType.QRS_END),
+                    stringResource(R.string.editor_t_wave) to listOf(EcgPointType.T_START, EcgPointType.T_PEAK, EcgPointType.T_END)
                 )
 
                 Column(
-                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     waves.forEach { (title, points) ->
@@ -88,7 +107,7 @@ fun SignificantPointPanel(
                                 onClick = { onPointToggle(selectedIndex, type) },
                                 label = {
                                     Text(
-                                        text = type.name.replace("_", " "),
+                                        text = type.toDisplayString(),
                                         modifier = Modifier.fillMaxWidth(),
                                         style = MaterialTheme.typography.labelSmall,
                                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -100,12 +119,33 @@ fun SignificantPointPanel(
                     }
                 }
             } else {
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = stringResource(R.string.editor_select_point_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                }
+            }
+
+            // Intervals section (Always visible if multiple R peaks exist)
+            val rPeaks = significantPoints.filter { it.type == EcgPointType.R_PEAK }.sortedBy { it.index }
+            if (rPeaks.size >= 2) {
+                HorizontalDivider()
                 Text(
-                    text = "Select a point on the chart to mark it",
-                    style = MaterialTheme.typography.bodySmall,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    text = stringResource(R.string.editor_rhythms_title), // Use existing "Rhythms" title or new one?
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                rPeaks.windowed(2).forEachIndexed { index, (r1, r2) ->
+                    val durationS = (r2.index - r1.index).toFloat() / sampleRate
+                    Text(
+                        text = stringResource(R.string.ecg_rr_value_format, durationS),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF2E7D32) // Match the overlay color
+                    )
+                }
             }
         }
     }
@@ -129,6 +169,7 @@ fun EditorScreen(
     val isMetadataDirty by editorViewModel.isMetadataDirty.collectAsState()
     val rhythms by rhythmViewModel.rhythms.collectAsState()
     val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
+    val monitorMode by monitorViewModel.monitorMode.collectAsState()
 
     var showRenameDialog by remember { mutableStateOf(false) }
 
@@ -186,7 +227,7 @@ fun EditorScreen(
                             it.nameRu ?: it.titleEn 
                         else 
                             it.titleEn
-                    } ?: "No pathology selected"
+                    } ?: stringResource(R.string.editor_no_pathology_selected)
                     
                     Text(
                         text = displayTitle,
@@ -196,17 +237,17 @@ fun EditorScreen(
 
                     if (targetFile != null) {
                         IconButton(onClick = { showRenameDialog = true }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Rename")
+                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.cd_rename))
                         }
                     }
                     
                     if (dirtyLeads.isNotEmpty() || isMetadataDirty) {
                         Button(onClick = { editorViewModel.save() }) {
-                            Text("Save")
+                            Text(stringResource(R.string.editor_save))
                         }
                         if (dirtyLeads.isNotEmpty()) {
                             OutlinedButton(onClick = { editorViewModel.revertLead(focusedLead) }) {
-                                Text("Revert Lead")
+                                Text(stringResource(R.string.editor_revert_lead_btn))
                             }
                         }
                     }
@@ -279,7 +320,7 @@ fun EditorScreen(
                                 }
                             } else {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Text("Lead ${focusedLead.name} not present in file.")
+                                    Text(stringResource(R.string.editor_lead_not_present, focusedLead.name))
                                 }
                             }
                         }
@@ -288,6 +329,7 @@ fun EditorScreen(
                         SignificantPointPanel(
                             significantPoints = stream?.significantPoints ?: emptyList(),
                             selectedIndex = selectedIndex,
+                            sampleRate = monitorMode.calibration.sampleRateHz,
                             onPointToggle = { idx, type -> 
                                 editorViewModel.toggleSignificantPoint(focusedLead, idx, type) 
                             }
@@ -295,7 +337,7 @@ fun EditorScreen(
                     }
                 } else {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Select a pathology from the left panel to edit.")
+                        Text(stringResource(R.string.editor_select_from_panel_hint))
                     }
                 }
             }

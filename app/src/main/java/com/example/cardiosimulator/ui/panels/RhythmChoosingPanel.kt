@@ -111,7 +111,7 @@ fun RhythmChoosingDrawer(
             ) {
                 Icon(
                     imageVector = if (isExpanded) Icons.Default.KeyboardArrowLeft else Icons.Default.KeyboardArrowRight,
-                    contentDescription = if (isExpanded) "Hide rhythms" else "Show rhythms",
+                    contentDescription = if (isExpanded) stringResource(R.string.cd_hide_rhythms) else stringResource(R.string.cd_show_rhythms),
                     tint = Color.Black,
                     modifier = Modifier.size(20.dp)
                 )

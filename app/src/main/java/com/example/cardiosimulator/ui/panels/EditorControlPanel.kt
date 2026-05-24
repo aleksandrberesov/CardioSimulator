@@ -82,14 +82,14 @@ fun EditorControlPanel(
         var timeText by remember { mutableStateOf(currentTimeMs.toString()) }
         AlertDialog(
             onDismissRequest = { showTimeDialog = false },
-            title = { Text("Set Time (ms)") },
+            title = { Text(stringResource(R.string.editor_set_time_title)) },
             text = {
                 TextField(
                     value = timeText,
                     onValueChange = { newValue ->
                         if (newValue.all { it.isDigit() }) timeText = newValue
                     },
-                    label = { Text("ms") },
+                    label = { Text(stringResource(R.string.editor_time_unit)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true
                 )
@@ -117,7 +117,7 @@ fun EditorControlPanel(
         var adcText by remember { mutableStateOf(currentAdc.toString()) }
         AlertDialog(
             onDismissRequest = { showAdcDialog = false },
-            title = { Text("Set ADC Value") },
+            title = { Text(stringResource(R.string.editor_set_adc_title)) },
             text = {
                 TextField(
                     value = adcText,
@@ -126,7 +126,7 @@ fun EditorControlPanel(
                             adcText = newValue
                         }
                     },
-                    label = { Text("ADC") },
+                    label = { Text(stringResource(R.string.editor_adc_label)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true
                 )
@@ -158,7 +158,9 @@ fun EditorControlPanel(
     ) {
         // Info Display
         val adcDisplayValue = if (samples != null && selectedIndex in samples.indices) currentAdc.toString() else "-"
-        val timeDisplayMs = if (samples != null && selectedIndex in samples.indices) "${currentTimeMs}ms" else "-"
+        val timeDisplayMs = if (samples != null && selectedIndex in samples.indices)
+            stringResource(R.string.editor_time_format, currentTimeMs)
+        else "-"
 
         // Point Selection
         Row(
@@ -200,7 +202,7 @@ fun EditorControlPanel(
                 modifier = Modifier.weight(1f)
             )
             Tab(
-                text = "ADC: $adcDisplayValue",
+                text = stringResource(R.string.editor_adc_format, adcDisplayValue),
                 onClick = { showAdcDialog = true },
                 modifier = Modifier.weight(1.5f)
             )
@@ -228,7 +230,7 @@ fun EditorControlPanel(
             )
             Tab(
                 text = "${monitorMode.speed}",
-                subText = "mm/s",
+                subText = stringResource(R.string.monitor_speed_unit),
                 onClick = { showSpeedDialog = true },
                 modifier = Modifier.weight(1.5f)
             )

@@ -134,4 +134,45 @@
     <string name="editor_rename_label">新名称</string>
     <string name="editor_rename_ok">确定</string>
     <string name="editor_rename_cancel">取消</string>
+    <string name="editor_set_time_title">设置时间 (ms)</string>
+    <string name="editor_time_unit">ms</string>
+    <string name="editor_time_format">%1$d ms</string>
+    <string name="editor_set_adc_title">设置 ADC 值</string>
+    <string name="editor_adc_label">ADC</string>
+    <string name="editor_adc_format">ADC: %1$s</string>
+
+    <string name="editor_significant_points">重要点</string>
+    <string name="editor_sample_label">样本: %1$d</string>
+    <string name="editor_p_wave">P 波</string>
+    <string name="editor_qrs_complex">QRS 波群</string>
+    <string name="editor_t_wave">T 波</string>
+    <string name="editor_select_point_hint">在图表上选择一个点进行标记</string>
+    <string name="editor_no_pathology_selected">未选择病理</string>
+    <string name="editor_revert_lead_btn">重置导联</string>
+    <string name="editor_lead_not_present">文件中不存在导联 %1$s。</string>
+    <string name="editor_select_from_panel_hint">从左侧面板选择要编辑的病理。</string>
+    <string name="cd_rename">重命名</string>
+    <string name="cd_hide_rhythms">隐藏心律</string>
+    <string name="cd_show_rhythms">显示心律</string>
+
+    <string name="ecg_point_p_start">P 开始</string>
+    <string name="ecg_point_p_peak">P 峰值</string>
+    <string name="ecg_point_p_end">P 结束</string>
+    <string name="ecg_point_q_peak">Q 峰值</string>
+    <string name="ecg_point_r_peak">R 峰值</string>
+    <string name="ecg_point_s_peak">S 峰值</string>
+    <string name="ecg_point_qrs_start">QRS 开始</string>
+    <string name="ecg_point_qrs_end">QRS 结束</string>
+    <string name="ecg_point_t_start">T 开始</string>
+    <string name="ecg_point_t_peak">T 峰值</string>
+    <string name="ecg_point_t_end">T 结束</string>
+
+    <string name="ecg_interval_p">P</string>
+    <string name="ecg_interval_qrs">QRS</string>
+    <string name="ecg_interval_t">T</string>
+    <string name="ecg_interval_pr">PR</string>
+    <string name="ecg_interval_st">ST</string>
+    <string name="ecg_interval_qt">QT</string>
+    <string name="ecg_interval_rr">R-R</string>
+    <string name="ecg_rr_value_format">R-R: %1$.3f 秒</string>
 </resources>

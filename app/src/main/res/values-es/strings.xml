@@ -134,4 +134,45 @@
     <string name="editor_rename_label">Nuevo nombre</string>
     <string name="editor_rename_ok">Aceptar</string>
     <string name="editor_rename_cancel">Cancelar</string>
+    <string name="editor_set_time_title">Establecer tiempo (ms)</string>
+    <string name="editor_time_unit">ms</string>
+    <string name="editor_time_format">%1$d ms</string>
+    <string name="editor_set_adc_title">Establecer valor ADC</string>
+    <string name="editor_adc_label">ADC</string>
+    <string name="editor_adc_format">ADC: %1$s</string>
+
+    <string name="editor_significant_points">Puntos significativos</string>
+    <string name="editor_sample_label">Muestra: %1$d</string>
+    <string name="editor_p_wave">Onda P</string>
+    <string name="editor_qrs_complex">Complejo QRS</string>
+    <string name="editor_t_wave">Onda T</string>
+    <string name="editor_select_point_hint">Seleccione un punto en el gráfico para marcarlo</string>
+    <string name="editor_no_pathology_selected">Ninguna patología seleccionada</string>
+    <string name="editor_revert_lead_btn">Revertir derivación</string>
+    <string name="editor_lead_not_present">La derivación %1$s no está presente en el archivo.</string>
+    <string name="editor_select_from_panel_hint">Seleccione una patología del panel izquierdo para editar.</string>
+    <string name="cd_rename">Renombrar</string>
+    <string name="cd_hide_rhythms">Ocultar ritmos</string>
+    <string name="cd_show_rhythms">Mostrar ritmos</string>
+
+    <string name="ecg_point_p_start">Inicio P</string>
+    <string name="ecg_point_p_peak">Pico P</string>
+    <string name="ecg_point_p_end">Fin P</string>
+    <string name="ecg_point_q_peak">Pico Q</string>
+    <string name="ecg_point_r_peak">Pico R</string>
+    <string name="ecg_point_s_peak">Pico S</string>
+    <string name="ecg_point_qrs_start">Inicio QRS</string>
+    <string name="ecg_point_qrs_end">Fin QRS</string>
+    <string name="ecg_point_t_start">Inicio T</string>
+    <string name="ecg_point_t_peak">Pico T</string>
+    <string name="ecg_point_t_end">Fin T</string>
+
+    <string name="ecg_interval_p">P</string>
+    <string name="ecg_interval_qrs">QRS</string>
+    <string name="ecg_interval_t">T</string>
+    <string name="ecg_interval_pr">PR</string>
+    <string name="ecg_interval_st">ST</string>
+    <string name="ecg_interval_qt">QT</string>
+    <string name="ecg_interval_rr">R-R</string>
+    <string name="ecg_rr_value_format">R-R: %1$.3f s</string>
 </resources>
