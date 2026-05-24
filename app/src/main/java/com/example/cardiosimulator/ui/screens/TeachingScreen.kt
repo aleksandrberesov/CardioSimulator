@@ -35,11 +35,6 @@ fun TeachingScreen(
     val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
     val waveforms by rhythmViewModel.waveforms.collectAsState()
 
-    LaunchedEffect(Unit) {
-        monitorViewModel.setSeriesCount(12)
-        monitorViewModel.setSeriesScheme(SeriesScheme.Grid)
-    }
-
     Box(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
         Column(
             modifier = Modifier.fillMaxSize().middleSectionCenter(),

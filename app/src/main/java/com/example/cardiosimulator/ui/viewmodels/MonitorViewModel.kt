@@ -26,15 +26,43 @@ class MonitorViewModel(private val prefs: DataSourcePrefs? = null) : ViewModel()
                     setGridScheme(scheme, persist = false)
                 } catch (_: Exception) {}
             }
+            prefs?.monitorSpeed?.first()?.let { speed ->
+                setSpeed(speed, persist = false)
+            }
+            prefs?.monitorScale?.first()?.let { scale ->
+                setScale(scale, persist = false)
+            }
+            prefs?.monitorDisplayScale?.first()?.let { displayScale ->
+                setDisplayScale(displayScale, persist = false)
+            }
+            prefs?.monitorSeriesCount?.first()?.let { count ->
+                setSeriesCount(count, persist = false)
+            }
+            prefs?.monitorSeriesScheme?.first()?.let { schemeName ->
+                try {
+                    val scheme = SeriesScheme.valueOf(schemeName)
+                    setSeriesScheme(scheme, persist = false)
+                } catch (_: Exception) {}
+            }
         }
     }
 
-    fun setSeriesCount(count: Int) {
+    fun setSeriesCount(count: Int, persist: Boolean = true) {
         _monitorMode.update { it.copy(count = count) }
+        if (persist) {
+            viewModelScope.launch {
+                prefs?.setMonitorSeriesCount(count)
+            }
+        }
     }
 
-    fun setSeriesScheme(scheme: SeriesScheme) {
+    fun setSeriesScheme(scheme: SeriesScheme, persist: Boolean = true) {
         _monitorMode.update { it.copy(seriesScheme = scheme) }
+        if (persist) {
+            viewModelScope.launch {
+                prefs?.setMonitorSeriesScheme(scheme.name)
+            }
+        }
     }
 
     fun setGridScheme(scheme: GridScheme, persist: Boolean = true) {
@@ -46,20 +74,35 @@ class MonitorViewModel(private val prefs: DataSourcePrefs? = null) : ViewModel()
         }
     }
 
-    fun setSpeed(speed: Int) {
+    fun setSpeed(speed: Int, persist: Boolean = true) {
         _monitorMode.update { it.copy(speed = speed) }
+        if (persist) {
+            viewModelScope.launch {
+                prefs?.setMonitorSpeed(speed)
+            }
+        }
     }
 
-    fun setScale(scale: Float) {
+    fun setScale(scale: Float, persist: Boolean = true) {
         _monitorMode.update { it.copy(scale = scale) }
+        if (persist) {
+            viewModelScope.launch {
+                prefs?.setMonitorScale(scale)
+            }
+        }
     }
 
     fun setCalibration(calibration: EcgCalibration) {
         _monitorMode.update { it.copy(calibration = calibration) }
     }
 
-    fun setDisplayScale(displayScale: Float) {
+    fun setDisplayScale(displayScale: Float, persist: Boolean = true) {
         _monitorMode.update { it.copy(displayScale = displayScale) }
+        if (persist) {
+            viewModelScope.launch {
+                prefs?.setMonitorDisplayScale(displayScale)
+            }
+        }
     }
 
     fun setIsRunning(isRunning: Boolean) {

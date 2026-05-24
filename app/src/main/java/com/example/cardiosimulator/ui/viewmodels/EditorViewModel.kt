@@ -4,6 +4,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cardiosimulator.data.DataSourcePrefs
 import com.example.cardiosimulator.data.PathologyRepository
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.LeadStream
@@ -11,6 +12,7 @@ import com.example.cardiosimulator.domain.PathologyFile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -18,8 +20,17 @@ import kotlinx.coroutines.launch
  * Works with raw ADC samples directly.
  */
 class EditorViewModel(
-    private val repository: PathologyRepository
+    private val repository: PathologyRepository,
+    private val prefs: DataSourcePrefs? = null
 ) : ViewModel() {
+
+    init {
+        viewModelScope.launch {
+            prefs?.lastEditorRhythmId?.first()?.let { id ->
+                selectPathology(id, persist = false)
+            }
+        }
+    }
 
     private val _targetFile = mutableStateOf<PathologyFile?>(null)
     val targetFile: State<PathologyFile?> = _targetFile
@@ -33,12 +44,15 @@ class EditorViewModel(
     private val _isSaving = MutableStateFlow(false)
     val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
 
-    fun selectPathology(id: String) {
+    fun selectPathology(id: String, persist: Boolean = true) {
         viewModelScope.launch {
             val file = repository.readPathology(id)
             _targetFile.value = file
             _dirtyLeads.value = emptySet()
             _focusedLead.value = Lead.II
+            if (persist) {
+                prefs?.setLastEditorRhythmId(id)
+            }
         }
     }
 

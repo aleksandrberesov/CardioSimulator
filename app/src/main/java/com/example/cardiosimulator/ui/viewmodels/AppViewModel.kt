@@ -12,6 +12,7 @@ import com.example.cardiosimulator.data.PathologyRepository
 import com.example.cardiosimulator.data.PathologyZipExtractor
 import com.example.cardiosimulator.domain.AppStateModel
 import com.example.cardiosimulator.domain.Language
+import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.network.TcpConnectionState
 import com.example.cardiosimulator.network.TcpMessage
@@ -124,6 +125,15 @@ class AppViewModel(
                 }
 
                 p.isDarkTheme.first()?.let { isDark -> _isDarkTheme.value = isDark }
+
+                p.lastOperatingMode.first()?.let { modeName ->
+                    try {
+                        val modeId = OperatingMode.valueOf(modeName)
+                        operatingModes.find { it.id == modeId }?.let { modeModel ->
+                            updateOperatingMode(modeModel, persist = false)
+                        }
+                    } catch (_: Exception) {}
+                }
             }
         } else if (repo != null) {
             // Asset-only / preview path: try to load the bundled manifest.
@@ -155,9 +165,14 @@ class AppViewModel(
         return Language.fromTag(tag) ?: default
     }
 
-    fun updateOperatingMode(mode: OperatingModeModel) {
+    fun updateOperatingMode(mode: OperatingModeModel, persist: Boolean = true) {
         appState.updateMode(mode)
         _selectedOperatingMode.value = mode
+        if (persist) {
+            viewModelScope.launch {
+                prefs?.setLastOperatingMode(mode.id.name)
+            }
+        }
     }
 
     fun updateTcpConnection(ip: String, port: Int) {

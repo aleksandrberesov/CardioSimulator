@@ -2,6 +2,7 @@ package com.example.cardiosimulator.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cardiosimulator.data.DataSourcePrefs
 import com.example.cardiosimulator.data.PathologyRepository
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.Lead
@@ -10,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -21,6 +23,7 @@ import kotlinx.coroutines.withContext
  */
 class RhythmViewModel(
     val repository: PathologyRepository,
+    private val prefs: DataSourcePrefs? = null,
 ) : ViewModel() {
 
     private val _rhythms = MutableStateFlow<List<PathologyEntry>>(emptyList())
@@ -36,7 +39,14 @@ class RhythmViewModel(
         viewModelScope.launch {
             val entries = withContext(Dispatchers.IO) { repository.pathologies() }
             _rhythms.value = entries
-            _selectedRhythm.value?.let { current -> selectRhythm(current.id) }
+            
+            // Try to restore last selected rhythm
+            val lastId = prefs?.lastRhythmId?.first()
+            if (lastId != null && _selectedRhythm.value == null) {
+                selectRhythm(lastId, persist = false)
+            } else {
+                _selectedRhythm.value?.let { current -> selectRhythm(current.id) }
+            }
 
             // Enrichment: If manifest entries are missing Russian names, try to 
             // peek-read them from the .dat files.
@@ -59,9 +69,16 @@ class RhythmViewModel(
         }
     }
 
-    fun selectRhythm(id: String) {
+    fun selectRhythm(id: String, persist: Boolean = true) {
         val entry = _rhythms.value.firstOrNull { it.id == id } ?: return
         _selectedRhythm.value = entry
+        
+        if (persist) {
+            viewModelScope.launch {
+                prefs?.setLastRhythmId(id)
+            }
+        }
+
         viewModelScope.launch {
             val leadOrder = repository.manifest()?.leadOrder ?: Lead.entries
             val map = withContext(Dispatchers.IO) {
