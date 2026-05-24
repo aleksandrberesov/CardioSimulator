@@ -41,6 +41,9 @@ class EditorViewModel(
     private val _dirtyLeads = MutableStateFlow<Set<Lead>>(emptySet())
     val dirtyLeads: StateFlow<Set<Lead>> = _dirtyLeads.asStateFlow()
 
+    private val _isMetadataDirty = MutableStateFlow(false)
+    val isMetadataDirty: StateFlow<Boolean> = _isMetadataDirty.asStateFlow()
+
     private val _isSaving = MutableStateFlow(false)
     val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
 
@@ -49,6 +52,7 @@ class EditorViewModel(
             val file = repository.readPathology(id)
             _targetFile.value = file
             _dirtyLeads.value = emptySet()
+            _isMetadataDirty.value = false
             _focusedLead.value = Lead.II
             if (persist) {
                 prefs?.setLastEditorRhythmId(id)
@@ -94,9 +98,22 @@ class EditorViewModel(
         }
     }
 
+    fun rename(newTitle: String, language: com.example.cardiosimulator.domain.Language) {
+        val currentFile = _targetFile.value ?: return
+        val updatedFile = if (language == com.example.cardiosimulator.domain.Language.RU) {
+            currentFile.copy(nameRu = newTitle)
+        } else {
+            currentFile.copy(titleEn = newTitle)
+        }
+        if (updatedFile != currentFile) {
+            _targetFile.value = updatedFile
+            _isMetadataDirty.value = true
+        }
+    }
+
     fun save() {
         val file = _targetFile.value ?: return
-        if (_dirtyLeads.value.isEmpty()) return
+        if (_dirtyLeads.value.isEmpty() && !_isMetadataDirty.value) return
 
         viewModelScope.launch {
             _isSaving.value = true
@@ -104,6 +121,7 @@ class EditorViewModel(
                 // Phase 4: writePathology will be added to repository
                 repository.writePathology(file)
                 _dirtyLeads.value = emptySet()
+                _isMetadataDirty.value = false
             } finally {
                 _isSaving.value = false
             }

@@ -129,4 +129,8 @@
     <string name="editor_file_content_label">Contenido del archivo de la serie seleccionada</string>
     <string name="editor_select_rhythm_hint">Seleccione un ritmo para inspeccionar</string>
     <string name="editor_no_data_for_lead">Sin datos para la derivación %1$s</string>
+    <string name="editor_rename_title">Renombrar patología</string>
+    <string name="editor_rename_label">Nuevo nombre</string>
+    <string name="editor_rename_ok">Aceptar</string>
+    <string name="editor_rename_cancel">Cancelar</string>
 </resources>

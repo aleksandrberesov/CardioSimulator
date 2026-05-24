@@ -129,4 +129,8 @@
     <string name="editor_file_content_label">Selected Series File Content</string>
     <string name="editor_select_rhythm_hint">Select a rhythm to inspect</string>
     <string name="editor_no_data_for_lead">No data for lead %1$s</string>
+    <string name="editor_rename_title">Rename Pathology</string>
+    <string name="editor_rename_label">New Name</string>
+    <string name="editor_rename_ok">OK</string>
+    <string name="editor_rename_cancel">Cancel</string>
 </resources>

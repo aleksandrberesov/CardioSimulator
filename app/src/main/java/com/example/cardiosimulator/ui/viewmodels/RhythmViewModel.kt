@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -35,10 +36,48 @@ class RhythmViewModel(
     private val _waveforms = MutableStateFlow<Map<Lead, Points>>(emptyMap())
     val waveforms: StateFlow<Map<Lead, Points>> = _waveforms.asStateFlow()
 
+    init {
+        viewModelScope.launch {
+            repository.manifestFlow.collectLatest { manifest ->
+                if (manifest != null) {
+                    val entries = repository.pathologies()
+                    
+                    // Enrichment: If manifest entries are missing Russian names, try to 
+                    // peek-read them from the .dat files.
+                    val missingNames = entries.filter { it.nameRu.isNullOrBlank() }
+                    if (missingNames.isNotEmpty()) {
+                        withContext(Dispatchers.IO) {
+                            val enriched = entries.map { entry ->
+                                if (entry.nameRu.isNullOrBlank()) {
+                                    val file = repository.readPathology(entry.id)
+                                    if (file?.nameRu != null) {
+                                        entry.copy(nameRu = file.nameRu)
+                                    } else entry
+                                } else entry
+                            }
+                            withContext(Dispatchers.Main) {
+                                _rhythms.value = enriched
+                            }
+                        }
+                    } else {
+                        _rhythms.value = entries
+                    }
+
+                    // Update selected rhythm if it's in the list
+                    _selectedRhythm.value?.let { current ->
+                        val updated = _rhythms.value.find { it.id == current.id }
+                        if (updated != null) {
+                            _selectedRhythm.value = updated
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     fun loadManifest() {
         viewModelScope.launch {
-            val entries = withContext(Dispatchers.IO) { repository.pathologies() }
-            _rhythms.value = entries
+            repository.loadManifest()
             
             // Try to restore last selected rhythm
             val lastId = prefs?.lastRhythmId?.first()
@@ -46,25 +85,6 @@ class RhythmViewModel(
                 selectRhythm(lastId, persist = false)
             } else {
                 _selectedRhythm.value?.let { current -> selectRhythm(current.id) }
-            }
-
-            // Enrichment: If manifest entries are missing Russian names, try to 
-            // peek-read them from the .dat files.
-            val missingNames = entries.filter { it.nameRu.isNullOrBlank() }
-            if (missingNames.isNotEmpty()) {
-                withContext(Dispatchers.IO) {
-                    val enriched = entries.map { entry ->
-                        if (entry.nameRu.isNullOrBlank()) {
-                            val file = repository.readPathology(entry.id)
-                            if (file?.nameRu != null) {
-                                entry.copy(nameRu = file.nameRu)
-                            } else entry
-                        } else entry
-                    }
-                    withContext(Dispatchers.Main) {
-                        _rhythms.value = enriched
-                    }
-                }
             }
         }
     }

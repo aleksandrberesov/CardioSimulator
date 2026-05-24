@@ -7,6 +7,10 @@ import com.example.cardiosimulator.domain.PathologyEntry
 import com.example.cardiosimulator.domain.PathologyFile
 import com.example.cardiosimulator.domain.PathologyManifest
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
 /**
  * Holds the current [PathologySource], caches the manifest, lazily reads
  * pathology files on demand, and exposes baseline-zeroed [Points] per
@@ -18,23 +22,24 @@ import com.example.cardiosimulator.domain.PathologyManifest
  */
 class PathologyRepository(private var source: PathologySource) {
 
-    @Volatile private var manifest: PathologyManifest? = null
+    private val _manifest = MutableStateFlow<PathologyManifest?>(null)
+    val manifestFlow: StateFlow<PathologyManifest?> = _manifest.asStateFlow()
 
     fun setSource(newSource: PathologySource) {
         source = newSource
-        manifest = null
+        _manifest.value = null
     }
 
     fun loadManifest(): Boolean {
         val m = source.readManifest()
-        manifest = m
+        _manifest.value = m
         return m != null
     }
 
-    fun manifest(): PathologyManifest? = manifest
+    fun manifest(): PathologyManifest? = _manifest.value
 
     fun pathologies(): List<PathologyEntry> =
-        manifest?.entries?.sortedBy { it.titleEn.lowercase() } ?: emptyList()
+        _manifest.value?.entries?.sortedBy { it.titleEn.lowercase() } ?: emptyList()
 
     fun readPathology(id: String): PathologyFile? = source.readPathology(id)
 
@@ -44,11 +49,15 @@ class PathologyRepository(private var source: PathologySource) {
      */
     fun writePathology(file: PathologyFile): Boolean {
         val s = source
-        return if (s is FilePathologySource) {
-            s.writePathology(file, manifest?.leadOrder)
-        } else {
-            false
+        if (s is FilePathologySource) {
+            val success = s.writePathology(file, manifest()?.leadOrder)
+            if (success) {
+                // Reload manifest to pick up title changes
+                loadManifest()
+            }
+            return success
         }
+        return false
     }
 
     /**
@@ -59,7 +68,7 @@ class PathologyRepository(private var source: PathologySource) {
      */
     fun leadWaveform(id: String, lead: Lead): Points? {
         val file = readPathology(id) ?: return null
-        val baseline = manifest?.baseline ?: DEFAULT_BASELINE
+        val baseline = manifest()?.baseline ?: DEFAULT_BASELINE
 
         file.leads[lead]?.let { stream ->
             return Points(stream.samples.map { (it - baseline).toFloat() })

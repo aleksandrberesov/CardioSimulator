@@ -129,4 +129,8 @@
     <string name="editor_file_content_label">Содержимое файла выбранной серии</string>
     <string name="editor_select_rhythm_hint">Выберите ритм для просмотра</string>
     <string name="editor_no_data_for_lead">Нет данных для отведения %1$s</string>
+    <string name="editor_rename_title">Переименовать патологию</string>
+    <string name="editor_rename_label">Новое имя</string>
+    <string name="editor_rename_ok">ОК</string>
+    <string name="editor_rename_cancel">Отмена</string>
 </resources>

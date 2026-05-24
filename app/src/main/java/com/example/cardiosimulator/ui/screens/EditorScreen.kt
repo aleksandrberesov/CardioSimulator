@@ -3,10 +3,14 @@ package com.example.cardiosimulator.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.example.cardiosimulator.R
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.Lead
@@ -33,8 +37,46 @@ fun EditorScreen(
     val targetFile by editorViewModel.targetFile
     val focusedLead by editorViewModel.focusedLead.collectAsState()
     val dirtyLeads by editorViewModel.dirtyLeads.collectAsState()
+    val isMetadataDirty by editorViewModel.isMetadataDirty.collectAsState()
     val rhythms by rhythmViewModel.rhythms.collectAsState()
     val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
+
+    var showRenameDialog by remember { mutableStateOf(false) }
+
+    if (showRenameDialog && targetFile != null) {
+        var newName by remember {
+            mutableStateOf(
+                if (selectedLanguage == com.example.cardiosimulator.domain.Language.RU)
+                    targetFile?.nameRu ?: ""
+                else
+                    targetFile?.titleEn ?: ""
+            )
+        }
+        AlertDialog(
+            onDismissRequest = { showRenameDialog = false },
+            title = { Text(stringResource(R.string.editor_rename_title)) },
+            text = {
+                TextField(
+                    value = newName,
+                    onValueChange = { newName = it },
+                    label = { Text(stringResource(R.string.editor_rename_label)) }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    editorViewModel.rename(newName, selectedLanguage)
+                    showRenameDialog = false
+                }) {
+                    Text(stringResource(R.string.editor_rename_ok))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRenameDialog = false }) {
+                    Text(stringResource(R.string.editor_rename_cancel))
+                }
+            }
+        )
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Main Area
@@ -62,13 +104,21 @@ fun EditorScreen(
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.weight(1f)
                     )
+
+                    if (targetFile != null) {
+                        IconButton(onClick = { showRenameDialog = true }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Rename")
+                        }
+                    }
                     
-                    if (dirtyLeads.isNotEmpty()) {
+                    if (dirtyLeads.isNotEmpty() || isMetadataDirty) {
                         Button(onClick = { editorViewModel.save() }) {
                             Text("Save")
                         }
-                        OutlinedButton(onClick = { editorViewModel.revertLead(focusedLead) }) {
-                            Text("Revert Lead")
+                        if (dirtyLeads.isNotEmpty()) {
+                            OutlinedButton(onClick = { editorViewModel.revertLead(focusedLead) }) {
+                                Text("Revert Lead")
+                            }
                         }
                     }
                 }
@@ -107,14 +157,14 @@ fun EditorScreen(
                         monitorViewModel = monitorViewModel
                     ) { _, _ ->
                         if (stream != null) {
-                            Box(modifier = Modifier.fillMaxSize()) {
+                            Column(modifier = Modifier.fillMaxSize()) {
                                 EditableLead(
                                     stream = stream,
                                     baseline = baseline,
                                     onSampleChanged = { i, v -> 
                                         editorViewModel.setSample(focusedLead, i, v)
                                     },
-                                    modifier = Modifier.fillMaxSize()
+                                    modifier = Modifier.weight(1f)
                                 )
 
                                 // Looping Preview at the bottom of the monitor
@@ -123,7 +173,6 @@ fun EditorScreen(
                                 }
                                 Surface(
                                     modifier = Modifier
-                                        .align(Alignment.BottomCenter)
                                         .padding(16.dp)
                                         .fillMaxWidth()
                                         .height(100.dp),
