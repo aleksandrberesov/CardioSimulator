@@ -1,6 +1,8 @@
 package com.example.cardiosimulator.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.material.icons.Icons
@@ -61,21 +63,41 @@ fun SignificantPointPanel(
                     style = MaterialTheme.typography.bodySmall
                 )
 
-                EcgPointType.entries.forEach { type ->
-                    val isSet = significantPoints.any { it.index == selectedIndex && it.type == type }
-                    
-                    FilterChip(
-                        selected = isSet,
-                        onClick = { onPointToggle(selectedIndex, type) },
-                        label = { 
-                            Text(
-                                text = type.label,
-                                modifier = Modifier.fillMaxWidth(),
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            ) 
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                // Group points by wave type for better organization
+                val waves = listOf(
+                    "P Wave" to listOf(EcgPointType.P_START, EcgPointType.P_PEAK, EcgPointType.P_END),
+                    "QRS Complex" to listOf(EcgPointType.QRS_START, EcgPointType.Q_PEAK, EcgPointType.R_PEAK, EcgPointType.S_PEAK, EcgPointType.QRS_END),
+                    "T Wave" to listOf(EcgPointType.T_START, EcgPointType.T_PEAK, EcgPointType.T_END)
+                )
+
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    waves.forEach { (title, points) ->
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(top = 4.dp),
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        points.forEach { type ->
+                            val isSet = significantPoints.any { it.index == selectedIndex && it.type == type }
+                            FilterChip(
+                                selected = isSet,
+                                onClick = { onPointToggle(selectedIndex, type) },
+                                label = {
+                                    Text(
+                                        text = type.name.replace("_", " "),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    )
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
                 }
             } else {
                 Text(
