@@ -8,11 +8,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.Lead
+import com.example.cardiosimulator.ui.components.PreviewPane
 import com.example.cardiosimulator.ui.display.EditableLead
 import com.example.cardiosimulator.ui.display.Monitor
 import com.example.cardiosimulator.ui.panels.RhythmChoosingDrawer
-import com.example.cardiosimulator.ui.panels.RhythmChoosingPanel
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.EditorViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
@@ -119,6 +120,34 @@ fun EditorScreen(
                 } else {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("Select a pathology from the left panel to edit.")
+                    }
+                }
+            }
+
+            // Preview Footer
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                tonalElevation = 2.dp
+            ) {
+                val file = targetFile
+                if (file != null) {
+                    val stream = file.leads[focusedLead]
+                    if (stream != null) {
+                        val baseline = rhythmViewModel.repository.manifest()?.baseline ?: 1024
+                        val points = remember(stream, baseline) {
+                            Points(stream.samples.map { (it - baseline).toFloat() })
+                        }
+                        PreviewPane(
+                            points = points,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                } else {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("No data to preview", style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
