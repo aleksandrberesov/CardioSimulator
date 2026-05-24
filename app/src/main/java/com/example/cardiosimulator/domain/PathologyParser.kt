@@ -97,7 +97,11 @@ object PathologyParser {
                     "pathology[$id]: lead $lead 'count' says $count but parsed ${samples.size} samples"
                 )
             }
-            leads[lead] = LeadStream(lead, samples)
+
+            val markersField = block["markers"]
+            val significantPoints = parseMarkers(markersField)
+
+            leads[lead] = LeadStream(lead, samples, significantPoints)
         }
         return PathologyFile(id, title, name, leads)
     }
@@ -113,6 +117,16 @@ object PathologyParser {
             sb.append('\n')
             sb.append("lead:").append(lead.name).append('\n')
             sb.append("count:").append(stream.samples.size).append('\n')
+            
+            if (stream.significantPoints.isNotEmpty()) {
+                sb.append("markers:")
+                stream.significantPoints.forEachIndexed { i, pt ->
+                    if (i > 0) sb.append(',')
+                    sb.append(pt.index).append(':').append(pt.type.name)
+                }
+                sb.append('\n')
+            }
+
             sb.append("points:")
             stream.samples.forEachIndexed { i, v ->
                 if (i > 0) sb.append(',')
@@ -192,5 +206,19 @@ object PathologyParser {
             out[n++] = parsed
         }
         return if (n == out.size) out else out.copyOf(n)
+    }
+
+    private fun parseMarkers(field: String?): List<SignificantPoint> {
+        if (field == null || field.isBlank()) return emptyList()
+        val out = mutableListOf<SignificantPoint>()
+        for (token in field.split(',')) {
+            val parts = token.split(':')
+            if (parts.size != 2) continue
+            val index = parts[0].trim().toIntOrNull() ?: continue
+            val typeName = parts[1].trim()
+            val type = runCatching { EcgPointType.valueOf(typeName) }.getOrNull() ?: continue
+            out.add(SignificantPoint(index, type))
+        }
+        return out
     }
 }

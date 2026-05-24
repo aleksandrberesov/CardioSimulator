@@ -45,14 +45,22 @@ data class PathologyEntry(
 data class LeadStream(
     val lead: Lead,
     val samples: IntArray,
+    val significantPoints: List<SignificantPoint> = emptyList()
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is LeadStream) return false
-        return lead == other.lead && samples.contentEquals(other.samples)
+        return lead == other.lead &&
+                samples.contentEquals(other.samples) &&
+                significantPoints == other.significantPoints
     }
 
-    override fun hashCode(): Int = 31 * lead.hashCode() + samples.contentHashCode()
+    override fun hashCode(): Int {
+        var result = lead.hashCode()
+        result = 31 * result + samples.contentHashCode()
+        result = 31 * result + significantPoints.hashCode()
+        return result
+    }
 }
 
 /** Parsed `<pathology>.dat`. */

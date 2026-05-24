@@ -10,9 +10,11 @@ import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.LeadStream
 import com.example.cardiosimulator.ui.components.ChartCanvas
 import com.example.cardiosimulator.ui.components.SampleHandleOverlay
+import com.example.cardiosimulator.ui.components.SignificantPointOverlay
 
 /**
- * A version of [Lead] that includes draggable handles for editing raw samples.
+ * A version of [Lead] that includes draggable handles for editing raw samples
+ * and an overlay for marking significant ECG points.
  */
 @Composable
 fun EditableLead(
@@ -29,13 +31,20 @@ fun EditableLead(
         modifier = modifier.leadArea(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Trace + Handle Overlay
+        // Trace + Overlays
         Box(
             modifier = Modifier
                 .fillMaxSize()
         ) {
             ChartCanvas(points = points, modifier = Modifier.fillMaxSize())
             
+            SignificantPointOverlay(
+                samples = stream.samples,
+                baseline = baseline,
+                significantPoints = stream.significantPoints,
+                modifier = Modifier.fillMaxSize()
+            )
+
             SampleHandleOverlay(
                 samples = stream.samples,
                 baseline = baseline,

@@ -6,8 +6,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cardiosimulator.data.DataSourcePrefs
 import com.example.cardiosimulator.data.PathologyRepository
+import com.example.cardiosimulator.domain.EcgPointType
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.PathologyFile
+import com.example.cardiosimulator.domain.SignificantPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -121,6 +123,29 @@ class EditorViewModel(
         val newLeads = currentFile.leads.toMutableMap()
         newLeads[lead] = stream.copy(samples = newSamples)
         
+        _targetFile.value = currentFile.copy(leads = newLeads)
+        _dirtyLeads.value += lead
+    }
+
+    fun toggleSignificantPoint(lead: Lead, index: Int, type: EcgPointType) {
+        val currentFile = _targetFile.value ?: return
+        val stream = currentFile.leads[lead] ?: return
+        if (index !in stream.samples.indices) return
+
+        val currentPoints = stream.significantPoints.toMutableList()
+        val existing = currentPoints.find { it.index == index && it.type == type }
+
+        if (existing != null) {
+            currentPoints.remove(existing)
+        } else {
+            // Usually one sample has only one ECG label
+            currentPoints.removeAll { it.index == index }
+            currentPoints.add(SignificantPoint(index, type))
+        }
+
+        val newLeads = currentFile.leads.toMutableMap()
+        newLeads[lead] = stream.copy(significantPoints = currentPoints)
+
         _targetFile.value = currentFile.copy(leads = newLeads)
         _dirtyLeads.value += lead
     }
