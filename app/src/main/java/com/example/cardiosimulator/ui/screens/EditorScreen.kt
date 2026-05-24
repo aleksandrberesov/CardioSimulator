@@ -10,10 +10,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.Lead
-import androidx.compose.ui.platform.LocalDensity
-import com.example.cardiosimulator.data.EcgCalibration
-import com.example.cardiosimulator.data.LocalPixelScale
-import com.example.cardiosimulator.data.PixelScale
 import com.example.cardiosimulator.ui.components.PreviewPane
 import com.example.cardiosimulator.ui.display.EditableLead
 import com.example.cardiosimulator.ui.display.Monitor
@@ -107,14 +103,36 @@ fun EditorScreen(
                     
                     Monitor(monitorViewModel = monitorViewModel) { _, _ ->
                         if (stream != null) {
-                            EditableLead(
-                                stream = stream,
-                                baseline = baseline,
-                                onSampleChanged = { i, v -> 
-                                    editorViewModel.setSample(focusedLead, i, v)
-                                },
-                                modifier = Modifier.fillMaxSize()
-                            )
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                EditableLead(
+                                    stream = stream,
+                                    baseline = baseline,
+                                    onSampleChanged = { i, v -> 
+                                        editorViewModel.setSample(focusedLead, i, v)
+                                    },
+                                    modifier = Modifier.fillMaxSize()
+                                )
+
+                                // Looping Preview at the bottom of the monitor
+                                val points = remember(stream, baseline) {
+                                    Points(stream.samples.map { (it - baseline).toFloat() })
+                                }
+                                Surface(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .padding(16.dp)
+                                        .fillMaxWidth()
+                                        .height(100.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
+                                    tonalElevation = 4.dp,
+                                    shape = MaterialTheme.shapes.medium
+                                ) {
+                                    PreviewPane(
+                                        points = points,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
+                            }
                         } else {
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                 Text("Lead ${focusedLead.name} not present in file.")
@@ -124,46 +142,6 @@ fun EditorScreen(
                 } else {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("Select a pathology from the left panel to edit.")
-                    }
-                }
-            }
-
-            // Preview Footer
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                tonalElevation = 2.dp
-            ) {
-                val file = targetFile
-                if (file != null) {
-                    val stream = file.leads[focusedLead]
-                    if (stream != null) {
-                        val baseline = rhythmViewModel.repository.manifest()?.baseline ?: 1024
-                        val points = remember(stream, baseline) {
-                            Points(stream.samples.map { (it - baseline).toFloat() })
-                        }
-                        val density = LocalDensity.current
-                        val pxPerMm = density.density * (160f / 25.4f)
-                        val previewScale = remember(pxPerMm) {
-                            PixelScale(
-                                pxPerMm = pxPerMm,
-                                paperSpeedMmPerSec = 25f,
-                                gainZoomY = 1.0f,
-                                cal = EcgCalibration(),
-                            )
-                        }
-                        CompositionLocalProvider(LocalPixelScale provides previewScale) {
-                            PreviewPane(
-                                points = points,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                    }
-                } else {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("No data to preview", style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }

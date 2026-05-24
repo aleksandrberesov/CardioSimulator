@@ -41,7 +41,7 @@ fun TeachingControlPanel(
     val monitorMode by monitorViewModel.monitorMode.collectAsState()
 
     Row(
-        modifier = modifier.height(IntrinsicSize.Min),
+        //modifier = modifier.height(IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically
     ) {
         var expanded by remember { mutableStateOf(false) }
