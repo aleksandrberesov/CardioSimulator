@@ -136,7 +136,7 @@ fun SignificantPointOverlay(
                         textAlign = Paint.Align.CENTER
                         setShadowLayer(4f, 0f, 0f, Color.White.toArgb())
                     }
-                    val text = String.format(Locale.US, "%s: %.3fs", label, duration)
+                    val text = String.format(Locale.US, "%s %.3fs", label, duration)
                     val textY = if (isBelow) y + fontSizePx + 5f else y - 12f
                     drawText(text, (x1 + x2) / 2f, textY, paint)
                 }
@@ -152,8 +152,8 @@ fun SignificantPointOverlay(
             drawInterval(EcgPointType.QRS_START, EcgPointType.QRS_END, "QRS", qrsY, Color(0xFFD32F2F))
 
             // 2. Segments (Slightly above baseline)
-            drawInterval(EcgPointType.P_END, EcgPointType.QRS_START, "PR Seg", baselineY - 40f, segmentColor)
-            drawInterval(EcgPointType.QRS_END, EcgPointType.T_START, "ST Seg", baselineY - 40f, Color(0xFF7B1FA2)) // Purple for ST
+            drawInterval(EcgPointType.P_END, EcgPointType.QRS_START, "PR", baselineY - 40f, segmentColor)
+            drawInterval(EcgPointType.QRS_END, EcgPointType.T_START, "ST", baselineY - 40f, Color(0xFF7B1FA2)) // Purple for ST
 
             // 3. Wave durations (Above their respective peaks)
             val pPeak = pointsMap[EcgPointType.P_PEAK]
@@ -165,8 +165,8 @@ fun SignificantPointOverlay(
             drawInterval(EcgPointType.T_START, EcgPointType.T_END, "T", tY, intervalColor)
 
             // 4. Long Intervals (Below baseline)
-            drawInterval(EcgPointType.P_START, EcgPointType.QRS_START, "PR Int", baselineY + 60f, Color(0xFFE64A19), isBelow = true) // Orange
-            drawInterval(EcgPointType.QRS_START, EcgPointType.T_END, "QT Int", baselineY + 100f, intervalColor, isBelow = true)
+            drawInterval(EcgPointType.P_START, EcgPointType.QRS_START, "PR", baselineY + 60f, Color(0xFFE64A19), isBelow = true) // Orange
+            drawInterval(EcgPointType.QRS_START, EcgPointType.T_END, "QT", baselineY + 100f, intervalColor, isBelow = true)
         }
     }
 }
