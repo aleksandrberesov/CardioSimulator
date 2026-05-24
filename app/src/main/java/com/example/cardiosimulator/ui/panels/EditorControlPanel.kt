@@ -37,6 +37,14 @@ fun EditorControlPanel(
     val monitorMode by monitorViewModel.monitorMode.collectAsState()
 
     var showSpeedDialog by remember { mutableStateOf(false) }
+    var showTimeDialog by remember { mutableStateOf(false) }
+    var showAdcDialog by remember { mutableStateOf(false) }
+
+    val samples = targetFile?.leads?.get(focusedLead)?.samples
+    val currentAdc = if (samples != null && selectedIndex in samples.indices) samples[selectedIndex] else 0
+    val currentTimeMs = if (samples != null && selectedIndex in samples.indices)
+        (selectedIndex * 1000f / monitorMode.calibration.sampleRateHz).toInt()
+    else 0
 
     if (showSpeedDialog) {
         var speedText by remember { mutableStateOf(monitorMode.speed.toString()) }
@@ -70,6 +78,77 @@ fun EditorControlPanel(
         )
     }
 
+    if (showTimeDialog) {
+        var timeText by remember { mutableStateOf(currentTimeMs.toString()) }
+        AlertDialog(
+            onDismissRequest = { showTimeDialog = false },
+            title = { Text("Set Time (ms)") },
+            text = {
+                TextField(
+                    value = timeText,
+                    onValueChange = { newValue ->
+                        if (newValue.all { it.isDigit() }) timeText = newValue
+                    },
+                    label = { Text("ms") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    timeText.toIntOrNull()?.let { ms ->
+                        val index = (ms * monitorMode.calibration.sampleRateHz / 1000f).toInt()
+                        editorViewModel.selectIndex(index)
+                    }
+                    showTimeDialog = false
+                }) {
+                    Text(stringResource(R.string.editor_rename_ok))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimeDialog = false }) {
+                    Text(stringResource(R.string.editor_rename_cancel))
+                }
+            }
+        )
+    }
+
+    if (showAdcDialog) {
+        var adcText by remember { mutableStateOf(currentAdc.toString()) }
+        AlertDialog(
+            onDismissRequest = { showAdcDialog = false },
+            title = { Text("Set ADC Value") },
+            text = {
+                TextField(
+                    value = adcText,
+                    onValueChange = { newValue ->
+                        if (newValue.isEmpty() || newValue == "-" || (newValue.startsWith("-") && newValue.drop(1).all { it.isDigit() }) || newValue.all { it.isDigit() }) {
+                            adcText = newValue
+                        }
+                    },
+                    label = { Text("ADC") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    adcText.toIntOrNull()?.let { value ->
+                        editorViewModel.setSample(focusedLead, selectedIndex, value)
+                    }
+                    showAdcDialog = false
+                }) {
+                    Text(stringResource(R.string.editor_rename_ok))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAdcDialog = false }) {
+                    Text(stringResource(R.string.editor_rename_cancel))
+                }
+            }
+        )
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -77,65 +156,60 @@ fun EditorControlPanel(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Info Display
+        val adcDisplayValue = if (samples != null && selectedIndex in samples.indices) currentAdc.toString() else "-"
+        val timeDisplayMs = if (samples != null && selectedIndex in samples.indices) "${currentTimeMs}ms" else "-"
+
         // Point Selection
-        Tab(
-            icon = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-            onClick = { editorViewModel.selectPrevious() },
-            modifier = Modifier.weight(0.4f)
-        )
-        Tab(
-            icon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            onClick = { editorViewModel.selectNext() },
-            modifier = Modifier.weight(0.4f)
-        )
+        Row(
+            modifier = Modifier.weight(1.2f).fillMaxHeight(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Tab(
+                icon = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                onClick = { editorViewModel.selectPrevious() },
+                isRepeatable = true,
+                modifier = Modifier.weight(1f)
+            )
+            Tab(
+                text = timeDisplayMs,
+                onClick = { showTimeDialog = true },
+                modifier = Modifier.weight(1.5f)
+            )
+            Tab(
+                icon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                onClick = { editorViewModel.selectNext() },
+                isRepeatable = true,
+                modifier = Modifier.weight(1f)
+            )
+        }
 
         ControlPanelDivider()
 
         // Point Adjustment
-        Tab(
-            icon = Icons.Default.KeyboardArrowUp,
-            onClick = { editorViewModel.moveSelectedUp() },
-            modifier = Modifier.weight(0.4f)
-        )
-        Tab(
-            icon = Icons.Default.KeyboardArrowDown,
-            onClick = { editorViewModel.moveSelectedDown() },
-            modifier = Modifier.weight(0.4f)
-        )
-
-        ControlPanelDivider()
-
-        // Info Display
-        Box(modifier = Modifier.weight(2f).fillMaxHeight(), contentAlignment = Alignment.CenterStart) {
-            targetFile?.leads?.get(focusedLead)?.samples?.let { samples ->
-                if (selectedIndex in samples.indices) {
-                    val adc = samples[selectedIndex]
-                    val timeMs = (selectedIndex * 1000f / monitorMode.calibration.sampleRateHz).toInt()
-                    
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Label(
-                            text = "Pt: $selectedIndex",
-                            fontSize = 13.sp,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Label(
-                            text = "ADC: $adc",
-                            fontSize = 13.sp,
-                            backgroundColor = Color.LightGray.copy(alpha = 0.2f),
-                            modifier = Modifier.weight(1f)
-                        )
-                        Label(
-                            text = "${timeMs}ms",
-                            fontSize = 13.sp,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-            }
+        Row(
+            modifier = Modifier.weight(1.2f).fillMaxHeight(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Tab(
+                icon = Icons.Default.KeyboardArrowDown,
+                onClick = { editorViewModel.moveSelectedDown() },
+                isRepeatable = true,
+                modifier = Modifier.weight(1f)
+            )
+            Tab(
+                text = "ADC: $adcDisplayValue",
+                onClick = { showAdcDialog = true },
+                modifier = Modifier.weight(1.5f)
+            )
+            Tab(
+                icon = Icons.Default.KeyboardArrowUp,
+                onClick = { editorViewModel.moveSelectedUp() },
+                isRepeatable = true,
+                modifier = Modifier.weight(1f)
+            )
         }
 
         ControlPanelDivider()
@@ -149,6 +223,7 @@ fun EditorControlPanel(
             Tab(
                 icon = Icons.Default.Remove,
                 onClick = { if (monitorMode.speed > 1) monitorViewModel.setSpeed(monitorMode.speed - 1) },
+                isRepeatable = true,
                 modifier = Modifier.weight(1f)
             )
             Tab(
@@ -160,6 +235,7 @@ fun EditorControlPanel(
             Tab(
                 icon = Icons.Default.Add,
                 onClick = { monitorViewModel.setSpeed(monitorMode.speed + 1) },
+                isRepeatable = true,
                 modifier = Modifier.weight(1f)
             )
         }

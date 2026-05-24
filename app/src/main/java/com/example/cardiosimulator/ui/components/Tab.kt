@@ -3,6 +3,10 @@ package com.example.cardiosimulator.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material3.ripple
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,6 +36,7 @@ import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 fun Tab(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isRepeatable: Boolean = false,
     text: String? = null,
     subText: String? = null,
     icon: ImageVector? = null,
@@ -42,14 +47,25 @@ fun Tab(
     backgroundColor: Color = Color.Transparent
 ) {
     val shape = RoundedCornerShape(cornerRadius)
+    val interactionSource = remember { MutableInteractionSource() }
+    
+    val baseModifier = modifier
+        .fillMaxHeight(1f)
+        .defaultMinSize(minWidth = 35.dp)
+        .border(borderWidth, Color.Black, shape)
+        .background(backgroundColor, shape)
+        .clip(shape)
+
+    val clickModifier = if (isRepeatable) {
+        Modifier
+            .indication(interactionSource, ripple())
+            .repeatingClickable(onClick = onClick, interactionSource = interactionSource)
+    } else {
+        Modifier.clickable(interactionSource = interactionSource, indication = ripple(), onClick = onClick)
+    }
+
     Column(
-        modifier = modifier
-            .fillMaxHeight(1f)
-            .defaultMinSize(minWidth = 35.dp)
-            .border(borderWidth, Color.Black, shape)
-            .background(backgroundColor, shape)
-            .clip(shape)
-            .clickable(onClick = onClick),
+        modifier = baseModifier.then(clickModifier),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
