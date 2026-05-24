@@ -66,22 +66,21 @@ fun SignificantPointOverlay(
                         )
                     }
 
-                    drawContext.canvas.nativeCanvas.apply {
-                        val paint = Paint().apply {
-                            color = primaryColor.toArgb()
-                            textSize = fontSizePx
-                            typeface = Typeface.DEFAULT_BOLD
-                            textAlign = Paint.Align.CENTER
-                            // Add a subtle shadow for better contrast
-                            setShadowLayer(3f, 0f, 0f, Color.White.toArgb())
+                    // Only draw text labels for peaks (P, Q, R, S, T), not for boundaries
+                    if (!pt.type.name.endsWith("_START") && !pt.type.name.endsWith("_END")) {
+                        drawContext.canvas.nativeCanvas.apply {
+                            val paint = Paint().apply {
+                                color = primaryColor.toArgb()
+                                textSize = fontSizePx
+                                typeface = Typeface.DEFAULT_BOLD
+                                textAlign = Paint.Align.CENTER
+                                // Add a subtle shadow for better contrast
+                                setShadowLayer(3f, 0f, 0f, Color.White.toArgb())
+                            }
+                            
+                            val cleanLabel = pt.type.name.replace("_PEAK", "")
+                            drawText(cleanLabel, x, y - 20f, paint)
                         }
-                        
-                        val cleanLabel = pt.type.name
-                            .replace("_PEAK", "")
-                            .replace("_START", "s")
-                            .replace("_END", "e")
-                        
-                        drawText(cleanLabel, x, y - 20f, paint)
                     }
                     
                     // Larger, more prominent circle
