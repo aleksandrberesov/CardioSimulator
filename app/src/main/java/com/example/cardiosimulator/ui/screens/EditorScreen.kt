@@ -293,6 +293,7 @@ fun EditorScreen(
                                 Column(modifier = Modifier.fillMaxSize()) {
                                     EditableLead(
                                         stream = stream,
+                                        significantPoints = file.significantPoints,
                                         baseline = baseline,
                                         selectedIndex = selectedIndex,
                                         onIndexSelected = { editorViewModel.selectIndex(it) },
@@ -327,7 +328,7 @@ fun EditorScreen(
 
                         // Right Side Panel for marking points
                         SignificantPointPanel(
-                            significantPoints = stream?.significantPoints ?: emptyList(),
+                            significantPoints = file.significantPoints,
                             selectedIndex = selectedIndex,
                             sampleRate = monitorMode.calibration.sampleRateHz,
                             onPointToggle = { idx, type -> 

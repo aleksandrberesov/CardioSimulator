@@ -36,6 +36,7 @@ fun TeachingScreen(
     val rhythms by rhythmViewModel.rhythms.collectAsState()
     val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
     val waveforms by rhythmViewModel.waveforms.collectAsState()
+    val significantPoints by rhythmViewModel.significantPoints.collectAsState()
 
     Box(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
         Column(
@@ -59,6 +60,7 @@ fun TeachingScreen(
                         points = leadPoints,
                         title = lead?.name ?: "",
                         isRunning = mode.isRunning,
+                        significantPoints = significantPoints
                     )
                 }
             }

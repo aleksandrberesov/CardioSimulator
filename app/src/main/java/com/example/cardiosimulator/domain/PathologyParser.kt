@@ -80,6 +80,7 @@ object PathologyParser {
         val id = header["pathology"] ?: throw FormatException("pathology: missing 'pathology'")
         val title = header["title"].orEmpty()
         val name = header["name"]
+        val globalMarkers = parseMarkers(header["markers"])
 
         val leadBlocks = blocks.drop(1)
         val leads = linkedMapOf<Lead, LeadStream>()
@@ -98,12 +99,9 @@ object PathologyParser {
                 )
             }
 
-            val markersField = block["markers"]
-            val significantPoints = parseMarkers(markersField)
-
-            leads[lead] = LeadStream(lead, samples, significantPoints)
+            leads[lead] = LeadStream(lead, samples)
         }
-        return PathologyFile(id, title, name, leads)
+        return PathologyFile(id, title, name, leads, globalMarkers)
     }
 
     fun serializePathology(file: PathologyFile, leadOrder: List<Lead>): String {
@@ -112,21 +110,22 @@ object PathologyParser {
         sb.append("title:").append(file.titleEn).append('\n')
         sb.append("name:").append(file.nameRu.orEmpty()).append('\n')
         sb.append("leads:").append(file.leads.size).append('\n')
+        
+        if (file.significantPoints.isNotEmpty()) {
+            sb.append("markers:")
+            file.significantPoints.forEachIndexed { i, pt ->
+                if (i > 0) sb.append(',')
+                sb.append(pt.index).append(':').append(pt.type.name)
+            }
+            sb.append('\n')
+        }
+
         for (lead in leadOrder) {
             val stream = file.leads[lead] ?: continue
             sb.append('\n')
             sb.append("lead:").append(lead.name).append('\n')
             sb.append("count:").append(stream.samples.size).append('\n')
             
-            if (stream.significantPoints.isNotEmpty()) {
-                sb.append("markers:")
-                stream.significantPoints.forEachIndexed { i, pt ->
-                    if (i > 0) sb.append(',')
-                    sb.append(pt.index).append(':').append(pt.type.name)
-                }
-                sb.append('\n')
-            }
-
             sb.append("points:")
             stream.samples.forEachIndexed { i, v ->
                 if (i > 0) sb.append(',')

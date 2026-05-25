@@ -44,21 +44,18 @@ data class PathologyEntry(
 /** One lead block inside a `<pathology>.dat` file. */
 data class LeadStream(
     val lead: Lead,
-    val samples: IntArray,
-    val significantPoints: List<SignificantPoint> = emptyList()
+    val samples: IntArray
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is LeadStream) return false
         return lead == other.lead &&
-                samples.contentEquals(other.samples) &&
-                significantPoints == other.significantPoints
+                samples.contentEquals(other.samples)
     }
 
     override fun hashCode(): Int {
         var result = lead.hashCode()
         result = 31 * result + samples.contentHashCode()
-        result = 31 * result + significantPoints.hashCode()
         return result
     }
 }
@@ -69,4 +66,5 @@ data class PathologyFile(
     val titleEn: String,
     val nameRu: String?,
     val leads: Map<Lead, LeadStream>,
+    val significantPoints: List<SignificantPoint> = emptyList()
 )

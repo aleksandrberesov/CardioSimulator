@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.LocalPixelScale
+import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.EcgPointType
 import com.example.cardiosimulator.domain.SignificantPoint
 import java.util.Locale
@@ -28,8 +29,7 @@ import java.util.Locale
  */
 @Composable
 fun SignificantPointOverlay(
-    samples: IntArray,
-    baseline: Int,
+    points: Points,
     significantPoints: List<SignificantPoint>,
     modifier: Modifier = Modifier
 ) {
@@ -61,10 +61,10 @@ fun SignificantPointOverlay(
             
             // 1. Draw individual point markers and labels
             significantPoints.forEach { pt ->
-                if (pt.index in samples.indices) {
-                    val sample = samples[pt.index]
+                if (pt.index in points.values.indices) {
+                    val value = points.values[pt.index]
                     val x = pt.index * stepX
-                    val y = baselineY - (sample - baseline) * stepY
+                    val y = baselineY - value * stepY
                     
                     // Draw vertical boundary lines for start/end points
                     if (pt.type.name.endsWith("_START") || pt.type.name.endsWith("_END")) {
@@ -158,7 +158,7 @@ fun SignificantPointOverlay(
             // 1. QRS Complex (At the top of the wave)
             val rPeak = pointsMap[EcgPointType.R_PEAK]
             val qrsY = if (rPeak != null) {
-                baselineY - (samples[rPeak.index] - baseline) * stepY - 40f
+                baselineY - points.values[rPeak.index] * stepY - 40f
             } else 40f
             drawInterval(EcgPointType.QRS_START, EcgPointType.QRS_END, qrsLabel, qrsY, Color(0xFFD32F2F))
 
@@ -168,11 +168,11 @@ fun SignificantPointOverlay(
 
             // 3. Wave durations (Above their respective peaks)
             val pPeak = pointsMap[EcgPointType.P_PEAK]
-            val pY = if (pPeak != null) baselineY - (samples[pPeak.index] - baseline) * stepY - 30f else baselineY - 60f
+            val pY = if (pPeak != null) baselineY - points.values[pPeak.index] * stepY - 30f else baselineY - 60f
             drawInterval(EcgPointType.P_START, EcgPointType.P_END, pLabel, pY, intervalColor)
 
             val tPeak = pointsMap[EcgPointType.T_PEAK]
-            val tY = if (tPeak != null) baselineY - (samples[tPeak.index] - baseline) * stepY - 30f else baselineY - 60f
+            val tY = if (tPeak != null) baselineY - points.values[tPeak.index] * stepY - 30f else baselineY - 60f
             drawInterval(EcgPointType.T_START, EcgPointType.T_END, tLabel, tY, intervalColor)
 
             // 4. Long Intervals (Below baseline)

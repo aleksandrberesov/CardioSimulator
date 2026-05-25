@@ -8,6 +8,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.LeadStream
+import com.example.cardiosimulator.domain.SignificantPoint
 import com.example.cardiosimulator.ui.components.ChartCanvas
 import com.example.cardiosimulator.ui.components.SampleHandleOverlay
 import com.example.cardiosimulator.ui.components.SignificantPointOverlay
@@ -19,6 +20,7 @@ import com.example.cardiosimulator.ui.components.SignificantPointOverlay
 @Composable
 fun EditableLead(
     stream: LeadStream,
+    significantPoints: List<SignificantPoint>,
     baseline: Int,
     modifier: Modifier = Modifier,
     selectedIndex: Int? = null,
@@ -39,9 +41,8 @@ fun EditableLead(
             ChartCanvas(points = points, modifier = Modifier.fillMaxSize())
             
             SignificantPointOverlay(
-                samples = stream.samples,
-                baseline = baseline,
-                significantPoints = stream.significantPoints,
+                points = points,
+                significantPoints = significantPoints,
                 modifier = Modifier.fillMaxSize()
             )
 

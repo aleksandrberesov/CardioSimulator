@@ -36,6 +36,9 @@ class RhythmViewModel(
     private val _waveforms = MutableStateFlow<Map<Lead, Points>>(emptyMap())
     val waveforms: StateFlow<Map<Lead, Points>> = _waveforms.asStateFlow()
 
+    private val _significantPoints = MutableStateFlow<List<com.example.cardiosimulator.domain.SignificantPoint>>(emptyList())
+    val significantPoints: StateFlow<List<com.example.cardiosimulator.domain.SignificantPoint>> = _significantPoints.asStateFlow()
+
     init {
         viewModelScope.launch {
             repository.manifestFlow.collectLatest { manifest ->
@@ -100,6 +103,9 @@ class RhythmViewModel(
         }
 
         viewModelScope.launch {
+            val file = withContext(Dispatchers.IO) { repository.readPathology(id) }
+            _significantPoints.value = file?.significantPoints ?: emptyList()
+
             val leadOrder = repository.manifest()?.leadOrder ?: Lead.entries
             val map = withContext(Dispatchers.IO) {
                 leadOrder.mapNotNull { lead ->

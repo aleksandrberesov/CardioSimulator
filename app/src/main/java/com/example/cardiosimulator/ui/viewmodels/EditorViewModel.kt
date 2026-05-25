@@ -129,10 +129,11 @@ class EditorViewModel(
 
     fun toggleSignificantPoint(lead: Lead, index: Int, type: EcgPointType) {
         val currentFile = _targetFile.value ?: return
+        // Ensure index is valid for the currently focused lead (or at least one lead)
         val stream = currentFile.leads[lead] ?: return
         if (index !in stream.samples.indices) return
 
-        val currentPoints = stream.significantPoints.toMutableList()
+        val currentPoints = currentFile.significantPoints.toMutableList()
         val existing = currentPoints.find { it.index == index && it.type == type }
 
         if (existing != null) {
@@ -143,11 +144,8 @@ class EditorViewModel(
             currentPoints.add(SignificantPoint(index, type))
         }
 
-        val newLeads = currentFile.leads.toMutableMap()
-        newLeads[lead] = stream.copy(significantPoints = currentPoints)
-
-        _targetFile.value = currentFile.copy(leads = newLeads)
-        _dirtyLeads.value += lead
+        _targetFile.value = currentFile.copy(significantPoints = currentPoints)
+        _isMetadataDirty.value = true // Since points are now global/metadata-like
     }
 
     fun revertLead(lead: Lead) {
