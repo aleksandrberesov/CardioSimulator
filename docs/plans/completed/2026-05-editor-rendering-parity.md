@@ -1,8 +1,9 @@
 # Editor rendering parity with Teaching mode
 
-**Status:** proposed
+**Status:** dropped
 **Owner:** —
 **Started:** 2026-05-13
+**Outcome:** dropped — superseded by the migration to flat-pathology architecture (`2026-05-transit-from-legacy.md`). The anchor-based design was replaced by a raw-sample editor.
 **Related issues / PRs:** —
 
 > **Update 2026-05-17 — interpolation removed.** Editor and Teaching

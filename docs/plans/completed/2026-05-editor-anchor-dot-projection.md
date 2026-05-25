@@ -1,8 +1,9 @@
 # Editor: unify anchor-handle and waveform-dot projection
 
-**Status:** proposed
+**Status:** dropped
 **Owner:** —
 **Started:** 2026-05-17
+**Outcome:** dropped — superseded by the migration to flat-pathology architecture (`2026-05-transit-from-legacy.md`). The anchor-based design was replaced by a raw-sample editor.
 **Related issues / PRs:** —
 **Follows:** `docs/plans/proposed/2026-05-editor-rendering-parity.md`
 

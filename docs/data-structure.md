@@ -56,7 +56,13 @@ the header block from each lead block, and lead blocks from one another.
                     "title:"     <en-text> NL
                     "name:"      <ru-text> NL
                     "leads:"     <int>     NL
+                    [ "markers:" <marker>(,<marker>)* NL ]
 <lead-block>    ::= "lead:"   <lead-name>       NL
+<int>           ::= [0-9]+
+<marker>        ::= <int> ":" <point-type>
+<point-type>    ::= "P_START" | "P_PEAK" | "P_END" 
+                  | "QRS_START" | "Q_PEAK" | "R_PEAK" | "S_PEAK" | "QRS_END"
+                  | "T_START" | "T_PEAK" | "T_END"
                     "count:"  <int>             NL
                     "points:" <int>(,<int>)*    NL
 <lead-name>     ::= "I" | "II" | "III" | "aVR" | "aVL" | "aVF"
@@ -75,6 +81,7 @@ NL              ::= "\n"
 | `title`     | string | English display name, without lead suffix.                                 |
 | `name`      | string | Russian display name (UTF-8), without lead suffix.                         |
 | `leads`     | int    | Number of lead blocks present in this file (always 12, except `emd` = 6).  |
+| `markers`   | string | Optional. Comma-separated list of key-point markers (see §2.6).             |
 
 **Lead block**
 
@@ -123,6 +130,26 @@ points:1024,1024,1024,1024,1024,1024,1024,...,1024
 
 ... (10 more lead blocks)
 ```
+
+---
+
+## 2.6 Markers (Significant Points)
+
+The `markers:` field in the header encodes significant ECG landmarks
+(like P-wave start or R-peak) that are common across all leads in the
+pathology. These markers are used by the renderer to draw labels or
+highlight regions.
+
+Format: `index:TYPE,index:TYPE,...` (comma-separated list of colon-delimited pairs).
+
+- **`index`**: Sample index (0-based) relative to the start of the lead streams.
+- **`TYPE`**: One of the standard ECG point identifiers:
+  - `P_START`, `P_PEAK`, `P_END`
+  - `QRS_START`, `Q_PEAK`, `R_PEAK`, `S_PEAK`, `QRS_END`
+  - `T_START`, `T_PEAK`, `T_END`
+
+Example:
+`markers:120:P_START,145:P_PEAK,160:P_END,210:QRS_START,225:R_PEAK`
 
 ---
 

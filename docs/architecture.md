@@ -2,7 +2,7 @@
 
 This document maps the classes, objects, and instances of the
 CardioSimulator Android app and the wiring between them. It describes the
-**code as it stands today**, built around the pathology dataset format
+**current architecture**, built around the pathology dataset format
 documented in [data-structure.md](data-structure.md): one `.dat` file per
 pathology, all 12 leads inside, raw ADC samples — no anchors, no
 part/series indirection, no per-record calibration.
@@ -11,13 +11,6 @@ The codebase is a layered MVVM-with-Compose viewer and editor for that
 dataset. The editor renders through the **same** `Points → ChartCanvas`
 pipeline as the viewer, adding per-sample drag handles
 (`SampleHandleOverlay`).
-
-> **Naming note.** The data-layer classes are named `Pathology*`
-> (`PathologyRepository`, `PathologySource`, `AssetPathologySource`,
-> `FilePathologySource`). Their KDocs mention a planned Phase-5 rename to
-> `Ecg*` once the legacy implementation is gone; the legacy classes are
-> already deleted, but the rename has not been applied. This document uses
-> the **actual current** names.
 
 ```
                 ┌─────────────────────────────────────┐
@@ -105,8 +98,6 @@ Dashed arrows (`╌╌►`) show **StateFlow emissions** consumed via `collectAs
 ║  │    isDataConfirmed       : StateFlow<Boolean>                       │    ║
 ║  │    lastAck               : StateFlow<TcpMessage.AckMessage?>        │    ║
 ║  │                            (set on ACK; not yet read by any UI)     │    ║
-║  │    dirtyParts/dirtySeries: StateFlow<Set<String>> (vestigial —      │    ║
-║  │                            read by SettingsContent, never written)  │    ║
 ║  └─────────────────────────────────────────────────────────────────────┘    ║
 ║                                                                              ║
 ║  ┌─────────────────────────────────────────────────────────────────────┐    ║
@@ -207,8 +198,6 @@ tcpConnectionState      ──╌╌►  SettingsContent (status dot + connect)
 dataState               ──╌╌►  MainScreen (guard), DataSourceScreen
 isDataConfirmed         ──╌╌►  MainScreen (guard)
 lastAck                 ──╌╌►  (none yet — set on ACK, no UI reader)
-dirtyParts/dirtySeries  ──╌╌►  SettingsContent (export-button label only;
-                               always empty — never written)
 
 MonitorViewModel StateFlows
 ─────────────────────────────────────────────────────────────────────
@@ -417,12 +406,7 @@ current architecture removes:
 **Vestigial leftovers still in the tree** (worth knowing, candidates for
 cleanup):
 
-- `AppViewModel.dirtyParts` / `dirtySeries` — read by `SettingsContent`
-  to label the export button, but never written, so always empty.
 - `AppViewModel.lastAck` — updated on every `AckMessage`, but no UI reads it.
-- `CalibrationPulse(samplesPerMv = …)` — an optional per-record gain hook
-  whose KDoc still references `AMax/AValue`; defaults to `0` (off) and no
-  caller passes it.
 - `Examination` / `OSKE` mode screens are empty placeholder stubs.
 
 What remains: a viewer and a raw-sample editor that load a

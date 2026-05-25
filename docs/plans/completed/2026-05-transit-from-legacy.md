@@ -1,8 +1,9 @@
 # Migration to flat-pathology architecture & unified rendering pipeline
 
-**Status:** proposed
+**Status:** completed
 **Owner:** a.beresov
 **Started:** 2026-05-21
+**Completed:** 2026-05-23
 **Related docs:** [`docs/architecture.md`](../../../VLN_Project/CardioSimulator/docs/architecture.md), [`docs/ecg-rendering-pipeline.md`](../../../VLN_Project/CardioSimulator/docs/ecg-rendering-pipeline.md), [`docs/data-structure.md`](../../../VLN_Project/CardioSimulator/docs/data-structure.md)
 **Supersedes:** `docs/plans/active/2026-05-editor-mode.md` (Phases 0/0a/1/2/3/4 — anchor-based design is dropped)
 **Target on-repo path after approval:** `docs/plans/active/2026-05-architecture-and-rendering-migration.md`
@@ -228,9 +229,7 @@ Each phase is one PR straight to `master`. Each leaves the app installable and t
 
 ## Outcome
 
-*(Fill in when status moves to completed/dropped.)*
-
-- **Result:**
-- **PRs:**
-- **Deviations from plan:**
-- **Follow-ups spawned:**
+- **Result:** Successfully migrated the codebase to the flat-pathology architecture. All viewer screens and the editor now use the unified `Points → ChartCanvas` rendering pipeline. Legacy anchor-based types and per-part calibration have been removed.
+- **PRs:** Phase 1 (additive), Phase 2 (viewer swap), Phase 3 (canvas unification), Phase 4 (editor rebuild), Phase 5 (cleanup).
+- **Deviations from plan:** The planned Phase-5 rename of `Pathology*` to `Ecg*` was deferred to keep the final cleanup PR focused on deletion of legacy code.
+- **Follow-ups spawned:** Final rename of data-layer classes to `Ecg*` prefix for consistency.

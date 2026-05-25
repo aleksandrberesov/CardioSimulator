@@ -43,8 +43,7 @@ What is **no longer** in the pipeline:
   samples directly through the same projection.
 - Per-record calibration overrides — `AMax` / `AValue` / `duration` no
   longer exist in the data file. `EcgCalibration` is the single source of
-  truth. (One vestige remains: an unused `samplesPerMv` parameter on
-  `CalibrationPulse`; see § 5b.)
+  truth.
 - Multi-part X-offset layout — each lead is a single contiguous stream.
 
 ---
@@ -380,17 +379,12 @@ recomputed only when inputs change. Line: **1.5 dp**, `StrokeCap.Round`.
 Standard ECG calibration: a rectangular pulse **1 mV tall, 200 ms wide**.
 
 ```
-pulseHeight = 1.0 * pxPerMv          // when samplesPerMv == 0 (the only case used)
+pulseHeight = 1.0 * pxPerMv
 pulseWidth  = 0.2 * pxPerSec
 Shape: baseline → wing(4 dp) → up pulseHeight → across pulseWidth → down → wing(4 dp)
 ```
 
 - Stroke width: **1.5 dp** · Wing width: **4 dp** · Start offset: **8 dp**
-- **Vestigial:** the composable still accepts `samplesPerMv: Float = 0f`
-  (a legacy per-record gain hook whose KDoc references `AMax/AValue`).
-  When `> 0` it would scale the pulse by `pxPerAdcCount * samplesPerMv`,
-  but neither `Lead` nor `EditableLead` passes it, so the global-gain
-  branch is always taken.
 
 ### 5c. Editor handles
 
@@ -532,8 +526,7 @@ For readers familiar with the previous Parts/Series-based pipeline:
 - **Anchor baking** is gone. The editor edits raw samples directly via
   `SampleHandleOverlay`.
 - **Per-part calibration** is gone. Every pathology renders against the
-  same `EcgCalibration`. (Only the unused `CalibrationPulse.samplesPerMv`
-  hook survives as a vestige; see § 5b.)
+  same `EcgCalibration`.
 - **Legacy Editor UI** (BlockTimeline, AnchorCanvas, PreviewPane) is
   replaced by the unified `Lead → ChartCanvas` path with
   `SampleHandleOverlay`.
