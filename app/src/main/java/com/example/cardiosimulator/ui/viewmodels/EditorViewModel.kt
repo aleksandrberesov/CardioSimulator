@@ -77,6 +77,20 @@ class EditorViewModel(
         }
     }
 
+    fun selectSignificantPoint(type: EcgPointType) {
+        val currentFile = _targetFile.value ?: return
+        val pointsOfType = currentFile.significantPoints
+            .filter { it.type == type }
+            .sortedBy { it.index }
+        
+        if (pointsOfType.isEmpty()) return
+        
+        val currentIndex = _selectedIndex.value
+        // Cycle through points of this type
+        val nextPoint = pointsOfType.find { it.index > currentIndex } ?: pointsOfType.first()
+        _selectedIndex.value = nextPoint.index
+    }
+
     fun selectNext() {
         val stream = _targetFile.value?.leads?.get(_focusedLead.value) ?: return
         if (_selectedIndex.value < stream.samples.size - 1) {

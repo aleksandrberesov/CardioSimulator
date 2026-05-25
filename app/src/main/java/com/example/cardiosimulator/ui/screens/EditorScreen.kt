@@ -22,28 +22,12 @@ import com.example.cardiosimulator.ui.components.PreviewPane
 import com.example.cardiosimulator.ui.display.EditableLead
 import com.example.cardiosimulator.ui.display.Monitor
 import com.example.cardiosimulator.ui.panels.RhythmChoosingDrawer
+import com.example.cardiosimulator.ui.panels.SignificantPointsDrawer
+import com.example.cardiosimulator.ui.utils.toDisplayString
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.EditorViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
-
-@Composable
-fun EcgPointType.toDisplayString(): String {
-    val resId = when (this) {
-        EcgPointType.P_START -> R.string.ecg_point_p_start
-        EcgPointType.P_PEAK -> R.string.ecg_point_p_peak
-        EcgPointType.P_END -> R.string.ecg_point_p_end
-        EcgPointType.Q_PEAK -> R.string.ecg_point_q_peak
-        EcgPointType.R_PEAK -> R.string.ecg_point_r_peak
-        EcgPointType.S_PEAK -> R.string.ecg_point_s_peak
-        EcgPointType.QRS_START -> R.string.ecg_point_qrs_start
-        EcgPointType.QRS_END -> R.string.ecg_point_qrs_end
-        EcgPointType.T_START -> R.string.ecg_point_t_start
-        EcgPointType.T_PEAK -> R.string.ecg_point_t_peak
-        EcgPointType.T_END -> R.string.ecg_point_t_end
-    }
-    return stringResource(resId)
-}
 
 /**
  * A side panel for marking significant ECG points on the selected sample.
@@ -350,7 +334,14 @@ fun EditorScreen(
             rhythms = rhythms,
             selectedId = targetFile?.id,
             onRhythmSelect = { editorViewModel.selectPathology(it.id) },
-            modifier = Modifier.align(Alignment.CenterStart)
+            modifier = Modifier.align(Alignment.CenterStart).offset(y = (-40).dp)
+        )
+
+        // Left Panel: Significant Points List (Drawer)
+        SignificantPointsDrawer(
+            editorViewModel = editorViewModel,
+            sampleRateHz = monitorMode.calibration.sampleRateHz,
+            modifier = Modifier.align(Alignment.CenterStart).offset(y = 40.dp)
         )
     }
 }
