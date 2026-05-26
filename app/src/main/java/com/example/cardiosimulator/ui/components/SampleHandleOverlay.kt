@@ -23,7 +23,8 @@ fun SampleHandleOverlay(
     baseline: Int,
     modifier: Modifier = Modifier,
     selectedIndex: Int? = null,
-    onIndexSelected: ((Int) -> Unit)? = null
+    onIndexSelected: ((Int) -> Unit)? = null,
+    scrollOffsetPx: Float? = null,
 ) {
     val scale = LocalPixelScale.current
     val density = LocalDensity.current
@@ -36,17 +37,22 @@ fun SampleHandleOverlay(
     Canvas(
         modifier = modifier
             .fillMaxSize()
-            .pointerInput(samples, stepX) {
+            .pointerInput(samples, stepX, scrollOffsetPx) {
                 var lastIndex = -1
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent()
                         // Only handle selection if there's exactly one pointer active
-                        // to avoid interfering with multi-touch gestures like zoom.
                         val change = if (event.changes.size == 1) event.changes.first() else null
                         
                         if (change != null && change.pressed) {
-                            val sampleIndex = (change.position.x / stepX).roundToInt().coerceIn(samples.indices)
+                            val xOffset = scrollOffsetPx ?: 0f
+                            // Adjust for scroll offset and loop
+                            val dataWidthPx = samples.size * stepX
+                            val adjustedX = (change.position.x - xOffset) % dataWidthPx
+                            val finalX = if (adjustedX < 0) adjustedX + dataWidthPx else adjustedX
+                            
+                            val sampleIndex = (finalX / stepX).roundToInt().coerceIn(samples.indices)
                             if (sampleIndex != lastIndex) {
                                 onIndexSelected?.invoke(sampleIndex)
                                 lastIndex = sampleIndex
@@ -60,34 +66,44 @@ fun SampleHandleOverlay(
     ) {
         val baselineY = size.height / 2f
         val stepY = scale.pxPerAdcCount
+        val xOffset = scrollOffsetPx ?: 0f
         
         // Only draw the selected handle
         if (selectedIndex != null && selectedIndex in samples.indices) {
             val sample = samples[selectedIndex]
-            val x = selectedIndex * stepX
-            val y = baselineY - (sample - baseline) * stepY
+            val dataWidthPx = samples.size * stepX
+            val rawX = selectedIndex * stepX
+            
+            // Draw handle with looping support
+            val iterations = if (scrollOffsetPx != null) (size.width / dataWidthPx).toInt() + 2 else 1
+            for (i in (if (scrollOffsetPx != null) -1 else 0) until iterations) {
+                val x = rawX + (xOffset % dataWidthPx) + i * dataWidthPx
+                if (x < -selectedRadiusPx || x > size.width + selectedRadiusPx) continue
+                
+                val y = baselineY - (sample - baseline) * stepY
 
-            drawCircle(
-                color = Color.Red,
-                radius = selectedRadiusPx,
-                center = Offset(x, y),
-                style = Stroke(width = strokeWidthPx)
-            )
+                drawCircle(
+                    color = Color.Red,
+                    radius = selectedRadiusPx,
+                    center = Offset(x, y),
+                    style = Stroke(width = strokeWidthPx)
+                )
 
-            // Draw a cross inside
-            val arm = selectedRadiusPx * 0.7f
-            drawLine(
-                color = Color.Red,
-                start = Offset(x - arm, y),
-                end = Offset(x + arm, y),
-                strokeWidth = strokeWidthPx
-            )
-            drawLine(
-                color = Color.Red,
-                start = Offset(x, y - arm),
-                end = Offset(x, y + arm),
-                strokeWidth = strokeWidthPx
-            )
+                // Draw a cross inside
+                val arm = selectedRadiusPx * 0.7f
+                drawLine(
+                    color = Color.Red,
+                    start = Offset(x - arm, y),
+                    end = Offset(x + arm, y),
+                    strokeWidth = strokeWidthPx
+                )
+                drawLine(
+                    color = Color.Red,
+                    start = Offset(x, y - arm),
+                    end = Offset(x, y + arm),
+                    strokeWidth = strokeWidthPx
+                )
+            }
         }
     }
 }

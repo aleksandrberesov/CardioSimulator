@@ -35,23 +35,27 @@ fun Label(
     fontSize: TextUnit = TextUnit.Unspecified,
     borderWidth: androidx.compose.ui.unit.Dp = 0.dp,
     borderColor: Color = Color.Transparent,
-    cornerRadius: androidx.compose.ui.unit.Dp = 0.dp
+    cornerRadius: androidx.compose.ui.unit.Dp = 0.dp,
+    isEnabled: Boolean = true
 ) {
     val shape = RoundedCornerShape(cornerRadius)
+    val displayColor = if (isEnabled) color else Color.LightGray
+    val displayBorderColor = if (isEnabled) borderColor else Color.LightGray
+    
     Box(
         modifier = modifier
             .fillMaxHeight()
             .defaultMinSize(minWidth = 50.dp)
             .clip(shape)
             .background(backgroundColor)
-            .border(borderWidth, borderColor, shape)
+            .border(borderWidth, displayBorderColor, shape)
             .padding(horizontal = 4.dp),
         contentAlignment = Alignment.Center
     ) {
         AutoResizeText(
             text = text,
             style = style,
-            color = color,
+            color = displayColor,
             fontWeight = fontWeight,
             textAlign = textAlign,
             fontSize = fontSize,

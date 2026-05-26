@@ -7,13 +7,24 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
+import android.graphics.BitmapFactory
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import com.example.cardiosimulator.R
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.EcgPointType
 import com.example.cardiosimulator.domain.Lead
@@ -122,7 +133,7 @@ fun SignificantPointPanel(
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                rPeaks.windowed(2).forEachIndexed { index, (r1, r2) ->
+                rPeaks.windowed(2).forEach { (r1, r2) ->
                     val durationS = (r2.index - r1.index).toFloat() / sampleRate
                     Text(
                         text = stringResource(R.string.ecg_rr_value_format, durationS),
@@ -142,9 +153,9 @@ fun SignificantPointPanel(
 @Composable
 fun EditorScreen(
     appViewModel: AppViewModel,
-    monitorViewModel: MonitorViewModel = viewModel(),
-    rhythmViewModel: RhythmViewModel = viewModel(),
-    editorViewModel: EditorViewModel = viewModel(),
+    monitorViewModel: MonitorViewModel,
+    rhythmViewModel: RhythmViewModel,
+    editorViewModel: EditorViewModel,
 ) {
     val targetFile by editorViewModel.targetFile
     val focusedLead by editorViewModel.focusedLead.collectAsState()
@@ -156,6 +167,46 @@ fun EditorScreen(
     val monitorMode by monitorViewModel.monitorMode.collectAsState()
 
     var showRenameDialog by remember { mutableStateOf(false) }
+    var showCalculateConfirmDialog by remember { mutableStateOf(false) }
+    val rhythmListState = rememberLazyListState()
+
+    var referenceImage by remember { mutableStateOf<ImageBitmap?>(null) }
+    val context = LocalContext.current
+    val imagePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            try {
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    val bitmap = BitmapFactory.decodeStream(inputStream)
+                    referenceImage = bitmap?.asImageBitmap()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    if (showCalculateConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showCalculateConfirmDialog = false },
+            title = { Text(stringResource(R.string.editor_generate_derived)) },
+            text = { Text(stringResource(R.string.editor_calculate_confirm_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    editorViewModel.calculateDerivedLeads()
+                    showCalculateConfirmDialog = false
+                }) {
+                    Text(stringResource(R.string.editor_rename_ok))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCalculateConfirmDialog = false }) {
+                    Text(stringResource(R.string.editor_rename_cancel))
+                }
+            }
+        )
+    }
 
     if (showRenameDialog && targetFile != null) {
         var newName by remember {
@@ -219,9 +270,25 @@ fun EditorScreen(
                         modifier = Modifier.weight(1f)
                     )
 
+                    // Playback controls
+                    IconButton(onClick = { monitorViewModel.setIsRunning(!monitorMode.isRunning) }) {
+                        Icon(
+                            imageVector = if (monitorMode.isRunning) Icons.Default.Stop else Icons.Default.PlayArrow,
+                            contentDescription = if (monitorMode.isRunning) stringResource(R.string.cd_stop) else stringResource(R.string.cd_start)
+                        )
+                    }
+
                     if (targetFile != null) {
                         IconButton(onClick = { showRenameDialog = true }) {
                             Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.cd_rename))
+                        }
+
+                        IconButton(onClick = { imagePicker.launch(arrayOf("image/*")) }) {
+                            Icon(Icons.Default.Image, contentDescription = stringResource(R.string.editor_add_reference_image))
+                        }
+
+                        OutlinedButton(onClick = { showCalculateConfirmDialog = true }) {
+                            Text(stringResource(R.string.editor_generate_derived))
                         }
                     }
                     
@@ -239,7 +306,7 @@ fun EditorScreen(
             }
 
             // Lead Tabs
-            TabRow(
+            SecondaryTabRow(
                 selectedTabIndex = Lead.entries.indexOf(focusedLead),
                 containerColor = MaterialTheme.colorScheme.surface
             ) {
@@ -272,17 +339,29 @@ fun EditorScreen(
                                 .weight(1f)
                                 .padding(start = 24.dp),
                             monitorViewModel = monitorViewModel
-                        ) { _, _ ->
+                        ) { _, _, scrollOffsetPx ->
                             if (stream != null) {
                                 Column(modifier = Modifier.fillMaxSize()) {
-                                    EditableLead(
-                                        stream = stream,
-                                        significantPoints = file.significantPoints,
-                                        baseline = baseline,
-                                        selectedIndex = selectedIndex,
-                                        onIndexSelected = { editorViewModel.selectIndex(it) },
-                                        modifier = Modifier.weight(1f)
-                                    )
+                                    Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                                        referenceImage?.let { img ->
+                                            Image(
+                                                bitmap = img,
+                                                contentDescription = "Reference Image",
+                                                modifier = Modifier.fillMaxSize().padding(horizontal = 48.dp),
+                                                contentScale = ContentScale.FillWidth,
+                                                alpha = 0.5f
+                                            )
+                                        }
+                                        EditableLead(
+                                            stream = stream,
+                                            significantPoints = file.significantPoints,
+                                            baseline = baseline,
+                                            selectedIndex = selectedIndex,
+                                            onIndexSelected = { editorViewModel.selectIndex(it) },
+                                            scrollOffsetPx = scrollOffsetPx,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    }
 
                                     // Looping Preview at the bottom of the monitor
                                     val points = remember(stream, baseline) {
@@ -299,6 +378,8 @@ fun EditorScreen(
                                     ) {
                                         PreviewPane(
                                             points = points,
+                                            isRunning = monitorMode.isRunning,
+                                            scrollOffsetPx = scrollOffsetPx,
                                             modifier = Modifier.fillMaxSize()
                                         )
                                     }
@@ -334,6 +415,7 @@ fun EditorScreen(
             rhythms = rhythms,
             selectedId = targetFile?.id,
             onRhythmSelect = { editorViewModel.selectPathology(it.id) },
+            listState = rhythmListState,
             modifier = Modifier.align(Alignment.CenterStart).offset(y = (-40).dp)
         )
 

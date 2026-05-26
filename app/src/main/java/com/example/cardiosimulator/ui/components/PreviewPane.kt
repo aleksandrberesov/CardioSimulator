@@ -29,6 +29,7 @@ fun PreviewPane(
     modifier: Modifier = Modifier,
     color: Color = Color.Black,
     isRunning: Boolean = true,
+    scrollOffsetPx: Float? = null,
 ) {
     if (points.values.size < 2) return
     val scale = LocalPixelScale.current
@@ -38,12 +39,11 @@ fun PreviewPane(
     val dataWidthPx = points.values.size * stepX
 
     // Calculate loop duration: at least 1 second (HR=60), or longer if data exceeds 1s.
-    // This keeps the horizontal speed constant at the speed defined in scale.
     val durationMs = max(1000, (dataWidthPx / pxPerSec * 1000).toInt())
     val periodPx = durationMs / 1000f * pxPerSec
 
     val infiniteTransition = rememberInfiniteTransition(label = "PreviewScroll")
-    val phase by if (isRunning) {
+    val phase by if (scrollOffsetPx == null && isRunning) {
         infiniteTransition.animateFloat(
             initialValue = 0f,
             targetValue = 1f,
@@ -68,10 +68,11 @@ fun PreviewPane(
                 val path = projectPath(points.values, stepX, stepY, baselineY)
 
                 onDrawBehind {
-                    val xOffset = -phase * periodPx
+                    val currentOffset = scrollOffsetPx ?: (-phase * periodPx)
+                    val xOffset = currentOffset % periodPx
                     val iterations = (size.width / periodPx).toInt() + 2
 
-                    for (i in 0..iterations) {
+                    for (i in -1..iterations) {
                         withTransform({
                             translate(left = xOffset + i * periodPx)
                         }) {

@@ -6,10 +6,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,9 +42,10 @@ import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 @Composable
 fun TopControlPanel(
     viewModel: AppViewModel,
-    monitorViewModel: MonitorViewModel = viewModel(),
     modifier: Modifier = Modifier,
+    monitorViewModel: MonitorViewModel = viewModel(),
     onStartStopClick: (Boolean) -> Unit = {},
+    onSettingsClick: () -> Unit = {},
 ) {
     var expanded by remember { mutableStateOf(false) }
     val operatingModes = viewModel.operatingModes
@@ -99,9 +104,19 @@ fun TopControlPanel(
                         OperatingMode.Examination -> {}
                         OperatingMode.OSKE -> {}
                         OperatingMode.Editor -> {}
+                        OperatingMode.Comparison -> {}
+                        OperatingMode.CourseConstructor -> {}
                     }
                 }
             }
+            
+            IconButton(onClick = onSettingsClick) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Settings"
+                )
+            }
+
             Image(
                 painter = painterResource(id = R.drawable.main_logo),
                 contentDescription = "Company Logo"

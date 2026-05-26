@@ -34,6 +34,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,8 +65,9 @@ fun RhythmChoosingDrawer(
     selectedId: String? = null,
     onRhythmSelect: (PathologyEntry) -> Unit = {},
     onSearchQueryChange: (String) -> Unit = {},
+    listState: androidx.compose.foundation.lazy.LazyListState = rememberLazyListState(),
 ) {
-    var isExpanded by remember { mutableStateOf(false) }
+    var isExpanded by rememberSaveable { mutableStateOf(false) }
 
     Row(
         modifier = modifier.fillMaxHeight(),
@@ -88,7 +90,8 @@ fun RhythmChoosingDrawer(
                     rhythms = rhythms,
                     selectedId = selectedId,
                     onRhythmSelect = onRhythmSelect,
-                    onSearchQueryChange = onSearchQueryChange
+                    onSearchQueryChange = onSearchQueryChange,
+                    listState = listState
                 )
             }
         }
@@ -128,10 +131,10 @@ fun RhythmChoosingPanel(
     selectedId: String? = null,
     onRhythmSelect: (PathologyEntry) -> Unit = {},
     onSearchQueryChange: (String) -> Unit = {},
+    listState: androidx.compose.foundation.lazy.LazyListState = rememberLazyListState(),
 ) {
     val currentLanguage by appViewModel.selectedLanguage.collectAsState()
-    var searchQuery by remember { mutableStateOf("") }
-    val listState = rememberLazyListState()
+    var searchQuery by rememberSaveable { mutableStateOf("") }
 
     Column(
         modifier = modifier
@@ -140,6 +143,12 @@ fun RhythmChoosingPanel(
             .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        Text(
+            text = stringResource(R.string.editor_rhythms_title),
+            style = MaterialTheme.typography.titleMedium,
+            color = Color.Black,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
         Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
             OutlinedTextField(
                 value = searchQuery,

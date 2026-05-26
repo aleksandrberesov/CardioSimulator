@@ -1,5 +1,11 @@
 package com.example.cardiosimulator.ui.display
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -35,7 +41,7 @@ import kotlin.math.ceil
 fun Monitor(
     modifier: Modifier = Modifier,
     monitorViewModel: MonitorViewModel = viewModel(),
-    content: @Composable ColumnScope.(rows: Int, columns: Int) -> Unit
+    content: @Composable ColumnScope.(rows: Int, columns: Int, scrollOffsetPx: Float) -> Unit
 ){
     val mode by monitorViewModel.monitorMode.collectAsState()
 
@@ -71,6 +77,24 @@ fun Monitor(
             cal = mode.calibration,
         )
     }
+
+    // Global scroll phase for synchronized movement of all leads and the grid
+    val infiniteTransition = rememberInfiniteTransition(label = "MonitorScroll")
+    val scrollPhase by if (mode.isRunning) {
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 1000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "GlobalScrollPhase"
+        )
+    } else {
+        remember { mutableFloatStateOf(0f) }
+    }
+    val pxPerSec = pixelScale.pxPerSec
+    val scrollOffsetPx = if (mode.isRunning) -scrollPhase * pxPerSec else 0f
 
     BoxWithConstraints(
         modifier = Modifier
@@ -110,9 +134,13 @@ fun Monitor(
                         translationX = offset.x,
                         translationY = offset.y
                     )
-                    .ekgGrid(mode.gridScheme)
+                    .ekgGrid(
+                        scheme = mode.gridScheme,
+                        isBlankSheet = mode.isBlankSheet,
+                        scrollOffsetPx = scrollOffsetPx
+                    )
             ) {
-                content(rows, columns)
+                content(rows, columns, scrollOffsetPx)
             }
         }
     }
@@ -133,12 +161,13 @@ fun MonitorOneColumn12Preview() {
     CardioSimulatorTheme {
         Monitor(
             monitorViewModel = vm
-        ) { rows, columns ->
+        ) { rows, columns, scrollOffset ->
             LeadsGrid(
                 rows = rows,
                 columns = columns,
                 itemCount = mode.count,
-            ) { _, lead ->
+                scrollOffsetPx = scrollOffset
+            ) { _, lead, _ ->
                 Lead(
                     points = samplePoints,
                     title = lead?.name ?: ""
@@ -163,12 +192,13 @@ fun MonitorTwoColumn12Preview() {
     CardioSimulatorTheme {
         Monitor(
             monitorViewModel = vm
-        ) { rows, columns ->
+        ) { rows, columns, scrollOffset ->
             LeadsGrid(
                 rows = rows,
                 columns = columns,
                 itemCount = mode.count,
-            ) { _, lead ->
+                scrollOffsetPx = scrollOffset
+            ) { _, lead, _ ->
                 Lead(
                     points = samplePoints,
                     title = lead?.name ?: ""
@@ -193,12 +223,13 @@ fun MonitorGrid12Preview() {
     CardioSimulatorTheme {
         Monitor(
             monitorViewModel = vm
-        ) { rows, columns ->
+        ) { rows, columns, scrollOffset ->
             LeadsGrid(
                 rows = rows,
                 columns = columns,
                 itemCount = mode.count,
-            ) { _, lead ->
+                scrollOffsetPx = scrollOffset
+            ) { _, lead, _ ->
                 Lead(
                     points = samplePoints,
                     title = lead?.name ?: ""

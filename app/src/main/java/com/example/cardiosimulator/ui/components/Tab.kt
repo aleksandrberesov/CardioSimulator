@@ -44,19 +44,24 @@ fun Tab(
     iconContentDescription: String? = null,
     borderWidth: Dp = 1.dp,
     cornerRadius: Dp = 4.dp,
-    backgroundColor: Color = Color.Transparent
+    backgroundColor: Color = Color.Transparent,
+    isEnabled: Boolean = true
 ) {
     val shape = RoundedCornerShape(cornerRadius)
     val interactionSource = remember { MutableInteractionSource() }
     
+    val displayColor = if (isEnabled) Color.Black else Color.LightGray
+    val displayBorderColor = if (isEnabled) Color.Black else Color.LightGray
+    val displayBgColor = if (isEnabled) backgroundColor else Color(0xFFFAFAFA)
+
     val baseModifier = modifier
         .fillMaxHeight(1f)
         .defaultMinSize(minWidth = 35.dp)
-        .border(borderWidth, Color.Black, shape)
-        .background(backgroundColor, shape)
+        .border(borderWidth, displayBorderColor, shape)
+        .background(displayBgColor, shape)
         .clip(shape)
 
-    val clickModifier = if (isRepeatable) {
+    val clickModifier = if (!isEnabled) Modifier else if (isRepeatable) {
         Modifier
             .indication(interactionSource, ripple())
             .repeatingClickable(onClick = onClick, interactionSource = interactionSource)
@@ -74,7 +79,7 @@ fun Tab(
                 Icon(
                     imageVector = icon,
                     contentDescription = text,
-                    tint = Color.Black,
+                    tint = displayColor,
                     modifier = iconModifier.padding(4.dp)
                 )
             }
@@ -86,7 +91,7 @@ fun Tab(
                     AutoResizeText(
                         text = text,
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color.Black,
+                        color = displayColor,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
                         softWrap = false,
@@ -96,7 +101,7 @@ fun Tab(
                     AutoResizeText(
                         text = subText,
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                        color = Color.Black,
+                        color = displayColor,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
                         softWrap = false,
@@ -109,7 +114,7 @@ fun Tab(
                 AutoResizeText(
                     text = text,
                     style = MaterialTheme.typography.labelLarge,
-                    color = Color.Black,
+                    color = displayColor,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
                     softWrap = false,

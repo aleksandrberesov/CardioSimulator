@@ -1,12 +1,17 @@
 <resources>
-    <string name="app_name">Кардиосимулятор</string>
+    <string name="app_name">Конструктор ЭКГ</string>
 
     <!-- Operating modes -->
     <string name="mode_teaching">Обучение</string>
     <string name="mode_testing">Тестирование</string>
     <string name="mode_examination">Экзамен</string>
     <string name="mode_oske">ОСКЭ</string>
-    <string name="mode_editor">Редактор</string>
+    <string name="mode_editor">Конструктор</string>
+    <string name="mode_comparison">Сравнение</string>
+    <string name="mode_course_constructor">Конструктор курсов</string>
+
+    <string name="compare_select_rhythm">Выберите ритм для сравнения</string>
+    <string name="cd_compare">Сравнить</string>
 
     <!-- Settings dialog -->
     <string name="settings_title">Настройки</string>
@@ -14,6 +19,7 @@
     <string name="theme_light">Светлая</string>
     <string name="theme_dark">Темная</string>
     <string name="settings_grid_scheme">Сетка монитора</string>
+    <string name="settings_blank_sheet">Чистый лист</string>
     <string name="settings_language">Язык</string>
     <string name="settings_tcp_title">TCP соединение</string>
     <string name="settings_tcp_ip">IP-адрес</string>
@@ -97,6 +103,7 @@
     <string name="editor_anchor_delete">Удалить</string>
     <string name="editor_anchor_center_y">Центрировать по Y</string>
     <string name="editor_generate_derived">Сгенерировать производные отведения</string>
+    <string name="editor_calculate_confirm_message">Это перезапишет существующие данные для производных отведений. Продолжить?</string>
     <string name="editor_flag_frequently">Часто</string>
     <string name="editor_flag_withsound">Со звуком</string>
     <string name="editor_flag_durationfixed">Фикс. длительность</string>
@@ -126,7 +133,7 @@
     <string name="editor_none">Нет</string>
     <string name="editor_parts_title">Части (Refs):</string>
     <string name="editor_offset_label">Смещение: %1$d</string>
-    <string name="editor_rhythms_title">Ритмы</string>
+    <string name="editor_rhythms_title">ЭКГ ритмы</string>
     <string name="editor_file_content_label">Содержимое файла выбранной серии</string>
     <string name="editor_select_rhythm_hint">Выберите ритм для просмотра</string>
     <string name="editor_no_data_for_lead">Нет данных для отведения %1$s</string>
@@ -151,6 +158,7 @@
     <string name="editor_revert_lead_btn">Сбросить отведение</string>
     <string name="editor_lead_not_present">Отведение %1$s отсутствует в файле.</string>
     <string name="editor_select_from_panel_hint">Выберите патологию на панели слева для редактирования.</string>
+    <string name="editor_add_reference_image">Добавить фоновое изображение</string>
     <string name="cd_rename">Переименовать</string>
     <string name="cd_hide_rhythms">Скрыть ритмы</string>
     <string name="cd_show_rhythms">Показать ритмы</string>

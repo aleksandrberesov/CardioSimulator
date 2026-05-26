@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cardiosimulator.data.DataSourcePrefs
 import com.example.cardiosimulator.data.PathologyRepository
+import com.example.cardiosimulator.domain.DerivedLeads
 import com.example.cardiosimulator.domain.EcgPointType
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.PathologyFile
@@ -187,6 +188,53 @@ class EditorViewModel(
         if (updatedFile != currentFile) {
             _targetFile.value = updatedFile
             _isMetadataDirty.value = true
+        }
+    }
+
+    fun calculateDerivedLeads() {
+        val currentFile = _targetFile.value ?: return
+        val baseline = repository.manifest()?.baseline ?: 1024
+
+        fun zeroed(l: Lead) = currentFile.leads[l]?.samples?.map { (it - baseline).toFloat() }
+
+        val newLeads = currentFile.leads.toMutableMap()
+        val changedLeads = mutableSetOf<Lead>()
+
+        // Limb leads from I and II
+        val leadI = zeroed(Lead.I)
+        val leadII = zeroed(Lead.II)
+        if (leadI != null && leadII != null) {
+            DerivedLeads.DerivableFromIandII.forEach { lead ->
+                val derived = DerivedLeads.combineIII_aVR_aVL_aVF(leadI, leadII, lead)
+                if (derived.isNotEmpty()) {
+                    newLeads[lead] = com.example.cardiosimulator.domain.LeadStream(
+                        lead,
+                        derived.map { (it + baseline).toInt() }.toIntArray()
+                    )
+                    changedLeads.add(lead)
+                }
+            }
+        }
+
+        // Precordial leads from V2 and V6
+        val leadV2 = zeroed(Lead.V2)
+        val leadV6 = zeroed(Lead.V6)
+        if (leadV2 != null && leadV6 != null) {
+            DerivedLeads.DerivableFromV2andV6.forEach { lead ->
+                val derived = DerivedLeads.combineV1_V3_V4_V5(leadV2, leadV6, lead)
+                if (derived.isNotEmpty()) {
+                    newLeads[lead] = com.example.cardiosimulator.domain.LeadStream(
+                        lead,
+                        derived.map { (it + baseline).toInt() }.toIntArray()
+                    )
+                    changedLeads.add(lead)
+                }
+            }
+        }
+
+        if (changedLeads.isNotEmpty()) {
+            _targetFile.value = currentFile.copy(leads = newLeads)
+            _dirtyLeads.value = _dirtyLeads.value + changedLeads
         }
     }
 

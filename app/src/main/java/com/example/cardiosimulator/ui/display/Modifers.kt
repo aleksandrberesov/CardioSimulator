@@ -22,7 +22,11 @@ fun Modifier.leadArea(): Modifier {
         .fillMaxHeight(1f)
 }
 
-fun Modifier.ekgGrid(scheme: GridScheme = GridScheme.Pink): Modifier = composed {
+fun Modifier.ekgGrid(
+    scheme: GridScheme = GridScheme.Pink,
+    isBlankSheet: Boolean = false,
+    scrollOffsetPx: Float = 0f
+): Modifier = composed {
     val backgroundColor = when (scheme) {
         GridScheme.Pink -> Color(0xFFFFF5F5)
         GridScheme.BlueGray -> Color(0xFFF0F4F7)
@@ -50,21 +54,23 @@ fun Modifier.ekgGrid(scheme: GridScheme = GridScheme.Pink): Modifier = composed 
             val largePath = Path()
 
             // Vertical lines
-            var x = 0f
-            var i = 0
-            while (x <= size.width) {
-                if (i % 5 == 0) {
-                    largePath.moveTo(x, 0f)
-                    largePath.lineTo(x, size.height)
-                } else {
-                    smallPath.moveTo(x, 0f)
-                    smallPath.lineTo(x, size.height)
+            val offsetX = scrollOffsetPx % largeStep
+            var x = offsetX
+            while (x <= size.width + largeStep) {
+                largePath.moveTo(x, 0f)
+                largePath.lineTo(x, size.height)
+
+                // Small lines between large ones
+                for (k in 1..4) {
+                    val sx = x + k * smallStep
+                    smallPath.moveTo(sx, 0f)
+                    smallPath.lineTo(sx, size.height)
                 }
-                x += smallStep
-                i++
+
+                x += largeStep
             }
 
-            // Horizontal lines
+            // Horizontal lines (static)
             var y = 0f
             var j = 0
             while (y <= size.height) {
@@ -80,8 +86,21 @@ fun Modifier.ekgGrid(scheme: GridScheme = GridScheme.Pink): Modifier = composed 
             }
 
             onDrawBehind {
-                drawPath(smallPath, smallGridColor, style = Stroke(thinStroke))
-                drawPath(largePath, largeGridColor, style = Stroke(thickStroke))
+                if (!isBlankSheet) {
+                    drawPath(smallPath, smallGridColor, style = Stroke(thinStroke))
+                    drawPath(largePath, largeGridColor, style = Stroke(thickStroke))
+                } else {
+                    // "Black bar" - draw a vertical line at the scroll boundary
+                    // to give a sense of movement on a blank sheet
+                    val barX = (scrollOffsetPx % size.width + size.width) % size.width
+                    drawLine(
+                        color = Color.Black.copy(alpha = 0.1f),
+                        start = Offset(barX, 0f),
+                        end = Offset(barX, size.height),
+                        strokeWidth = 4.dp.toPx()
+                    )
+                }
             }
         }
 }
+

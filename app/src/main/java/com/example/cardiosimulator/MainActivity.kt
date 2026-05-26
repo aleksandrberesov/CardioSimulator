@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -22,6 +23,10 @@ import com.example.cardiosimulator.ui.screens.MainScreen
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 
+import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
+import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
+import com.example.cardiosimulator.ui.viewmodels.EditorViewModel
+
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,27 +35,60 @@ class MainActivity : AppCompatActivity() {
         OperatingMode.entries.forEach { mode ->
             appBuilder.addMode(OperatingModeModel(mode))
         }
+
+        val repository = PathologyRepository(AssetPathologySource(this.assets))
+        val prefs = DataSourcePrefs(this.applicationContext)
+
         setContent {
-            val viewModel: AppViewModel = viewModel(
+            val appViewModel: AppViewModel = viewModel(
                 factory = object : ViewModelProvider.Factory {
                     @Suppress("UNCHECKED_CAST")
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         return AppViewModel(
                             appState = appBuilder.build(initialMode = OperatingMode.Teaching),
-                            // Boot from assets; swapped to a FilePathologySource once
-                            // the user picks a Pathologies.zip via SAF.
-                            repository = PathologyRepository(
-                                AssetPathologySource(this@MainActivity.assets),
-                            ),
-                            appContext = this@MainActivity.applicationContext,
-                            prefs = DataSourcePrefs(this@MainActivity.applicationContext),
+                            repository = repository,
+                            appContext = applicationContext,
+                            prefs = prefs,
                         ) as T
                     }
                 },
             )
-            val isDarkTheme by viewModel.isDarkTheme.collectAsState()
+
+            val monitorViewModel: MonitorViewModel = viewModel(
+                factory = object : ViewModelProvider.Factory {
+                    @Suppress("UNCHECKED_CAST")
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        return MonitorViewModel(prefs) as T
+                    }
+                }
+            )
+
+            val rhythmViewModel: RhythmViewModel = viewModel(
+                factory = object : ViewModelProvider.Factory {
+                    @Suppress("UNCHECKED_CAST")
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        return RhythmViewModel(repository, prefs) as T
+                    }
+                }
+            )
+
+            val editorViewModel: EditorViewModel = viewModel(
+                factory = object : ViewModelProvider.Factory {
+                    @Suppress("UNCHECKED_CAST")
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        return EditorViewModel(repository, prefs) as T
+                    }
+                }
+            )
+
+            val isDarkTheme by appViewModel.isDarkTheme.collectAsState()
             CardioSimulatorTheme(darkTheme = isDarkTheme) {
-                MainScreen(appViewModel = viewModel)
+                MainScreen(
+                    appViewModel = appViewModel,
+                    monitorViewModel = monitorViewModel,
+                    rhythmViewModel = rhythmViewModel,
+                    editorViewModel = editorViewModel
+                )
             }
         }
     }
@@ -60,11 +98,16 @@ class MainActivity : AppCompatActivity() {
 @Preview(showBackground = true, widthDp = 1000, heightDp = 800)
 @Composable
 fun MainPreview() {
+    val context = LocalContext.current
     val appBuilder = AppBuilder()
     OperatingMode.entries.forEach { mode ->
         appBuilder.addMode(OperatingModeModel(mode))
     }
-    val previewViewModel: AppViewModel = viewModel(
+    
+    val repository = PathologyRepository(AssetPathologySource(context.assets))
+    val prefs = DataSourcePrefs(context)
+
+    val appViewModel: AppViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -72,7 +115,38 @@ fun MainPreview() {
             }
         },
     )
+    val monitorViewModel: MonitorViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return MonitorViewModel(prefs) as T
+            }
+        }
+    )
+    val rhythmViewModel: RhythmViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return RhythmViewModel(repository, prefs) as T
+            }
+        }
+    )
+
+    val editorViewModel: EditorViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return EditorViewModel(repository, prefs) as T
+            }
+        }
+    )
+
     CardioSimulatorTheme {
-        MainScreen(appViewModel = previewViewModel)
+        MainScreen(
+            appViewModel = appViewModel,
+            monitorViewModel = monitorViewModel,
+            rhythmViewModel = rhythmViewModel,
+            editorViewModel = editorViewModel
+        )
     }
 }

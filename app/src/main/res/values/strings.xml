@@ -1,12 +1,17 @@
 <resources>
-    <string name="app_name">Cardio Simulator</string>
+    <string name="app_name">ECG Constructor</string>
 
     <!-- Operating modes -->
     <string name="mode_teaching">Teaching</string>
     <string name="mode_testing">Testing</string>
     <string name="mode_examination">Examination</string>
     <string name="mode_oske">OSKE</string>
-    <string name="mode_editor">Editor</string>
+    <string name="mode_editor">Constructor</string>
+    <string name="mode_comparison">Comparison</string>
+    <string name="mode_course_constructor">Course Constructor</string>
+
+    <string name="compare_select_rhythm">Select rhythm to compare</string>
+    <string name="cd_compare">Compare</string>
 
     <!-- Settings dialog -->
     <string name="settings_title">Settings</string>
@@ -14,6 +19,7 @@
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="settings_grid_scheme">Monitor Grid Scheme</string>
+    <string name="settings_blank_sheet">Blank Sheet</string>
     <string name="settings_language">Language</string>
     <string name="settings_tcp_title">TCP Connection</string>
     <string name="settings_tcp_ip">IP Address</string>
@@ -86,6 +92,7 @@
     <string name="editor_anchor_delete">Delete</string>
     <string name="editor_anchor_center_y">Center Y</string>
     <string name="editor_generate_derived">Generate derived leads</string>
+    <string name="editor_calculate_confirm_message">This will overwrite existing data for derived leads. Continue?</string>
     <string name="editor_flag_frequently">Frequently</string>
     <string name="editor_flag_withsound">With sound</string>
     <string name="editor_flag_durationfixed">Duration fixed</string>
@@ -126,7 +133,7 @@
     <string name="editor_none">None</string>
     <string name="editor_parts_title">Parts (Refs):</string>
     <string name="editor_offset_label">Offset: %1$d</string>
-    <string name="editor_rhythms_title">Rhythms</string>
+    <string name="editor_rhythms_title">ECG Rhythms</string>
     <string name="editor_file_content_label">Selected Series File Content</string>
     <string name="editor_select_rhythm_hint">Select a rhythm to inspect</string>
     <string name="editor_no_data_for_lead">No data for lead %1$s</string>
@@ -151,6 +158,7 @@
     <string name="editor_revert_lead_btn">Revert Lead</string>
     <string name="editor_lead_not_present">Lead %1$s not present in file.</string>
     <string name="editor_select_from_panel_hint">Select a pathology from the left panel to edit.</string>
+    <string name="editor_add_reference_image">Add reference image</string>
     <string name="cd_rename">Rename</string>
     <string name="cd_hide_rhythms">Hide rhythms</string>
     <string name="cd_show_rhythms">Show rhythms</string>

@@ -213,6 +213,23 @@ fun SettingsContent(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.settings_blank_sheet),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Switch(
+                        checked = monitorMode.isBlankSheet,
+                        onCheckedChange = { monitorViewModel.setBlankSheet(it) }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
                 Text(
                     text = stringResource(R.string.settings_language),
                     style = MaterialTheme.typography.titleMedium,

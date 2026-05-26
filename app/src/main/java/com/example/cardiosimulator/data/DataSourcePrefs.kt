@@ -72,6 +72,10 @@ class DataSourcePrefs(private val context: Context) {
         prefs[KEY_MONITOR_SERIES_SCHEME]
     }
 
+    val monitorBlankSheet: Flow<Boolean?> = context.dataSourceDataStore.data.map { prefs ->
+        prefs[KEY_MONITOR_BLANK_SHEET]
+    }
+
     val lastOperatingMode: Flow<String?> = context.dataSourceDataStore.data.map { prefs ->
         prefs[KEY_LAST_OPERATING_MODE]
     }
@@ -152,6 +156,12 @@ class DataSourcePrefs(private val context: Context) {
         }
     }
 
+    suspend fun setMonitorBlankSheet(isBlank: Boolean) {
+        context.dataSourceDataStore.edit { prefs ->
+            prefs[KEY_MONITOR_BLANK_SHEET] = isBlank
+        }
+    }
+
     suspend fun setLastOperatingMode(mode: String) {
         context.dataSourceDataStore.edit { prefs ->
             prefs[KEY_LAST_OPERATING_MODE] = mode
@@ -172,6 +182,7 @@ class DataSourcePrefs(private val context: Context) {
         private val KEY_MONITOR_DISPLAY_SCALE = floatPreferencesKey("monitor_display_scale")
         private val KEY_MONITOR_SERIES_COUNT = intPreferencesKey("monitor_series_count")
         private val KEY_MONITOR_SERIES_SCHEME = stringPreferencesKey("monitor_series_scheme")
+        private val KEY_MONITOR_BLANK_SHEET = booleanPreferencesKey("monitor_blank_sheet")
         private val KEY_LAST_OPERATING_MODE = stringPreferencesKey("last_operating_mode")
     }
 }

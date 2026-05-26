@@ -13,7 +13,7 @@ class AppBuilder {
         val initial = initialMode?.let { id -> modes.find { it.id == id } } ?: modes.first()
         return AppStateModel(
             initialOperatingMode = initial,
-            operatingModes = modes.toList()
+            operatingModes = modes.toList(),
         )
     }
 }

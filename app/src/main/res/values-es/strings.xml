@@ -151,6 +151,7 @@
     <string name="editor_revert_lead_btn">Revertir derivación</string>
     <string name="editor_lead_not_present">La derivación %1$s no está presente en el archivo.</string>
     <string name="editor_select_from_panel_hint">Seleccione una patología del panel izquierdo para editar.</string>
+    <string name="editor_add_reference_image">Añadir imagen de referencia</string>
     <string name="cd_rename">Renombrar</string>
     <string name="cd_hide_rhythms">Ocultar ritmos</string>
     <string name="cd_show_rhythms">Mostrar ritmos</string>

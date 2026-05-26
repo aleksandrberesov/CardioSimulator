@@ -22,7 +22,8 @@ fun ColumnScope.LeadsGrid(
     columns: Int,
     itemCount: Int,
     leadOrder: List<Lead> = LEAD_ORDER,
-    content: @Composable BoxScope.(index: Int, lead: Lead?) -> Unit
+    scrollOffsetPx: Float = 0f,
+    content: @Composable BoxScope.(index: Int, lead: Lead?, scrollOffsetPx: Float) -> Unit
 ) {
     repeat(rows) { rowIndex ->
         Row(modifier = Modifier.weight(1f)) {
@@ -36,7 +37,7 @@ fun ColumnScope.LeadsGrid(
                 ) {
                     if (itemIndex < itemCount) {
                         val lead = leadOrder.getOrNull(itemIndex)
-                        content(itemIndex, lead)
+                        content(itemIndex, lead, scrollOffsetPx)
                     }
                 }
             }

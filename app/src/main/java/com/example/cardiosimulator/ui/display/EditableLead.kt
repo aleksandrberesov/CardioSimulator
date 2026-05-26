@@ -24,26 +24,32 @@ fun EditableLead(
     baseline: Int,
     modifier: Modifier = Modifier,
     selectedIndex: Int? = null,
-    onIndexSelected: ((Int) -> Unit)? = null
+    onIndexSelected: ((Int) -> Unit)? = null,
+    scrollOffsetPx: Float? = null,
 ) {
     // Convert raw ADC to baseline-zeroed floats for the unified renderer.
     val points = Points(stream.samples.map { (it - baseline).toFloat() })
 
     Row(
         modifier = modifier.leadArea(),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         // Trace + Overlays
         Box(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            ChartCanvas(points = points, modifier = Modifier.fillMaxSize())
+            ChartCanvas(
+                points = points, 
+                modifier = Modifier.fillMaxSize(),
+                scrollOffsetPx = scrollOffsetPx
+            )
             
             SignificantPointOverlay(
                 points = points,
                 significantPoints = significantPoints,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                scrollOffsetPx = scrollOffsetPx
             )
 
             SampleHandleOverlay(
@@ -51,7 +57,8 @@ fun EditableLead(
                 baseline = baseline,
                 selectedIndex = selectedIndex,
                 onIndexSelected = onIndexSelected,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                scrollOffsetPx = scrollOffsetPx
             )
         }
     }

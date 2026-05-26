@@ -26,8 +26,8 @@ import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 @Composable
 fun TestingScreen(
     appViewModel: AppViewModel,
-    monitorViewModel: MonitorViewModel = viewModel(),
-    rhythmViewModel: RhythmViewModel = viewModel(),
+    monitorViewModel: MonitorViewModel,
+    rhythmViewModel: RhythmViewModel,
 ) {
     val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
     val waveforms by rhythmViewModel.waveforms.collectAsState()
@@ -47,12 +47,13 @@ fun TestingScreen(
             Monitor(
                 modifier = Modifier.weight(1f),
                 monitorViewModel = monitorViewModel,
-            ) { rows, columns ->
+            ) { rows, columns, scrollOffsetPx ->
                 LeadsGrid(
                     rows = rows,
                     columns = columns,
                     itemCount = mode.count,
-                ) { _, lead ->
+                    scrollOffsetPx = scrollOffsetPx
+                ) { _, lead, offset ->
                     val leadPoints = lead?.let { waveforms[it] }
                         ?.takeIf { it.values.size >= 2 }
                         ?: Points(emptyList<Float>())
@@ -60,12 +61,18 @@ fun TestingScreen(
                         points = leadPoints,
                         title = lead?.name ?: "",
                         isRunning = mode.isRunning,
+                        scrollOffsetPx = offset,
                         significantPoints = significantPoints
                     )
                 }
             }
             MonitorControlPanel(
                 viewModel = monitorViewModel,
+                onCompareClick = {
+                    appViewModel.operatingModes.find { it.id == com.example.cardiosimulator.domain.OperatingMode.Comparison }?.let {
+                        appViewModel.updateOperatingMode(it)
+                    }
+                },
                 onStartStopClick = { isRunning ->
                     if (isRunning) {
                         appViewModel.sendStartCommand(selectedRhythm?.id, selectedRhythm?.titleEn)

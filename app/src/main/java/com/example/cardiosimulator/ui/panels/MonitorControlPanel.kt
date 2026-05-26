@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Settings
@@ -45,6 +46,7 @@ fun MonitorControlPanel(
     modifier: Modifier = Modifier,
     onTipsClick: () -> Unit = {},
     onRulerClick: () -> Unit = {},
+    onCompareClick: () -> Unit = {},
     onStartStopClick: (Boolean) -> Unit = {},
 ) {
     val monitorMode by viewModel.monitorMode.collectAsState()
@@ -166,21 +168,31 @@ fun MonitorControlPanel(
             }
         }
 
+        Tab(
+            icon = androidx.compose.material.icons.Icons.AutoMirrored.Filled.CompareArrows,
+            iconContentDescription = stringResource(R.string.cd_compare),
+            onClick = { onCompareClick() },
+            modifier = Modifier.weight(0.8f)
+        )
+
         ControlPanelDivider()
 
         Tab(
             text = stringResource(R.string.monitor_electrodes),
             onClick = { },
+            isEnabled = false,
             modifier = Modifier.weight(1.5f)
         )
         Tab(
             text = stringResource(R.string.monitor_emd_ebpa),
             onClick = { },
+            isEnabled = false,
             modifier = Modifier.weight(1.5f)
         )
         Tab(
             text = stringResource(R.string.monitor_muscle),
             onClick = { },
+            isEnabled = false,
             modifier = Modifier.weight(1.5f)
         )
 
@@ -195,6 +207,7 @@ fun MonitorControlPanel(
             borderWidth = 1.dp,
             borderColor = androidx.compose.ui.graphics.Color.Black,
             cornerRadius = 4.dp,
+            isEnabled = false,
             modifier = Modifier.weight(1f)
         )
         Label(
@@ -205,11 +218,13 @@ fun MonitorControlPanel(
             backgroundColor = androidx.compose.ui.graphics.Color.Black,
             fontSize = 20.sp,
             cornerRadius = 4.dp,
+            isEnabled = false,
             modifier = Modifier.weight(1f)
         )
         Tab(
             text = stringResource(R.string.monitor_tips),
             onClick = onTipsClick,
+            isEnabled = true,
             modifier = Modifier.weight(1f)
         )
 
@@ -220,6 +235,7 @@ fun MonitorControlPanel(
             iconModifier = Modifier.rotate(-45f),
             iconContentDescription = stringResource(R.string.cd_ruler),
             onClick = onRulerClick,
+            isEnabled = false,
             modifier = Modifier.weight(0.8f)
         )
         Tab(

@@ -44,6 +44,9 @@ class MonitorViewModel(private val prefs: DataSourcePrefs? = null) : ViewModel()
                     setSeriesScheme(scheme, persist = false)
                 } catch (_: Exception) {}
             }
+            prefs?.monitorBlankSheet?.first()?.let { isBlank ->
+                setBlankSheet(isBlank, persist = false)
+            }
         }
     }
 
@@ -107,5 +110,14 @@ class MonitorViewModel(private val prefs: DataSourcePrefs? = null) : ViewModel()
 
     fun setIsRunning(isRunning: Boolean) {
         _monitorMode.update { it.copy(isRunning = isRunning) }
+    }
+
+    fun setBlankSheet(isBlank: Boolean, persist: Boolean = true) {
+        _monitorMode.update { it.copy(isBlankSheet = isBlank) }
+        if (persist) {
+            viewModelScope.launch {
+                prefs?.setMonitorBlankSheet(isBlank)
+            }
+        }
     }
 }

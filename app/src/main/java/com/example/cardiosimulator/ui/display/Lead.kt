@@ -34,6 +34,7 @@ fun Lead(
     modifier: Modifier = Modifier,
     title: String = "",
     isRunning: Boolean = false,
+    scrollOffsetPx: Float? = null,
     significantPoints: List<SignificantPoint> = emptyList()
 ){
     Row(
@@ -69,7 +70,8 @@ fun Lead(
             PreviewPane(
                 points = points,
                 modifier = Modifier.fillMaxSize(),
-                isRunning = isRunning
+                isRunning = isRunning,
+                scrollOffsetPx = scrollOffsetPx
             )
 
             if (significantPoints.isNotEmpty()) {

@@ -7,6 +7,7 @@ import com.example.cardiosimulator.data.PathologyRepository
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.PathologyEntry
+import com.example.cardiosimulator.domain.SignificantPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,8 +37,11 @@ class RhythmViewModel(
     private val _waveforms = MutableStateFlow<Map<Lead, Points>>(emptyMap())
     val waveforms: StateFlow<Map<Lead, Points>> = _waveforms.asStateFlow()
 
-    private val _significantPoints = MutableStateFlow<List<com.example.cardiosimulator.domain.SignificantPoint>>(emptyList())
-    val significantPoints: StateFlow<List<com.example.cardiosimulator.domain.SignificantPoint>> = _significantPoints.asStateFlow()
+    private val _significantPoints = MutableStateFlow<List<SignificantPoint>>(emptyList())
+    val significantPoints: StateFlow<List<SignificantPoint>> = _significantPoints.asStateFlow()
+
+    private val _comparisonWaveforms = MutableStateFlow<Map<String, Points>>(emptyMap())
+    val comparisonWaveforms: StateFlow<Map<String, Points>> = _comparisonWaveforms.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -118,5 +122,16 @@ class RhythmViewModel(
 
     fun refresh() {
         _selectedRhythm.value?.let { selectRhythm(it.id) }
+    }
+
+    fun loadComparisonWaveforms(rhythmIds: List<String>, lead: Lead) {
+        viewModelScope.launch {
+            val map = withContext(Dispatchers.IO) {
+                rhythmIds.mapNotNull { id ->
+                    repository.leadWaveform(id, lead)?.let { id to it }
+                }.toMap()
+            }
+            _comparisonWaveforms.value = map
+        }
     }
 }
