@@ -176,7 +176,7 @@ Dashed arrows (`╌╌►`) show **StateFlow emissions** consumed via `collectAs
 ║         │   └─ MonitorControlPanel(Monitor, onStartStopClick)               ║
 ║         Examination  → ExaminationScreen   (empty stub)                      ║
 ║         OSKE         → OSKEScreen          (empty stub)                      ║
-║         Editor       → EditorScreen(App, Monitor, Rhythm, Editor)            ║
+║         Editor       → ConstructorScreen(App, Monitor, Rhythm, Editor)       ║
 ║             ├─ RhythmChoosingPanel ──► EditorViewModel.selectPathology      ║
 ║             ├─ toolbar: Save / Revert Lead (when dirtyLeads ≠ ∅)            ║
 ║             ├─ ScrollableTabRow over Lead.entries (dirty leads in red)      ║
@@ -190,7 +190,7 @@ Dashed arrows (`╌╌►`) show **StateFlow emissions** consumed via `collectAs
 AppViewModel StateFlows           Consumed by
 ─────────────────────────────────────────────────────────────────────
 selectedOperatingMode   ──╌╌►  MainScreen (routing), TopControlPanel
-selectedLanguage        ──╌╌►  RhythmChoosingPanel, EditorScreen,
+selectedLanguage        ──╌╌►  RhythmChoosingPanel, ConstructorScreen,
                                SettingsContent
 tcpIp / tcpPort         ──╌╌►  SettingsContent
 isDarkTheme             ──╌╌►  MainActivity (theme), SettingsContent
@@ -213,9 +213,9 @@ waveforms               ──╌╌►  LeadsGrid → Lead (render Points per l
 
 EditorViewModel StateFlows / State
 ─────────────────────────────────────────────────────────────────────
-targetFile              ──╌╌►  EditorScreen (toolbar title, focused lead)
-focusedLead             ──╌╌►  EditorScreen (tab selection, EditableLead)
-dirtyLeads              ──╌╌►  EditorScreen (Save/Revert + red tab labels)
+targetFile              ──╌╌►  ConstructorScreen (toolbar title, focused lead)
+focusedLead             ──╌╌►  ConstructorScreen (tab selection, EditableLead)
+dirtyLeads              ──╌╌►  ConstructorScreen (Save/Revert + red tab labels)
 isSaving                ──╌╌►  EditorViewModel-internal (save guard)
 ```
 
@@ -392,7 +392,7 @@ For readers familiar with the previous Parts/Series-based design, the
 current architecture removes:
 
 - **Legacy Editor** anchor-based design (replaced by the raw-sample
-  `EditorScreen` + `EditableLead` + `SampleHandleOverlay`).
+  `ConstructorScreen` + `EditableLead` + `SampleHandleOverlay`).
 - **Editable working copies**: `EditablePart`, `EditableSeries`,
   `UndoStack<T>`, `AnchorClipboard`, `PartNamer`.
 - **Anchor model**: `AnchorPoint`, `SourceSpec`, `bakeAnchorsToSamples`,

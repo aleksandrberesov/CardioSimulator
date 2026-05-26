@@ -25,17 +25,17 @@ import com.example.cardiosimulator.domain.EcgPointType
 import com.example.cardiosimulator.domain.SignificantPoint
 import com.example.cardiosimulator.ui.utils.toDisplayString
 import com.example.cardiosimulator.ui.screens.verticalScrollbar
-import com.example.cardiosimulator.ui.viewmodels.EditorViewModel
+import com.example.cardiosimulator.ui.viewmodels.ConstructorViewModel
 
 @Composable
 fun SignificantPointsDrawer(
-    editorViewModel: EditorViewModel,
+    constructorViewModel: ConstructorViewModel,
     sampleRateHz: Float,
     modifier: Modifier = Modifier
 ) {
     var isExpanded by remember { mutableStateOf(false) }
-    val targetFile by editorViewModel.targetFile
-    val selectedIndex by editorViewModel.selectedIndex.collectAsState()
+    val targetFile by constructorViewModel.targetFile
+    val selectedIndex by constructorViewModel.selectedIndex.collectAsState()
     val points = targetFile?.significantPoints?.sortedBy { it.index } ?: emptyList()
 
     Row(
@@ -58,7 +58,7 @@ fun SignificantPointsDrawer(
                     points = points,
                     selectedIndex = selectedIndex,
                     sampleRateHz = sampleRateHz,
-                    onPointSelect = { editorViewModel.selectIndex(it.index) }
+                    onPointSelect = { constructorViewModel.selectIndex(it.index) }
                 )
             }
         }
@@ -105,7 +105,7 @@ fun SignificantPointsListPanel(
             .padding(8.dp)
     ) {
         Text(
-            text = stringResource(R.string.editor_significant_points),
+            text = stringResource(R.string.constructor_significant_points),
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(bottom = 8.dp)
         )
@@ -115,7 +115,7 @@ fun SignificantPointsListPanel(
         if (points.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = stringResource(R.string.editor_select_point_hint),
+                    text = stringResource(R.string.constructor_select_point_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
@@ -158,7 +158,7 @@ fun SignificantPointsListPanel(
                                 )
                                 val timeMs = (point.index * 1000f / sampleRateHz).toInt()
                                 Text(
-                                    text = stringResource(R.string.editor_time_format, timeMs),
+                                    text = stringResource(R.string.constructor_time_format, timeMs),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f) else Color.Gray
                                 )

@@ -15,16 +15,16 @@ import com.example.cardiosimulator.domain.EcgPointType
 import com.example.cardiosimulator.ui.components.ControlPanelDivider
 import com.example.cardiosimulator.ui.components.Label
 import com.example.cardiosimulator.ui.components.Tab
-import com.example.cardiosimulator.ui.viewmodels.EditorViewModel
+import com.example.cardiosimulator.ui.viewmodels.ConstructorViewModel
 
 @Composable
 fun SignificantPointsControlPanel(
-    editorViewModel: EditorViewModel,
+    constructorViewModel: ConstructorViewModel,
     modifier: Modifier = Modifier
 ) {
-    val targetFile by editorViewModel.targetFile
-    val selectedIndex by editorViewModel.selectedIndex.collectAsState()
-    val focusedLead by editorViewModel.focusedLead.collectAsState()
+    val targetFile by constructorViewModel.targetFile
+    val selectedIndex by constructorViewModel.selectedIndex.collectAsState()
+    val focusedLead by constructorViewModel.focusedLead.collectAsState()
 
     val pointTypes = listOf(
         EcgPointType.P_START, EcgPointType.P_PEAK, EcgPointType.P_END,
@@ -40,7 +40,7 @@ fun SignificantPointsControlPanel(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Label(
-            text = stringResource(R.string.editor_significant_points),
+            text = stringResource(R.string.constructor_significant_points),
             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 4.dp).weight(2f)
         )
@@ -62,7 +62,7 @@ fun SignificantPointsControlPanel(
             Tab(
                 text = cleanLabel,
                 onClick = { 
-                    editorViewModel.selectSignificantPoint(type)
+                    constructorViewModel.selectSignificantPoint(type)
                 },
                 backgroundColor = when {
                     isAtPoint -> MaterialTheme.colorScheme.primaryContainer

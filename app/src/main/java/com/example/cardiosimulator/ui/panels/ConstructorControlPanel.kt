@@ -22,18 +22,18 @@ import com.example.cardiosimulator.R
 import com.example.cardiosimulator.ui.components.ControlPanelDivider
 import com.example.cardiosimulator.ui.components.Label
 import com.example.cardiosimulator.ui.components.Tab
-import com.example.cardiosimulator.ui.viewmodels.EditorViewModel
+import com.example.cardiosimulator.ui.viewmodels.ConstructorViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 
 @Composable
-fun EditorControlPanel(
-    editorViewModel: EditorViewModel,
+fun ConstructorControlPanel(
+    constructorViewModel: ConstructorViewModel,
     monitorViewModel: MonitorViewModel,
     modifier: Modifier = Modifier
 ) {
-    val selectedIndex by editorViewModel.selectedIndex.collectAsState()
-    val targetFile by editorViewModel.targetFile
-    val focusedLead by editorViewModel.focusedLead.collectAsState()
+    val selectedIndex by constructorViewModel.selectedIndex.collectAsState()
+    val targetFile by constructorViewModel.targetFile
+    val focusedLead by constructorViewModel.focusedLead.collectAsState()
     val monitorMode by monitorViewModel.monitorMode.collectAsState()
 
     var showSpeedDialog by remember { mutableStateOf(false) }
@@ -67,12 +67,12 @@ fun EditorControlPanel(
                     speedText.toIntOrNull()?.let { monitorViewModel.setSpeed(it) }
                     showSpeedDialog = false
                 }) {
-                    Text(stringResource(R.string.editor_rename_ok))
+                    Text(stringResource(R.string.constructor_rename_ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showSpeedDialog = false }) {
-                    Text(stringResource(R.string.editor_rename_cancel))
+                    Text(stringResource(R.string.constructor_rename_cancel))
                 }
             }
         )
@@ -82,14 +82,14 @@ fun EditorControlPanel(
         var timeText by remember { mutableStateOf(currentTimeMs.toString()) }
         AlertDialog(
             onDismissRequest = { showTimeDialog = false },
-            title = { Text(stringResource(R.string.editor_set_time_title)) },
+            title = { Text(stringResource(R.string.constructor_set_time_title)) },
             text = {
                 TextField(
                     value = timeText,
                     onValueChange = { newValue ->
                         if (newValue.all { it.isDigit() }) timeText = newValue
                     },
-                    label = { Text(stringResource(R.string.editor_time_unit)) },
+                    label = { Text(stringResource(R.string.constructor_time_unit)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true
                 )
@@ -98,16 +98,16 @@ fun EditorControlPanel(
                 TextButton(onClick = {
                     timeText.toIntOrNull()?.let { ms ->
                         val index = (ms * monitorMode.calibration.sampleRateHz / 1000f).toInt()
-                        editorViewModel.selectIndex(index)
+                        constructorViewModel.selectIndex(index)
                     }
                     showTimeDialog = false
                 }) {
-                    Text(stringResource(R.string.editor_rename_ok))
+                    Text(stringResource(R.string.constructor_rename_ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showTimeDialog = false }) {
-                    Text(stringResource(R.string.editor_rename_cancel))
+                    Text(stringResource(R.string.constructor_rename_cancel))
                 }
             }
         )
@@ -117,7 +117,7 @@ fun EditorControlPanel(
         var adcText by remember { mutableStateOf(currentAdc.toString()) }
         AlertDialog(
             onDismissRequest = { showAdcDialog = false },
-            title = { Text(stringResource(R.string.editor_set_adc_title)) },
+            title = { Text(stringResource(R.string.constructor_set_adc_title)) },
             text = {
                 TextField(
                     value = adcText,
@@ -126,7 +126,7 @@ fun EditorControlPanel(
                             adcText = newValue
                         }
                     },
-                    label = { Text(stringResource(R.string.editor_adc_label)) },
+                    label = { Text(stringResource(R.string.constructor_adc_label)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true
                 )
@@ -134,16 +134,16 @@ fun EditorControlPanel(
             confirmButton = {
                 TextButton(onClick = {
                     adcText.toIntOrNull()?.let { value ->
-                        editorViewModel.setSample(focusedLead, selectedIndex, value)
+                        constructorViewModel.setSample(focusedLead, selectedIndex, value)
                     }
                     showAdcDialog = false
                 }) {
-                    Text(stringResource(R.string.editor_rename_ok))
+                    Text(stringResource(R.string.constructor_rename_ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showAdcDialog = false }) {
-                    Text(stringResource(R.string.editor_rename_cancel))
+                    Text(stringResource(R.string.constructor_rename_cancel))
                 }
             }
         )
@@ -159,7 +159,7 @@ fun EditorControlPanel(
         // Info Display
         val adcDisplayValue = if (samples != null && selectedIndex in samples.indices) currentAdc.toString() else "-"
         val timeDisplayMs = if (samples != null && selectedIndex in samples.indices)
-            stringResource(R.string.editor_time_format, currentTimeMs)
+            stringResource(R.string.constructor_time_format, currentTimeMs)
         else "-"
 
         // Point Selection
@@ -170,7 +170,7 @@ fun EditorControlPanel(
         ) {
             Tab(
                 icon = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                onClick = { editorViewModel.selectPrevious() },
+                onClick = { constructorViewModel.selectPrevious() },
                 isRepeatable = true,
                 modifier = Modifier.weight(1f)
             )
@@ -181,7 +181,7 @@ fun EditorControlPanel(
             )
             Tab(
                 icon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                onClick = { editorViewModel.selectNext() },
+                onClick = { constructorViewModel.selectNext() },
                 isRepeatable = true,
                 modifier = Modifier.weight(1f)
             )
@@ -197,18 +197,18 @@ fun EditorControlPanel(
         ) {
             Tab(
                 icon = Icons.Default.KeyboardArrowDown,
-                onClick = { editorViewModel.moveSelectedDown() },
+                onClick = { constructorViewModel.moveSelectedDown() },
                 isRepeatable = true,
                 modifier = Modifier.weight(1f)
             )
             Tab(
-                text = stringResource(R.string.editor_adc_format, adcDisplayValue),
+                text = stringResource(R.string.constructor_adc_format, adcDisplayValue),
                 onClick = { showAdcDialog = true },
                 modifier = Modifier.weight(1.5f)
             )
             Tab(
                 icon = Icons.Default.KeyboardArrowUp,
-                onClick = { editorViewModel.moveSelectedUp() },
+                onClick = { constructorViewModel.moveSelectedUp() },
                 isRepeatable = true,
                 modifier = Modifier.weight(1f)
             )

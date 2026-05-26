@@ -24,13 +24,13 @@ import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.panels.BottomControlPanel
-import com.example.cardiosimulator.ui.panels.EditorControlPanel
+import com.example.cardiosimulator.ui.panels.ConstructorControlPanel
 import com.example.cardiosimulator.ui.panels.MonitorControlPanel
 import com.example.cardiosimulator.ui.panels.TopControlPanel
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.DataState
-import com.example.cardiosimulator.ui.viewmodels.EditorViewModel
+import com.example.cardiosimulator.ui.viewmodels.ConstructorViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
@@ -65,12 +65,12 @@ fun MainScreen(appViewModel: AppViewModel) {
     )
     val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
 
-    val editorViewModel: EditorViewModel = viewModel(
+    val constructorViewModel: ConstructorViewModel = viewModel(
         key = selectedMode.id.name + "_editor",
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return EditorViewModel(
+                return ConstructorViewModel(
                     repository = appViewModel.repository!!,
                     prefs = appViewModel.prefs
                 ) as T
@@ -140,11 +140,11 @@ fun MainScreen(appViewModel: AppViewModel) {
                     monitorViewModel = monitorViewModel,
                     rhythmViewModel = rhythmViewModel,
                 )
-                OperatingMode.Editor -> EditorScreen(
+                OperatingMode.Constructor -> ConstructorScreen(
                     appViewModel = appViewModel,
                     monitorViewModel = monitorViewModel,
                     rhythmViewModel = rhythmViewModel,
-                    editorViewModel = editorViewModel,
+                    constructorViewModel = constructorViewModel,
                 )
             }
         }
@@ -168,9 +168,9 @@ fun MainScreen(appViewModel: AppViewModel) {
                             },
                         )
                     }
-                    OperatingMode.Editor -> {
-                        EditorControlPanel(
-                            editorViewModel = editorViewModel,
+                    OperatingMode.Constructor -> {
+                        ConstructorControlPanel(
+                            constructorViewModel = constructorViewModel,
                             monitorViewModel = monitorViewModel
                         )
                     }

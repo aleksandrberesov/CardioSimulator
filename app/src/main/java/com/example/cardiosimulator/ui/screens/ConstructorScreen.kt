@@ -25,7 +25,7 @@ import com.example.cardiosimulator.ui.panels.RhythmChoosingDrawer
 import com.example.cardiosimulator.ui.panels.SignificantPointsDrawer
 import com.example.cardiosimulator.ui.utils.toDisplayString
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
-import com.example.cardiosimulator.ui.viewmodels.EditorViewModel
+import com.example.cardiosimulator.ui.viewmodels.ConstructorViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
@@ -53,7 +53,7 @@ fun SignificantPointPanel(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = stringResource(R.string.editor_significant_points),
+                text = stringResource(R.string.constructor_significant_points),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -62,15 +62,15 @@ fun SignificantPointPanel(
 
             if (selectedIndex != null) {
                 Text(
-                    text = stringResource(R.string.editor_sample_label, selectedIndex),
+                    text = stringResource(R.string.constructor_sample_label, selectedIndex),
                     style = MaterialTheme.typography.bodySmall
                 )
 
                 // Group points by wave type for better organization
                 val waves = listOf(
-                    stringResource(R.string.editor_p_wave) to listOf(EcgPointType.P_START, EcgPointType.P_PEAK, EcgPointType.P_END),
-                    stringResource(R.string.editor_qrs_complex) to listOf(EcgPointType.QRS_START, EcgPointType.Q_PEAK, EcgPointType.R_PEAK, EcgPointType.S_PEAK, EcgPointType.QRS_END),
-                    stringResource(R.string.editor_t_wave) to listOf(EcgPointType.T_START, EcgPointType.T_PEAK, EcgPointType.T_END)
+                    stringResource(R.string.constructor_p_wave) to listOf(EcgPointType.P_START, EcgPointType.P_PEAK, EcgPointType.P_END),
+                    stringResource(R.string.constructor_qrs_complex) to listOf(EcgPointType.QRS_START, EcgPointType.Q_PEAK, EcgPointType.R_PEAK, EcgPointType.S_PEAK, EcgPointType.QRS_END),
+                    stringResource(R.string.constructor_t_wave) to listOf(EcgPointType.T_START, EcgPointType.T_PEAK, EcgPointType.T_END)
                 )
 
                 Column(
@@ -105,7 +105,7 @@ fun SignificantPointPanel(
             } else {
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     Text(
-                        text = stringResource(R.string.editor_select_point_hint),
+                        text = stringResource(R.string.constructor_select_point_hint),
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
@@ -118,7 +118,7 @@ fun SignificantPointPanel(
             if (rPeaks.size >= 2) {
                 HorizontalDivider()
                 Text(
-                    text = stringResource(R.string.editor_rhythms_title), // Use existing "Rhythms" title or new one?
+                    text = stringResource(R.string.constructor_rhythms_title), // Use existing "Rhythms" title or new one?
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -136,21 +136,21 @@ fun SignificantPointPanel(
 }
 
 /**
- * Rebuilt Editor on the unified rendering pipeline.
- * Edits raw ADC samples directly.
+ * Rebuilt Constructor on the unified rendering pipeline.
+ * Constructs raw ADC samples directly.
  */
 @Composable
-fun EditorScreen(
+fun ConstructorScreen(
     appViewModel: AppViewModel,
     monitorViewModel: MonitorViewModel = viewModel(),
     rhythmViewModel: RhythmViewModel = viewModel(),
-    editorViewModel: EditorViewModel = viewModel(),
+    constructorViewModel: ConstructorViewModel = viewModel(),
 ) {
-    val targetFile by editorViewModel.targetFile
-    val focusedLead by editorViewModel.focusedLead.collectAsState()
-    val selectedIndex by editorViewModel.selectedIndex.collectAsState()
-    val dirtyLeads by editorViewModel.dirtyLeads.collectAsState()
-    val isMetadataDirty by editorViewModel.isMetadataDirty.collectAsState()
+    val targetFile by constructorViewModel.targetFile
+    val focusedLead by constructorViewModel.focusedLead.collectAsState()
+    val selectedIndex by constructorViewModel.selectedIndex.collectAsState()
+    val dirtyLeads by constructorViewModel.dirtyLeads.collectAsState()
+    val isMetadataDirty by constructorViewModel.isMetadataDirty.collectAsState()
     val rhythms by rhythmViewModel.rhythms.collectAsState()
     val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
     val monitorMode by monitorViewModel.monitorMode.collectAsState()
@@ -168,25 +168,25 @@ fun EditorScreen(
         }
         AlertDialog(
             onDismissRequest = { showRenameDialog = false },
-            title = { Text(stringResource(R.string.editor_rename_title)) },
+            title = { Text(stringResource(R.string.constructor_rename_title)) },
             text = {
                 TextField(
                     value = newName,
                     onValueChange = { newName = it },
-                    label = { Text(stringResource(R.string.editor_rename_label)) }
+                    label = { Text(stringResource(R.string.constructor_rename_label)) }
                 )
             },
             confirmButton = {
                 TextButton(onClick = {
-                    editorViewModel.rename(newName, selectedLanguage)
+                    constructorViewModel.rename(newName, selectedLanguage)
                     showRenameDialog = false
                 }) {
-                    Text(stringResource(R.string.editor_rename_ok))
+                    Text(stringResource(R.string.constructor_rename_ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showRenameDialog = false }) {
-                    Text(stringResource(R.string.editor_rename_cancel))
+                    Text(stringResource(R.string.constructor_rename_cancel))
                 }
             }
         )
@@ -211,7 +211,7 @@ fun EditorScreen(
                             it.nameRu ?: it.titleEn 
                         else 
                             it.titleEn
-                    } ?: stringResource(R.string.editor_no_pathology_selected)
+                    } ?: stringResource(R.string.constructor_no_pathology_selected)
                     
                     Text(
                         text = displayTitle,
@@ -226,12 +226,12 @@ fun EditorScreen(
                     }
                     
                     if (dirtyLeads.isNotEmpty() || isMetadataDirty) {
-                        Button(onClick = { editorViewModel.save() }) {
-                            Text(stringResource(R.string.editor_save))
+                        Button(onClick = { constructorViewModel.save() }) {
+                            Text(stringResource(R.string.constructor_save))
                         }
                         if (dirtyLeads.isNotEmpty()) {
-                            OutlinedButton(onClick = { editorViewModel.revertLead(focusedLead) }) {
-                                Text(stringResource(R.string.editor_revert_lead_btn))
+                            OutlinedButton(onClick = { constructorViewModel.revertLead(focusedLead) }) {
+                                Text(stringResource(R.string.constructor_revert_lead_btn))
                             }
                         }
                     }
@@ -246,7 +246,7 @@ fun EditorScreen(
                 Lead.entries.forEach { lead ->
                     Tab(
                         selected = focusedLead == lead,
-                        onClick = { editorViewModel.selectLead(lead) },
+                        onClick = { constructorViewModel.selectLead(lead) },
                         text = {
                             Text(
                                 text = lead.name,
@@ -280,7 +280,7 @@ fun EditorScreen(
                                         significantPoints = file.significantPoints,
                                         baseline = baseline,
                                         selectedIndex = selectedIndex,
-                                        onIndexSelected = { editorViewModel.selectIndex(it) },
+                                        onIndexSelected = { constructorViewModel.selectIndex(it) },
                                         modifier = Modifier.weight(1f)
                                     )
 
@@ -305,7 +305,7 @@ fun EditorScreen(
                                 }
                             } else {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Text(stringResource(R.string.editor_lead_not_present, focusedLead.name))
+                                    Text(stringResource(R.string.constructor_lead_not_present, focusedLead.name))
                                 }
                             }
                         }
@@ -316,13 +316,13 @@ fun EditorScreen(
                             selectedIndex = selectedIndex,
                             sampleRate = monitorMode.calibration.sampleRateHz,
                             onPointToggle = { idx, type -> 
-                                editorViewModel.toggleSignificantPoint(focusedLead, idx, type) 
+                                constructorViewModel.toggleSignificantPoint(focusedLead, idx, type) 
                             }
                         )
                     }
                 } else {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(stringResource(R.string.editor_select_from_panel_hint))
+                        Text(stringResource(R.string.constructor_select_from_panel_hint))
                     }
                 }
             }
@@ -333,13 +333,13 @@ fun EditorScreen(
             appViewModel = appViewModel,
             rhythms = rhythms,
             selectedId = targetFile?.id,
-            onRhythmSelect = { editorViewModel.selectPathology(it.id) },
+            onRhythmSelect = { constructorViewModel.selectPathology(it.id) },
             modifier = Modifier.align(Alignment.CenterStart).offset(y = (-40).dp)
         )
 
         // Left Panel: Significant Points List (Drawer)
         SignificantPointsDrawer(
-            editorViewModel = editorViewModel,
+            constructorViewModel = constructorViewModel,
             sampleRateHz = monitorMode.calibration.sampleRateHz,
             modifier = Modifier.align(Alignment.CenterStart).offset(y = 40.dp)
         )

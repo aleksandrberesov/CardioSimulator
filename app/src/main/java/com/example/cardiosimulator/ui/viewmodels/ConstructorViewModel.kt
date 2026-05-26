@@ -17,10 +17,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
- * Manages editing a single [PathologyFile].
+ * Manages constructing a single [PathologyFile].
  * Works with raw ADC samples directly.
  */
-class EditorViewModel(
+class ConstructorViewModel(
     private val repository: PathologyRepository,
     private val prefs: DataSourcePrefs? = null
 ) : ViewModel() {
