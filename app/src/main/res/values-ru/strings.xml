@@ -98,6 +98,8 @@
     <string name="constructor_anchor_insert_after">Вставить после</string>
     <string name="constructor_anchor_delete">Удалить</string>
     <string name="constructor_anchor_center_y">Центрировать по Y</string>
+    <string name="constructor_calculate_derived_confirm_title">Рассчитать производные отведения?</string>
+    <string name="constructor_calculate_derived_confirm_message">Это перезапишет существующие данные для зависимых отведений (III, aVR, aVL, aVF, V1, V3, V4, V5) на основе I, II, V2 и V6. Продолжить?</string>
     <string name="constructor_generate_derived">Сгенерировать производные отведения</string>
     <string name="constructor_flag_frequently">Часто</string>
     <string name="constructor_flag_withsound">Со звуком</string>

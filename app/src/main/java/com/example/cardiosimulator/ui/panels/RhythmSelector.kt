@@ -20,6 +20,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +57,22 @@ fun RhythmSelector(
     val currentLanguage by appViewModel.selectedLanguage.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
+
+    val filtered = remember(rhythms, searchQuery, currentLanguage) {
+        rhythms.filter {
+            val title = if (currentLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn
+            title.contains(searchQuery, ignoreCase = true)
+        }
+    }
+
+    LaunchedEffect(selectedId, rhythms) {
+        if (selectedId != null) {
+            val index = filtered.indexOfFirst { it.id == selectedId }
+            if (index >= 0) {
+                listState.animateScrollToItem(index)
+            }
+        }
+    }
 
     Column(
         modifier = modifier
@@ -98,10 +115,6 @@ fun RhythmSelector(
                     .fillMaxHeight()
                     .verticalScrollbar(listState),
             ) {
-                val filtered = rhythms.filter {
-                    val title = if (currentLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn
-                    title.contains(searchQuery, ignoreCase = true)
-                }
                 itemsIndexed(filtered, key = { _, r -> r.id }) { index, rhythm ->
                     val isSelected = rhythm.id == selectedId
                     val title = if (currentLanguage == Language.RU)

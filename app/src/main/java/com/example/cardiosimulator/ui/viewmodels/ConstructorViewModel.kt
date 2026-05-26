@@ -71,10 +71,19 @@ class ConstructorViewModel(
     }
 
     fun selectIndex(index: Int) {
-        val stream = _targetFile.value?.leads?.get(_focusedLead.value) ?: return
+        val lead = _focusedLead.value
+        val stream = _targetFile.value?.leads?.get(lead) ?: return
         if (index in stream.samples.indices) {
             _selectedIndex.value = index
         }
+    }
+
+    fun isLeadEditable(lead: Lead): Boolean {
+        // According to requirements, dependent leads (III, aVR, aVL, aVF, V1, V3, V4, V5)
+        // should be selected but not edited if they are derived.
+        // For simplicity, we define which leads are independent in our system.
+        return lead !in com.example.cardiosimulator.domain.DerivedLeads.DerivableFromIandII &&
+               lead !in com.example.cardiosimulator.domain.DerivedLeads.DerivableFromV2andV6
     }
 
     fun selectSignificantPoint(type: EcgPointType) {
@@ -106,6 +115,7 @@ class ConstructorViewModel(
 
     fun moveSelectedUp() {
         val lead = _focusedLead.value
+        if (!isLeadEditable(lead)) return
         val stream = _targetFile.value?.leads?.get(lead) ?: return
         val index = _selectedIndex.value
         if (index in stream.samples.indices) {
@@ -115,6 +125,7 @@ class ConstructorViewModel(
 
     fun moveSelectedDown() {
         val lead = _focusedLead.value
+        if (!isLeadEditable(lead)) return
         val stream = _targetFile.value?.leads?.get(lead) ?: return
         val index = _selectedIndex.value
         if (index in stream.samples.indices) {
@@ -123,6 +134,7 @@ class ConstructorViewModel(
     }
 
     fun setSample(lead: Lead, index: Int, adcValue: Int) {
+        if (!isLeadEditable(lead)) return
         val currentFile = _targetFile.value ?: return
         val stream = currentFile.leads[lead] ?: return
         if (index !in stream.samples.indices) return
@@ -204,6 +216,50 @@ class ConstructorViewModel(
             } finally {
                 _isSaving.value = false
             }
+        }
+    }
+
+    fun calculateDerivedLeads() {
+        val currentFile = _targetFile.value ?: return
+        val baseline = repository.manifest()?.baseline ?: 1024
+        
+        val leads = currentFile.leads.toMutableMap()
+        val newlyDirty = mutableSetOf<Lead>()
+
+        fun getZeroed(lead: Lead): List<Float>? =
+            currentFile.leads[lead]?.samples?.map { (it - baseline).toFloat() }
+
+        // Derive limb leads from I and II
+        val i = getZeroed(Lead.I)
+        val ii = getZeroed(Lead.II)
+        if (i != null && ii != null) {
+            com.example.cardiosimulator.domain.DerivedLeads.DerivableFromIandII.forEach { target ->
+                val derived = com.example.cardiosimulator.domain.DerivedLeads.combineIII_aVR_aVL_aVF(i, ii, target)
+                if (derived.isNotEmpty()) {
+                    val samples = derived.map { (it + baseline).toInt() }.toIntArray()
+                    leads[target] = com.example.cardiosimulator.domain.LeadStream(target, samples)
+                    newlyDirty.add(target)
+                }
+            }
+        }
+
+        // Derive precordial leads from V2 and V6
+        val v2 = getZeroed(Lead.V2)
+        val v6 = getZeroed(Lead.V6)
+        if (v2 != null && v6 != null) {
+            com.example.cardiosimulator.domain.DerivedLeads.DerivableFromV2andV6.forEach { target ->
+                val derived = com.example.cardiosimulator.domain.DerivedLeads.combineV1_V3_V4_V5(v2, v6, target)
+                if (derived.isNotEmpty()) {
+                    val samples = derived.map { (it + baseline).toInt() }.toIntArray()
+                    leads[target] = com.example.cardiosimulator.domain.LeadStream(target, samples)
+                    newlyDirty.add(target)
+                }
+            }
+        }
+
+        if (newlyDirty.isNotEmpty()) {
+            _targetFile.value = currentFile.copy(leads = leads)
+            _dirtyLeads.value += newlyDirty
         }
     }
 }

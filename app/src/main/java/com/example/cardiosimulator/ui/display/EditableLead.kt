@@ -24,7 +24,8 @@ fun EditableLead(
     baseline: Int,
     modifier: Modifier = Modifier,
     selectedIndex: Int? = null,
-    onIndexSelected: ((Int) -> Unit)? = null
+    onIndexSelected: ((Int) -> Unit)? = null,
+    isEditable: Boolean = true
 ) {
     // Convert raw ADC to baseline-zeroed floats for the unified renderer.
     val points = Points(stream.samples.map { (it - baseline).toFloat() })
@@ -51,6 +52,7 @@ fun EditableLead(
                 baseline = baseline,
                 selectedIndex = selectedIndex,
                 onIndexSelected = onIndexSelected,
+                isEditable = isEditable,
                 modifier = Modifier.fillMaxSize()
             )
         }

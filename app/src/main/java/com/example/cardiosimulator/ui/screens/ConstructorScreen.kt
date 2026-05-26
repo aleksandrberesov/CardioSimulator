@@ -161,6 +161,28 @@ fun ConstructorScreen(
     val monitorMode by monitorViewModel.monitorMode.collectAsState()
 
     var showRenameDialog by remember { mutableStateOf(false) }
+    var showCalculateDerivedDialog by remember { mutableStateOf(false) }
+
+    if (showCalculateDerivedDialog) {
+        AlertDialog(
+            onDismissRequest = { showCalculateDerivedDialog = false },
+            title = { Text(stringResource(R.string.constructor_calculate_derived_confirm_title)) },
+            text = { Text(stringResource(R.string.constructor_calculate_derived_confirm_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    constructorViewModel.calculateDerivedLeads()
+                    showCalculateDerivedDialog = false
+                }) {
+                    Text(stringResource(R.string.constructor_rename_ok)) // Reuse "OK"
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCalculateDerivedDialog = false }) {
+                    Text(stringResource(R.string.constructor_rename_cancel)) // Reuse "Cancel"
+                }
+            }
+        )
+    }
 
     if (showRenameDialog && targetFile != null) {
         var newName by remember {
@@ -232,6 +254,10 @@ fun ConstructorScreen(
                         IconButton(onClick = { showRenameDialog = true }) {
                             Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.cd_rename))
                         }
+                        
+                        OutlinedButton(onClick = { showCalculateDerivedDialog = true }) {
+                            Text(stringResource(R.string.constructor_generate_derived))
+                        }
                     }
                     
                     if (dirtyLeads.isNotEmpty() || isMetadataDirty) {
@@ -283,6 +309,7 @@ fun ConstructorScreen(
                             monitorViewModel = monitorViewModel
                         ) { _, _ ->
                             if (stream != null) {
+                                val isEditable = constructorViewModel.isLeadEditable(focusedLead)
                                 Column(modifier = Modifier.fillMaxSize()) {
                                     EditableLead(
                                         stream = stream,
@@ -290,6 +317,7 @@ fun ConstructorScreen(
                                         baseline = baseline,
                                         selectedIndex = selectedIndex,
                                         onIndexSelected = { constructorViewModel.selectIndex(it) },
+                                        isEditable = isEditable,
                                         modifier = Modifier.weight(1f)
                                     )
 

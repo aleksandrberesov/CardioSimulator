@@ -23,7 +23,8 @@ fun SampleHandleOverlay(
     baseline: Int,
     modifier: Modifier = Modifier,
     selectedIndex: Int? = null,
-    onIndexSelected: ((Int) -> Unit)? = null
+    onIndexSelected: ((Int) -> Unit)? = null,
+    isEditable: Boolean = true
 ) {
     val scale = LocalPixelScale.current
     val density = LocalDensity.current
@@ -32,6 +33,7 @@ fun SampleHandleOverlay(
     val strokeWidthPx = with(density) { 1.dp.toPx() }
 
     val stepX = scale.pxPerSample
+    val handleColor = if (isEditable) Color.Red else Color.Gray
 
     Canvas(
         modifier = modifier
@@ -68,7 +70,7 @@ fun SampleHandleOverlay(
             val y = baselineY - (sample - baseline) * stepY
 
             drawCircle(
-                color = Color.Red,
+                color = handleColor,
                 radius = selectedRadiusPx,
                 center = Offset(x, y),
                 style = Stroke(width = strokeWidthPx)
@@ -77,13 +79,13 @@ fun SampleHandleOverlay(
             // Draw a cross inside
             val arm = selectedRadiusPx * 0.7f
             drawLine(
-                color = Color.Red,
+                color = handleColor,
                 start = Offset(x - arm, y),
                 end = Offset(x + arm, y),
                 strokeWidth = strokeWidthPx
             )
             drawLine(
-                color = Color.Red,
+                color = handleColor,
                 start = Offset(x, y - arm),
                 end = Offset(x, y + arm),
                 strokeWidth = strokeWidthPx
