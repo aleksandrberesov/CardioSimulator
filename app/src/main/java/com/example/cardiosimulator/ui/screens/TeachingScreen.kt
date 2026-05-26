@@ -2,21 +2,34 @@ package com.example.cardiosimulator.ui.screens
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.Points
+import com.example.cardiosimulator.ui.components.SideDrawer
 import com.example.cardiosimulator.ui.display.Lead as LeadView
 import com.example.cardiosimulator.ui.display.LeadsGrid
 import com.example.cardiosimulator.ui.display.Monitor
-import com.example.cardiosimulator.ui.panels.RhythmChoosingDrawer
+import com.example.cardiosimulator.ui.panels.RhythmSelector
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
@@ -30,7 +43,7 @@ fun TeachingScreen(
     val rhythms by rhythmViewModel.rhythms.collectAsState()
     val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
     val waveforms by rhythmViewModel.waveforms.collectAsState()
-    val significantPoints by rhythmViewModel.significantPoints.collectAsState()
+    var isRhythmDrawerExpanded by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
         Column(
@@ -53,19 +66,37 @@ fun TeachingScreen(
                     LeadView(
                         points = leadPoints,
                         title = lead?.name ?: "",
-                        isRunning = mode.isRunning,
-                        significantPoints = significantPoints
+                        isRunning = mode.isRunning
                     )
                 }
             }
         }
 
-        RhythmChoosingDrawer(
-            appViewModel = appViewModel,
-            rhythms = rhythms,
-            selectedId = selectedRhythm?.id,
-            onRhythmSelect = { rhythmViewModel.selectRhythm(it.id) },
-            modifier = Modifier.align(Alignment.CenterStart)
+        SideDrawer(
+            isExpanded = isRhythmDrawerExpanded,
+            onExpandedChange = { isRhythmDrawerExpanded = it },
+            drawerWidth = 300.dp,
+            drawerContent = {
+                RhythmSelector(
+                    appViewModel = appViewModel,
+                    rhythms = rhythms,
+                    selectedId = selectedRhythm?.id,
+                    onRhythmSelect = { rhythmViewModel.selectRhythm(it.id) },
+                )
+            },
+            handlerContent = {
+                Text(
+                    text = stringResource(R.string.rhythm_drawer_title),
+                    modifier = Modifier
+                        .requiredWidth(64.dp)
+                        .rotate(-90f),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    textAlign = TextAlign.Center
+                )
+            },
+            modifier = Modifier.fillMaxHeight().align(Alignment.TopStart)
         )
     }
 }

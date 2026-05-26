@@ -31,7 +31,6 @@ fun TestingScreen(
 ) {
     val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
     val waveforms by rhythmViewModel.waveforms.collectAsState()
-    val significantPoints by rhythmViewModel.significantPoints.collectAsState()
 
     LaunchedEffect(Unit) {
         monitorViewModel.setSeriesCount(12)
@@ -59,8 +58,7 @@ fun TestingScreen(
                     LeadView(
                         points = leadPoints,
                         title = lead?.name ?: "",
-                        isRunning = mode.isRunning,
-                        significantPoints = significantPoints
+                        isRunning = mode.isRunning
                     )
                 }
             }

@@ -21,11 +21,9 @@ import com.example.cardiosimulator.data.EcgCalibration
 import com.example.cardiosimulator.data.LocalPixelScale
 import com.example.cardiosimulator.data.PixelScale
 import com.example.cardiosimulator.data.Points
-import com.example.cardiosimulator.domain.SignificantPoint
 import com.example.cardiosimulator.ui.components.CalibrationPulse
 import com.example.cardiosimulator.ui.components.ChartCanvas
 import com.example.cardiosimulator.ui.components.PreviewPane
-import com.example.cardiosimulator.ui.components.SignificantPointOverlay
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 
 @Composable
@@ -33,8 +31,7 @@ fun Lead(
     points: Points,
     modifier: Modifier = Modifier,
     title: String = "",
-    isRunning: Boolean = false,
-    significantPoints: List<SignificantPoint> = emptyList()
+    isRunning: Boolean = false
 ){
     Row(
         modifier = modifier.leadArea(),
@@ -71,14 +68,6 @@ fun Lead(
                 modifier = Modifier.fillMaxSize(),
                 isRunning = isRunning
             )
-
-            if (significantPoints.isNotEmpty()) {
-                SignificantPointOverlay(
-                    points = points,
-                    significantPoints = significantPoints,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
         }
     }
 }

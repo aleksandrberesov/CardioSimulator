@@ -7,11 +7,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import com.example.cardiosimulator.R
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.data.Points
@@ -19,10 +23,11 @@ import com.example.cardiosimulator.domain.EcgPointType
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.SignificantPoint
 import com.example.cardiosimulator.ui.components.PreviewPane
+import com.example.cardiosimulator.ui.components.SideDrawer
 import com.example.cardiosimulator.ui.display.EditableLead
 import com.example.cardiosimulator.ui.display.Monitor
-import com.example.cardiosimulator.ui.panels.RhythmChoosingDrawer
-import com.example.cardiosimulator.ui.panels.SignificantPointsDrawer
+import com.example.cardiosimulator.ui.panels.RhythmSelector
+import com.example.cardiosimulator.ui.panels.SignificantPointSelector
 import com.example.cardiosimulator.ui.utils.toDisplayString
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.ConstructorViewModel
@@ -192,9 +197,13 @@ fun ConstructorScreen(
         )
     }
 
+    var isRhythmDrawerExpanded by remember { mutableStateOf(false) }
+    var isPointsDrawerExpanded by remember { mutableStateOf(false) }
+
     Box(modifier = Modifier.fillMaxSize()) {
         // Main Area
         Column(modifier = Modifier.fillMaxSize()) {
+            // ... (rest of the Toolbar and Lead Tabs code)
             // Toolbar
             Surface(
                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -325,23 +334,72 @@ fun ConstructorScreen(
                         Text(stringResource(R.string.constructor_select_from_panel_hint))
                     }
                 }
+
+                // Side Drawers
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .align(Alignment.TopStart)
+                ) {
+                    // Rhythm List (Drawer)
+                    SideDrawer(
+                        isExpanded = isRhythmDrawerExpanded,
+                        onExpandedChange = { isRhythmDrawerExpanded = it },
+                        drawerWidth = 300.dp,
+                        drawerContent = {
+                            RhythmSelector(
+                                appViewModel = appViewModel,
+                                rhythms = rhythms,
+                                selectedId = targetFile?.id,
+                                onRhythmSelect = { constructorViewModel.selectPathology(it.id) },
+                            )
+                        },
+                        handlerContent = {
+                            Text(
+                                text = stringResource(R.string.rhythm_drawer_title),
+                                modifier = Modifier
+                                    .requiredWidth(64.dp)
+                                    .rotate(-90f),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                textAlign = TextAlign.Center
+                            )
+                        },
+                        handlerModifier = Modifier.offset(y = (-40).dp),
+                        modifier = Modifier.fillMaxHeight()
+                    )
+
+                    // Significant Points List (Drawer)
+                    SideDrawer(
+                        isExpanded = isPointsDrawerExpanded,
+                        onExpandedChange = { isPointsDrawerExpanded = it },
+                        handlerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        drawerContent = {
+                            SignificantPointSelector(
+                                points = targetFile?.significantPoints?.sortedBy { it.index } ?: emptyList(),
+                                selectedIndex = selectedIndex,
+                                sampleRateHz = monitorMode.calibration.sampleRateHz,
+                                onPointSelect = { constructorViewModel.selectIndex(it.index) }
+                            )
+                        },
+                        handlerContent = {
+                            Text(
+                                text = stringResource(R.string.points_drawer_title),
+                                modifier = Modifier
+                                    .requiredWidth(64.dp)
+                                    .rotate(-90f),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                maxLines = 1,
+                                textAlign = TextAlign.Center
+                            )
+                        },
+                        handlerModifier = Modifier.offset(y = 40.dp),
+                        modifier = Modifier.fillMaxHeight()
+                    )
+                }
             }
         }
-
-        // Left Panel: Rhythm List (Drawer)
-        RhythmChoosingDrawer(
-            appViewModel = appViewModel,
-            rhythms = rhythms,
-            selectedId = targetFile?.id,
-            onRhythmSelect = { constructorViewModel.selectPathology(it.id) },
-            modifier = Modifier.align(Alignment.CenterStart).offset(y = (-40).dp)
-        )
-
-        // Left Panel: Significant Points List (Drawer)
-        SignificantPointsDrawer(
-            constructorViewModel = constructorViewModel,
-            sampleRateHz = monitorMode.calibration.sampleRateHz,
-            modifier = Modifier.align(Alignment.CenterStart).offset(y = 40.dp)
-        )
     }
 }

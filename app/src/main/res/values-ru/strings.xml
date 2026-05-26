@@ -60,6 +60,7 @@
 
     <!-- Rhythm panel -->
     <string name="rhythm_drawer_title">Ритм</string>
+    <string name="points_drawer_title">Точки</string>
     <string name="rhythm_search_placeholder">Ритм…</string>
     <string name="rhythm_search_content_description">Поиск</string>
 

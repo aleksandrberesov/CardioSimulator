@@ -36,11 +36,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.domain.AppBuilder
-import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
-import com.example.cardiosimulator.domain.PathologyEntry
-import com.example.cardiosimulator.ui.panels.RhythmChoosingPanel
+import com.example.cardiosimulator.ui.panels.RhythmSelector
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.DataState
@@ -155,7 +153,7 @@ fun DataSourceScreen(
             onDismissRequest = { showDetails = false },
             title = { Text(stringResource(R.string.data_source_pathologies_title, rhythms.size)) },
             text = {
-                RhythmChoosingPanel(
+                RhythmSelector(
                     appViewModel = appViewModel,
                     modifier = Modifier.fillMaxHeight(0.7f),
                     rhythms = rhythms,
