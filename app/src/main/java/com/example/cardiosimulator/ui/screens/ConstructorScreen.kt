@@ -170,7 +170,12 @@ fun ConstructorScreen(
         AlertDialog(
             onDismissRequest = { showCalculateDerivedDialog = false },
             title = { Text(stringResource(R.string.constructor_calculate_derived_confirm_title)) },
-            text = { Text(stringResource(R.string.constructor_calculate_derived_confirm_message)) },
+            text = { 
+                Text(
+                    stringResource(R.string.constructor_calculate_derived_confirm_message) + 
+                    stringResource(R.string.constructor_calculate_derived_formulas)
+                ) 
+            },
             confirmButton = {
                 TextButton(onClick = {
                     constructorViewModel.calculateDerivedLeads()

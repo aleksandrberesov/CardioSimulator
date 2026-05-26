@@ -97,6 +97,9 @@
     <string name="constructor_anchor_insert_after">Insertar después</string>
     <string name="constructor_anchor_delete">Eliminar</string>
     <string name="constructor_anchor_center_y">Centrar Y</string>
+    <string name="constructor_calculate_derived_confirm_title">¿Calcular derivaciones derivadas?</string>
+    <string name="constructor_calculate_derived_confirm_message">Esto sobrescribirá los datos existentes de las derivaciones dependientes (III, aVR, aVL, aVF, V1, V3, V4, V5) basándose en I, II, V2 y V6. ¿Continuar?</string>
+    <string name="constructor_calculate_derived_formulas">\n\nFórmulas:\nIII = II - I\naVR = -(I + II) / 2\naVL = (2\u00B7I - II) / 2\naVF = (2\u00B7II - I) / 2\nV1, V3, V4, V5 = proyección angular (V2, V6)</string>
     <string name="constructor_generate_derived">Generar derivaciones derivadas</string>
     <string name="constructor_flag_frequently">Frecuentemente</string>
     <string name="constructor_flag_withsound">Con sonido</string>

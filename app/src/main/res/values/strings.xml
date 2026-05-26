@@ -89,6 +89,7 @@
     <string name="constructor_anchor_center_y">Center Y</string>
     <string name="constructor_calculate_derived_confirm_title">Calculate Derived Leads?</string>
     <string name="constructor_calculate_derived_confirm_message">This will overwrite existing data for dependent leads (III, aVR, aVL, aVF, V1, V3, V4, V5) based on I, II, V2, and V6. Continue?</string>
+    <string name="constructor_calculate_derived_formulas">\n\nFormulas:\nIII = II - I\naVR = -(I + II) / 2\naVL = (2\u00B7I - II) / 2\naVF = (2\u00B7II - I) / 2\nV1, V3, V4, V5 = angular projection (V2, V6)</string>
     <string name="constructor_generate_derived">Generate derived leads</string>
     <string name="constructor_flag_frequently">Frequently</string>
     <string name="constructor_flag_withsound">With sound</string>

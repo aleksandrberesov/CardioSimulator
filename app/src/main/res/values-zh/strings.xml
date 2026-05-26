@@ -97,6 +97,9 @@
     <string name="constructor_anchor_insert_after">在后面插入</string>
     <string name="constructor_anchor_delete">删除</string>
     <string name="constructor_anchor_center_y">Y轴居中</string>
+    <string name="constructor_calculate_derived_confirm_title">计算派生导联？</string>
+    <string name="constructor_calculate_derived_confirm_message">这将基于 I、II、V2 和 V6 覆盖现有依赖导联（III、aVR、aVL、aVF、V1、V3、V4、V5）的数据。是否继续？</string>
+    <string name="constructor_calculate_derived_formulas">\n\n公式：\nIII = II - I\naVR = -(I + II) / 2\naVL = (2\u00B7I - II) / 2\naVF = (2\u00B7II - I) / 2\nV1, V3, V4, V5 = 角度投影 (V2, V6)</string>
     <string name="constructor_generate_derived">生成派生导联</string>
     <string name="constructor_flag_frequently">频繁</string>
     <string name="constructor_flag_withsound">带声音</string>
