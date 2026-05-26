@@ -6,7 +6,7 @@
     <string name="mode_testing">Testing</string>
     <string name="mode_examination">Examination</string>
     <string name="mode_oske">OSKE</string>
-    <string name="mode_editor">Constructor</string>
+    <string name="mode_editor">Constructor ECG</string>
 
     <!-- Settings dialog -->
     <string name="settings_title">Settings</string>

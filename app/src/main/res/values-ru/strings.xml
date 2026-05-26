@@ -6,7 +6,7 @@
     <string name="mode_testing">Тестирование</string>
     <string name="mode_examination">Экзамен</string>
     <string name="mode_oske">ОСКЭ</string>
-    <string name="mode_editor">Конструктор</string>
+    <string name="mode_editor">Конструктор ЭКГ</string>
 
     <!-- Settings dialog -->
     <string name="settings_title">Настройки</string>
