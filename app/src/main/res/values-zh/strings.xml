@@ -59,6 +59,7 @@
     <string name="monitor_tips">提示</string>
 
     <!-- Rhythm panel -->
+    <string name="rhythm_drawer_title">心律</string>
     <string name="rhythm_search_placeholder">心律…</string>
     <string name="rhythm_search_content_description">搜索</string>
 

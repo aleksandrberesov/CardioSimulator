@@ -59,6 +59,7 @@
     <string name="monitor_tips">Подсказки</string>
 
     <!-- Rhythm panel -->
+    <string name="rhythm_drawer_title">Ритм</string>
     <string name="rhythm_search_placeholder">Ритм…</string>
     <string name="rhythm_search_content_description">Поиск</string>
 

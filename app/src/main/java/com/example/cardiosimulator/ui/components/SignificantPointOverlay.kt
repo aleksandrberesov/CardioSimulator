@@ -128,6 +128,7 @@ fun SignificantPointOverlay(
                 val start = pointsMap[startType]?.index ?: return
                 val end = pointsMap[endType]?.index ?: return
                 if (start >= end) return
+                if (start !in points.values.indices || end !in points.values.indices) return
                 
                 val x1 = start * stepX
                 val x2 = end * stepX
@@ -157,7 +158,7 @@ fun SignificantPointOverlay(
             
             // 1. QRS Complex (At the top of the wave)
             val rPeak = pointsMap[EcgPointType.R_PEAK]
-            val qrsY = if (rPeak != null) {
+            val qrsY = if (rPeak != null && rPeak.index in points.values.indices) {
                 baselineY - points.values[rPeak.index] * stepY - 40f
             } else 40f
             drawInterval(EcgPointType.QRS_START, EcgPointType.QRS_END, qrsLabel, qrsY, Color(0xFFD32F2F))
@@ -168,11 +169,11 @@ fun SignificantPointOverlay(
 
             // 3. Wave durations (Above their respective peaks)
             val pPeak = pointsMap[EcgPointType.P_PEAK]
-            val pY = if (pPeak != null) baselineY - points.values[pPeak.index] * stepY - 30f else baselineY - 60f
+            val pY = if (pPeak != null && pPeak.index in points.values.indices) baselineY - points.values[pPeak.index] * stepY - 30f else baselineY - 60f
             drawInterval(EcgPointType.P_START, EcgPointType.P_END, pLabel, pY, intervalColor)
 
             val tPeak = pointsMap[EcgPointType.T_PEAK]
-            val tY = if (tPeak != null) baselineY - points.values[tPeak.index] * stepY - 30f else baselineY - 60f
+            val tY = if (tPeak != null && tPeak.index in points.values.indices) baselineY - points.values[tPeak.index] * stepY - 30f else baselineY - 60f
             drawInterval(EcgPointType.T_START, EcgPointType.T_END, tLabel, tY, intervalColor)
 
             // 4. Long Intervals (Below baseline)
@@ -180,7 +181,9 @@ fun SignificantPointOverlay(
             drawInterval(EcgPointType.QRS_START, EcgPointType.T_END, qtLabel, baselineY + 100f, intervalColor, isBelow = true)
 
             // 5. R-R Intervals (Distance between R peaks)
-            val rPeaks = significantPoints.filter { it.type == EcgPointType.R_PEAK }.sortedBy { it.index }
+            val rPeaks = significantPoints
+                .filter { it.type == EcgPointType.R_PEAK && it.index in points.values.indices }
+                .sortedBy { it.index }
             rPeaks.windowed(2).forEach { (r1, r2) ->
                 val x1 = r1.index * stepX
                 val x2 = r2.index * stepX
