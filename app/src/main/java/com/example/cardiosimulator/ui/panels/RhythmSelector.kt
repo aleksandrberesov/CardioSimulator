@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,10 +54,10 @@ fun RhythmSelector(
     selectedId: String? = null,
     onRhythmSelect: (PathologyEntry) -> Unit = {},
     onSearchQueryChange: (String) -> Unit = {},
+    listState: LazyListState = rememberLazyListState(),
 ) {
     val currentLanguage by appViewModel.selectedLanguage.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
-    val listState = rememberLazyListState()
 
     val filtered = remember(rhythms, searchQuery, currentLanguage) {
         rhythms.filter {
@@ -81,6 +82,11 @@ fun RhythmSelector(
             .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        Text(
+            text = stringResource(R.string.rhythm_selector_title),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
+        )
         Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
             OutlinedTextField(
                 value = searchQuery,

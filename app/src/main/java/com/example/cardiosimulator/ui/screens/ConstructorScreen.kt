@@ -1,12 +1,15 @@
 package com.example.cardiosimulator.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.ui.Alignment
@@ -221,6 +224,7 @@ fun ConstructorScreen(
 
     var isRhythmDrawerExpanded by remember { mutableStateOf(false) }
     var isPointsDrawerExpanded by remember { mutableStateOf(false) }
+    val rhythmListState = rememberLazyListState()
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Main Area
@@ -336,7 +340,8 @@ fun ConstructorScreen(
                                     ) {
                                         PreviewPane(
                                             points = points,
-                                            modifier = Modifier.fillMaxSize()
+                                            modifier = Modifier.fillMaxSize(),
+                                            isRunning = monitorMode.isRunning
                                         )
                                     }
                                 }
@@ -380,6 +385,7 @@ fun ConstructorScreen(
                                 rhythms = rhythms,
                                 selectedId = targetFile?.id,
                                 onRhythmSelect = { constructorViewModel.selectPathology(it.id) },
+                                listState = rhythmListState,
                             )
                         },
                         handlerContent = {

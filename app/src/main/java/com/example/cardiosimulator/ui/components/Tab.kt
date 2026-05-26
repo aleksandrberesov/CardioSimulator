@@ -73,7 +73,7 @@ fun Tab(
             icon != null -> {
                 Icon(
                     imageVector = icon,
-                    contentDescription = text,
+                    contentDescription = iconContentDescription ?: text,
                     tint = Color.Black,
                     modifier = iconModifier.padding(4.dp)
                 )

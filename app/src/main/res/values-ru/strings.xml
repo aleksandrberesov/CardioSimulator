@@ -119,6 +119,8 @@
     <string name="cd_pause">Пауза</string>
     <string name="cd_ruler">Линейка</string>
 
+    <string name="rhythm_selector_title">ЭКГ ритмы</string>
+
     <!-- Экран конструктора -->
     <string name="constructor_title">Конструктор ЭКГ</string>
     <string name="constructor_select_hint">Выберите серию для конструирования</string>

@@ -241,5 +241,14 @@ fun ConstructorControlPanel(
                 modifier = Modifier.weight(1f)
             )
         }
+
+        ControlPanelDivider()
+
+        Tab(
+            icon = if (monitorMode.isRunning) Icons.Default.Stop else Icons.Default.PlayArrow,
+            iconContentDescription = if (monitorMode.isRunning) stringResource(R.string.cd_stop) else stringResource(R.string.cd_start),
+            onClick = { monitorViewModel.setIsRunning(!monitorMode.isRunning) },
+            modifier = Modifier.weight(0.5f)
+        )
     }
 }

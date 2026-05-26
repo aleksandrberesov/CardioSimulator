@@ -119,6 +119,8 @@
     <string name="cd_pause">Pause</string>
     <string name="cd_ruler">Ruler</string>
 
+    <string name="rhythm_selector_title">ECG Rhythms</string>
+
     <!-- Constructor Screen -->
     <string name="constructor_title">ECG Constructor</string>
     <string name="constructor_select_hint">Select a series for construction</string>
