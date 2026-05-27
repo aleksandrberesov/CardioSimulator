@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,7 +30,24 @@ fun Modifier.ekgGrid(
     val backgroundColor = when (scheme) {
         GridScheme.Pink -> Color(0xFFFFF5F5)
         GridScheme.BlueGray -> Color(0xFFF0F4F7)
+        GridScheme.Blank -> Color.White
     }
+
+    if (scheme == GridScheme.Blank) {
+        return@composed this
+            .background(backgroundColor)
+            .drawWithCache {
+                val barWidth = 2.dp.toPx()
+                onDrawBehind {
+                    drawRect(
+                        color = Color.Black.copy(alpha = 0.5f),
+                        topLeft = Offset(0f, 0f),
+                        size = Size(barWidth, size.height)
+                    )
+                }
+            }
+    }
+
     val smallGridColor = when (scheme) {
         GridScheme.Pink -> Color(0xFFFDE4E4)
         GridScheme.BlueGray -> Color(0xFFDDE4E9)

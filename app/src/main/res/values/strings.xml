@@ -33,6 +33,7 @@
     <!-- Grid scheme labels -->
     <string name="grid_scheme_pink">Pink</string>
     <string name="grid_scheme_blue_gray">Blue/Gray</string>
+    <string name="grid_scheme_blank">Blank</string>
 
     <!-- Navigation -->
     <string name="nav_home">Home</string>

@@ -6,7 +6,8 @@ import com.example.cardiosimulator.data.EcgCalibration
 
 enum class GridScheme(@StringRes val labelRes: Int) {
     Pink(R.string.grid_scheme_pink),
-    BlueGray(R.string.grid_scheme_blue_gray)
+    BlueGray(R.string.grid_scheme_blue_gray),
+    Blank(R.string.grid_scheme_blank)
 }
 
 enum class SeriesScheme {
