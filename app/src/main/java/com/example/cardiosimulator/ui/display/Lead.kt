@@ -31,7 +31,8 @@ fun Lead(
     points: Points,
     modifier: Modifier = Modifier,
     title: String = "",
-    isRunning: Boolean = false
+    isRunning: Boolean = false,
+    xOffsetPx: Float = 0f
 ){
     Row(
         modifier = modifier.leadArea(),
@@ -66,7 +67,8 @@ fun Lead(
             PreviewPane(
                 points = points,
                 modifier = Modifier.fillMaxSize(),
-                isRunning = isRunning
+                isRunning = isRunning,
+                externalXOffsetPx = xOffsetPx
             )
         }
     }

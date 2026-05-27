@@ -29,6 +29,7 @@ fun PreviewPane(
     modifier: Modifier = Modifier,
     color: Color = Color.Black,
     isRunning: Boolean = true,
+    externalXOffsetPx: Float? = null,
 ) {
     if (points.values.size < 2) return
     val scale = LocalPixelScale.current
@@ -43,7 +44,7 @@ fun PreviewPane(
     val periodPx = durationMs / 1000f * pxPerSec
 
     val infiniteTransition = rememberInfiniteTransition(label = "PreviewScroll")
-    val phase by if (isRunning) {
+    val phase by if (externalXOffsetPx == null && isRunning) {
         infiniteTransition.animateFloat(
             initialValue = 0f,
             targetValue = 1f,
@@ -68,12 +69,13 @@ fun PreviewPane(
                 val path = projectPath(points.values, stepX, stepY, baselineY)
 
                 onDrawBehind {
-                    val xOffset = -phase * periodPx
+                    val xOffset = externalXOffsetPx ?: (-phase * periodPx)
+                    val scroll = xOffset % periodPx
                     val iterations = (size.width / periodPx).toInt() + 2
 
                     for (i in 0..iterations) {
                         withTransform({
-                            translate(left = xOffset + i * periodPx)
+                            translate(left = scroll + i * periodPx)
                         }) {
                             drawWaveform(path, color)
                         }

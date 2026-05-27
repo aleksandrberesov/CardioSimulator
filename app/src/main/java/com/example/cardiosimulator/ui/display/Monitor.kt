@@ -31,11 +31,19 @@ import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import kotlin.math.ceil
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.tween
+
 @Composable
 fun Monitor(
     modifier: Modifier = Modifier,
     monitorViewModel: MonitorViewModel = viewModel(),
-    content: @Composable ColumnScope.(rows: Int, columns: Int) -> Unit
+    staticGrid: Boolean = false,
+    content: @Composable ColumnScope.(rows: Int, columns: Int, xOffsetPx: Float) -> Unit
 ){
     val mode by monitorViewModel.monitorMode.collectAsState()
 
@@ -71,6 +79,22 @@ fun Monitor(
             cal = mode.calibration,
         )
     }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "MonitorAnimation")
+    val timeMillis by if (mode.isRunning) {
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 3600000f, // 1 hour continuous clock
+            animationSpec = infiniteRepeatable(
+                animation = tween(3600000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "GlobalTimeMillis"
+        )
+    } else {
+        remember { mutableFloatStateOf(0f) }
+    }
+    val xOffsetPx = -(timeMillis / 1000f) * pixelScale.pxPerSec
 
     BoxWithConstraints(
         modifier = Modifier
@@ -110,9 +134,9 @@ fun Monitor(
                         translationX = offset.x,
                         translationY = offset.y
                     )
-                    .ekgGrid(mode.gridScheme)
+                    .ekgGrid(mode.gridScheme, if (staticGrid) 0f else xOffsetPx)
             ) {
-                content(rows, columns)
+                content(rows, columns, xOffsetPx)
             }
         }
     }
@@ -133,7 +157,7 @@ fun MonitorOneColumn12Preview() {
     CardioSimulatorTheme {
         Monitor(
             monitorViewModel = vm
-        ) { rows, columns ->
+        ) { rows, columns, xOffset ->
             LeadsGrid(
                 rows = rows,
                 columns = columns,
@@ -141,7 +165,8 @@ fun MonitorOneColumn12Preview() {
             ) { _, lead ->
                 Lead(
                     points = samplePoints,
-                    title = lead?.name ?: ""
+                    title = lead?.name ?: "",
+                    xOffsetPx = xOffset
                 )
             }
         }
@@ -163,7 +188,7 @@ fun MonitorTwoColumn12Preview() {
     CardioSimulatorTheme {
         Monitor(
             monitorViewModel = vm
-        ) { rows, columns ->
+        ) { rows, columns, xOffset ->
             LeadsGrid(
                 rows = rows,
                 columns = columns,
@@ -171,7 +196,8 @@ fun MonitorTwoColumn12Preview() {
             ) { _, lead ->
                 Lead(
                     points = samplePoints,
-                    title = lead?.name ?: ""
+                    title = lead?.name ?: "",
+                    xOffsetPx = xOffset
                 )
             }
         }
@@ -193,7 +219,7 @@ fun MonitorGrid12Preview() {
     CardioSimulatorTheme {
         Monitor(
             monitorViewModel = vm
-        ) { rows, columns ->
+        ) { rows, columns, xOffset ->
             LeadsGrid(
                 rows = rows,
                 columns = columns,
@@ -201,7 +227,8 @@ fun MonitorGrid12Preview() {
             ) { _, lead ->
                 Lead(
                     points = samplePoints,
-                    title = lead?.name ?: ""
+                    title = lead?.name ?: "",
+                    xOffsetPx = xOffset
                 )
             }
         }

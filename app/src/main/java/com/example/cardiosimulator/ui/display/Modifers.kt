@@ -22,7 +22,10 @@ fun Modifier.leadArea(): Modifier {
         .fillMaxHeight(1f)
 }
 
-fun Modifier.ekgGrid(scheme: GridScheme = GridScheme.Pink): Modifier = composed {
+fun Modifier.ekgGrid(
+    scheme: GridScheme = GridScheme.Pink,
+    xOffsetPx: Float = 0f
+): Modifier = composed {
     val backgroundColor = when (scheme) {
         GridScheme.Pink -> Color(0xFFFFF5F5)
         GridScheme.BlueGray -> Color(0xFFF0F4F7)
@@ -49,10 +52,10 @@ fun Modifier.ekgGrid(scheme: GridScheme = GridScheme.Pink): Modifier = composed 
             val smallPath = Path()
             val largePath = Path()
 
-            // Vertical lines
+            // Vertical lines: draw one extra large step to allow for scrolling
             var x = 0f
             var i = 0
-            while (x <= size.width) {
+            while (x <= size.width + largeStep) {
                 if (i % 5 == 0) {
                     largePath.moveTo(x, 0f)
                     largePath.lineTo(x, size.height)
@@ -70,18 +73,22 @@ fun Modifier.ekgGrid(scheme: GridScheme = GridScheme.Pink): Modifier = composed 
             while (y <= size.height) {
                 if (j % 5 == 0) {
                     largePath.moveTo(0f, y)
-                    largePath.lineTo(size.width, y)
+                    largePath.lineTo(size.width + largeStep, y)
                 } else {
                     smallPath.moveTo(0f, y)
-                    smallPath.lineTo(size.width, y)
+                    smallPath.lineTo(size.width + largeStep, y)
                 }
                 y += smallStep
                 j++
             }
 
             onDrawBehind {
+                val scroll = xOffsetPx % largeStep
+                drawContext.canvas.save()
+                drawContext.canvas.translate(scroll, 0f)
                 drawPath(smallPath, smallGridColor, style = Stroke(thinStroke))
                 drawPath(largePath, largeGridColor, style = Stroke(thickStroke))
+                drawContext.canvas.restore()
             }
         }
 }

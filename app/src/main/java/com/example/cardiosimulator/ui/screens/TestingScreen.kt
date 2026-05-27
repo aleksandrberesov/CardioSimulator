@@ -46,7 +46,7 @@ fun TestingScreen(
             Monitor(
                 modifier = Modifier.weight(1f),
                 monitorViewModel = monitorViewModel,
-            ) { rows, columns ->
+            ) { rows, columns, xOffset ->
                 LeadsGrid(
                     rows = rows,
                     columns = columns,
@@ -58,7 +58,8 @@ fun TestingScreen(
                     LeadView(
                         points = leadPoints,
                         title = lead?.name ?: "",
-                        isRunning = mode.isRunning
+                        isRunning = mode.isRunning,
+                        xOffsetPx = xOffset
                     )
                 }
             }
