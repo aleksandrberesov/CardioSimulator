@@ -58,13 +58,13 @@ the header block from each lead block, and lead blocks from one another.
                     "leads:"     <int>     NL
                     [ "markers:" <marker>(,<marker>)* NL ]
 <lead-block>    ::= "lead:"   <lead-name>       NL
-<int>           ::= [0-9]+
-<marker>        ::= <int> ":" <point-type>
-<point-type>    ::= "P_START" | "P_PEAK" | "P_END" 
-                  | "QRS_START" | "Q_PEAK" | "R_PEAK" | "S_PEAK" | "QRS_END"
-                  | "T_START" | "T_PEAK" | "T_END"
                     "count:"  <int>             NL
                     "points:" <int>(,<int>)*    NL
+<int>           ::= [0-9]+
+<marker>        ::= <int> ":" <point-type>
+<point-type>    ::= "P_START" | "P_PEAK" | "P_END"
+                  | "QRS_START" | "Q_PEAK" | "R_PEAK" | "S_PEAK" | "QRS_END"
+                  | "T_START" | "T_PEAK" | "T_END"
 <lead-name>     ::= "I" | "II" | "III" | "aVR" | "aVL" | "aVF"
                   | "V1" | "V2" | "V3" | "V4" | "V5" | "V6"
 <blank>         ::= NL
@@ -119,6 +119,7 @@ pathology:tachpm
 title:Atrial tachycardia, and pacemaker migration
 name:Предсердная тахикардия и миграция водителя ритма
 leads:12
+markers:120:P_START,145:P_PEAK,160:P_END,210:QRS_START,225:R_PEAK
 
 lead:I
 count:2262
@@ -130,6 +131,10 @@ points:1024,1024,1024,1024,1024,1024,1024,...,1024
 
 ... (10 more lead blocks)
 ```
+
+The `markers:` line is optional and may be omitted entirely. When
+present, it lives in the header block alongside `pathology` / `title` /
+`name` / `leads`.
 
 ---
 

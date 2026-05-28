@@ -20,7 +20,7 @@ data class MonitorModeModel(
     val count: Int = 1,
     val gridScheme: GridScheme = GridScheme.Pink,
     val seriesScheme: SeriesScheme = SeriesScheme.OneColumn,
-    val speed: Int = 25,
+    val speed: Float = 25f,
     val scale: Float = 1f,
     val displayScale: Float = 0.4f,
     val calibration: EcgCalibration = EcgCalibration(),

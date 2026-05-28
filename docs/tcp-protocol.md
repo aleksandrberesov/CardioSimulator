@@ -13,10 +13,14 @@ waveform samples over a TCP connection.
   [TcpMessage.kt](../app/src/main/java/com/example/cardiosimulator/network/TcpMessage.kt),
   tests in [TcpProtocolTest.kt](../app/src/test/java/com/example/cardiosimulator/network/TcpProtocolTest.kt).
 
-> **Scope note.** This document specifies only the message format. The Android
-> app currently exposes IP/port settings and implements encode/decode, but
-> does not yet open sockets. Connection lifecycle, authentication, reconnect
-> behavior, and keep-alive are out of scope here and TBD.
+> **Scope note.** This document specifies the message format. The Android
+> app's `AppViewModel` opens a TCP socket on demand from the Settings dialog,
+> auto-uploads the current `Pathologies.zip` snapshot on every successful
+> connect, drains incoming frames to detect disconnects, and reconnects
+> on a fixed `tcpReconnectIntervalMs` cadence (default 5 s). See
+> [architecture.md](architecture.md) §4 for the connection lifecycle.
+> Authentication and keep-alive are not implemented and are out of scope
+> for this document.
 
 ---
 
@@ -99,7 +103,7 @@ Minimal form (no lead, no identy, offset = 0):
 ### Lead tokens
 
 Valid `lead` values, defined by the
-[`Lead`](../app/src/main/java/com/example/cardiosimulator/domain/EcgData.kt) enum:
+[`Lead`](../app/src/main/java/com/example/cardiosimulator/domain/Pathology.kt) enum:
 
 ```
 I, II, III, aVR, aVL, aVF, V1, V2, V3, V4, V5, V6

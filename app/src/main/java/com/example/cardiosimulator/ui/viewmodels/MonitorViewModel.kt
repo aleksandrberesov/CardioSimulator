@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class MonitorViewModel(
-    private val mode: OperatingMode,
+    val mode: OperatingMode,
     private val prefs: DataSourcePrefs? = null
 ) : ViewModel() {
     private val _monitorMode = MutableStateFlow(MonitorModeModel())
@@ -79,7 +79,7 @@ class MonitorViewModel(
         }
     }
 
-    fun setSpeed(speed: Int, persist: Boolean = true) {
+    fun setSpeed(speed: Float, persist: Boolean = true) {
         _monitorMode.update { it.copy(speed = speed) }
         if (persist) {
             viewModelScope.launch {

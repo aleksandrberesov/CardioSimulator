@@ -74,7 +74,7 @@ fun Monitor(
     val pixelScale = remember(pxPerMm, mode.speed, mode.calibration) {
         PixelScale(
             pxPerMm = pxPerMm,
-            paperSpeedMmPerSec = mode.speed.toFloat(),
+            paperSpeedMmPerSec = mode.speed,
             gainZoomY = 1.0f,
             cal = mode.calibration,
         )

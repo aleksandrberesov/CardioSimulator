@@ -52,20 +52,44 @@ class DataSourcePrefs(private val context: Context) {
         prefs[KEY_LAST_EDITOR_RHYTHM_ID]
     }
 
-    fun monitorSpeed(mode: String): Flow<Int?> = context.dataSourceDataStore.data.map { prefs ->
-        prefs[intPreferencesKey("${mode}_monitor_speed")] ?: prefs[KEY_MONITOR_SPEED]
+    fun monitorSpeed(mode: String): Flow<Float?> = context.dataSourceDataStore.data.map { prefs ->
+        fun getFloat(name: String): Float? = when (val v = prefs.asMap().entries.find { it.key.name == name }?.value) {
+            is Float -> v
+            is Int -> v.toFloat()
+            is Double -> v.toFloat()
+            else -> null
+        }
+        getFloat("${mode}_monitor_speed") ?: getFloat("monitor_speed")
     }
 
     fun monitorScale(mode: String): Flow<Float?> = context.dataSourceDataStore.data.map { prefs ->
-        prefs[floatPreferencesKey("${mode}_monitor_scale")] ?: prefs[KEY_MONITOR_SCALE]
+        fun getFloat(name: String): Float? = when (val v = prefs.asMap().entries.find { it.key.name == name }?.value) {
+            is Float -> v
+            is Int -> v.toFloat()
+            is Double -> v.toFloat()
+            else -> null
+        }
+        getFloat("${mode}_monitor_scale") ?: getFloat("monitor_scale")
     }
 
     fun monitorDisplayScale(mode: String): Flow<Float?> = context.dataSourceDataStore.data.map { prefs ->
-        prefs[floatPreferencesKey("${mode}_monitor_display_scale")] ?: prefs[KEY_MONITOR_DISPLAY_SCALE]
+        fun getFloat(name: String): Float? = when (val v = prefs.asMap().entries.find { it.key.name == name }?.value) {
+            is Float -> v
+            is Int -> v.toFloat()
+            is Double -> v.toFloat()
+            else -> null
+        }
+        getFloat("${mode}_monitor_display_scale") ?: getFloat("monitor_display_scale")
     }
 
     fun monitorSeriesCount(mode: String): Flow<Int?> = context.dataSourceDataStore.data.map { prefs ->
-        prefs[intPreferencesKey("${mode}_monitor_series_count")] ?: prefs[KEY_MONITOR_SERIES_COUNT]
+        fun getInt(name: String): Int? = when (val v = prefs.asMap().entries.find { it.key.name == name }?.value) {
+            is Int -> v
+            is Float -> v.toInt()
+            is Double -> v.toInt()
+            else -> null
+        }
+        getInt("${mode}_monitor_series_count") ?: getInt("monitor_series_count")
     }
 
     fun monitorSeriesScheme(mode: String): Flow<String?> = context.dataSourceDataStore.data.map { prefs ->
@@ -123,9 +147,9 @@ class DataSourcePrefs(private val context: Context) {
         }
     }
 
-    suspend fun setMonitorSpeed(mode: String, speed: Int) {
+    suspend fun setMonitorSpeed(mode: String, speed: Float) {
         context.dataSourceDataStore.edit { prefs ->
-            prefs[intPreferencesKey("${mode}_monitor_speed")] = speed
+            prefs[floatPreferencesKey("${mode}_monitor_speed")] = speed
         }
     }
 
@@ -169,7 +193,7 @@ class DataSourcePrefs(private val context: Context) {
         private val KEY_GRID_SCHEME = stringPreferencesKey("grid_scheme")
         private val KEY_LAST_RHYTHM_ID = stringPreferencesKey("last_rhythm_id")
         private val KEY_LAST_EDITOR_RHYTHM_ID = stringPreferencesKey("last_editor_rhythm_id")
-        private val KEY_MONITOR_SPEED = intPreferencesKey("monitor_speed")
+        private val KEY_MONITOR_SPEED = floatPreferencesKey("monitor_speed")
         private val KEY_MONITOR_SCALE = floatPreferencesKey("monitor_scale")
         private val KEY_MONITOR_DISPLAY_SCALE = floatPreferencesKey("monitor_display_scale")
         private val KEY_MONITOR_SERIES_COUNT = intPreferencesKey("monitor_series_count")

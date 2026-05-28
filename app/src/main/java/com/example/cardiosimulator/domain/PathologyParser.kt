@@ -149,8 +149,12 @@ object PathologyParser {
         while (i < lines.size) {
             val line = lines[i]
             if (line.isBlank()) { i++; break }
-            val (k, v) = splitKeyValue(line) ?: run { i++; continue }
-            header[k] = v
+            val pair = splitKeyValue(line)
+            if (pair == null) {
+                i++
+                continue
+            }
+            header[pair.first] = pair.second
             i++
         }
         val body = lines.drop(i).filter { it.isNotBlank() }

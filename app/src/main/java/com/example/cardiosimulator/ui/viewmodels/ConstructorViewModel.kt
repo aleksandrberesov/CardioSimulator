@@ -212,10 +212,11 @@ class ConstructorViewModel(
         viewModelScope.launch {
             _isSaving.value = true
             try {
-                // Phase 4: writePathology will be added to repository
-                repository.writePathology(file)
-                _dirtyLeads.value = emptySet()
-                _isMetadataDirty.value = false
+                val success = repository.writePathology(file)
+                if (success) {
+                    _dirtyLeads.value = emptySet()
+                    _isMetadataDirty.value = false
+                }
             } finally {
                 _isSaving.value = false
             }

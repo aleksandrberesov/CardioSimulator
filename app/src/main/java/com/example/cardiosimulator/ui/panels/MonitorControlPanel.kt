@@ -124,8 +124,9 @@ fun MonitorControlPanel(
 
         Box(modifier = Modifier.weight(1f)) {
             var speedMenuExpanded by remember { mutableStateOf(false) }
+            val formattedSpeed = if (monitorMode.speed % 1 == 0f) monitorMode.speed.toInt().toString() else monitorMode.speed.toString()
             Tab(
-                text = "${monitorMode.speed}",
+                text = formattedSpeed,
                 subText = stringResource(R.string.monitor_speed_unit),
                 onClick = { speedMenuExpanded = true },
                 modifier = Modifier.fillMaxWidth()
@@ -134,9 +135,11 @@ fun MonitorControlPanel(
                 expanded = speedMenuExpanded,
                 onDismissRequest = { speedMenuExpanded = false }
             ) {
-                listOf(25, 50).forEach { speed ->
+                val speeds = if (viewModel.mode == OperatingMode.Teaching) listOf(12.5f, 25f, 50f) else listOf(25f, 50f)
+                speeds.forEach { speed ->
+                    val displaySpeed = if (speed % 1 == 0f) speed.toInt().toString() else speed.toString()
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.monitor_speed_format, speed)) },
+                        text = { Text(stringResource(R.string.monitor_speed_format, displaySpeed)) },
                         onClick = {
                             viewModel.setSpeed(speed)
                             speedMenuExpanded = false

@@ -47,7 +47,7 @@ fun ConstructorControlPanel(
     else 0
 
     if (showSpeedDialog) {
-        var speedText by remember { mutableStateOf(monitorMode.speed.toString()) }
+        var speedText by remember { mutableStateOf(if (monitorMode.speed % 1 == 0f) monitorMode.speed.toInt().toString() else monitorMode.speed.toString()) }
         AlertDialog(
             onDismissRequest = { showSpeedDialog = false },
             title = { Text(stringResource(R.string.monitor_speed_title)) },
@@ -55,16 +55,16 @@ fun ConstructorControlPanel(
                 TextField(
                     value = speedText,
                     onValueChange = { newValue ->
-                        if (newValue.all { it.isDigit() }) speedText = newValue
+                        if (newValue.isEmpty() || newValue.all { it.isDigit() || it == '.' }) speedText = newValue
                     },
                     label = { Text(stringResource(R.string.monitor_speed_unit)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true
                 )
             },
             confirmButton = {
                 TextButton(onClick = {
-                    speedText.toIntOrNull()?.let { monitorViewModel.setSpeed(it) }
+                    speedText.toFloatOrNull()?.let { monitorViewModel.setSpeed(it) }
                     showSpeedDialog = false
                 }) {
                     Text(stringResource(R.string.constructor_rename_ok))
@@ -228,8 +228,9 @@ fun ConstructorControlPanel(
                 isRepeatable = true,
                 modifier = Modifier.weight(1f)
             )
+            val formattedSpeed = if (monitorMode.speed % 1 == 0f) monitorMode.speed.toInt().toString() else monitorMode.speed.toString()
             Tab(
-                text = "${monitorMode.speed}",
+                text = formattedSpeed,
                 subText = stringResource(R.string.monitor_speed_unit),
                 onClick = { showSpeedDialog = true },
                 modifier = Modifier.weight(1.5f)

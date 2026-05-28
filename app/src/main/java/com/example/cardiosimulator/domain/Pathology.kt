@@ -16,7 +16,7 @@ enum class Lead {
 
     companion object {
         fun fromToken(raw: String): Lead? =
-            entries.firstOrNull { it.name.equals(raw.trim(), ignoreCase = true) }
+            Lead.entries.firstOrNull { it.name.equals(raw.trim(), ignoreCase = true) }
     }
 }
 
