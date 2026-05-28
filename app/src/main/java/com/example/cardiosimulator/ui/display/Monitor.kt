@@ -22,11 +22,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.data.LocalPixelScale
 import com.example.cardiosimulator.data.PixelScale
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.GridScheme
+import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.SeriesScheme
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
@@ -38,7 +41,7 @@ import kotlin.math.ceil
 @Composable
 fun Monitor(
     modifier: Modifier = Modifier,
-    monitorViewModel: MonitorViewModel = viewModel(),
+    monitorViewModel: MonitorViewModel,
     staticGrid: Boolean = false,
     content: @Composable ColumnScope.(rows: Int, columns: Int, xOffsetPx: Float, scheme: GridScheme) -> Unit
 ){
@@ -148,7 +151,14 @@ fun MonitorOneColumn12Preview() {
         0f, 0.1f, 0.2f, 0.5f, 1f, 0.5f, 0.2f, 0.1f, 0f,
         -0.1f, -0.2f, -0.5f, -1f, -0.5f, -0.2f, -0.1f, 0f
     ))
-    val vm: MonitorViewModel = viewModel()
+    val vm: MonitorViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return MonitorViewModel(mode = OperatingMode.Teaching) as T
+            }
+        }
+    )
     vm.setSeriesCount(12)
     vm.setSeriesScheme(SeriesScheme.OneColumn)
     vm.setGridScheme(GridScheme.Pink)
@@ -180,7 +190,14 @@ fun MonitorTwoColumn12Preview() {
         0f, 0.1f, 0.2f, 0.5f, 1f, 0.5f, 0.2f, 0.1f, 0f,
         -0.1f, -0.2f, -0.5f, -1f, -0.5f, -0.2f, -0.1f, 0f
     ))
-    val vm: MonitorViewModel = viewModel()
+    val vm: MonitorViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return MonitorViewModel(mode = OperatingMode.Teaching) as T
+            }
+        }
+    )
     vm.setSeriesCount(12)
     vm.setSeriesScheme(SeriesScheme.TwoColumn)
     vm.setGridScheme(GridScheme.BlueGray)
@@ -212,7 +229,14 @@ fun MonitorGrid12Preview() {
         0f, 0.1f, 0.2f, 0.5f, 1f, 0.5f, 0.2f, 0.1f, 0f,
         -0.1f, -0.2f, -0.5f, -1f, -0.5f, -0.2f, -0.1f, 0f
     ))
-    val vm: MonitorViewModel = viewModel()
+    val vm: MonitorViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return MonitorViewModel(mode = OperatingMode.Teaching) as T
+            }
+        }
+    )
     vm.setSeriesCount(6)
     vm.setSeriesScheme(SeriesScheme.Grid)
     vm.setGridScheme(GridScheme.Pink)

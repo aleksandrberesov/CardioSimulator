@@ -7,6 +7,7 @@ import com.example.cardiosimulator.data.EcgCalibration
 import com.example.cardiosimulator.domain.GridScheme
 import com.example.cardiosimulator.domain.MonitorModeModel
 import com.example.cardiosimulator.domain.SeriesScheme
+import com.example.cardiosimulator.domain.OperatingMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,31 +15,35 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class MonitorViewModel(private val prefs: DataSourcePrefs? = null) : ViewModel() {
+class MonitorViewModel(
+    private val mode: OperatingMode,
+    private val prefs: DataSourcePrefs? = null
+) : ViewModel() {
     private val _monitorMode = MutableStateFlow(MonitorModeModel())
     val monitorMode: StateFlow<MonitorModeModel> = _monitorMode.asStateFlow()
 
     init {
         viewModelScope.launch {
-            prefs?.gridScheme?.first()?.let { schemeName ->
+            val modeName = mode.name
+            prefs?.gridScheme(modeName)?.first()?.let { schemeName ->
                 try {
                     val scheme = GridScheme.valueOf(schemeName)
                     setGridScheme(scheme, persist = false)
                 } catch (_: Exception) {}
             }
-            prefs?.monitorSpeed?.first()?.let { speed ->
+            prefs?.monitorSpeed(modeName)?.first()?.let { speed ->
                 setSpeed(speed, persist = false)
             }
-            prefs?.monitorScale?.first()?.let { scale ->
+            prefs?.monitorScale(modeName)?.first()?.let { scale ->
                 setScale(scale, persist = false)
             }
-            prefs?.monitorDisplayScale?.first()?.let { displayScale ->
+            prefs?.monitorDisplayScale(modeName)?.first()?.let { displayScale ->
                 setDisplayScale(displayScale, persist = false)
             }
-            prefs?.monitorSeriesCount?.first()?.let { count ->
+            prefs?.monitorSeriesCount(modeName)?.first()?.let { count ->
                 setSeriesCount(count, persist = false)
             }
-            prefs?.monitorSeriesScheme?.first()?.let { schemeName ->
+            prefs?.monitorSeriesScheme(modeName)?.first()?.let { schemeName ->
                 try {
                     val scheme = SeriesScheme.valueOf(schemeName)
                     setSeriesScheme(scheme, persist = false)
@@ -51,7 +56,7 @@ class MonitorViewModel(private val prefs: DataSourcePrefs? = null) : ViewModel()
         _monitorMode.update { it.copy(count = count) }
         if (persist) {
             viewModelScope.launch {
-                prefs?.setMonitorSeriesCount(count)
+                prefs?.setMonitorSeriesCount(mode.name, count)
             }
         }
     }
@@ -60,7 +65,7 @@ class MonitorViewModel(private val prefs: DataSourcePrefs? = null) : ViewModel()
         _monitorMode.update { it.copy(seriesScheme = scheme) }
         if (persist) {
             viewModelScope.launch {
-                prefs?.setMonitorSeriesScheme(scheme.name)
+                prefs?.setMonitorSeriesScheme(mode.name, scheme.name)
             }
         }
     }
@@ -69,7 +74,7 @@ class MonitorViewModel(private val prefs: DataSourcePrefs? = null) : ViewModel()
         _monitorMode.update { it.copy(gridScheme = scheme) }
         if (persist) {
             viewModelScope.launch {
-                prefs?.setGridScheme(scheme.name)
+                prefs?.setGridScheme(mode.name, scheme.name)
             }
         }
     }
@@ -78,7 +83,7 @@ class MonitorViewModel(private val prefs: DataSourcePrefs? = null) : ViewModel()
         _monitorMode.update { it.copy(speed = speed) }
         if (persist) {
             viewModelScope.launch {
-                prefs?.setMonitorSpeed(speed)
+                prefs?.setMonitorSpeed(mode.name, speed)
             }
         }
     }
@@ -87,7 +92,7 @@ class MonitorViewModel(private val prefs: DataSourcePrefs? = null) : ViewModel()
         _monitorMode.update { it.copy(scale = scale) }
         if (persist) {
             viewModelScope.launch {
-                prefs?.setMonitorScale(scale)
+                prefs?.setMonitorScale(mode.name, scale)
             }
         }
     }
@@ -100,10 +105,11 @@ class MonitorViewModel(private val prefs: DataSourcePrefs? = null) : ViewModel()
         _monitorMode.update { it.copy(displayScale = displayScale) }
         if (persist) {
             viewModelScope.launch {
-                prefs?.setMonitorDisplayScale(displayScale)
+                prefs?.setMonitorDisplayScale(mode.name, displayScale)
             }
         }
     }
+
 
     fun setIsRunning(isRunning: Boolean) {
         _monitorMode.update { it.copy(isRunning = isRunning) }

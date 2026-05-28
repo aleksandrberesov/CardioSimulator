@@ -40,36 +40,36 @@ class DataSourcePrefs(private val context: Context) {
         prefs[KEY_DARK_THEME]
     }
 
-    val gridScheme: Flow<String?> = context.dataSourceDataStore.data.map { prefs ->
-        prefs[KEY_GRID_SCHEME]
+    fun gridScheme(mode: String): Flow<String?> = context.dataSourceDataStore.data.map { prefs ->
+        prefs[stringPreferencesKey("${mode}_grid_scheme")] ?: prefs[KEY_GRID_SCHEME]
     }
 
-    val lastRhythmId: Flow<String?> = context.dataSourceDataStore.data.map { prefs ->
-        prefs[KEY_LAST_RHYTHM_ID]
+    fun lastRhythmId(mode: String): Flow<String?> = context.dataSourceDataStore.data.map { prefs ->
+        prefs[stringPreferencesKey("${mode}_last_rhythm_id")] ?: prefs[KEY_LAST_RHYTHM_ID]
     }
 
     val lastEditorRhythmId: Flow<String?> = context.dataSourceDataStore.data.map { prefs ->
         prefs[KEY_LAST_EDITOR_RHYTHM_ID]
     }
 
-    val monitorSpeed: Flow<Int?> = context.dataSourceDataStore.data.map { prefs ->
-        prefs[KEY_MONITOR_SPEED]
+    fun monitorSpeed(mode: String): Flow<Int?> = context.dataSourceDataStore.data.map { prefs ->
+        prefs[intPreferencesKey("${mode}_monitor_speed")] ?: prefs[KEY_MONITOR_SPEED]
     }
 
-    val monitorScale: Flow<Float?> = context.dataSourceDataStore.data.map { prefs ->
-        prefs[KEY_MONITOR_SCALE]
+    fun monitorScale(mode: String): Flow<Float?> = context.dataSourceDataStore.data.map { prefs ->
+        prefs[floatPreferencesKey("${mode}_monitor_scale")] ?: prefs[KEY_MONITOR_SCALE]
     }
 
-    val monitorDisplayScale: Flow<Float?> = context.dataSourceDataStore.data.map { prefs ->
-        prefs[KEY_MONITOR_DISPLAY_SCALE]
+    fun monitorDisplayScale(mode: String): Flow<Float?> = context.dataSourceDataStore.data.map { prefs ->
+        prefs[floatPreferencesKey("${mode}_monitor_display_scale")] ?: prefs[KEY_MONITOR_DISPLAY_SCALE]
     }
 
-    val monitorSeriesCount: Flow<Int?> = context.dataSourceDataStore.data.map { prefs ->
-        prefs[KEY_MONITOR_SERIES_COUNT]
+    fun monitorSeriesCount(mode: String): Flow<Int?> = context.dataSourceDataStore.data.map { prefs ->
+        prefs[intPreferencesKey("${mode}_monitor_series_count")] ?: prefs[KEY_MONITOR_SERIES_COUNT]
     }
 
-    val monitorSeriesScheme: Flow<String?> = context.dataSourceDataStore.data.map { prefs ->
-        prefs[KEY_MONITOR_SERIES_SCHEME]
+    fun monitorSeriesScheme(mode: String): Flow<String?> = context.dataSourceDataStore.data.map { prefs ->
+        prefs[stringPreferencesKey("${mode}_monitor_series_scheme")] ?: prefs[KEY_MONITOR_SERIES_SCHEME]
     }
 
     val lastOperatingMode: Flow<String?> = context.dataSourceDataStore.data.map { prefs ->
@@ -102,16 +102,17 @@ class DataSourcePrefs(private val context: Context) {
         }
     }
 
-    suspend fun setGridScheme(scheme: String) {
+    suspend fun setGridScheme(mode: String, scheme: String) {
         context.dataSourceDataStore.edit { prefs ->
-            prefs[KEY_GRID_SCHEME] = scheme
+            prefs[stringPreferencesKey("${mode}_grid_scheme")] = scheme
         }
     }
 
-    suspend fun setLastRhythmId(id: String?) {
+    suspend fun setLastRhythmId(mode: String, id: String?) {
         context.dataSourceDataStore.edit { prefs ->
-            if (id == null) prefs.remove(KEY_LAST_RHYTHM_ID)
-            else prefs[KEY_LAST_RHYTHM_ID] = id
+            val key = stringPreferencesKey("${mode}_last_rhythm_id")
+            if (id == null) prefs.remove(key)
+            else prefs[key] = id
         }
     }
 
@@ -122,35 +123,36 @@ class DataSourcePrefs(private val context: Context) {
         }
     }
 
-    suspend fun setMonitorSpeed(speed: Int) {
+    suspend fun setMonitorSpeed(mode: String, speed: Int) {
         context.dataSourceDataStore.edit { prefs ->
-            prefs[KEY_MONITOR_SPEED] = speed
+            prefs[intPreferencesKey("${mode}_monitor_speed")] = speed
         }
     }
 
-    suspend fun setMonitorScale(scale: Float) {
+    suspend fun setMonitorScale(mode: String, scale: Float) {
         context.dataSourceDataStore.edit { prefs ->
-            prefs[KEY_MONITOR_SCALE] = scale
+            prefs[floatPreferencesKey("${mode}_monitor_scale")] = scale
         }
     }
 
-    suspend fun setMonitorDisplayScale(displayScale: Float) {
+    suspend fun setMonitorDisplayScale(mode: String, displayScale: Float) {
         context.dataSourceDataStore.edit { prefs ->
-            prefs[KEY_MONITOR_DISPLAY_SCALE] = displayScale
+            prefs[floatPreferencesKey("${mode}_monitor_display_scale")] = displayScale
         }
     }
 
-    suspend fun setMonitorSeriesCount(count: Int) {
+    suspend fun setMonitorSeriesCount(mode: String, count: Int) {
         context.dataSourceDataStore.edit { prefs ->
-            prefs[KEY_MONITOR_SERIES_COUNT] = count
+            prefs[intPreferencesKey("${mode}_monitor_series_count")] = count
         }
     }
 
-    suspend fun setMonitorSeriesScheme(scheme: String) {
+    suspend fun setMonitorSeriesScheme(mode: String, scheme: String) {
         context.dataSourceDataStore.edit { prefs ->
-            prefs[KEY_MONITOR_SERIES_SCHEME] = scheme
+            prefs[stringPreferencesKey("${mode}_monitor_series_scheme")] = scheme
         }
     }
+
 
     suspend fun setLastOperatingMode(mode: String) {
         context.dataSourceDataStore.edit { prefs ->

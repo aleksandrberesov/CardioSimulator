@@ -150,9 +150,9 @@ fun SignificantPointPanel(
 @Composable
 fun ConstructorScreen(
     appViewModel: AppViewModel,
-    monitorViewModel: MonitorViewModel = viewModel(),
-    rhythmViewModel: RhythmViewModel = viewModel(),
-    constructorViewModel: ConstructorViewModel = viewModel(),
+    monitorViewModel: MonitorViewModel,
+    rhythmViewModel: RhythmViewModel,
+    constructorViewModel: ConstructorViewModel,
 ) {
     val targetFile by constructorViewModel.targetFile
     val focusedLead by constructorViewModel.focusedLead.collectAsState()

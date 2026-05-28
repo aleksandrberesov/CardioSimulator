@@ -26,16 +26,11 @@ import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 @Composable
 fun TestingScreen(
     appViewModel: AppViewModel,
-    monitorViewModel: MonitorViewModel = viewModel(),
-    rhythmViewModel: RhythmViewModel = viewModel(),
+    monitorViewModel: MonitorViewModel,
+    rhythmViewModel: RhythmViewModel,
 ) {
     val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
     val waveforms by rhythmViewModel.waveforms.collectAsState()
-
-    LaunchedEffect(Unit) {
-        monitorViewModel.setSeriesCount(12)
-        monitorViewModel.setSeriesScheme(SeriesScheme.Grid)
-    }
 
     Row(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
         Column(

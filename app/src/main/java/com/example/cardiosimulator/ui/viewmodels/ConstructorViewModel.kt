@@ -8,6 +8,7 @@ import com.example.cardiosimulator.data.DataSourcePrefs
 import com.example.cardiosimulator.data.PathologyRepository
 import com.example.cardiosimulator.domain.EcgPointType
 import com.example.cardiosimulator.domain.Lead
+import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.PathologyFile
 import com.example.cardiosimulator.domain.SignificantPoint
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,11 +23,13 @@ import kotlinx.coroutines.launch
  */
 class ConstructorViewModel(
     private val repository: PathologyRepository,
+    private val mode: OperatingMode,
     private val prefs: DataSourcePrefs? = null
 ) : ViewModel() {
 
     init {
         viewModelScope.launch {
+            // Constructor uses its own specific preference for the last edited rhythm
             prefs?.lastEditorRhythmId?.first()?.let { id ->
                 selectPathology(id, persist = false)
             }

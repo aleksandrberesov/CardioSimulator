@@ -30,8 +30,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.R
+import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.components.ControlPanelDivider
 import com.example.cardiosimulator.ui.components.Label
@@ -238,7 +241,15 @@ fun MonitorControlPanel(
 @Preview(showBackground = true, widthDp = 1280, heightDp = 150)
 @Composable
 fun MonitorControlPanelPreview() {
+    val previewViewModel: MonitorViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return MonitorViewModel(mode = OperatingMode.Teaching) as T
+            }
+        }
+    )
     CardioSimulatorTheme {
-        MonitorControlPanel(viewModel = viewModel())
+        MonitorControlPanel(viewModel = previewViewModel)
     }
 }

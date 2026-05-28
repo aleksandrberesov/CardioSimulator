@@ -6,6 +6,7 @@ import com.example.cardiosimulator.data.DataSourcePrefs
 import com.example.cardiosimulator.data.PathologyRepository
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.Lead
+import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.PathologyEntry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +25,7 @@ import kotlinx.coroutines.withContext
  */
 class RhythmViewModel(
     val repository: PathologyRepository,
+    private val mode: OperatingMode,
     private val prefs: DataSourcePrefs? = null,
 ) : ViewModel() {
 
@@ -83,7 +85,7 @@ class RhythmViewModel(
             repository.loadManifest()
             
             // Try to restore last selected rhythm
-            val lastId = prefs?.lastRhythmId?.first()
+            val lastId = prefs?.lastRhythmId(mode.name)?.first()
             if (lastId != null && _selectedRhythm.value == null) {
                 selectRhythm(lastId, persist = false)
             } else {
@@ -98,7 +100,7 @@ class RhythmViewModel(
         
         if (persist) {
             viewModelScope.launch {
-                prefs?.setLastRhythmId(id)
+                prefs?.setLastRhythmId(mode.name, id)
             }
         }
 
