@@ -21,6 +21,7 @@ import com.example.cardiosimulator.data.EcgCalibration
 import com.example.cardiosimulator.data.LocalPixelScale
 import com.example.cardiosimulator.data.PixelScale
 import com.example.cardiosimulator.data.Points
+import com.example.cardiosimulator.domain.GridScheme
 import com.example.cardiosimulator.ui.components.CalibrationPulse
 import com.example.cardiosimulator.ui.components.ChartCanvas
 import com.example.cardiosimulator.ui.components.PreviewPane
@@ -32,7 +33,8 @@ fun Lead(
     modifier: Modifier = Modifier,
     title: String = "",
     isRunning: Boolean = false,
-    xOffsetPx: Float = 0f
+    xOffsetPx: Float = 0f,
+    gridScheme: GridScheme = GridScheme.Pink
 ){
     Row(
         modifier = modifier.leadArea(),
@@ -51,7 +53,7 @@ fun Lead(
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Serif,
                 fontSize = 16.sp,
-                color = Color.Black,
+                color = if (gridScheme == GridScheme.Blank) Color.Black else Color.Black, // Placeholder for future theme adjustments
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(top = 45.dp, start = 8.dp)
@@ -68,7 +70,8 @@ fun Lead(
                 points = points,
                 modifier = Modifier.fillMaxSize(),
                 isRunning = isRunning,
-                externalXOffsetPx = xOffsetPx
+                externalXOffsetPx = xOffsetPx,
+                gridScheme = gridScheme
             )
         }
     }

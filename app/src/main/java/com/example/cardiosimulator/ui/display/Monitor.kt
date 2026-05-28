@@ -15,6 +15,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
@@ -29,21 +30,17 @@ import com.example.cardiosimulator.domain.GridScheme
 import com.example.cardiosimulator.domain.SeriesScheme
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
+import kotlinx.coroutines.isActive
 import kotlin.math.ceil
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.tween
+
 
 @Composable
 fun Monitor(
     modifier: Modifier = Modifier,
     monitorViewModel: MonitorViewModel = viewModel(),
     staticGrid: Boolean = false,
-    content: @Composable ColumnScope.(rows: Int, columns: Int, xOffsetPx: Float) -> Unit
+    content: @Composable ColumnScope.(rows: Int, columns: Int, xOffsetPx: Float, scheme: GridScheme) -> Unit
 ){
     val mode by monitorViewModel.monitorMode.collectAsState()
 
@@ -80,20 +77,22 @@ fun Monitor(
         )
     }
 
-    val infiniteTransition = rememberInfiniteTransition(label = "MonitorAnimation")
-    val timeMillis by if (mode.isRunning) {
-        infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 3600000f, // 1 hour continuous clock
-            animationSpec = infiniteRepeatable(
-                animation = tween(3600000, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart
-            ),
-            label = "GlobalTimeMillis"
-        )
-    } else {
-        remember { mutableFloatStateOf(0f) }
+    val timeState = remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(mode.isRunning) {
+        if (mode.isRunning) {
+            var lastTime = 0L
+            while (isActive) {
+                withFrameNanos { frameTime ->
+                    if (lastTime != 0L) {
+                        val deltaMs = (frameTime - lastTime) / 1_000_000f
+                        timeState.floatValue += deltaMs
+                    }
+                    lastTime = frameTime
+                }
+            }
+        }
     }
+    val timeMillis = timeState.floatValue
     val xOffsetPx = -(timeMillis / 1000f) * pixelScale.pxPerSec
 
     BoxWithConstraints(
@@ -136,7 +135,7 @@ fun Monitor(
                     )
                     .ekgGrid(mode.gridScheme, if (staticGrid) 0f else xOffsetPx)
             ) {
-                content(rows, columns, xOffsetPx)
+                content(rows, columns, xOffsetPx, mode.gridScheme)
             }
         }
     }
@@ -157,7 +156,7 @@ fun MonitorOneColumn12Preview() {
     CardioSimulatorTheme {
         Monitor(
             monitorViewModel = vm
-        ) { rows, columns, xOffset ->
+        ) { rows, columns, xOffset, scheme ->
             LeadsGrid(
                 rows = rows,
                 columns = columns,
@@ -166,7 +165,8 @@ fun MonitorOneColumn12Preview() {
                 Lead(
                     points = samplePoints,
                     title = lead?.name ?: "",
-                    xOffsetPx = xOffset
+                    xOffsetPx = xOffset,
+                    gridScheme = scheme
                 )
             }
         }
@@ -188,7 +188,7 @@ fun MonitorTwoColumn12Preview() {
     CardioSimulatorTheme {
         Monitor(
             monitorViewModel = vm
-        ) { rows, columns, xOffset ->
+        ) { rows, columns, xOffset, scheme ->
             LeadsGrid(
                 rows = rows,
                 columns = columns,
@@ -197,7 +197,8 @@ fun MonitorTwoColumn12Preview() {
                 Lead(
                     points = samplePoints,
                     title = lead?.name ?: "",
-                    xOffsetPx = xOffset
+                    xOffsetPx = xOffset,
+                    gridScheme = scheme
                 )
             }
         }
@@ -219,7 +220,7 @@ fun MonitorGrid12Preview() {
     CardioSimulatorTheme {
         Monitor(
             monitorViewModel = vm
-        ) { rows, columns, xOffset ->
+        ) { rows, columns, xOffset, scheme ->
             LeadsGrid(
                 rows = rows,
                 columns = columns,
@@ -228,7 +229,8 @@ fun MonitorGrid12Preview() {
                 Lead(
                     points = samplePoints,
                     title = lead?.name ?: "",
-                    xOffsetPx = xOffset
+                    xOffsetPx = xOffset,
+                    gridScheme = scheme
                 )
             }
         }

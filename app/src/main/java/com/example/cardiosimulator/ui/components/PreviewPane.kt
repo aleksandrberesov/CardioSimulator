@@ -1,21 +1,25 @@
 package com.example.cardiosimulator.ui.components
 
-import androidx.compose.animation.core.*
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.withTransform
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.data.EcgCalibration
 import com.example.cardiosimulator.data.LocalPixelScale
 import com.example.cardiosimulator.data.PixelScale
 import com.example.cardiosimulator.data.Points
+import com.example.cardiosimulator.domain.GridScheme
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
+import kotlinx.coroutines.isActive
 import kotlin.math.max
 
 /**
@@ -30,6 +34,7 @@ fun PreviewPane(
     color: Color = Color.Black,
     isRunning: Boolean = true,
     externalXOffsetPx: Float? = null,
+    gridScheme: GridScheme = GridScheme.Pink,
 ) {
     if (points.values.size < 2) return
     val scale = LocalPixelScale.current
@@ -43,20 +48,22 @@ fun PreviewPane(
     val durationMs = max(1000, (dataWidthPx / pxPerSec * 1000).toInt())
     val periodPx = durationMs / 1000f * pxPerSec
 
-    val infiniteTransition = rememberInfiniteTransition(label = "PreviewScroll")
-    val phase by if (externalXOffsetPx == null && isRunning) {
-        infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = durationMs, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart
-            ),
-            label = "ScrollPhase"
-        )
-    } else {
-        remember { mutableFloatStateOf(0f) }
+    val phaseState = remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(isRunning, durationMs, externalXOffsetPx) {
+        if (isRunning && externalXOffsetPx == null) {
+            var lastTime = 0L
+            while (isActive) {
+                withFrameNanos { frameTime ->
+                    if (lastTime != 0L) {
+                        val deltaMs = (frameTime - lastTime) / 1_000_000f
+                        phaseState.floatValue = (phaseState.floatValue + deltaMs / durationMs) % 1f
+                    }
+                    lastTime = frameTime
+                }
+            }
+        }
     }
+    val phase = phaseState.floatValue
 
     Spacer(
         modifier = modifier
@@ -69,15 +76,68 @@ fun PreviewPane(
                 val path = projectPath(points.values, stepX, stepY, baselineY)
 
                 onDrawBehind {
-                    val xOffset = externalXOffsetPx ?: (-phase * periodPx)
-                    val scroll = xOffset % periodPx
-                    val iterations = (size.width / periodPx).toInt() + 2
+                    if (gridScheme == GridScheme.Blank) {
+                        // Sweep mode: waveform is stationary, revealed by the carrier moving across.
+                        val dist = if (externalXOffsetPx != null) -externalXOffsetPx else (phase * periodPx)
+                        val carrierX = dist % size.width
+                        val gapWidth = 4.dp.toPx()
+                        val gapEnd = carrierX + gapWidth
 
-                    for (i in 0..iterations) {
-                        withTransform({
-                            translate(left = scroll + i * periodPx)
-                        }) {
-                            drawWaveform(path, color)
+                        // Offset that anchors the continuous 'dist' to the moving 'carrierX'
+                        // This ensures the signal at any X corresponds to the 'dist' when the 
+                        // carrier was at that X.
+                        val baseScroll = carrierX - dist
+                        val iterations = (size.width / periodPx).toInt() + 2
+
+                        if (gapEnd < size.width) {
+                            // Normal case: Draw new data [0, carrierX] and old data [gapEnd, width]
+                            clipRect(right = carrierX) {
+                                val s = baseScroll % periodPx
+                                for (i in 0..iterations) {
+                                    withTransform({ translate(left = s + i * periodPx) }) {
+                                        drawWaveform(path, color)
+                                    }
+                                }
+                            }
+                            clipRect(left = gapEnd) {
+                                val s = (baseScroll + size.width) % periodPx
+                                for (i in 0..iterations) {
+                                    withTransform({ translate(left = s + i * periodPx) }) {
+                                        drawWaveform(path, color)
+                                    }
+                                }
+                            }
+                        } else {
+                            // Wrap-around case: The gap is currently at the start of the screen.
+                            val wrappedGapEnd = gapEnd - size.width
+                            clipRect(left = wrappedGapEnd, right = carrierX) {
+                                val s = baseScroll % periodPx
+                                for (i in 0..iterations) {
+                                    withTransform({ translate(left = s + i * periodPx) }) {
+                                        drawWaveform(path, color)
+                                    }
+                                }
+                            }
+                        }
+
+                        // Draw the carrier highlight (the leading edge/pen)
+                        drawRect(
+                            color = Color.White.copy(alpha = 0.4f),
+                            topLeft = Offset(carrierX, 0f),
+                            size = Size(2.dp.toPx(), size.height)
+                        )
+                    } else {
+                        // Standard mode: scrolling waveform
+                        val xOffset = externalXOffsetPx ?: (-phase * periodPx)
+                        val scroll = xOffset % periodPx
+                        val iterations = (size.width / periodPx).toInt() + 2
+
+                        for (i in 0..iterations) {
+                            withTransform({
+                                translate(left = scroll + i * periodPx)
+                            }) {
+                                drawWaveform(path, color)
+                            }
                         }
                     }
                 }
@@ -90,10 +150,10 @@ fun PreviewPane(
 fun PreviewPanePreview() {
     val samples = mutableListOf<Float>()
     for (i in 0 until 500) {
-        val v = when {
-            i in 200..210 -> (i - 200) * 50f
-            i in 211..220 -> 500f - (i - 211) * 60f
-            i in 221..230 -> -100f + (i - 221) * 10f
+        val v = when (i) {
+            in 200..210 -> (i - 200) * 50f
+            in 211..220 -> 500f - (i - 211) * 60f
+            in 221..230 -> -100f + (i - 221) * 10f
             else -> 0f
         }
         samples.add(v)

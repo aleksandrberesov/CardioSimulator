@@ -36,16 +36,6 @@ fun Modifier.ekgGrid(
     if (scheme == GridScheme.Blank) {
         return@composed this
             .background(backgroundColor)
-            .drawWithCache {
-                val barWidth = 2.dp.toPx()
-                onDrawBehind {
-                    drawRect(
-                        color = Color.Black.copy(alpha = 0.5f),
-                        topLeft = Offset(0f, 0f),
-                        size = Size(barWidth, size.height)
-                    )
-                }
-            }
     }
 
     val smallGridColor = when (scheme) {

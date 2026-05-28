@@ -81,7 +81,7 @@ fun TeachingScreen(
             Monitor(
                 modifier = Modifier.weight(1f).padding(top = 8.dp, start = 24.dp),
                 monitorViewModel = monitorViewModel,
-            ) { rows, columns, xOffset ->
+            ) { rows, columns, xOffset, scheme ->
                 LeadsGrid(
                     rows = rows,
                     columns = columns,
@@ -94,7 +94,8 @@ fun TeachingScreen(
                         points = leadPoints,
                         title = lead?.name ?: "",
                         isRunning = mode.isRunning,
-                        xOffsetPx = xOffset
+                        xOffsetPx = xOffset,
+                        gridScheme = scheme
                     )
                 }
             }

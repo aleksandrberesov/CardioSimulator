@@ -317,7 +317,7 @@ fun ConstructorScreen(
                                 .padding(start = 24.dp),
                             monitorViewModel = monitorViewModel,
                             staticGrid = true
-                        ) { _, _, xOffset ->
+                        ) { _, _, xOffset, scheme ->
                             if (stream != null) {
                                 val isEditable = constructorViewModel.isLeadEditable(focusedLead)
                                 Column(modifier = Modifier.fillMaxSize()) {
@@ -348,7 +348,8 @@ fun ConstructorScreen(
                                             points = points,
                                             modifier = Modifier.fillMaxSize(),
                                             isRunning = monitorMode.isRunning,
-                                            externalXOffsetPx = xOffset
+                                            externalXOffsetPx = xOffset,
+                                            gridScheme = scheme
                                         )
                                     }
                                 }
