@@ -12,6 +12,8 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -165,6 +167,28 @@ fun ConstructorScreen(
 
     var showRenameDialog by remember { mutableStateOf(false) }
     var showCalculateDerivedDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = { Text(stringResource(R.string.constructor_delete_confirm_title)) },
+            text = { Text(stringResource(R.string.constructor_delete_confirm_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    constructorViewModel.deleteCurrentPathology()
+                    showDeleteConfirmDialog = false
+                }) {
+                    Text(stringResource(R.string.constructor_anchor_delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text(stringResource(R.string.constructor_rename_cancel))
+                }
+            }
+        )
+    }
 
     if (showCalculateDerivedDialog) {
         AlertDialog(
@@ -262,6 +286,18 @@ fun ConstructorScreen(
                     if (targetFile != null) {
                         IconButton(onClick = { showRenameDialog = true }) {
                             Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.cd_rename))
+                        }
+
+                        IconButton(onClick = { constructorViewModel.duplicateCurrentPathology() }) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.cd_copy))
+                        }
+
+                        IconButton(onClick = { showDeleteConfirmDialog = true }) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = stringResource(R.string.constructor_anchor_delete),
+                                tint = MaterialTheme.colorScheme.error
+                            )
                         }
                         
                         OutlinedButton(onClick = { showCalculateDerivedDialog = true }) {

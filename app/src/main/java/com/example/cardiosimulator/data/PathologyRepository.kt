@@ -60,6 +60,29 @@ class PathologyRepository(private var source: PathologySource) {
         return false
     }
 
+    fun deletePathology(id: String): Boolean {
+        val s = source
+        if (s is FilePathologySource) {
+            val success = s.deletePathology(id)
+            if (success) {
+                loadManifest()
+            }
+            return success
+        }
+        return false
+    }
+
+    fun duplicatePathology(id: String): String? {
+        val original = readPathology(id) ?: return null
+        val newId = id + "_copy_" + System.currentTimeMillis().toString().takeLast(4)
+        val newFile = original.copy(
+            id = newId,
+            titleEn = original.titleEn + " (Copy)",
+            nameRu = original.nameRu?.let { it + " (Копия)" }
+        )
+        return if (writePathology(newFile)) newId else null
+    }
+
     /**
      * Returns the baseline-zeroed [Points] for one lead of one pathology,
      * synthesizing the lead via [DerivedLeads] if the file does not ship

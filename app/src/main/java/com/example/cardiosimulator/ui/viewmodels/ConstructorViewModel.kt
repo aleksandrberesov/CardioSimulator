@@ -224,7 +224,8 @@ class ConstructorViewModel(
             if (targetIndex !in newSamples.indices) continue
             val weight = computeWeight(d, radius, algorithm)
             if (weight == 0f) continue
-            floatBuf[targetIndex] += deltaF * weight
+            floatBuf[targetIndex] = (floatBuf[targetIndex] + deltaF * weight)
+                .coerceIn(ADC_MIN.toFloat(), ADC_MAX.toFloat())
             newSamples[targetIndex] = floatBuf[targetIndex].roundToInt()
         }
 
@@ -240,15 +241,16 @@ class ConstructorViewModel(
         val currentFile = _targetFile.value ?: return
         val stream = currentFile.leads[lead] ?: return
         if (index !in stream.samples.indices) return
-        if (stream.samples[index] == adcValue) return
+        val target = adcValue.coerceIn(ADC_MIN, ADC_MAX)
+        if (stream.samples[index] == target) return
 
         // Apply the same weighted kernel as adjustSample so an absolute value
         // jump from the dialog produces a smooth bump instead of a single-sample
         // spike. At d=0 every kernel returns weight=1.0, so the center lands
-        // exactly on adcValue.
+        // exactly on target.
         val radius = _editingRadius.value
         val algorithm = _editingAlgorithm.value
-        val deltaF = (adcValue - stream.samples[index]).toFloat()
+        val deltaF = (target - stream.samples[index]).toFloat()
 
         val floatBuf = floatBufferFor(lead, stream.samples)
         val newSamples = stream.samples.copyOf()
@@ -258,7 +260,8 @@ class ConstructorViewModel(
             if (targetIndex !in newSamples.indices) continue
             val weight = computeWeight(d, radius, algorithm)
             if (weight == 0f) continue
-            floatBuf[targetIndex] += deltaF * weight
+            floatBuf[targetIndex] = (floatBuf[targetIndex] + deltaF * weight)
+                .coerceIn(ADC_MIN.toFloat(), ADC_MAX.toFloat())
             newSamples[targetIndex] = floatBuf[targetIndex].roundToInt()
         }
 
@@ -318,6 +321,28 @@ class ConstructorViewModel(
         if (updatedFile != currentFile) {
             _targetFile.value = updatedFile
             _isMetadataDirty.value = true
+        }
+    }
+
+    fun deleteCurrentPathology() {
+        val id = _targetFile.value?.id ?: return
+        viewModelScope.launch {
+            if (repository.deletePathology(id)) {
+                _targetFile.value = null
+                floatBuffers.clear()
+                _dirtyLeads.value = emptySet()
+                _isMetadataDirty.value = false
+            }
+        }
+    }
+
+    fun duplicateCurrentPathology() {
+        val id = _targetFile.value?.id ?: return
+        viewModelScope.launch {
+            val newId = repository.duplicatePathology(id)
+            if (newId != null) {
+                selectPathology(newId)
+            }
         }
     }
 
@@ -393,5 +418,9 @@ class ConstructorViewModel(
         const val DEFAULT_EDITING_RADIUS = 100
         const val MIN_EDITING_RADIUS = 1
         const val MAX_EDITING_RADIUS = 1000
+
+        // Valid raw ADC range; edits can never push a sample outside this.
+        const val ADC_MIN = 0
+        const val ADC_MAX = 2048
     }
 }

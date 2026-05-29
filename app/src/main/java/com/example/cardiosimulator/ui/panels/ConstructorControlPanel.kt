@@ -136,7 +136,8 @@ fun ConstructorControlPanel(
                 TextField(
                     value = adcText,
                     onValueChange = { newValue ->
-                        if (newValue.isEmpty() || newValue == "-" || (newValue.startsWith("-") && newValue.drop(1).all { it.isDigit() }) || newValue.all { it.isDigit() }) {
+                        // Raw ADC is 0..2048; only accept non-negative digits.
+                        if (newValue.all { it.isDigit() }) {
                             adcText = newValue
                         }
                     },

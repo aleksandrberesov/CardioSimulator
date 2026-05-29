@@ -142,6 +142,8 @@
     <string name="constructor_rename_label">New Name</string>
     <string name="constructor_rename_ok">OK</string>
     <string name="constructor_rename_cancel">Cancel</string>
+    <string name="constructor_delete_confirm_title">Delete Pathology</string>
+    <string name="constructor_delete_confirm_message">Are you sure you want to delete this pathology? This action cannot be undone.</string>
     <string name="constructor_set_time_title">Set Time (ms)</string>
     <string name="constructor_time_unit">ms</string>
     <string name="constructor_time_format">%1$d ms</string>
@@ -164,6 +166,7 @@
     <string name="constructor_lead_not_present">Lead %1$s not present in file.</string>
     <string name="constructor_select_from_panel_hint">Select a pathology from the left panel for construction.</string>
     <string name="cd_rename">Rename</string>
+    <string name="cd_copy">Copy</string>
     <string name="cd_hide_rhythms">Hide rhythms</string>
     <string name="cd_show_rhythms">Show rhythms</string>
 

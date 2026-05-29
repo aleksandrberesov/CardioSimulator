@@ -36,7 +36,7 @@ class FilePathologySource(
 
     /**
      * Atomically writes [file] as `<id>.dat`. Also updates the `manifest.txt`
-     * if the pathology's metadata (title/name) has changed.
+     * if the pathology's metadata (title/name) has changed or if it's a new entry.
      */
     fun writePathology(file: PathologyFile, leadOrder: List<Lead>? = null): Boolean = runCatching {
         // 1. Write the .dat file
@@ -50,15 +50,52 @@ class FilePathologySource(
         if (target.exists()) target.delete()
         if (!tmp.renameTo(target)) return false
 
-        // 2. Update manifest.txt if title/name changed
+        // 2. Update manifest.txt
         if (manifest != null) {
-            val existing = manifest.entries.find { it.id == file.id }
-            if (existing != null && (existing.titleEn != file.titleEn || existing.nameRu != file.nameRu)) {
-                val updatedEntries = manifest.entries.map {
-                    if (it.id == file.id) {
-                        it.copy(titleEn = file.titleEn, nameRu = file.nameRu)
-                    } else it
-                }
+            val existingIndex = manifest.entries.indexOfFirst { it.id == file.id }
+            val updatedEntries = if (existingIndex != -1) {
+                val existing = manifest.entries[existingIndex]
+                if (existing.titleEn != file.titleEn || existing.nameRu != file.nameRu) {
+                    manifest.entries.map {
+                        if (it.id == file.id) {
+                            it.copy(titleEn = file.titleEn, nameRu = file.nameRu)
+                        } else it
+                    }
+                } else null
+            } else {
+                // New entry
+                manifest.entries + com.example.cardiosimulator.domain.PathologyEntry(
+                    id = file.id,
+                    titleEn = file.titleEn,
+                    nameRu = file.nameRu,
+                    leadsCount = file.leads.size,
+                    fileName = "${file.id}.dat"
+                )
+            }
+
+            if (updatedEntries != null) {
+                val updatedManifest = manifest.copy(entries = updatedEntries)
+                val manifestFile = File(root, "manifest.txt")
+                val manifestText = PathologyParser.serializeManifest(updatedManifest)
+                val mTmp = File(root, "manifest.txt.tmp")
+                mTmp.writeText(manifestText, Charsets.UTF_8)
+                if (manifestFile.exists()) manifestFile.delete()
+                mTmp.renameTo(manifestFile)
+            }
+        }
+        true
+    }.getOrDefault(false)
+
+    fun deletePathology(id: String): Boolean = runCatching {
+        val target = File(root, "$id.dat")
+        if (target.exists()) {
+            target.delete()
+        }
+
+        val manifest = readManifest()
+        if (manifest != null) {
+            val updatedEntries = manifest.entries.filter { it.id != id }
+            if (updatedEntries.size != manifest.entries.size) {
                 val updatedManifest = manifest.copy(entries = updatedEntries)
                 val manifestFile = File(root, "manifest.txt")
                 val manifestText = PathologyParser.serializeManifest(updatedManifest)

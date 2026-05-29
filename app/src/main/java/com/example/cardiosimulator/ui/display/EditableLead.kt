@@ -1,14 +1,17 @@
 package com.example.cardiosimulator.ui.display
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.data.LocalPixelScale
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.LeadStream
@@ -17,13 +20,22 @@ import com.example.cardiosimulator.ui.components.ChartCanvas
 import com.example.cardiosimulator.ui.components.SampleHandleOverlay
 import com.example.cardiosimulator.ui.components.SignificantPointOverlay
 
+private const val EDITOR_ADC_RANGE = 2048f
+
+// Vertical breathing room reserved at each edge so the selection handle circle
+// (radius 5dp + 1dp stroke in SampleHandleOverlay) stays fully visible when a
+// sample sits at the 0 or 2048 limit, instead of being clipped in half.
+private val EDITOR_VERTICAL_MARGIN = 6.dp
+
 /**
  * A version of [Lead] that includes draggable handles for editing raw samples
  * and an overlay for marking significant ECG points.
  *
  * The waveform is rendered at its natural pixel width and centered horizontally
  * within the parent so it sits in the middle of the monitor area instead of
- * starting at the left edge.
+ * starting at the left edge. Unlike the live monitor, the editor uses a
+ * fit-to-view vertical scale so the full 0..2048 raw ADC range is visible
+ * regardless of the medical calibration in effect.
  */
 @Composable
 fun EditableLead(
@@ -35,14 +47,7 @@ fun EditableLead(
     onIndexSelected: ((Int) -> Unit)? = null,
     isEditable: Boolean = true
 ) {
-    // Convert raw ADC to baseline-zeroed floats for the unified renderer.
-    // Valid ADC range is 0..2048; samples above 1463 (or below 0) are dropped
-    // as NaN so the waveform breaks across them instead of being drawn.
-    val points = Points(
-        stream.samples.map { adc ->
-            if (adc !in 0..1463) Float.NaN else (adc - baseline).toFloat()
-        }
-    )
+    val points = Points(stream.samples.map { (it - baseline).toFloat() })
     val scale = LocalPixelScale.current
     val density = LocalDensity.current
 
@@ -50,35 +55,49 @@ fun EditableLead(
         (stream.samples.size * scale.pxPerSample).toDp()
     }
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .leadArea()
             .clipToBounds(),
         contentAlignment = Alignment.Center
     ) {
-        // Trace + overlays sized to the natural waveform width so the
-        // centering container can place them in the middle of the monitor.
-        Box(
-            modifier = Modifier
-                .width(waveformWidthDp)
-                .fillMaxHeight()
-        ) {
-            ChartCanvas(points = points, modifier = Modifier.fillMaxSize())
+        // Rescale gainZoomY so the full 0..2048 ADC range fits in the lead
+        // height minus a margin at each edge. baselineY stays at height/2 and
+        // 1024 is the midpoint, so only the 0/2048 extremes pull inward by the
+        // margin, keeping the selection handle from being clipped at the edge.
+        val heightPx = with(density) { maxHeight.toPx() }
+        val marginPx = with(density) { EDITOR_VERTICAL_MARGIN.toPx() }
+        val drawableHeight = (heightPx - 2f * marginPx).coerceAtLeast(0f)
+        val fitScale = if (drawableHeight > 0f && scale.pxPerAdcCount > 0f) {
+            val targetPxPerAdcCount = drawableHeight / EDITOR_ADC_RANGE
+            scale.copy(gainZoomY = scale.gainZoomY * targetPxPerAdcCount / scale.pxPerAdcCount)
+        } else {
+            scale
+        }
 
-            SignificantPointOverlay(
-                points = points,
-                significantPoints = significantPoints,
-                modifier = Modifier.fillMaxSize()
-            )
+        CompositionLocalProvider(LocalPixelScale provides fitScale) {
+            Box(
+                modifier = Modifier
+                    .width(waveformWidthDp)
+                    .fillMaxHeight()
+            ) {
+                ChartCanvas(points = points, modifier = Modifier.fillMaxSize())
 
-            SampleHandleOverlay(
-                samples = stream.samples,
-                baseline = baseline,
-                selectedIndex = selectedIndex,
-                onIndexSelected = onIndexSelected,
-                isEditable = isEditable,
-                modifier = Modifier.fillMaxSize()
-            )
+                SignificantPointOverlay(
+                    points = points,
+                    significantPoints = significantPoints,
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                SampleHandleOverlay(
+                    samples = stream.samples,
+                    baseline = baseline,
+                    selectedIndex = selectedIndex,
+                    onIndexSelected = onIndexSelected,
+                    isEditable = isEditable,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
     }
 }

@@ -142,6 +142,8 @@
     <string name="constructor_rename_label">Новое имя</string>
     <string name="constructor_rename_ok">ОК</string>
     <string name="constructor_rename_cancel">Отмена</string>
+    <string name="constructor_delete_confirm_title">Удалить патологию</string>
+    <string name="constructor_delete_confirm_message">Вы уверены, что хотите удалить эту патологию? Это действие нельзя отменить.</string>
     <string name="constructor_set_time_title">Установить время (мс)</string>
     <string name="constructor_time_unit">мс</string>
     <string name="constructor_time_format">%1$d мс</string>
@@ -164,6 +166,7 @@
     <string name="constructor_lead_not_present">Отведение %1$s отсутствует в файле.</string>
     <string name="constructor_select_from_panel_hint">Выберите патологию на панели слева для конструирования.</string>
     <string name="cd_rename">Переименовать</string>
+    <string name="cd_copy">Копировать</string>
     <string name="cd_hide_rhythms">Скрыть ритмы</string>
     <string name="cd_show_rhythms">Показать ритмы</string>
 
