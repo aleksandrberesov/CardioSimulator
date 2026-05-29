@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -31,6 +32,7 @@ import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.DataState
 import com.example.cardiosimulator.ui.viewmodels.ConstructorViewModel
+import com.example.cardiosimulator.ui.viewmodels.CourseConstructorViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
@@ -76,6 +78,20 @@ fun MainScreen(appViewModel: AppViewModel) {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return ConstructorViewModel(
                     repository = appViewModel.repository!!,
+                    mode = selectedMode.id,
+                    prefs = appViewModel.prefs
+                ) as T
+            }
+        }
+    )
+
+    val courseConstructorViewModel: CourseConstructorViewModel = viewModel(
+        key = selectedMode.id.name + "_course_editor",
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return CourseConstructorViewModel(
+                    repository = appViewModel.courseRepository!!,
                     mode = selectedMode.id,
                     prefs = appViewModel.prefs
                 ) as T
@@ -151,6 +167,12 @@ fun MainScreen(appViewModel: AppViewModel) {
                     rhythmViewModel = rhythmViewModel,
                     constructorViewModel = constructorViewModel,
                 )
+                OperatingMode.CourseConstructor -> CourseConstructorScreen(
+                    appViewModel = appViewModel,
+                    monitorViewModel = monitorViewModel,
+                    rhythmViewModel = rhythmViewModel,
+                    courseConstructorViewModel = courseConstructorViewModel,
+                )
             }
         }
         Box(
@@ -178,6 +200,10 @@ fun MainScreen(appViewModel: AppViewModel) {
                             constructorViewModel = constructorViewModel,
                             monitorViewModel = monitorViewModel
                         )
+                    }
+                    OperatingMode.CourseConstructor -> {
+                        // Placeholder for Phase 3b
+                        Text("Course Constructor Panel (Stub)", color = androidx.compose.ui.graphics.Color.Gray)
                     }
                     else -> {}
                 }

@@ -7,6 +7,7 @@
     <string name="mode_examination">考试</string>
     <string name="mode_oske">客观结构化临床考试</string>
     <string name="mode_editor">心电图构造器</string>
+    <string name="mode_course_constructor">课程构造器</string>
 
     <!-- Settings dialog -->
     <string name="settings_title">设置</string>

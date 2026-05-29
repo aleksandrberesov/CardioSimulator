@@ -7,6 +7,7 @@
     <string name="mode_examination">Examen</string>
     <string name="mode_oske">ECOE</string>
     <string name="mode_editor">Constructor ECG</string>
+    <string name="mode_course_constructor">Constructor de Cursos</string>
 
     <!-- Settings dialog -->
     <string name="settings_title">Ajustes</string>

@@ -99,6 +99,7 @@ fun TopControlPanel(
                         OperatingMode.Examination -> {}
                         OperatingMode.OSKE -> {}
                         OperatingMode.Constructor -> {}
+                        OperatingMode.CourseConstructor -> {}
                     }
                 }
             }

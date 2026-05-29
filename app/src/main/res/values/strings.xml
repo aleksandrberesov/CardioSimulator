@@ -7,6 +7,7 @@
     <string name="mode_examination">Examination</string>
     <string name="mode_oske">OSKE</string>
     <string name="mode_editor">Constructor ECG</string>
+    <string name="mode_course_constructor">Course Constructor</string>
 
     <!-- Settings dialog -->
     <string name="settings_title">Settings</string>
