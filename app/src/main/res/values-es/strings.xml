@@ -57,6 +57,7 @@
     <string name="monitor_muscle">Músculo</string>
     <string name="monitor_eos">EE</string>
     <string name="monitor_hr_format">FC %1$d</string>
+    <string name="monitor_scale_label_format">%1$s mm/s  %2$s mm/mV</string>
     <string name="monitor_tips">Consejos</string>
 
     <!-- Rhythm panel -->

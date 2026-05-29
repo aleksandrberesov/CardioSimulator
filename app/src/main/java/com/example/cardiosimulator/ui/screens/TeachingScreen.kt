@@ -44,6 +44,7 @@ fun TeachingScreen(
     rhythmViewModel: RhythmViewModel,
 ) {
     val rhythms by rhythmViewModel.rhythms.collectAsState()
+    val courses by appViewModel.courses.collectAsState()
     val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
     val waveforms by rhythmViewModel.waveforms.collectAsState()
     var isRhythmDrawerExpanded by remember { mutableStateOf(false) }
@@ -109,6 +110,7 @@ fun TeachingScreen(
                 RhythmSelector(
                     appViewModel = appViewModel,
                     rhythms = rhythms,
+                    courses = courses,
                     selectedId = selectedRhythm?.id,
                     onRhythmSelect = { rhythmViewModel.selectRhythm(it.id) },
                 )

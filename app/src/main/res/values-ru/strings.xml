@@ -65,6 +65,8 @@
     <string name="points_drawer_title">Точки</string>
     <string name="rhythm_search_placeholder">Ритм…</string>
     <string name="rhythm_search_content_description">Поиск</string>
+    <string name="rhythm_course_filter_all">Все патологии</string>
+    <string name="rhythm_course_filter_cd">Фильтр ритмов по курсу</string>
 
     <!-- Testing panel -->
     <string name="testing_question_format">Вопрос %1$d</string>

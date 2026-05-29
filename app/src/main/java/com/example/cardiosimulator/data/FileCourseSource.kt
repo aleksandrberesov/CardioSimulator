@@ -117,6 +117,7 @@ class FileCourseSource(
             titleEn = course.titleEn,
             nameRu = course.nameRu,
             lecturesCount = course.lectures.size,
+            pathologies = course.pathologies,
         )
         val idx = manifest.entries.indexOfFirst { it.id == course.id }
         val updated = when {

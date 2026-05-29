@@ -168,6 +168,7 @@ fun ConstructorScreen(
     val dirtyLeads by constructorViewModel.dirtyLeads.collectAsState()
     val isMetadataDirty by constructorViewModel.isMetadataDirty.collectAsState()
     val rhythms by rhythmViewModel.rhythms.collectAsState()
+    val courses by appViewModel.courses.collectAsState()
     val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
     val monitorMode by monitorViewModel.monitorMode.collectAsState()
     val referenceImageUri by constructorViewModel.referenceImageUri.collectAsState()
@@ -463,6 +464,7 @@ fun ConstructorScreen(
                             RhythmSelector(
                                 appViewModel = appViewModel,
                                 rhythms = rhythms,
+                                courses = courses,
                                 selectedId = targetFile?.id,
                                 onRhythmSelect = { constructorViewModel.selectPathology(it.id) },
                                 listState = rhythmListState,

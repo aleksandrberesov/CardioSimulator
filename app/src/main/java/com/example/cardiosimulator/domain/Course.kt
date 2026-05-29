@@ -31,6 +31,13 @@ data class CourseEntry(
     val titleEn: String,
     val nameRu: String?,
     val lecturesCount: Int,
+    /**
+     * `PathologyEntry.id`s this course covers. Mirrors [Course.pathologies]
+     * up into the manifest row so consumers (e.g. the rhythm selector) can
+     * scope the pathology list to a course without reading every
+     * `course.txt`.
+     */
+    val pathologies: List<String> = emptyList(),
 )
 
 /** Parsed `<course-id>/course.txt`. */
@@ -41,6 +48,13 @@ data class Course(
     val authors: String?,
     val languages: List<String>,
     val lectures: List<LectureEntry>,
+    /**
+     * Ordered, de-duplicated list of `PathologyEntry.id`s this course
+     * covers. Authoritative source for the course → pathologies mapping;
+     * typically the union of the pathologies embedded across the course's
+     * lectures (see `docs/course-format.md` §3).
+     */
+    val pathologies: List<String> = emptyList(),
 )
 
 /** One row of [Course.lectures] — the lecture index inside a course. */

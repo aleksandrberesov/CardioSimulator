@@ -58,6 +58,7 @@
     <string name="monitor_muscle">Muscle</string>
     <string name="monitor_eos">EOS</string>
     <string name="monitor_hr_format">HR %1$d</string>
+    <string name="monitor_scale_label_format">%1$s mm/s  %2$s mm/mV</string>
     <string name="monitor_tips">Tips</string>
 
     <!-- Rhythm panel -->
@@ -65,6 +66,8 @@
     <string name="points_drawer_title">Points</string>
     <string name="rhythm_search_placeholder">Rhythm…</string>
     <string name="rhythm_search_content_description">Search</string>
+    <string name="rhythm_course_filter_all">All pathologies</string>
+    <string name="rhythm_course_filter_cd">Filter rhythms by course</string>
 
     <!-- Testing panel -->
     <string name="testing_question_format">Question %1$d</string>

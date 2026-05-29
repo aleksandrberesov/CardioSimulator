@@ -2,6 +2,7 @@ package com.example.cardiosimulator.ui.display
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.width
@@ -16,15 +17,16 @@ import com.example.cardiosimulator.data.LocalPixelScale
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.LeadStream
 import com.example.cardiosimulator.domain.SignificantPoint
+import com.example.cardiosimulator.ui.components.CalibrationPulse
 import com.example.cardiosimulator.ui.components.ChartCanvas
 import com.example.cardiosimulator.ui.components.SampleHandleOverlay
 import com.example.cardiosimulator.ui.components.SignificantPointOverlay
 
-private const val EDITOR_ADC_RANGE = 2048f
+private const val EDITOR_ADC_RANGE = 512f
 
 // Vertical breathing room reserved at each edge so the selection handle circle
 // (radius 5dp + 1dp stroke in SampleHandleOverlay) stays fully visible when a
-// sample sits at the 0 or 2048 limit, instead of being clipped in half.
+// sample sits at the edge of the visible range, instead of being clipped in half.
 private val EDITOR_VERTICAL_MARGIN = 6.dp
 
 /**
@@ -34,8 +36,8 @@ private val EDITOR_VERTICAL_MARGIN = 6.dp
  * The waveform is rendered at its natural pixel width and centered horizontally
  * within the parent so it sits in the middle of the monitor area instead of
  * starting at the left edge. Unlike the live monitor, the editor uses a
- * fit-to-view vertical scale so the full 0..2048 raw ADC range is visible
- * regardless of the medical calibration in effect.
+ * fit-to-view vertical scale that focuses on a typical ECG range (~3 mV or 800 ADC
+ * counts) to ensure comfortable editing, regardless of the medical calibration.
  */
 @Composable
 fun EditableLead(
@@ -76,27 +78,41 @@ fun EditableLead(
         }
 
         CompositionLocalProvider(LocalPixelScale provides fitScale) {
-            Box(
-                modifier = Modifier
-                    .width(waveformWidthDp)
-                    .fillMaxHeight()
+            Row(
+                modifier = Modifier.fillMaxHeight(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                ChartCanvas(points = points, modifier = Modifier.fillMaxSize())
+                // Calibration Symbol (moved close to graphic)
+                Box(
+                    modifier = Modifier
+                        .width(48.dp)
+                        .fillMaxHeight()
+                ) {
+                    CalibrationPulse(modifier = Modifier.fillMaxSize())
+                }
 
-                SignificantPointOverlay(
-                    points = points,
-                    significantPoints = significantPoints,
-                    modifier = Modifier.fillMaxSize()
-                )
+                Box(
+                    modifier = Modifier
+                        .width(waveformWidthDp)
+                        .fillMaxHeight()
+                ) {
+                    ChartCanvas(points = points, modifier = Modifier.fillMaxSize())
 
-                SampleHandleOverlay(
-                    samples = stream.samples,
-                    baseline = baseline,
-                    selectedIndex = selectedIndex,
-                    onIndexSelected = onIndexSelected,
-                    isEditable = isEditable,
-                    modifier = Modifier.fillMaxSize()
-                )
+                    SignificantPointOverlay(
+                        points = points,
+                        significantPoints = significantPoints,
+                        modifier = Modifier.fillMaxSize()
+                    )
+
+                    SampleHandleOverlay(
+                        samples = stream.samples,
+                        baseline = baseline,
+                        selectedIndex = selectedIndex,
+                        onIndexSelected = onIndexSelected,
+                        isEditable = isEditable,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
     }

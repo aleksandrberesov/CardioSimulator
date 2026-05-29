@@ -40,8 +40,8 @@ created:2026-05-29T12:00:00
 encoding:utf-8
 line_endings:lf
 
-course:cardio-101;lectures:8;title:Cardio Basics;name:Основы кардиологии
-course:arrhythmia-adv;lectures:12;title:Arrhythmias;name:Аритмии
+course:cardio-101;lectures:8;title:Cardio Basics;name:Основы кардиологии;pathologies:sin,1abblock,fib
+course:arrhythmia-adv;lectures:12;title:Arrhythmias;name:Аритмии;pathologies:fib,atrflu,tach
 ```
 
 | Header key | Required | Notes |
@@ -52,7 +52,14 @@ course:arrhythmia-adv;lectures:12;title:Arrhythmias;name:Аритмии
 | `line_endings` | no | Always `lf`. |
 
 Below the blank-line-terminated header, one semicolon-delimited row per
-course: `course:<id>;lectures:<n>;title:<en>;name:<ru>`.
+course: `course:<id>;lectures:<n>;title:<en>;name:<ru>;pathologies:<csv>`.
+
+| Row field | Required | Notes |
+|---|---|---|
+| `course` | yes | `<course-id>`. |
+| `lectures` | no | Lecture count (display hint). |
+| `title` / `name` | no | English / Russian display names. |
+| `pathologies` | no | Comma-separated `PathologyEntry.id`s the course covers. Mirrors the authoritative list in `course.txt` (§3) so a consumer can scope the rhythm list to a course straight from the manifest. |
 
 ## 3. `<course-id>/course.txt`
 
@@ -64,6 +71,7 @@ title:Cardio Basics
 name:Основы кардиологии
 authors:A. Beresov
 language:ru,en
+pathologies:sin,1abblock,fib
 
 lecture:01-intro;title:Introduction;name:Введение
 lecture:02-axis;title:Electrical Axis;name:Электрическая ось
@@ -71,6 +79,14 @@ lecture:02-axis;title:Electrical Axis;name:Электрическая ось
 
 The lecture rows define the **display order**. Each row references one
 or more `<lecture-id>.<lang>.md` files in `lectures/`.
+
+The optional `pathologies` header key is a comma-separated list of
+`PathologyEntry.id`s — the **authoritative** set of pathologies the
+course covers, typically the union of the ids embedded across its
+lectures (§5.1). It is surfaced to the UI as a course → pathologies map
+so a viewer (e.g. `ui/panels/RhythmSelector.kt`) can restrict the
+selectable rhythm list to the active course. The generator keeps the
+manifest row's `pathologies` field (§2) in sync with this list.
 
 ## 4. `<lecture-id>.<lang>.md`
 

@@ -40,6 +40,7 @@ object CourseParser {
                 titleEn = fields["title"].orEmpty(),
                 nameRu = fields["name"],
                 lecturesCount = fields["lectures"]?.toIntOrNull() ?: 0,
+                pathologies = parseCsv(fields["pathologies"]),
             )
         }
         return CourseManifest(version = version, entries = entries)
@@ -54,6 +55,9 @@ object CourseParser {
                 .append(";lectures:").append(e.lecturesCount)
                 .append(";title:").append(e.titleEn)
             if (!e.nameRu.isNullOrBlank()) append(";name:").append(e.nameRu)
+            if (e.pathologies.isNotEmpty()) {
+                append(";pathologies:").append(e.pathologies.joinToString(","))
+            }
             append('\n')
         }
     }
@@ -69,6 +73,7 @@ object CourseParser {
             ?.map { it.trim() }
             ?.filter { it.isNotEmpty() }
             ?: emptyList()
+        val pathologies = parseCsv(header["pathologies"])
         val lectures = body.mapNotNull { line ->
             val fields = parseSemicolonFields(line)
             val lectureId = fields["lecture"] ?: return@mapNotNull null
@@ -85,6 +90,7 @@ object CourseParser {
             authors = header["authors"],
             languages = languages,
             lectures = lectures,
+            pathologies = pathologies,
         )
     }
 
@@ -95,6 +101,9 @@ object CourseParser {
         if (!course.authors.isNullOrBlank()) append("authors:").append(course.authors).append('\n')
         if (course.languages.isNotEmpty()) {
             append("language:").append(course.languages.joinToString(",")).append('\n')
+        }
+        if (course.pathologies.isNotEmpty()) {
+            append("pathologies:").append(course.pathologies.joinToString(",")).append('\n')
         }
         append('\n')
         for (l in course.lectures) {
@@ -265,6 +274,10 @@ object CourseParser {
             raw = rawLines.joinToString("\n").trim('\n'),
         )
     }
+
+    /** Splits a comma-separated value list, trimming and dropping blanks. */
+    private fun parseCsv(raw: String?): List<String> =
+        raw?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
 
     // Shared grammar primitives (splitHeader / splitKeyValue /
     // parseSemicolonFields / parseKeyValueLines) live in

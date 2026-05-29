@@ -14,6 +14,7 @@ import com.example.cardiosimulator.data.FilePathologySource
 import com.example.cardiosimulator.data.PathologyRepository
 import com.example.cardiosimulator.data.PathologyZipExtractor
 import com.example.cardiosimulator.domain.AppStateModel
+import com.example.cardiosimulator.domain.CourseEntry
 import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
@@ -25,8 +26,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
@@ -100,6 +104,19 @@ class AppViewModel(
     // field will be renamed to `itemCount` across both pipelines.
     private val _courseDataState = MutableStateFlow<DataState>(DataState.NotConfigured)
     val courseDataState: StateFlow<DataState> = _courseDataState.asStateFlow()
+
+    /**
+     * Course index derived from the loaded course manifest, sorted by
+     * English title. Each [CourseEntry] carries its
+     * [CourseEntry.pathologies], so this doubles as the course →
+     * pathologies map that [com.example.cardiosimulator.ui.panels.RhythmSelector]
+     * uses to scope the rhythm list. Empty when no bundle is loaded.
+     */
+    val courses: StateFlow<List<CourseEntry>> =
+        courseRepository?.manifestFlow
+            ?.map { m -> m?.entries?.sortedBy { it.titleEn.lowercase() } ?: emptyList() }
+            ?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), emptyList())
+            ?: MutableStateFlow<List<CourseEntry>>(emptyList()).asStateFlow()
 
     private val _isDataConfirmed = MutableStateFlow(false)
     val isDataConfirmed: StateFlow<Boolean> = _isDataConfirmed.asStateFlow()

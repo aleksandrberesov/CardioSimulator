@@ -12,10 +12,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.cardiosimulator.data.AssetCourseSource
 import com.example.cardiosimulator.data.AssetPathologySource
 import com.example.cardiosimulator.data.CourseRepository
 import com.example.cardiosimulator.data.DataSourcePrefs
+import com.example.cardiosimulator.data.FileCourseSource
 import com.example.cardiosimulator.data.PathologyRepository
 import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.OperatingMode
@@ -23,6 +23,7 @@ import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.screens.MainScreen
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,10 +45,14 @@ class MainActivity : AppCompatActivity() {
                             repository = PathologyRepository(
                                 AssetPathologySource(this@MainActivity.assets),
                             ),
-                            // Same pattern for the course bundle: asset-backed at
-                            // boot, swapped to FileCourseSource on SAF pick.
+                            // Course bundle starts empty — no courses are bundled
+                            // in assets. The repository points at the (initially
+                            // absent) filesDir/courses dir; it stays empty until the
+                            // user picks a Courses.zip via SAF, at which point
+                            // AppViewModel swaps in a populated FileCourseSource.
+                            // While empty, RhythmSelector simply shows all pathologies.
                             courseRepository = CourseRepository(
-                                AssetCourseSource(this@MainActivity.assets),
+                                FileCourseSource(File(this@MainActivity.filesDir, AppViewModel.COURSES_DIR)),
                             ),
                             appContext = this@MainActivity.applicationContext,
                             prefs = DataSourcePrefs(this@MainActivity.applicationContext),
