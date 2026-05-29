@@ -25,7 +25,8 @@ fun Modifier.leadArea(): Modifier {
 
 fun Modifier.ekgGrid(
     scheme: GridScheme = GridScheme.Pink,
-    xOffsetPx: Float = 0f
+    xOffsetPx: Float = 0f,
+    showBackground: Boolean = true
 ): Modifier = composed {
     val backgroundColor = when (scheme) {
         GridScheme.Pink -> Color(0xFFFFF5F5)
@@ -34,8 +35,11 @@ fun Modifier.ekgGrid(
     }
 
     if (scheme == GridScheme.Blank) {
-        return@composed this
-            .background(backgroundColor)
+        return@composed if (showBackground) {
+            this.background(backgroundColor)
+        } else {
+            this
+        }
     }
 
     val smallGridColor = when (scheme) {
@@ -51,8 +55,9 @@ fun Modifier.ekgGrid(
     val smallStep = scale.smallGridStepPx
     val largeStep = scale.largeGridStepPx
 
-    this
-        .background(backgroundColor)
+    val baseModifier = if (showBackground) this.background(backgroundColor) else this
+
+    baseModifier
         .drawWithCache {
             val thinStroke = 0.5.dp.toPx()
             val thickStroke = 1.5.dp.toPx()

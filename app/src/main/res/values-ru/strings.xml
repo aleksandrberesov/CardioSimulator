@@ -169,6 +169,8 @@
     <string name="cd_copy">Копировать</string>
     <string name="cd_hide_rhythms">Скрыть ритмы</string>
     <string name="cd_show_rhythms">Показать ритмы</string>
+    <string name="constructor_load_reference">Загрузить эталон</string>
+    <string name="cd_load_reference">Загрузить изображение ЭКГ для привязки</string>
 
     <string name="ecg_point_p_start">P начало</string>
     <string name="ecg_point_p_peak">P пик</string>

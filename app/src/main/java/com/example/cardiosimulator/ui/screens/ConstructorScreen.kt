@@ -14,6 +14,12 @@ import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Image
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.net.Uri
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -164,6 +170,13 @@ fun ConstructorScreen(
     val rhythms by rhythmViewModel.rhythms.collectAsState()
     val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
     val monitorMode by monitorViewModel.monitorMode.collectAsState()
+    val referenceImageUri by constructorViewModel.referenceImageUri.collectAsState()
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        constructorViewModel.setReferenceImageUri(uri)
+    }
 
     var showRenameDialog by remember { mutableStateOf(false) }
     var showCalculateDerivedDialog by remember { mutableStateOf(false) }
@@ -292,6 +305,13 @@ fun ConstructorScreen(
                             Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.cd_copy))
                         }
 
+                        IconButton(onClick = { launcher.launch("image/*") }) {
+                            Icon(
+                                Icons.Default.Image,
+                                contentDescription = stringResource(R.string.cd_load_reference)
+                            )
+                        }
+
                         IconButton(onClick = { showDeleteConfirmDialog = true }) {
                             Icon(
                                 Icons.Default.Delete,
@@ -352,7 +372,19 @@ fun ConstructorScreen(
                                 .weight(1f)
                                 .padding(start = 24.dp),
                             monitorViewModel = monitorViewModel,
-                            staticGrid = true
+                            staticGrid = true,
+                            showGridBackground = referenceImageUri == null,
+                            backgroundContent = {
+                                referenceImageUri?.let { uri ->
+                                    AsyncImage(
+                                        model = uri,
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Fit,
+                                        alpha = 0.5f
+                                    )
+                                }
+                            }
                         ) { _, _, xOffset, scheme ->
                             if (stream != null) {
                                 val isEditable = constructorViewModel.isLeadEditable(focusedLead)

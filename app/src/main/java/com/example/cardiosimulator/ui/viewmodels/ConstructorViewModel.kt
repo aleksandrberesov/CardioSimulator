@@ -1,5 +1,6 @@
 package com.example.cardiosimulator.ui.viewmodels
 
+import android.net.Uri
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -68,6 +69,13 @@ class ConstructorViewModel(
 
     private val _editingRadius = MutableStateFlow(DEFAULT_EDITING_RADIUS)
     val editingRadius: StateFlow<Int> = _editingRadius.asStateFlow()
+
+    private val _referenceImageUri = MutableStateFlow<Uri?>(null)
+    val referenceImageUri: StateFlow<Uri?> = _referenceImageUri.asStateFlow()
+
+    fun setReferenceImageUri(uri: Uri?) {
+        _referenceImageUri.value = uri
+    }
 
     /**
      * Per-lead float accumulator parallel to [LeadStream.samples].

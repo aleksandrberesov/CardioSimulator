@@ -2,6 +2,7 @@ package com.example.cardiosimulator.ui.display
 
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -43,6 +44,8 @@ fun Monitor(
     modifier: Modifier = Modifier,
     monitorViewModel: MonitorViewModel,
     staticGrid: Boolean = false,
+    showGridBackground: Boolean = true,
+    backgroundContent: @Composable () -> Unit = {},
     content: @Composable ColumnScope.(rows: Int, columns: Int, xOffsetPx: Float, scheme: GridScheme) -> Unit
 ){
     val mode by monitorViewModel.monitorMode.collectAsState()
@@ -107,7 +110,7 @@ fun Monitor(
         val containerWidth = constraints.maxWidth.toFloat()
         val containerHeight = constraints.maxHeight.toFloat()
 
-        val state = rememberTransformableState { zoomChange, offsetChange, _ ->
+        val state = rememberTransformableState { _, zoomChange, offsetChange, _ ->
             scale = (scale * zoomChange).coerceIn(1f, 5f)
 
             val maxX = (containerWidth * (scale - 1)) / 2
@@ -126,7 +129,7 @@ fun Monitor(
         }
 
         CompositionLocalProvider(LocalPixelScale provides pixelScale) {
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .transformable(state = state)
@@ -136,9 +139,19 @@ fun Monitor(
                         translationX = offset.x,
                         translationY = offset.y
                     )
-                    .ekgGrid(mode.gridScheme, if (staticGrid) 0f else xOffsetPx)
             ) {
-                content(rows, columns, xOffsetPx, mode.gridScheme)
+                backgroundContent()
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .ekgGrid(
+                            scheme = mode.gridScheme,
+                            xOffsetPx = if (staticGrid) 0f else xOffsetPx,
+                            showBackground = showGridBackground
+                        )
+                ) {
+                    content(rows, columns, xOffsetPx, mode.gridScheme)
+                }
             }
         }
     }

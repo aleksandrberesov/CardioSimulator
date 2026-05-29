@@ -137,29 +137,8 @@ object PathologyParser {
     }
 
     // ─── helpers ────────────────────────────────────────────────────────
-
-    /**
-     * Returns the header `key:value` map and the list of remaining
-     * non-empty lines (the per-pathology index section).
-     */
-    private fun splitHeader(text: String): Pair<Map<String, String>, List<String>> {
-        val lines = text.split('\n').map { it.trimEnd('\r') }
-        val header = linkedMapOf<String, String>()
-        var i = 0
-        while (i < lines.size) {
-            val line = lines[i]
-            if (line.isBlank()) { i++; break }
-            val pair = splitKeyValue(line)
-            if (pair == null) {
-                i++
-                continue
-            }
-            header[pair.first] = pair.second
-            i++
-        }
-        val body = lines.drop(i).filter { it.isNotBlank() }
-        return header to body
-    }
+    // Shared grammar primitives (splitHeader / splitKeyValue /
+    // parseSemicolonFields) live in domain/ParserHelpers.kt.
 
     /**
      * Splits a `.dat` text into its header block + per-lead blocks. Each
@@ -182,21 +161,6 @@ object PathologyParser {
         }
         if (current.isNotEmpty()) out += current
         return out
-    }
-
-    private fun splitKeyValue(line: String): Pair<String, String>? {
-        val i = line.indexOf(':')
-        if (i <= 0) return null
-        return line.substring(0, i).trim() to line.substring(i + 1)
-    }
-
-    private fun parseSemicolonFields(line: String): Map<String, String> {
-        val map = linkedMapOf<String, String>()
-        for (field in line.split(';')) {
-            val (k, v) = splitKeyValue(field) ?: continue
-            map[k.trim()] = v.trim()
-        }
-        return map
     }
 
     private fun parseIntCsv(field: String): IntArray {

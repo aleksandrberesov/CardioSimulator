@@ -24,6 +24,18 @@ class DataSourcePrefs(private val context: Context) {
         prefs[KEY_TREE_URI]?.takeIf { it.isNotBlank() }?.let(Uri::parse)
     }
 
+    val coursesTreeUri: Flow<Uri?> = context.dataSourceDataStore.data.map { prefs ->
+        prefs[KEY_COURSES_TREE_URI]?.takeIf { it.isNotBlank() }?.let(Uri::parse)
+    }
+
+    val lastCourseId: Flow<String?> = context.dataSourceDataStore.data.map { prefs ->
+        prefs[KEY_LAST_COURSE_ID]
+    }
+
+    fun lastLectureId(mode: String): Flow<String?> = context.dataSourceDataStore.data.map { prefs ->
+        prefs[stringPreferencesKey("${mode}_last_lecture_id")]
+    }
+
     val languageTag: Flow<String?> = context.dataSourceDataStore.data.map { prefs ->
         prefs[KEY_LANGUAGE_TAG]
     }
@@ -104,6 +116,28 @@ class DataSourcePrefs(private val context: Context) {
         context.dataSourceDataStore.edit { prefs ->
             if (uri == null) prefs.remove(KEY_TREE_URI)
             else prefs[KEY_TREE_URI] = uri.toString()
+        }
+    }
+
+    suspend fun setCoursesTreeUri(uri: Uri?) {
+        context.dataSourceDataStore.edit { prefs ->
+            if (uri == null) prefs.remove(KEY_COURSES_TREE_URI)
+            else prefs[KEY_COURSES_TREE_URI] = uri.toString()
+        }
+    }
+
+    suspend fun setLastCourseId(id: String?) {
+        context.dataSourceDataStore.edit { prefs ->
+            if (id == null) prefs.remove(KEY_LAST_COURSE_ID)
+            else prefs[KEY_LAST_COURSE_ID] = id
+        }
+    }
+
+    suspend fun setLastLectureId(mode: String, id: String?) {
+        context.dataSourceDataStore.edit { prefs ->
+            val key = stringPreferencesKey("${mode}_last_lecture_id")
+            if (id == null) prefs.remove(key)
+            else prefs[key] = id
         }
     }
 
@@ -199,5 +233,7 @@ class DataSourcePrefs(private val context: Context) {
         private val KEY_MONITOR_SERIES_COUNT = intPreferencesKey("monitor_series_count")
         private val KEY_MONITOR_SERIES_SCHEME = stringPreferencesKey("monitor_series_scheme")
         private val KEY_LAST_OPERATING_MODE = stringPreferencesKey("last_operating_mode")
+        private val KEY_COURSES_TREE_URI = stringPreferencesKey("courses_tree_uri")
+        private val KEY_LAST_COURSE_ID = stringPreferencesKey("last_course_id")
     }
 }

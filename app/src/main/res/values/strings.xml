@@ -169,6 +169,8 @@
     <string name="cd_copy">Copy</string>
     <string name="cd_hide_rhythms">Hide rhythms</string>
     <string name="cd_show_rhythms">Show rhythms</string>
+    <string name="constructor_load_reference">Load Reference</string>
+    <string name="cd_load_reference">Load Reference ECG Image</string>
 
     <string name="ecg_point_p_start">P Start</string>
     <string name="ecg_point_p_peak">P Peak</string>

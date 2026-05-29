@@ -6,7 +6,10 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cardiosimulator.data.CourseRepository
+import com.example.cardiosimulator.data.CourseZipExtractor
 import com.example.cardiosimulator.data.DataSourcePrefs
+import com.example.cardiosimulator.data.FileCourseSource
 import com.example.cardiosimulator.data.FilePathologySource
 import com.example.cardiosimulator.data.PathologyRepository
 import com.example.cardiosimulator.data.PathologyZipExtractor
@@ -63,6 +66,7 @@ sealed class DataState {
 class AppViewModel(
     private val appState: AppStateModel,
     val repository: PathologyRepository? = null,
+    val courseRepository: CourseRepository? = null,
     private val appContext: Context? = null,
     val prefs: DataSourcePrefs? = null,
     private val tcpReconnectIntervalMs: Long = 5000L,
@@ -90,6 +94,12 @@ class AppViewModel(
 
     private val _dataState = MutableStateFlow<DataState>(DataState.NotConfigured)
     val dataState: StateFlow<DataState> = _dataState.asStateFlow()
+
+    // Course bundle lifecycle. `DataState.Ready.pathologyCount` is reused
+    // here as a generic "loaded count" — when the courses UI lands the
+    // field will be renamed to `itemCount` across both pipelines.
+    private val _courseDataState = MutableStateFlow<DataState>(DataState.NotConfigured)
+    val courseDataState: StateFlow<DataState> = _courseDataState.asStateFlow()
 
     private val _isDataConfirmed = MutableStateFlow(false)
     val isDataConfirmed: StateFlow<Boolean> = _isDataConfirmed.asStateFlow()
@@ -133,6 +143,14 @@ class AppViewModel(
                             updateOperatingMode(modeModel, persist = false)
                         }
                     } catch (_: Exception) {}
+                }
+
+                // Courses pipeline — restore the user's last picked
+                // bundle if one exists. Failures are silent here; the
+                // UI surfaces them via [courseDataState].
+                if (courseRepository != null) {
+                    val coursesUri = p.coursesTreeUri.first()
+                    if (coursesUri != null) loadCoursesFromSaf(ctx, coursesUri)
                 }
             }
         } else if (repo != null) {
@@ -327,6 +345,20 @@ class AppViewModel(
         }
     }
 
+    /**
+     * SAF entry point for the courses bundle. Mirrors [setDataFolder]
+     * for pathologies — persists the picked URI and re-extracts into
+     * `filesDir/courses/`. No confirmation gate.
+     */
+    fun setCourseDataFolder(context: Context, uri: Uri) {
+        val p = prefs ?: return
+        if (courseRepository == null) return
+        viewModelScope.launch {
+            p.setCoursesTreeUri(uri)
+            loadCoursesFromSaf(context, uri, forceUnzip = true)
+        }
+    }
+
     fun confirmData() { _isDataConfirmed.value = true }
 
     fun exportZip(context: Context, destUri: Uri) {
@@ -377,8 +409,58 @@ class AppViewModel(
         }
     }
 
+    // ─── Courses pipeline (mirrors the pathology helpers above) ────────
+
+    private suspend fun loadCoursesFromSaf(
+        context: Context,
+        uri: Uri,
+        forceUnzip: Boolean = false,
+    ) {
+        val repo = courseRepository ?: return
+        _courseDataState.value = DataState.Loading
+
+        val targetDir = File(context.filesDir, COURSES_DIR)
+        val fileSource = FileCourseSource(targetDir)
+
+        if (!forceUnzip && fileSource.isValid()) {
+            repo.setSource(fileSource)
+            if (reloadCourses(repo)) return
+        }
+
+        val ok = withContext(Dispatchers.IO) {
+            CourseZipExtractor.extract(context, uri, targetDir)
+        }
+        if (ok) {
+            val newSource = FileCourseSource(targetDir)
+            if (newSource.isValid()) {
+                repo.setSource(newSource)
+                if (reloadCourses(repo)) return
+            }
+        }
+        _courseDataState.value = DataState.Error(DataState.Error.Reason.Empty)
+    }
+
+    private suspend fun reloadCourses(repo: CourseRepository): Boolean {
+        val ok = withContext(Dispatchers.IO) { repo.loadManifest() }
+        if (!ok) {
+            _courseDataState.value = DataState.Error(DataState.Error.Reason.BadManifest)
+            return false
+        }
+        val count = repo.courses().size
+        return if (count == 0) {
+            _courseDataState.value = DataState.Error(DataState.Error.Reason.Empty)
+            false
+        } else {
+            _courseDataState.value = DataState.Ready(count)
+            true
+        }
+    }
+
     companion object {
         /** Subdirectory under `filesDir` where the extracted dataset lives. */
         const val PATHOLOGIES_DIR: String = "pathologies"
+
+        /** Subdirectory under `filesDir` where the extracted course bundle lives. */
+        const val COURSES_DIR: String = "courses"
     }
 }

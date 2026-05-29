@@ -12,7 +12,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.cardiosimulator.data.AssetCourseSource
 import com.example.cardiosimulator.data.AssetPathologySource
+import com.example.cardiosimulator.data.CourseRepository
 import com.example.cardiosimulator.data.DataSourcePrefs
 import com.example.cardiosimulator.data.PathologyRepository
 import com.example.cardiosimulator.domain.AppBuilder
@@ -41,6 +43,11 @@ class MainActivity : AppCompatActivity() {
                             // the user picks a Pathologies.zip via SAF.
                             repository = PathologyRepository(
                                 AssetPathologySource(this@MainActivity.assets),
+                            ),
+                            // Same pattern for the course bundle: asset-backed at
+                            // boot, swapped to FileCourseSource on SAF pick.
+                            courseRepository = CourseRepository(
+                                AssetCourseSource(this@MainActivity.assets),
                             ),
                             appContext = this@MainActivity.applicationContext,
                             prefs = DataSourcePrefs(this@MainActivity.applicationContext),

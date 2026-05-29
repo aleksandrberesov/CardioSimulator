@@ -38,19 +38,15 @@ class FilePathologySource(
      * Atomically writes [file] as `<id>.dat`. Also updates the `manifest.txt`
      * if the pathology's metadata (title/name) has changed or if it's a new entry.
      */
-    fun writePathology(file: PathologyFile, leadOrder: List<Lead>? = null): Boolean = runCatching {
-        // 1. Write the .dat file
-        val target = File(root, "${file.id}.dat")
-        target.parentFile?.mkdirs()
+    fun writePathology(file: PathologyFile, leadOrder: List<Lead>? = null): Boolean {
         val manifest = readManifest()
         val order = leadOrder ?: manifest?.leadOrder ?: Lead.entries
-        val text = PathologyParser.serializePathology(file, order)
-        val tmp = File(target.parentFile, target.name + ".tmp")
-        tmp.writeText(text, Charsets.UTF_8)
-        if (target.exists()) target.delete()
-        if (!tmp.renameTo(target)) return false
+        val ok = atomicWriteText(
+            File(root, "${file.id}.dat"),
+            PathologyParser.serializePathology(file, order),
+        )
+        if (!ok) return false
 
-        // 2. Update manifest.txt
         if (manifest != null) {
             val existingIndex = manifest.entries.indexOfFirst { it.id == file.id }
             val updatedEntries = if (existingIndex != -1) {
@@ -63,7 +59,6 @@ class FilePathologySource(
                     }
                 } else null
             } else {
-                // New entry
                 manifest.entries + com.example.cardiosimulator.domain.PathologyEntry(
                     id = file.id,
                     titleEn = file.titleEn,
@@ -72,37 +67,28 @@ class FilePathologySource(
                     fileName = "${file.id}.dat"
                 )
             }
-
             if (updatedEntries != null) {
-                val updatedManifest = manifest.copy(entries = updatedEntries)
-                val manifestFile = File(root, "manifest.txt")
-                val manifestText = PathologyParser.serializeManifest(updatedManifest)
-                val mTmp = File(root, "manifest.txt.tmp")
-                mTmp.writeText(manifestText, Charsets.UTF_8)
-                if (manifestFile.exists()) manifestFile.delete()
-                mTmp.renameTo(manifestFile)
+                atomicWriteText(
+                    File(root, "manifest.txt"),
+                    PathologyParser.serializeManifest(manifest.copy(entries = updatedEntries)),
+                )
             }
         }
-        true
-    }.getOrDefault(false)
+        return true
+    }
 
     fun deletePathology(id: String): Boolean = runCatching {
         val target = File(root, "$id.dat")
-        if (target.exists()) {
-            target.delete()
-        }
+        if (target.exists()) target.delete()
 
         val manifest = readManifest()
         if (manifest != null) {
             val updatedEntries = manifest.entries.filter { it.id != id }
             if (updatedEntries.size != manifest.entries.size) {
-                val updatedManifest = manifest.copy(entries = updatedEntries)
-                val manifestFile = File(root, "manifest.txt")
-                val manifestText = PathologyParser.serializeManifest(updatedManifest)
-                val mTmp = File(root, "manifest.txt.tmp")
-                mTmp.writeText(manifestText, Charsets.UTF_8)
-                if (manifestFile.exists()) manifestFile.delete()
-                mTmp.renameTo(manifestFile)
+                atomicWriteText(
+                    File(root, "manifest.txt"),
+                    PathologyParser.serializeManifest(manifest.copy(entries = updatedEntries)),
+                )
             }
         }
         true
