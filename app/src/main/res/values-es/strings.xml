@@ -144,6 +144,10 @@
     <string name="constructor_set_adc_title">Establecer valor ADC</string>
     <string name="constructor_adc_label">ADC</string>
     <string name="constructor_adc_format">ADC: %1$s</string>
+    <string name="constructor_smoothing_title">Ajustes de suavizado</string>
+    <string name="constructor_smoothing_algorithm_label">Algoritmo</string>
+    <string name="constructor_smoothing_width_label">Ancho de suavizado</string>
+    <string name="constructor_smoothing_width_unit">muestras</string>
 
     <string name="constructor_significant_points">Puntos significativos</string>
     <string name="constructor_sample_label">Muestra: %1$d</string>

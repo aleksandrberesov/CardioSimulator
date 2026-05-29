@@ -16,6 +16,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlin.math.*
+
+enum class EditingAlgorithm {
+    Cosine,
+    Spline,
+    Bezier,
+    LOESS,
+    MLS
+}
 
 /**
  * Manages constructing a single [PathologyFile].
@@ -54,10 +63,66 @@ class ConstructorViewModel(
     private val _isSaving = MutableStateFlow(false)
     val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
 
+    private val _editingAlgorithm = MutableStateFlow(EditingAlgorithm.Cosine)
+    val editingAlgorithm: StateFlow<EditingAlgorithm> = _editingAlgorithm.asStateFlow()
+
+    private val _editingRadius = MutableStateFlow(DEFAULT_EDITING_RADIUS)
+    val editingRadius: StateFlow<Int> = _editingRadius.asStateFlow()
+
+    /**
+     * Per-lead float accumulator parallel to [LeadStream.samples].
+     *
+     * Sub-integer weighted contributions are accumulated here so that repeated
+     * +/-1 nudges build up a smooth bump shape instead of being lost to
+     * per-call rounding (which otherwise produces a "block of samples moving
+     * synchronously" artifact at the cursor: every sample whose weight rounds
+     * to >= 0.5 moves by the full delta, every sample whose weight rounds to
+     * < 0.5 does not move at all).
+     *
+     * Invariant: when present, `floatBuffers[lead][i].roundToInt()` equals
+     * `_targetFile.leads[lead].samples[i]`. Mutators that change samples
+     * outside of [adjustSample] must keep this in sync (see [setSample],
+     * [revertLead], [calculateDerivedLeads], [selectPathology]).
+     */
+    private val floatBuffers = mutableMapOf<Lead, FloatArray>()
+
+    private fun floatBufferFor(lead: Lead, samples: IntArray): FloatArray {
+        val existing = floatBuffers[lead]
+        if (existing != null && existing.size == samples.size) return existing
+        val fresh = FloatArray(samples.size) { samples[it].toFloat() }
+        floatBuffers[lead] = fresh
+        return fresh
+    }
+
+    private fun computeWeight(d: Int, radius: Int, algorithm: EditingAlgorithm): Float {
+        val t = abs(d.toFloat() / radius)
+        if (t > 1.0f) return 0f
+        return when (algorithm) {
+            EditingAlgorithm.Cosine -> 0.5f * (1f + cos(PI * d / radius).toFloat())
+            // Smoothstep (Hermite h01): zero slope at center and at the edge.
+            EditingAlgorithm.Spline -> 1.0f - (-2.0f * t.pow(3) + 3.0f * t.pow(2))
+            // Smooth bump (1 - t^2)^2: zero slope at d=0 (no kink) and zero at the edge.
+            // The previous (1 - t)^2 had slope -2 at d=0 and produced a tent-shaped peak.
+            EditingAlgorithm.Bezier -> (1.0f - t.pow(2)).pow(2)
+            EditingAlgorithm.LOESS  -> (1.0f - t.pow(3)).pow(3)
+            EditingAlgorithm.MLS    -> {
+                // Truncated Gaussian re-normalised so the kernel smoothly reaches 0
+                // at |d| = radius. The raw Gaussian was ~4.4% of peak at the edge
+                // (sigma=0.4), which produced a visible step at the influence boundary.
+                val sigma = 0.4f
+                val raw = exp(-t.pow(2) / (2 * sigma.pow(2)))
+                val edge = exp(-1f / (2 * sigma.pow(2)))
+                ((raw - edge) / (1f - edge)).coerceAtLeast(0f)
+            }
+        }
+    }
+
     fun selectPathology(id: String, persist: Boolean = true) {
         viewModelScope.launch {
             val file = repository.readPathology(id)
             _targetFile.value = file
+            // A new file is loaded — accumulators from the previous file are stale.
+            floatBuffers.clear()
             _dirtyLeads.value = emptySet()
             _isMetadataDirty.value = false
             _focusedLead.value = Lead.II
@@ -116,24 +181,58 @@ class ConstructorViewModel(
         }
     }
 
+    fun setEditingAlgorithm(algorithm: EditingAlgorithm) {
+        _editingAlgorithm.value = algorithm
+    }
+
+    fun setEditingRadius(radius: Int) {
+        _editingRadius.value = radius.coerceIn(MIN_EDITING_RADIUS, MAX_EDITING_RADIUS)
+    }
+
     fun moveSelectedUp() {
         val lead = _focusedLead.value
         if (!isLeadEditable(lead)) return
-        val stream = _targetFile.value?.leads?.get(lead) ?: return
         val index = _selectedIndex.value
-        if (index in stream.samples.indices) {
-            setSample(lead, index, stream.samples[index] + 1)
-        }
+        adjustSample(lead, index, 1)
     }
 
     fun moveSelectedDown() {
         val lead = _focusedLead.value
         if (!isLeadEditable(lead)) return
-        val stream = _targetFile.value?.leads?.get(lead) ?: return
         val index = _selectedIndex.value
-        if (index in stream.samples.indices) {
-            setSample(lead, index, stream.samples[index] - 1)
+        adjustSample(lead, index, -1)
+    }
+
+    private fun adjustSample(lead: Lead, index: Int, delta: Int) {
+        val currentFile = _targetFile.value ?: return
+        val stream = currentFile.leads[lead] ?: return
+        if (index !in stream.samples.indices) return
+
+        val radius = _editingRadius.value
+        val algorithm = _editingAlgorithm.value
+        val deltaF = delta.toFloat()
+
+        // Accumulate weighted contributions into the float buffer, then project
+        // back to the displayed int samples. This is what turns a sequence of
+        // +/-1 nudges into a genuinely smooth bump: a sample whose per-call
+        // weight rounds to 0 still moves once enough nudges have accumulated.
+        val floatBuf = floatBufferFor(lead, stream.samples)
+        val newSamples = stream.samples.copyOf()
+
+        for (d in -radius..radius) {
+            val targetIndex = index + d
+            if (targetIndex !in newSamples.indices) continue
+            val weight = computeWeight(d, radius, algorithm)
+            if (weight == 0f) continue
+            floatBuf[targetIndex] += deltaF * weight
+            newSamples[targetIndex] = floatBuf[targetIndex].roundToInt()
         }
+
+        val newLeads = currentFile.leads.toMutableMap()
+        newLeads[lead] = stream.copy(samples = newSamples)
+
+        _targetFile.value = currentFile.copy(leads = newLeads)
+        _dirtyLeads.value += lead
     }
 
     fun setSample(lead: Lead, index: Int, adcValue: Int) {
@@ -143,15 +242,29 @@ class ConstructorViewModel(
         if (index !in stream.samples.indices) return
         if (stream.samples[index] == adcValue) return
 
-        // Update the sample in-place (or copy-on-write if preferred for Compose)
-        // Since it's a MutableState holding the whole file, we need a new file instance
-        // or a way to notify Compose.
+        // Apply the same weighted kernel as adjustSample so an absolute value
+        // jump from the dialog produces a smooth bump instead of a single-sample
+        // spike. At d=0 every kernel returns weight=1.0, so the center lands
+        // exactly on adcValue.
+        val radius = _editingRadius.value
+        val algorithm = _editingAlgorithm.value
+        val deltaF = (adcValue - stream.samples[index]).toFloat()
+
+        val floatBuf = floatBufferFor(lead, stream.samples)
         val newSamples = stream.samples.copyOf()
-        newSamples[index] = adcValue
-        
+
+        for (d in -radius..radius) {
+            val targetIndex = index + d
+            if (targetIndex !in newSamples.indices) continue
+            val weight = computeWeight(d, radius, algorithm)
+            if (weight == 0f) continue
+            floatBuf[targetIndex] += deltaF * weight
+            newSamples[targetIndex] = floatBuf[targetIndex].roundToInt()
+        }
+
         val newLeads = currentFile.leads.toMutableMap()
         newLeads[lead] = stream.copy(samples = newSamples)
-        
+
         _targetFile.value = currentFile.copy(leads = newLeads)
         _dirtyLeads.value += lead
     }
@@ -189,6 +302,9 @@ class ConstructorViewModel(
             
             _targetFile.value = currentFile.copy(leads = newLeads)
             _dirtyLeads.value -= lead
+            // Original samples are restored from disk — drop any accumulated edits
+            // so the next adjust on this lead re-seeds from the restored baseline.
+            floatBuffers.remove(lead)
         }
     }
 
@@ -242,6 +358,9 @@ class ConstructorViewModel(
                 if (derived.isNotEmpty()) {
                     val samples = derived.map { (it + baseline).toInt() }.toIntArray()
                     leads[target] = com.example.cardiosimulator.domain.LeadStream(target, samples)
+                    // Derived samples replace the previous content — any accumulated
+                    // float edits for this lead are stale.
+                    floatBuffers.remove(target)
                     newlyDirty.add(target)
                 }
             }
@@ -256,6 +375,9 @@ class ConstructorViewModel(
                 if (derived.isNotEmpty()) {
                     val samples = derived.map { (it + baseline).toInt() }.toIntArray()
                     leads[target] = com.example.cardiosimulator.domain.LeadStream(target, samples)
+                    // Derived samples replace the previous content — any accumulated
+                    // float edits for this lead are stale.
+                    floatBuffers.remove(target)
                     newlyDirty.add(target)
                 }
             }
@@ -265,5 +387,11 @@ class ConstructorViewModel(
             _targetFile.value = currentFile.copy(leads = leads)
             _dirtyLeads.value += newlyDirty
         }
+    }
+
+    companion object {
+        const val DEFAULT_EDITING_RADIUS = 100
+        const val MIN_EDITING_RADIUS = 1
+        const val MAX_EDITING_RADIUS = 1000
     }
 }

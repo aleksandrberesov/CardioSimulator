@@ -144,6 +144,10 @@
     <string name="constructor_set_adc_title">设置 ADC 值</string>
     <string name="constructor_adc_label">ADC</string>
     <string name="constructor_adc_format">ADC: %1$s</string>
+    <string name="constructor_smoothing_title">平滑设置</string>
+    <string name="constructor_smoothing_algorithm_label">算法</string>
+    <string name="constructor_smoothing_width_label">平滑宽度</string>
+    <string name="constructor_smoothing_width_unit">采样点</string>
 
     <string name="constructor_significant_points">重要点</string>
     <string name="constructor_sample_label">样本: %1$d</string>

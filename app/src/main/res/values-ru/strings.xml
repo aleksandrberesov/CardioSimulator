@@ -148,6 +148,10 @@
     <string name="constructor_set_adc_title">Установить значение АЦП</string>
     <string name="constructor_adc_label">АЦП</string>
     <string name="constructor_adc_format">АЦП: %1$s</string>
+    <string name="constructor_smoothing_title">Настройки сглаживания</string>
+    <string name="constructor_smoothing_algorithm_label">Алгоритм</string>
+    <string name="constructor_smoothing_width_label">Ширина сглаживания</string>
+    <string name="constructor_smoothing_width_unit">точек</string>
 
     <string name="constructor_significant_points">Значимые точки</string>
     <string name="constructor_sample_label">Точка: %1$d</string>

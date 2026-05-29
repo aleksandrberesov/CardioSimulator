@@ -1,55 +1,61 @@
 package com.example.cardiosimulator.ui.panels
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.ui.components.ControlPanelDivider
-import com.example.cardiosimulator.ui.components.Label
 import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.ui.viewmodels.ConstructorViewModel
+import com.example.cardiosimulator.ui.viewmodels.EditingAlgorithm
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 
 @Composable
 fun ConstructorControlPanel(
     constructorViewModel: ConstructorViewModel,
     monitorViewModel: MonitorViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val selectedIndex by constructorViewModel.selectedIndex.collectAsState()
     val targetFile by constructorViewModel.targetFile
     val focusedLead by constructorViewModel.focusedLead.collectAsState()
     val monitorMode by monitorViewModel.monitorMode.collectAsState()
+    val editingAlgorithm by constructorViewModel.editingAlgorithm.collectAsState()
+    val editingRadius by constructorViewModel.editingRadius.collectAsState()
 
-    var showSpeedDialog by remember { mutableStateOf(false) }
-    var showTimeDialog by remember { mutableStateOf(false) }
-    var showAdcDialog by remember { mutableStateOf(false) }
+    val showSpeedDialog = remember { mutableStateOf(value = false) }
+    val showTimeDialog = remember { mutableStateOf(value = false) }
+    val showAdcDialog = remember { mutableStateOf(value = false) }
+    val showSmoothingDialog = remember { mutableStateOf(value = false) }
 
     val samples = targetFile?.leads?.get(focusedLead)?.samples
-    val currentAdc = if (samples != null && selectedIndex in samples.indices) samples[selectedIndex] else 0
-    val currentTimeMs = if (samples != null && selectedIndex in samples.indices)
+    val currentAdc = if (samples != null && (selectedIndex in samples.indices)) samples[selectedIndex] else 0
+    val currentTimeMs = if (samples != null && (selectedIndex in samples.indices))
         (selectedIndex * 1000f / monitorMode.calibration.sampleRateHz).toInt()
     else 0
 
-    if (showSpeedDialog) {
-        var speedText by remember { mutableStateOf(if (monitorMode.speed % 1 == 0f) monitorMode.speed.toInt().toString() else monitorMode.speed.toString()) }
+    if (showSpeedDialog.value) {
+        var speedText by remember { mutableStateOf(value = if (monitorMode.speed % 1 == 0f) monitorMode.speed.toInt().toString() else monitorMode.speed.toString()) }
         AlertDialog(
-            onDismissRequest = { showSpeedDialog = false },
+            onDismissRequest = { showSpeedDialog.value = false },
             title = { Text(stringResource(R.string.monitor_speed_title)) },
             text = {
                 TextField(
@@ -63,25 +69,29 @@ fun ConstructorControlPanel(
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
-                    speedText.toFloatOrNull()?.let { monitorViewModel.setSpeed(it) }
-                    showSpeedDialog = false
-                }) {
+                TextButton(
+                    onClick = {
+                        speedText.toFloatOrNull()?.let { monitorViewModel.setSpeed(it) }
+                        showSpeedDialog.value = false
+                    }
+                ) {
                     Text(stringResource(R.string.constructor_rename_ok))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showSpeedDialog = false }) {
+                TextButton(
+                    onClick = { showSpeedDialog.value = false }
+                ) {
                     Text(stringResource(R.string.constructor_rename_cancel))
                 }
             }
         )
     }
 
-    if (showTimeDialog) {
-        var timeText by remember { mutableStateOf(currentTimeMs.toString()) }
+    if (showTimeDialog.value) {
+        var timeText by remember { mutableStateOf(value = currentTimeMs.toString()) }
         AlertDialog(
-            onDismissRequest = { showTimeDialog = false },
+            onDismissRequest = { showTimeDialog.value = false },
             title = { Text(stringResource(R.string.constructor_set_time_title)) },
             text = {
                 TextField(
@@ -95,28 +105,32 @@ fun ConstructorControlPanel(
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
-                    timeText.toIntOrNull()?.let { ms ->
-                        val index = (ms * monitorMode.calibration.sampleRateHz / 1000f).toInt()
-                        constructorViewModel.selectIndex(index)
+                TextButton(
+                    onClick = {
+                        timeText.toIntOrNull()?.let { ms ->
+                            val index = (ms * monitorMode.calibration.sampleRateHz / 1000f).toInt()
+                            constructorViewModel.selectIndex(index)
+                        }
+                        showTimeDialog.value = false
                     }
-                    showTimeDialog = false
-                }) {
+                ) {
                     Text(stringResource(R.string.constructor_rename_ok))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showTimeDialog = false }) {
+                TextButton(
+                    onClick = { showTimeDialog.value = false }
+                ) {
                     Text(stringResource(R.string.constructor_rename_cancel))
                 }
             }
         )
     }
 
-    if (showAdcDialog) {
-        var adcText by remember { mutableStateOf(currentAdc.toString()) }
+    if (showAdcDialog.value) {
+        var adcText by remember { mutableStateOf(value = currentAdc.toString()) }
         AlertDialog(
-            onDismissRequest = { showAdcDialog = false },
+            onDismissRequest = { showAdcDialog.value = false },
             title = { Text(stringResource(R.string.constructor_set_adc_title)) },
             text = {
                 TextField(
@@ -132,17 +146,88 @@ fun ConstructorControlPanel(
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
-                    adcText.toIntOrNull()?.let { value ->
-                        constructorViewModel.setSample(focusedLead, selectedIndex, value)
+                TextButton(
+                    onClick = {
+                        adcText.toIntOrNull()?.let { value ->
+                            constructorViewModel.setSample(focusedLead, selectedIndex, value)
+                        }
+                        showAdcDialog.value = false
                     }
-                    showAdcDialog = false
-                }) {
+                ) {
                     Text(stringResource(R.string.constructor_rename_ok))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showAdcDialog = false }) {
+                TextButton(
+                    onClick = { showAdcDialog.value = false }
+                ) {
+                    Text(stringResource(R.string.constructor_rename_cancel))
+                }
+            }
+        )
+    }
+
+    if (showSmoothingDialog.value) {
+        var selectedAlgorithm by remember { mutableStateOf(value = editingAlgorithm) }
+        var widthText by remember { mutableStateOf(value = editingRadius.toString()) }
+        AlertDialog(
+            onDismissRequest = { showSmoothingDialog.value = false },
+            title = { Text(stringResource(R.string.constructor_smoothing_title)) },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.constructor_smoothing_algorithm_label),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    EditingAlgorithm.entries.forEach { algo ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedAlgorithm = algo }
+                                .padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = selectedAlgorithm == algo,
+                                onClick = { selectedAlgorithm = algo }
+                            )
+                            Text(text = algo.name)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    TextField(
+                        value = widthText,
+                        onValueChange = { newValue ->
+                            if (newValue.isEmpty() || newValue.all { it.isDigit() }) widthText = newValue
+                        },
+                        label = { Text(stringResource(R.string.constructor_smoothing_width_label)) },
+                        suffix = { Text(stringResource(R.string.constructor_smoothing_width_unit)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        constructorViewModel.setEditingAlgorithm(selectedAlgorithm)
+                        widthText.toIntOrNull()?.let { constructorViewModel.setEditingRadius(it) }
+                        showSmoothingDialog.value = false
+                    }
+                ) {
+                    Text(stringResource(R.string.constructor_rename_ok))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showSmoothingDialog.value = false }
+                ) {
                     Text(stringResource(R.string.constructor_rename_cancel))
                 }
             }
@@ -176,7 +261,7 @@ fun ConstructorControlPanel(
             )
             Tab(
                 text = timeDisplayMs,
-                onClick = { showTimeDialog = true },
+                onClick = { showTimeDialog.value = true },
                 modifier = Modifier.weight(1.5f)
             )
             Tab(
@@ -191,7 +276,7 @@ fun ConstructorControlPanel(
 
         // Point Adjustment
         Row(
-            modifier = Modifier.weight(1.2f).fillMaxHeight(),
+            modifier = Modifier.weight(2.0f).fillMaxHeight(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
@@ -203,7 +288,12 @@ fun ConstructorControlPanel(
             )
             Tab(
                 text = stringResource(R.string.constructor_adc_format, adcDisplayValue),
-                onClick = { showAdcDialog = true },
+                onClick = { showAdcDialog.value = true },
+                modifier = Modifier.weight(1.5f)
+            )
+            Tab(
+                text = editingAlgorithm.name,
+                onClick = { showSmoothingDialog.value = true },
                 modifier = Modifier.weight(1.5f)
             )
             Tab(
@@ -232,7 +322,7 @@ fun ConstructorControlPanel(
             Tab(
                 text = formattedSpeed,
                 subText = stringResource(R.string.monitor_speed_unit),
-                onClick = { showSpeedDialog = true },
+                onClick = { showSpeedDialog.value = true },
                 modifier = Modifier.weight(1.5f)
             )
             Tab(

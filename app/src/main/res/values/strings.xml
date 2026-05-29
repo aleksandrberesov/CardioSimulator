@@ -148,6 +148,10 @@
     <string name="constructor_set_adc_title">Set ADC Value</string>
     <string name="constructor_adc_label">ADC</string>
     <string name="constructor_adc_format">ADC: %1$s</string>
+    <string name="constructor_smoothing_title">Smoothing Settings</string>
+    <string name="constructor_smoothing_algorithm_label">Algorithm</string>
+    <string name="constructor_smoothing_width_label">Smoothing Width</string>
+    <string name="constructor_smoothing_width_unit">samples</string>
 
     <string name="constructor_significant_points">Significant Points</string>
     <string name="constructor_sample_label">Sample: %1$d</string>

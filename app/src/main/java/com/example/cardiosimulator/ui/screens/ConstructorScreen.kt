@@ -321,6 +321,10 @@ fun ConstructorScreen(
                             if (stream != null) {
                                 val isEditable = constructorViewModel.isLeadEditable(focusedLead)
                                 Column(modifier = Modifier.fillMaxSize()) {
+                                    // Balance the PreviewPane at the bottom (100dp + 16dp*2 padding) 
+                                    // to center the EditableLead baseline in the monitor
+                                    Spacer(modifier = Modifier.height(132.dp))
+
                                     EditableLead(
                                         stream = stream,
                                         significantPoints = file.significantPoints,
