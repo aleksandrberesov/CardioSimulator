@@ -108,6 +108,10 @@ class DataSourcePrefs(private val context: Context) {
         prefs[stringPreferencesKey("${mode}_monitor_series_scheme")] ?: prefs[KEY_MONITOR_SERIES_SCHEME]
     }
 
+    fun comparisonPresets(mode: String): Flow<String?> = context.dataSourceDataStore.data.map { prefs ->
+        prefs[stringPreferencesKey("${mode}_comparison_presets")]
+    }
+
     val lastOperatingMode: Flow<String?> = context.dataSourceDataStore.data.map { prefs ->
         prefs[KEY_LAST_OPERATING_MODE]
     }
@@ -208,6 +212,12 @@ class DataSourcePrefs(private val context: Context) {
     suspend fun setMonitorSeriesScheme(mode: String, scheme: String) {
         context.dataSourceDataStore.edit { prefs ->
             prefs[stringPreferencesKey("${mode}_monitor_series_scheme")] = scheme
+        }
+    }
+
+    suspend fun setComparisonPresets(mode: String, json: String) {
+        context.dataSourceDataStore.edit { prefs ->
+            prefs[stringPreferencesKey("${mode}_comparison_presets")] = json
         }
     }
 

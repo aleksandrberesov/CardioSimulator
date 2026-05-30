@@ -55,6 +55,9 @@ class RhythmViewModel(
     private val _waveforms = MutableStateFlow<Map<Lead, Points>>(emptyMap())
     val waveforms: StateFlow<Map<Lead, Points>> = _waveforms.asStateFlow()
 
+    private val _comparisonWaveforms = MutableStateFlow<Map<Int, Points>>(emptyMap())
+    val comparisonWaveforms: StateFlow<Map<Int, Points>> = _comparisonWaveforms.asStateFlow()
+
     private val _significantPoints = MutableStateFlow<List<com.example.cardiosimulator.domain.SignificantPoint>>(emptyList())
     val significantPoints: StateFlow<List<com.example.cardiosimulator.domain.SignificantPoint>> = _significantPoints.asStateFlow()
 
@@ -137,5 +140,16 @@ class RhythmViewModel(
 
     fun refresh() {
         _selectedRhythm.value?.let { selectRhythm(it.id) }
+    }
+
+    fun loadComparisonWaveform(paneIndex: Int, pathologyId: String, lead: Lead) {
+        viewModelScope.launch {
+            val points = withContext(Dispatchers.IO) {
+                repository.leadWaveform(pathologyId, lead)
+            }
+            if (points != null) {
+                _comparisonWaveforms.value = _comparisonWaveforms.value + (paneIndex to points)
+            }
+        }
     }
 }

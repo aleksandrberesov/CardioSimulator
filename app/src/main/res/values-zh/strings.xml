@@ -58,6 +58,12 @@
     <string name="monitor_eos">心电轴</string>
     <string name="monitor_hr_format">心率 %1$d</string>
     <string name="monitor_tips">提示</string>
+    <string name="monitor_compare">比较</string>
+    <string name="monitor_compare_placeholder">点击选择病理</string>
+    <string name="monitor_comparison_presets_title">比较预设</string>
+    <string name="monitor_comparison_presets_new">设置新方案</string>
+    <string name="monitor_comparison_preset_save_title">保存预设</string>
+    <string name="monitor_comparison_preset_name_hint">预设名称</string>
 
     <!-- Rhythm panel -->
     <string name="rhythm_drawer_title">心律</string>

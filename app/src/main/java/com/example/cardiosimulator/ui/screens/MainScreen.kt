@@ -192,6 +192,7 @@ fun MainScreen(appViewModel: AppViewModel) {
                     OperatingMode.Teaching -> {
                         MonitorControlPanel(
                             viewModel = monitorViewModel,
+                            onCompareClick = { monitorViewModel.toggleCompareMode() },
                             onStartStopClick = { isRunning ->
                                 if (isRunning) {
                                     appViewModel.sendStartCommand(selectedRhythm?.id, selectedRhythm?.titleEn)
