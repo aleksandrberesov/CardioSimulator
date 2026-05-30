@@ -16,6 +16,16 @@ enum class SeriesScheme {
     Grid
 }
 
+data class ComparisonTarget(
+    val pathologyId: String,
+    val lead: Lead
+)
+
+data class ComparisonPreset(
+    val name: String,
+    val targets: Map<Int, ComparisonTarget>
+)
+
 data class MonitorModeModel(
     val count: Int = 1,
     val gridScheme: GridScheme = GridScheme.Pink,
@@ -25,4 +35,7 @@ data class MonitorModeModel(
     val displayScale: Float = 0.4f,
     val calibration: EcgCalibration = EcgCalibration(),
     val isRunning: Boolean = false,
+    val isCompareMode: Boolean = false,
+    val comparisonTargets: Map<Int, ComparisonTarget> = emptyMap(),
+    val comparisonPresets: List<ComparisonPreset> = emptyList()
 )

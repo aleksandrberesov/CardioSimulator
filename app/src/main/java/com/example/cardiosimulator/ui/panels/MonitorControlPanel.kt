@@ -47,6 +47,7 @@ fun MonitorControlPanel(
     viewModel: MonitorViewModel,
     modifier: Modifier = Modifier,
     onTipsClick: () -> Unit = {},
+    onCompareClick: () -> Unit = {},
     onRulerClick: () -> Unit = {},
     onStartStopClick: (Boolean) -> Unit = {},
 ) {
@@ -218,6 +219,14 @@ fun MonitorControlPanel(
             onClick = onTipsClick,
             modifier = Modifier.weight(1f)
         )
+
+        if (viewModel.mode == OperatingMode.Teaching) {
+            Tab(
+                text = stringResource(R.string.monitor_compare),
+                onClick = onCompareClick,
+                modifier = Modifier.weight(1f)
+            )
+        }
 
         ControlPanelDivider()
 

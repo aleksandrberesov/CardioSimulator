@@ -60,6 +60,12 @@
     <string name="monitor_hr_format">HR %1$d</string>
     <string name="monitor_scale_label_format">%1$s mm/s  %2$s mm/mV</string>
     <string name="monitor_tips">Tips</string>
+    <string name="monitor_compare">Compare</string>
+    <string name="monitor_compare_placeholder">Click to choose pathology</string>
+    <string name="monitor_comparison_presets_title">Comparison Presets</string>
+    <string name="monitor_comparison_presets_new">Set New Schema</string>
+    <string name="monitor_comparison_preset_save_title">Save Preset</string>
+    <string name="monitor_comparison_preset_name_hint">Preset Name</string>
 
     <!-- Rhythm panel -->
     <string name="rhythm_drawer_title">Rhythm</string>
