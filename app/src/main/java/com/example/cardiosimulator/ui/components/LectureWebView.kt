@@ -39,8 +39,8 @@ private const val ASSET_DOMAIN = "https://appassets.androidplatform.net"
  * - KaTeX `$…$` / `$$…$$` math auto-rendered in a single pass (no
  *   per-formula WebView).
  * - All subresources (KaTeX assets, course images) are served from one
- *   virtual origin via [WebViewAssetLoader]: `/assets/*` → APK assets,
- *   `/course/*` → `filesDir/courses/`. Same-origin serving avoids
+ *   virtual origin via [WebViewAssetLoader]: `/assets/` → APK assets,
+ *   `/course/` → `filesDir/courses/`. Same-origin serving avoids
  *   `file://` font-CORS pain and keeps remote loads impossible.
  *
  * @param resolveEcg maps `(pathologyId, lead)` → traces to draw (a null
@@ -267,3 +267,4 @@ private fun buildAnswerInjectScript(answers: Map<String, Map<String, String>>): 
 })();
 """.trimIndent()
 }
+
