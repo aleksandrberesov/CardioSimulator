@@ -174,7 +174,18 @@ class AppViewModel(
                 // UI surfaces them via [courseDataState].
                 if (courseRepository != null) {
                     val coursesUri = p.coursesTreeUri.first()
-                    if (coursesUri != null) loadCoursesFromSaf(ctx, coursesUri)
+                    if (coursesUri != null) {
+                        loadCoursesFromSaf(ctx, coursesUri)
+                    } else {
+                        // Try loading from the initial source (e.g. assets).
+                        viewModelScope.launch {
+                            if (withContext(Dispatchers.IO) { courseRepository.loadManifest() }) {
+                                _courseDataState.value = DataState.Ready(courseRepository.courses().size)
+                            } else {
+                                _courseDataState.value = DataState.Ready(0)
+                            }
+                        }
+                    }
                 }
             }
         } else if (repo != null) {
@@ -184,6 +195,15 @@ class AppViewModel(
                     _dataState.value = DataState.Ready(repo.pathologies().size)
                 } else {
                     _dataState.value = DataState.Ready(0)
+                }
+                
+                // Also try courses for the asset-only path.
+                if (courseRepository != null) {
+                    if (withContext(Dispatchers.IO) { courseRepository.loadManifest() }) {
+                        _courseDataState.value = DataState.Ready(courseRepository.courses().size)
+                    } else {
+                        _courseDataState.value = DataState.Ready(0)
+                    }
                 }
             }
         } else {

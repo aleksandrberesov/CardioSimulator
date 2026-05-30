@@ -63,6 +63,10 @@
     <!-- Rhythm panel -->
     <string name="rhythm_drawer_title">Ритм</string>
     <string name="course_drawer_title">Курсы</string>
+    <string name="lecture_drawer_title">Лекции</string>
+    <string name="teaching_no_course_selected">Курс не выбран</string>
+    <string name="teaching_pick_course_hint">Выберите курс в боковом меню, чтобы начать</string>
+    <string name="teaching_pick_lecture_hint">Выберите лекцию в боковом меню</string>
     <string name="points_drawer_title">Точки</string>
     <string name="rhythm_search_placeholder">Ритм…</string>
     <string name="rhythm_search_content_description">Поиск</string>

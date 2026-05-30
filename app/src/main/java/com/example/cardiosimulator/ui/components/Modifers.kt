@@ -9,7 +9,3 @@ fun Modifier.chartArea(): Modifier {
         .fillMaxWidth(1f)
         .fillMaxHeight(1f)
 }
-
-fun Modifier.Tab(): Modifier {
-    return this
-}

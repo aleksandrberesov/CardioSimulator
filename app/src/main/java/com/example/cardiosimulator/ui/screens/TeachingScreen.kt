@@ -1,7 +1,9 @@
 package com.example.cardiosimulator.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,41 +28,54 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.R
-import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.Language
+import com.example.cardiosimulator.ui.components.MarkdownRenderer
 import com.example.cardiosimulator.ui.components.SideDrawer
-import com.example.cardiosimulator.ui.display.Lead as LeadView
-import com.example.cardiosimulator.ui.display.LeadsGrid
-import com.example.cardiosimulator.ui.display.Monitor
-import com.example.cardiosimulator.ui.panels.RhythmSelector
+import com.example.cardiosimulator.ui.panels.CourseSelector
+import com.example.cardiosimulator.ui.panels.LectureSelector
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
-import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
-import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
+import com.example.cardiosimulator.ui.viewmodels.CourseViewerViewModel
 
 @Composable
 fun TeachingScreen(
     appViewModel: AppViewModel,
-    monitorViewModel: MonitorViewModel,
-    rhythmViewModel: RhythmViewModel,
 ) {
-    val rhythms by rhythmViewModel.rhythms.collectAsState()
+    val courseRepository = appViewModel.courseRepository ?: return
+    val pathologyRepository = appViewModel.repository ?: return
+    val prefs = appViewModel.prefs ?: return
+    
+    val viewerViewModel: CourseViewerViewModel = viewModel(
+        key = "teaching",
+        factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                return CourseViewerViewModel(courseRepository, prefs, "teaching") as T
+            }
+        }
+    )
+
     val courses by appViewModel.courses.collectAsState()
-    val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
-    val waveforms by rhythmViewModel.waveforms.collectAsState()
-    var isRhythmDrawerExpanded by remember { mutableStateOf(false) }
+    val selectedCourseId by viewerViewModel.selectedCourseId.collectAsState()
+    val selectedCourse by viewerViewModel.selectedCourse.collectAsState()
+    val selectedLectureId by viewerViewModel.selectedLectureId.collectAsState()
+    val lectureContent by viewerViewModel.lectureContent.collectAsState()
+    val lectureEntries by viewerViewModel.lectureEntries.collectAsState()
+    
+    val currentLanguage by appViewModel.selectedLanguage.collectAsState()
+
+    var isDrawerExpanded by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
         Column(
-            modifier = Modifier.fillMaxSize().middleSectionCenter(),
+            modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
-            val displayTitle = selectedRhythm?.let {
-                if (selectedLanguage == Language.RU)
-                    it.nameRu ?: it.titleEn
-                else
-                    it.titleEn
-            } ?: stringResource(R.string.constructor_no_pathology_selected)
+            // Header
+            val displayTitle = lectureContent?.let {
+                if (currentLanguage == Language.RU) it.frontMatter.title.takeIf { t -> t.isNotEmpty() } ?: it.id else it.frontMatter.title.takeIf { t -> t.isNotEmpty() } ?: it.id
+            } ?: selectedCourse?.let {
+                if (currentLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn
+            } ?: stringResource(R.string.teaching_no_course_selected)
 
             Surface(
                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -78,47 +93,83 @@ fun TeachingScreen(
                 }
             }
 
-            val mode by monitorViewModel.monitorMode.collectAsState()
-            Monitor(
-                modifier = Modifier.weight(1f).padding(top = 8.dp, start = 24.dp),
-                monitorViewModel = monitorViewModel,
-            ) { rows, columns, xOffset, scheme ->
-                LeadsGrid(
-                    rows = rows,
-                    columns = columns,
-                    itemCount = mode.count,
-                ) { _, lead ->
-                    val leadPoints = lead?.let { waveforms[it] }
-                        ?.takeIf { it.values.size >= 2 }
-                        ?: Points(emptyList<Float>())
-                    LeadView(
-                        points = leadPoints,
-                        title = lead?.name ?: "",
-                        isRunning = mode.isRunning,
-                        xOffsetPx = xOffset,
-                        gridScheme = scheme
+            // Main Content
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                if (lectureContent != null) {
+                    MarkdownRenderer(
+                        lecture = lectureContent!!,
+                        pathologyRepository = pathologyRepository,
                     )
+                } else {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = if (selectedCourse == null) 
+                                stringResource(R.string.teaching_pick_course_hint)
+                            else 
+                                stringResource(R.string.teaching_pick_lecture_hint),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
 
         SideDrawer(
-            isExpanded = isRhythmDrawerExpanded,
-            onExpandedChange = { isRhythmDrawerExpanded = it },
-            drawerWidth = 300.dp,
+            isExpanded = isDrawerExpanded,
+            onExpandedChange = { isDrawerExpanded = it },
+            drawerWidth = 320.dp,
             drawerContent = {
-                RhythmSelector(
-                    appViewModel = appViewModel,
-                    rhythms = rhythms,
-                    selectedId = selectedRhythm?.id,
-                    onRhythmSelect = { rhythmViewModel.selectRhythm(it.id) },
-                )
+                Column(modifier = Modifier.fillMaxSize()) {
+                    if (selectedCourse == null) {
+                        Text(
+                            text = stringResource(R.string.course_drawer_title),
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                        CourseSelector(
+                            appViewModel = appViewModel,
+                            courses = courses,
+                            selectedCourseId = selectedCourseId,
+                            onCourseSelect = { viewerViewModel.selectCourse(it.id) }
+                        )
+                    } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { viewerViewModel.selectCourse(null) }
+                                .padding(16.dp)
+                        ) {
+                            Text(
+                                text = "← ",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = if (currentLanguage == Language.RU) selectedCourse?.nameRu ?: selectedCourse?.titleEn ?: "" else selectedCourse?.titleEn ?: "",
+                                style = MaterialTheme.typography.titleLarge,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            )
+                        }
+                        LectureSelector(
+                            appViewModel = appViewModel,
+                            lectures = lectureEntries,
+                            selectedLectureId = selectedLectureId,
+                            onLectureSelect = { 
+                                viewerViewModel.selectLecture(it.id)
+                                isDrawerExpanded = false
+                            }
+                        )
+                    }
+                }
             },
             handlerContent = {
                 Text(
-                    text = stringResource(R.string.rhythm_drawer_title),
+                    text = stringResource(if (selectedCourse == null) R.string.course_drawer_title else R.string.lecture_drawer_title),
                     modifier = Modifier
-                        .requiredWidth(64.dp)
+                        .requiredWidth(128.dp)
                         .rotate(-90f),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

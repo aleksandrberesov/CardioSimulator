@@ -94,8 +94,8 @@ fun MainScreen(appViewModel: AppViewModel) {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return CourseConstructorViewModel(
                     repository = appViewModel.courseRepository!!,
-                    mode = selectedMode.id,
-                    prefs = appViewModel.prefs
+                    prefs = appViewModel.prefs,
+                    mode = selectedMode.id.name
                 ) as T
             }
         }
@@ -149,8 +149,6 @@ fun MainScreen(appViewModel: AppViewModel) {
             when (selectedMode.id) {
                 OperatingMode.Teaching -> TeachingScreen(
                     appViewModel = appViewModel,
-                    monitorViewModel = monitorViewModel,
-                    rhythmViewModel = rhythmViewModel,
                 )
                 OperatingMode.Testing -> TestingScreen(
                     appViewModel = appViewModel,
@@ -175,8 +173,6 @@ fun MainScreen(appViewModel: AppViewModel) {
                 )
                 OperatingMode.CourseConstructor -> CourseConstructorScreen(
                     appViewModel = appViewModel,
-                    monitorViewModel = monitorViewModel,
-                    rhythmViewModel = rhythmViewModel,
                     courseConstructorViewModel = courseConstructorViewModel,
                 )
             }
@@ -208,8 +204,9 @@ fun MainScreen(appViewModel: AppViewModel) {
                         )
                     }
                     OperatingMode.CourseConstructor -> {
-                        // Placeholder for Phase 3b
-                        Text("Course Constructor Panel (Stub)", color = androidx.compose.ui.graphics.Color.Gray)
+                        com.example.cardiosimulator.ui.panels.CourseConstructorControlPanel(
+                            courseConstructorViewModel = courseConstructorViewModel
+                        )
                     }
                     else -> {}
                 }
