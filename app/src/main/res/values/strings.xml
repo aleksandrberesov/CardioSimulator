@@ -61,6 +61,7 @@
     <string name="monitor_scale_label_format">%1$s mm/s  %2$s mm/mV</string>
     <string name="monitor_tips">Tips</string>
     <string name="monitor_compare">Compare</string>
+    <string name="monitor_compare_mode">Compare mode</string>
     <string name="monitor_compare_placeholder">Click to choose pathology</string>
     <string name="monitor_comparison_presets_title">Comparison Presets</string>
     <string name="monitor_comparison_presets_new">Set New Schema</string>
@@ -84,7 +85,7 @@
     <string name="points_drawer_title">Points</string>
     <string name="rhythm_search_placeholder">Rhythm…</string>
     <string name="rhythm_search_content_description">Search</string>
-    <string name="rhythm_course_filter_all">All pathologies</string>
+    <string name="rhythm_course_filter_all">All Rhythms</string>
     <string name="rhythm_course_filter_cd">Filter rhythms by course</string>
 
     <!-- Testing panel -->

@@ -41,7 +41,7 @@ class RhythmViewModel(
             appViewModel.selectedCourseId,
             appViewModel.courses
         ) { all, courseId, courses ->
-            if (courseId == null) return@combine all
+            if (courseId == null || courseId == AppViewModel.ALL_RHYTHMS_ID) return@combine all
             val pathologyIds = courses.find { it.id == courseId }?.pathologies?.toSet() ?: emptySet()
             all.filter { it.id in pathologyIds }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

@@ -44,7 +44,8 @@ fun Tab(
     iconContentDescription: String? = null,
     borderWidth: Dp = 1.dp,
     cornerRadius: Dp = 4.dp,
-    backgroundColor: Color = Color.Transparent
+    backgroundColor: Color = Color.Transparent,
+    contentColor: Color = Color.Black
 ) {
     val shape = RoundedCornerShape(cornerRadius)
     val interactionSource = remember { MutableInteractionSource() }
@@ -74,7 +75,7 @@ fun Tab(
                 Icon(
                     imageVector = icon,
                     contentDescription = iconContentDescription ?: text,
-                    tint = Color.Black,
+                    tint = contentColor,
                     modifier = iconModifier.padding(4.dp)
                 )
             }
@@ -86,7 +87,7 @@ fun Tab(
                     AutoResizeText(
                         text = text,
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color.Black,
+                        color = contentColor,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
                         softWrap = false,
@@ -96,7 +97,7 @@ fun Tab(
                     AutoResizeText(
                         text = subText,
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                        color = Color.Black,
+                        color = contentColor,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
                         softWrap = false,
@@ -109,7 +110,7 @@ fun Tab(
                 AutoResizeText(
                     text = text,
                     style = MaterialTheme.typography.labelLarge,
-                    color = Color.Black,
+                    color = contentColor,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
                     softWrap = false,

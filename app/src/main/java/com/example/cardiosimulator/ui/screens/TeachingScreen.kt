@@ -165,7 +165,7 @@ fun TeachingScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             val displayTitle = if (mode.isCompareMode) {
-                stringResource(R.string.monitor_compare)
+                stringResource(R.string.monitor_compare_mode)
             } else {
                 selectedRhythm?.let {
                     if (selectedLanguage == Language.RU)
@@ -207,7 +207,7 @@ fun TeachingScreen(
                     columns = columns,
                     itemCount = mode.count,
                 ) { index, lead ->
-                    if (mode.isCompareMode && index >= 2 && !mode.comparisonTargets.containsKey(index)) {
+                    if (mode.isCompareMode && !mode.comparisonTargets.containsKey(index)) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -226,24 +226,16 @@ fun TeachingScreen(
                         }
                     } else {
                         val (displayPoints, displayTitle) = if (mode.isCompareMode) {
-                            if (index < 2) {
-                                val comparisonLead = if (index == 0) Lead.I else Lead.II
-                                val points = waveforms[comparisonLead] ?: Points(emptyList())
-                                val mainPathTitle = if (selectedLanguage == Language.RU) selectedRhythm?.nameRu ?: selectedRhythm?.titleEn else selectedRhythm?.titleEn
-                                val title = "${mainPathTitle ?: "???"} (${comparisonLead.name})"
-                                points to title
+                            val target = mode.comparisonTargets[index]
+                            val points = comparisonWaveforms[index] ?: Points(emptyList())
+                            val title = if (target != null) {
+                                val pathology = rhythms.find { it.id == target.pathologyId }
+                                val pathTitle = if (selectedLanguage == Language.RU) pathology?.nameRu ?: pathology?.titleEn else pathology?.titleEn
+                                "${pathTitle ?: "???"} (${target.lead.name})"
                             } else {
-                                val target = mode.comparisonTargets[index]
-                                val points = comparisonWaveforms[index] ?: Points(emptyList())
-                                val title = if (target != null) {
-                                    val pathology = rhythms.find { it.id == target.pathologyId }
-                                    val pathTitle = if (selectedLanguage == Language.RU) pathology?.nameRu ?: pathology?.titleEn else pathology?.titleEn
-                                    "${pathTitle ?: "???"} (${target.lead.name})"
-                                } else {
-                                    "" // Should not happen due to the placeholder box above
-                                }
-                                points to title
+                                "" // Should not happen due to the placeholder box above
                             }
+                            points to title
                         } else {
                             val points = lead?.let { waveforms[it] }
                                 ?.takeIf { it.values.size >= 2 }
@@ -257,7 +249,8 @@ fun TeachingScreen(
                             isRunning = mode.isRunning,
                             xOffsetPx = xOffset,
                             gridScheme = scheme,
-                            modifier = if (mode.isCompareMode && index >= 2) {
+                            isCompareMode = mode.isCompareMode,
+                            modifier = if (mode.isCompareMode) {
                                 Modifier.clickable { editingPaneIndex = index }
                             } else Modifier
                         )

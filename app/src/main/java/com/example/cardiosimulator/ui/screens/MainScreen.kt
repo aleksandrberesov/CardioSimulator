@@ -123,10 +123,7 @@ fun MainScreen(appViewModel: AppViewModel) {
         }
     }
 
-    if (!isDataConfirmed ||
-        dataState !is DataState.Ready ||
-        courseDataState !is DataState.Ready
-    ) {
+    if (!isDataConfirmed) {
         DataSourceScreen(
             appViewModel = appViewModel,
             rhythmViewModel = rhythmViewModel,
@@ -209,7 +206,7 @@ fun MainScreen(appViewModel: AppViewModel) {
                     OperatingMode.Teaching -> {
                         MonitorControlPanel(
                             viewModel = monitorViewModel,
-                            onCompareClick = { monitorViewModel.toggleCompareMode() },
+                            onCompareClick = { monitorViewModel.toggleCompareMode(selectedRhythm?.id) },
                             onStartStopClick = { isRunning ->
                                 if (isRunning) {
                                     appViewModel.sendStartCommand(selectedRhythm?.id, selectedRhythm?.titleEn)
