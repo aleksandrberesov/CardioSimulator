@@ -61,6 +61,10 @@ Keep this list current when you add or move a plan.
   language switcher (en/ru/zh/es), string extraction, a11y sweep. Code on
   `claude/charming-hertz-d394c5`; awaiting build + on-device QA + clinician
   review of translations before merge.
+- [`2026-05-ecg-photo-tracing.md`](active/2026-05-ecg-photo-tracing.md) —
+  digitize a real ECG photo (single strip) in the Constructor: positionable
+  underlay + tool modes, freehand sweep tracing, then auto-detect. *Proposed —
+  awaiting sign-off before Phase A.*
 
 ### Proposed
 *(none)*
