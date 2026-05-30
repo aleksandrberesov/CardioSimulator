@@ -28,6 +28,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.domain.AppBuilder
+import com.example.cardiosimulator.domain.CourseEntry
+import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.components.Tab
@@ -90,9 +92,14 @@ fun TopControlPanel(
                 Box(
                     modifier = Modifier.weight(5f).fillMaxWidth()
                 ){
+                    val courses by viewModel.courses.collectAsState()
+                    val currentLanguage by viewModel.selectedLanguage.collectAsState()
+
                     when (selectedOperatingMode.id) {
                         OperatingMode.Teaching -> TeachingControlPanel(
                             monitorViewModel = monitorViewModel,
+                            courses = courses,
+                            currentLanguage = currentLanguage,
                             onStartStopClick = onStartStopClick
                         )
                         OperatingMode.Testing -> TestingControlPanel(viewModel = viewModel)

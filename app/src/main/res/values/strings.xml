@@ -63,6 +63,7 @@
 
     <!-- Rhythm panel -->
     <string name="rhythm_drawer_title">Rhythm</string>
+    <string name="course_drawer_title">Courses</string>
     <string name="points_drawer_title">Points</string>
     <string name="rhythm_search_placeholder">Rhythm…</string>
     <string name="rhythm_search_content_description">Search</string>
@@ -79,6 +80,13 @@
     <string name="data_source_change_folder">Change ZIP archive</string>
     <string name="data_source_export_zip">Export ZIP</string>
     <string name="data_source_export_zip_dirty">Export ZIP (unsaved edits)</string>
+    <string name="course_data_source_title">Course Data</string>
+    <string name="course_data_source_description">Select a ZIP archive on your device containing the course data.</string>
+    <string name="course_data_source_pick">Select Courses ZIP</string>
+    <string name="course_data_source_change">Change Courses ZIP</string>
+    <string name="course_data_source_export">Export Courses ZIP</string>
+    <string name="course_data_source_upload">Upload Courses to Server</string>
+    <string name="course_data_source_loaded_format">Loaded %1$d courses</string>
     <string name="constructor_save">Save</string>
     <string name="constructor_save_confirm_title">Unsaved changes</string>
     <string name="constructor_save_confirm_message">Save your edits before leaving?</string>
@@ -113,7 +121,9 @@
     <string name="data_source_retry">Pick another ZIP</string>
     <string name="data_source_show_details">Show Details</string>
     <string name="data_source_pathologies_title">Loaded Pathologies (%1$d)</string>
+    <string name="data_source_courses_title">Loaded Courses (%1$d)</string>
     <string name="data_source_leads_format">Leads: %1$d%2$s</string>
+    <string name="course_details_lectures_format">Lectures: %1$d</string>
     <string name="data_source_close">Close</string>
     <string name="data_source_uploading">Uploading to remote server\u2026</string>
     <string name="data_source_upload_success">Successfully uploaded to server</string>

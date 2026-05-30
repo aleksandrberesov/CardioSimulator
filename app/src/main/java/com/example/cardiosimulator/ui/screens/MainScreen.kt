@@ -40,6 +40,7 @@ import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 fun MainScreen(appViewModel: AppViewModel) {
     val selectedMode by appViewModel.selectedOperatingMode.collectAsState()
     val dataState by appViewModel.dataState.collectAsState()
+    val courseDataState by appViewModel.courseDataState.collectAsState()
     val isDataConfirmed by appViewModel.isDataConfirmed.collectAsState()
 
     var showSettings by remember { mutableStateOf(false) }
@@ -64,7 +65,8 @@ fun MainScreen(appViewModel: AppViewModel) {
                 return RhythmViewModel(
                     repository = appViewModel.repository!!,
                     mode = selectedMode.id,
-                    prefs = appViewModel.prefs
+                    prefs = appViewModel.prefs,
+                    appViewModel = appViewModel
                 ) as T
             }
         }
@@ -106,11 +108,15 @@ fun MainScreen(appViewModel: AppViewModel) {
     }
 
     if (!isDataConfirmed ||
-        dataState is DataState.NotConfigured ||
-        dataState is DataState.Error ||
-        dataState is DataState.Loading
+        dataState !is DataState.Ready ||
+        courseDataState !is DataState.Ready
     ) {
-        DataSourceScreen(appViewModel = appViewModel, rhythmViewModel = rhythmViewModel, state = dataState)
+        DataSourceScreen(
+            appViewModel = appViewModel,
+            rhythmViewModel = rhythmViewModel,
+            state = dataState,
+            courseState = courseDataState
+        )
         return
     }
 

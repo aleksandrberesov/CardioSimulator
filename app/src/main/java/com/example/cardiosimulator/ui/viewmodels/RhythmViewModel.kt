@@ -11,9 +11,12 @@ import com.example.cardiosimulator.domain.PathologyEntry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -27,10 +30,24 @@ class RhythmViewModel(
     val repository: PathologyRepository,
     private val mode: OperatingMode,
     private val prefs: DataSourcePrefs? = null,
+    private val appViewModel: AppViewModel? = null,
 ) : ViewModel() {
 
-    private val _rhythms = MutableStateFlow<List<PathologyEntry>>(emptyList())
-    val rhythms: StateFlow<List<PathologyEntry>> = _rhythms.asStateFlow()
+    private val _allRhythms = MutableStateFlow<List<PathologyEntry>>(emptyList())
+
+    val rhythms: StateFlow<List<PathologyEntry>> = if (appViewModel != null) {
+        combine(
+            _allRhythms,
+            appViewModel.selectedCourseId,
+            appViewModel.courses
+        ) { all, courseId, courses ->
+            if (courseId == null) return@combine all
+            val pathologyIds = courses.find { it.id == courseId }?.pathologies?.toSet() ?: emptySet()
+            all.filter { it.id in pathologyIds }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    } else {
+        _allRhythms.asStateFlow()
+    }
 
     private val _selectedRhythm = MutableStateFlow<PathologyEntry?>(null)
     val selectedRhythm: StateFlow<PathologyEntry?> = _selectedRhythm.asStateFlow()
@@ -61,16 +78,16 @@ class RhythmViewModel(
                                 } else entry
                             }
                             withContext(Dispatchers.Main) {
-                                _rhythms.value = enriched
+                                _allRhythms.value = enriched
                             }
                         }
                     } else {
-                        _rhythms.value = entries
+                        _allRhythms.value = entries
                     }
 
                     // Update selected rhythm if it's in the list
                     _selectedRhythm.value?.let { current ->
-                        val updated = _rhythms.value.find { it.id == current.id }
+                        val updated = _allRhythms.value.find { it.id == current.id }
                         if (updated != null) {
                             _selectedRhythm.value = updated
                         }
@@ -95,7 +112,7 @@ class RhythmViewModel(
     }
 
     fun selectRhythm(id: String, persist: Boolean = true) {
-        val entry = _rhythms.value.firstOrNull { it.id == id } ?: return
+        val entry = _allRhythms.value.firstOrNull { it.id == id } ?: return
         _selectedRhythm.value = entry
         
         if (persist) {

@@ -62,6 +62,7 @@
 
     <!-- Rhythm panel -->
     <string name="rhythm_drawer_title">Ritmo</string>
+    <string name="course_drawer_title">Cursos</string>
     <string name="rhythm_search_placeholder">Ritmo…</string>
     <string name="rhythm_search_content_description">Buscar</string>
 
@@ -86,6 +87,13 @@
     <string name="data_source_leads_format">Derivaciones: %1$d%2$s</string>
     <string name="data_source_export_zip">Exportar ZIP</string>
     <string name="data_source_export_zip_dirty">Exportar ZIP (cambios sin guardar)</string>
+    <string name="course_data_source_title">Datos del curso</string>
+    <string name="course_data_source_description">Selecciona en tu dispositivo un archivo ZIP que contenga los datos del curso.</string>
+    <string name="course_data_source_pick">Seleccionar archivo ZIP de cursos</string>
+    <string name="course_data_source_change">Cambiar ZIP de cursos</string>
+    <string name="course_data_source_export">Exportar ZIP de cursos</string>
+    <string name="course_data_source_upload">Subir cursos al servidor</string>
+    <string name="course_data_source_loaded_format">Cursos cargados: %1$d</string>
     <string name="constructor_save">Guardar</string>
     <string name="constructor_save_confirm_title">Cambios sin guardar</string>
     <string name="constructor_save_confirm_message">¿Guardar los cambios antes de salir?</string>
