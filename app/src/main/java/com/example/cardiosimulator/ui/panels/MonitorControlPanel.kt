@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -224,7 +225,9 @@ fun MonitorControlPanel(
             Tab(
                 text = stringResource(R.string.monitor_compare),
                 onClick = onCompareClick,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                backgroundColor = if (monitorMode.isCompareMode) Color.Blue else Color.Transparent,
+                contentColor = if (monitorMode.isCompareMode) Color.White else Color.Black
             )
         }
 

@@ -57,11 +57,6 @@ fun CourseSelector(
                     .verticalScrollbar(listState),
             ) {
                 itemsIndexed(courses, key = { _, c -> c.id }) { index, course ->
-                    val title = if (currentLanguage == Language.RU)
-                        course.nameRu ?: course.titleEn
-                    else
-                        course.titleEn
-                    
                     val isSelected = course.id == selectedCourseId
                     
                     Column(
@@ -75,16 +70,30 @@ fun CourseSelector(
                             )
                             .padding(vertical = 12.dp, horizontal = 4.dp)
                     ) {
+                        val title = if (course.id == AppViewModel.ALL_RHYTHMS_ID) {
+                            stringResource(R.string.rhythm_course_filter_all)
+                        } else {
+                            if (currentLanguage == Language.RU)
+                                course.nameRu ?: course.titleEn
+                            else
+                                course.titleEn
+                        }
+                        
                         Text(
                             text = title,
-                            color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else Color.Black,
+                            color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer 
+                                    else MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.bodyLarge,
                         )
-                        Text(
-                            text = stringResource(R.string.course_details_lectures_format, course.lecturesCount),
-                            color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f) else Color.Gray,
-                            style = MaterialTheme.typography.bodySmall,
-                        )
+                        
+                        if (course.lecturesCount > 0 || course.id != AppViewModel.ALL_RHYTHMS_ID) {
+                            Text(
+                                text = stringResource(R.string.course_details_lectures_format, course.lecturesCount),
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f) 
+                                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
                     }
                     
                     if (index < courses.lastIndex) {

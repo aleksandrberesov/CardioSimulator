@@ -59,6 +59,7 @@
     <string name="monitor_hr_format">心率 %1$d</string>
     <string name="monitor_tips">提示</string>
     <string name="monitor_compare">比较</string>
+    <string name="monitor_compare_mode">比较模式</string>
     <string name="monitor_compare_placeholder">点击选择病理</string>
     <string name="monitor_comparison_presets_title">比较预设</string>
     <string name="monitor_comparison_presets_new">设置新方案</string>
@@ -67,8 +68,11 @@
 
     <!-- Rhythm panel -->
     <string name="rhythm_drawer_title">心律</string>
+    <string name="course_drawer_title">课程</string>
     <string name="rhythm_search_placeholder">心律…</string>
     <string name="rhythm_search_content_description">搜索</string>
+    <string name="rhythm_course_filter_all">所有心律</string>
+    <string name="rhythm_course_filter_cd">按课程筛选心律</string>
 
     <!-- Testing panel -->
     <string name="testing_question_format">问题 %1$d</string>

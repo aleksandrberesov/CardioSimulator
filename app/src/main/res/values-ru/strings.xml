@@ -60,6 +60,7 @@
     <string name="monitor_hr_format">ЧСС %1$d</string>
     <string name="monitor_tips">Подсказки</string>
     <string name="monitor_compare">Сравнить</string>
+    <string name="monitor_compare_mode">Режим сравнения</string>
     <string name="monitor_compare_placeholder">Нажмите, чтобы выбрать патологию</string>
     <string name="monitor_comparison_presets_title">Шаблоны сравнения</string>
     <string name="monitor_comparison_presets_new">Новая схема</string>
@@ -72,7 +73,7 @@
     <string name="points_drawer_title">Точки</string>
     <string name="rhythm_search_placeholder">Ритм…</string>
     <string name="rhythm_search_content_description">Поиск</string>
-    <string name="rhythm_course_filter_all">Все патологии</string>
+    <string name="rhythm_course_filter_all">Все ритмы</string>
     <string name="rhythm_course_filter_cd">Фильтр ритмов по курсу</string>
 
     <!-- Testing panel -->

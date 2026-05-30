@@ -189,8 +189,18 @@ class MonitorViewModel(
         _monitorMode.update { it.copy(isRunning = isRunning) }
     }
 
-    fun toggleCompareMode() {
-        _monitorMode.update { it.copy(isCompareMode = !it.isCompareMode) }
+    fun toggleCompareMode(defaultPathologyId: String? = null) {
+        _monitorMode.update { prev ->
+            val nextCompareMode = !prev.isCompareMode
+            var nextTargets = prev.comparisonTargets
+            if (nextCompareMode && nextTargets.isEmpty() && defaultPathologyId != null && prev.comparisonPresets.isEmpty()) {
+                nextTargets = mapOf(
+                    0 to ComparisonTarget(defaultPathologyId, Lead.I),
+                    1 to ComparisonTarget(defaultPathologyId, Lead.II)
+                )
+            }
+            prev.copy(isCompareMode = nextCompareMode, comparisonTargets = nextTargets)
+        }
     }
 
     fun setComparisonTarget(paneIndex: Int, target: ComparisonTarget) {

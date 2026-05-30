@@ -114,11 +114,20 @@ class AppViewModel(
      */
     val courses: StateFlow<List<CourseEntry>> =
         courseRepository?.manifestFlow
-            ?.map { m -> m?.entries?.sortedBy { it.titleEn.lowercase() } ?: emptyList() }
+            ?.map { m ->
+                val entries = m?.entries?.sortedBy { it.titleEn.lowercase() } ?: emptyList()
+                val allRhythmsEntry = CourseEntry(
+                    id = ALL_RHYTHMS_ID,
+                    titleEn = "All Rhythms",
+                    nameRu = "Все ритмы",
+                    lecturesCount = 0
+                )
+                listOf(allRhythmsEntry) + entries
+            }
             ?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), emptyList())
             ?: MutableStateFlow<List<CourseEntry>>(emptyList()).asStateFlow()
 
-    private val _selectedCourseId = MutableStateFlow<String?>(null)
+    private val _selectedCourseId = MutableStateFlow<String?>(ALL_RHYTHMS_ID)
     val selectedCourseId: StateFlow<String?> = _selectedCourseId.asStateFlow()
 
     fun selectCourse(id: String?) {
@@ -523,5 +532,8 @@ class AppViewModel(
 
         /** Subdirectory under `filesDir` where the extracted course bundle lives. */
         const val COURSES_DIR: String = "courses"
+
+        /** Virtual course ID representing the unfiltered list of all rhythms. */
+        const val ALL_RHYTHMS_ID: String = "all_rhythms"
     }
 }

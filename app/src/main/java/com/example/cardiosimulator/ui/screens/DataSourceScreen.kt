@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -98,54 +99,61 @@ fun DataSourceScreen(
         }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .systemBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
     ) {
-        Text(
-            text = stringResource(R.string.app_name),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(Modifier.height(32.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(Modifier.height(32.dp))
 
-        // --- ECG DATA SECTION ---
-        DataSourceSection(
-            title = stringResource(R.string.data_source_title),
-            description = stringResource(R.string.data_source_description),
-            state = state,
-            onPickFile = { pickZipFile.launch(ZIP_MIME) },
-            readyText = { count -> stringResource(R.string.data_source_loaded_format, count) },
-            onShowDetails = { showDetails = true }
-        )
+            // --- ECG DATA SECTION ---
+            DataSourceSection(
+                title = stringResource(R.string.data_source_title),
+                description = stringResource(R.string.data_source_description),
+                state = state,
+                onPickFile = { pickZipFile.launch(ZIP_MIME) },
+                readyText = { count -> stringResource(R.string.data_source_loaded_format, count) },
+                onShowDetails = { showDetails = true }
+            )
 
-        Spacer(Modifier.height(24.dp))
-        HorizontalDivider(modifier = Modifier.fillMaxWidth(0.8f))
-        Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(24.dp))
+            HorizontalDivider(modifier = Modifier.fillMaxWidth(0.8f))
+            Spacer(Modifier.height(24.dp))
 
-        // --- COURSE DATA SECTION ---
-        DataSourceSection(
-            title = stringResource(R.string.course_data_source_title),
-            description = stringResource(R.string.course_data_source_description),
-            state = courseState,
-            onPickFile = { pickCourseZipFile.launch(ZIP_MIME) },
-            readyText = { count -> stringResource(R.string.course_data_source_loaded_format, count) },
-            onShowDetails = { showCourseDetails = true }
-        )
+            // --- COURSE DATA SECTION ---
+            DataSourceSection(
+                title = stringResource(R.string.course_data_source_title),
+                description = stringResource(R.string.course_data_source_description),
+                state = courseState,
+                onPickFile = { pickCourseZipFile.launch(ZIP_MIME) },
+                readyText = { count -> stringResource(R.string.course_data_source_loaded_format, count) },
+                onShowDetails = { showCourseDetails = true }
+            )
 
-        Spacer(Modifier.height(48.dp))
+            Spacer(Modifier.height(80.dp))
+        }
 
-        val canContinue = state is DataState.Ready && courseState is DataState.Ready
         Button(
             onClick = { appViewModel.confirmData() },
-            enabled = canContinue,
-            modifier = Modifier.fillMaxWidth(0.6f),
-        ) { Text(stringResource(R.string.data_source_continue)) }
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(24.dp),
+        ) {
+            Text(stringResource(R.string.data_source_continue))
+        }
     }
 
     val rhythms by rhythmViewModel.rhythms.collectAsState()
