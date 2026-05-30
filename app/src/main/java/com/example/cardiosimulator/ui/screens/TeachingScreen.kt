@@ -110,7 +110,6 @@ fun TeachingScreen(
                 RhythmSelector(
                     appViewModel = appViewModel,
                     rhythms = rhythms,
-                    courses = courses,
                     selectedId = selectedRhythm?.id,
                     onRhythmSelect = { rhythmViewModel.selectRhythm(it.id) },
                 )

@@ -35,7 +35,7 @@ class RhythmViewModel(
 
     private val _allRhythms = MutableStateFlow<List<PathologyEntry>>(emptyList())
 
-    val rhythms: StateFlow<List<PathologyEntry>> = if (appViewModel != null) {
+    val rhythms: StateFlow<List<PathologyEntry>> = if (appViewModel != null && mode == OperatingMode.Teaching) {
         combine(
             _allRhythms,
             appViewModel.selectedCourseId,

@@ -92,14 +92,10 @@ fun TopControlPanel(
                 Box(
                     modifier = Modifier.weight(5f).fillMaxWidth()
                 ){
-                    val courses by viewModel.courses.collectAsState()
-                    val currentLanguage by viewModel.selectedLanguage.collectAsState()
-
                     when (selectedOperatingMode.id) {
                         OperatingMode.Teaching -> TeachingControlPanel(
+                            appViewModel = viewModel,
                             monitorViewModel = monitorViewModel,
-                            courses = courses,
-                            currentLanguage = currentLanguage,
                             onStartStopClick = onStartStopClick
                         )
                         OperatingMode.Testing -> TestingControlPanel(viewModel = viewModel)
