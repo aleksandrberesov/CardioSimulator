@@ -390,6 +390,51 @@ fun SettingsContent(
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
+
+                // Course Data ZIP archive
+                val pickCourseZipFile = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.OpenDocument()
+                ) { uri ->
+                    if (uri != null) {
+                        runCatching {
+                            context.contentResolver.takePersistableUriPermission(
+                                uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            )
+                        }
+                        appViewModel.setCourseDataFolder(context, uri)
+                        onDismiss()
+                    }
+                }
+                val exportCourseZipLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.CreateDocument("application/zip")
+                ) { uri ->
+                    if (uri != null) appViewModel.exportCoursesZip(context, uri)
+                }
+
+                Text(
+                    text = stringResource(R.string.course_data_source_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                OutlinedButton(onClick = { pickCourseZipFile.launch(arrayOf("application/zip", "application/x-zip-compressed")) }) {
+                    Text(stringResource(R.string.course_data_source_change))
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedButton(onClick = { exportCourseZipLauncher.launch("courses_export.zip") }) {
+                    Text(stringResource(R.string.course_data_source_export))
+                }
+
+                val tcpState by appViewModel.tcpConnectionState.collectAsState()
+                if (tcpState == TcpConnectionState.Connected) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedButton(onClick = { appViewModel.uploadCourses() }) {
+                        Text(stringResource(R.string.course_data_source_upload))
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
             }
 
             TextButton(

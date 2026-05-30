@@ -68,6 +68,7 @@
 
     <!-- Rhythm panel -->
     <string name="rhythm_drawer_title">Ритм</string>
+    <string name="course_drawer_title">Курсы</string>
     <string name="points_drawer_title">Точки</string>
     <string name="rhythm_search_placeholder">Ритм…</string>
     <string name="rhythm_search_content_description">Поиск</string>
@@ -92,9 +93,18 @@
     <string name="data_source_retry">Выбрать другой архив</string>
     <string name="data_source_show_details">Подробнее</string>
     <string name="data_source_pathologies_title">Загруженные патологии (%1$d)</string>
+    <string name="data_source_courses_title">Загруженные курсы (%1$d)</string>
     <string name="data_source_leads_format">Отведения: %1$d%2$s</string>
+    <string name="course_details_lectures_format">Лекций: %1$d</string>
     <string name="data_source_export_zip">Экспорт ZIP</string>
     <string name="data_source_export_zip_dirty">Экспорт ZIP (несохраненные изменения)</string>
+    <string name="course_data_source_title">Данные курсов</string>
+    <string name="course_data_source_description">Выберите на устройстве ZIP-архив, содержащий данные курсов.</string>
+    <string name="course_data_source_pick">Выбрать ZIP с курсами</string>
+    <string name="course_data_source_change">Сменить ZIP с курсами</string>
+    <string name="course_data_source_export">Экспорт ZIP с курсами</string>
+    <string name="course_data_source_upload">Загрузить курсы на сервер</string>
+    <string name="course_data_source_loaded_format">Загружено курсов: %1$d</string>
     <string name="constructor_save">Сохранить</string>
     <string name="constructor_save_confirm_title">Несохраненные изменения</string>
     <string name="constructor_save_confirm_message">Сохранить изменения перед выходом?</string>

@@ -464,7 +464,6 @@ fun ConstructorScreen(
                             RhythmSelector(
                                 appViewModel = appViewModel,
                                 rhythms = rhythms,
-                                courses = courses,
                                 selectedId = targetFile?.id,
                                 onRhythmSelect = { constructorViewModel.selectPathology(it.id) },
                                 listState = rhythmListState,

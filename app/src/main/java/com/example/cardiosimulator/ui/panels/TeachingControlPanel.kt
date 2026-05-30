@@ -22,48 +22,56 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
+import com.example.cardiosimulator.domain.CourseEntry
+import com.example.cardiosimulator.domain.Language
+import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
-
-val educationPrograms = listOf(
-    "Program 1", "Program 2", "Program 3", "Program 4", "Program 5", "Program 6",
-)
 
 @Composable
 fun TeachingControlPanel(
+    appViewModel: AppViewModel,
     modifier: Modifier = Modifier,
     monitorViewModel: MonitorViewModel = viewModel(),
     onStartStopClick: (Boolean) -> Unit = {},
 ) {
     val monitorMode by monitorViewModel.monitorMode.collectAsState()
+    val courses by appViewModel.courses.collectAsState()
+    val selectedCourseId by appViewModel.selectedCourseId.collectAsState()
+    val currentLanguage by appViewModel.selectedLanguage.collectAsState()
 
     Row(
         //modifier = modifier.height(IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically
     ) {
         var expanded by remember { mutableStateOf(false) }
-        var selectedProgram by remember { mutableStateOf(educationPrograms[0]) }
+        val selectedCourse = courses.find { it.id == selectedCourseId }
+        val selectedLabel = selectedCourse?.let { courseDisplayName(it, currentLanguage) } ?: ""
 
         Tab(
-            text = selectedProgram,
-            onClick = { expanded = true },
+            text = selectedLabel,
+            onClick = { if (courses.isNotEmpty()) expanded = true },
             modifier = Modifier.padding(horizontal = 4.dp)
         )
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            educationPrograms.forEach { item ->
-                DropdownMenuItem(
-                    text = { Text(item) },
-                    onClick = {
-                        selectedProgram = item
-                        expanded = false
-                    }
-                )
+        if (courses.isNotEmpty()) {
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                courses.forEach { course ->
+                    DropdownMenuItem(
+                        text = { Text(courseDisplayName(course, currentLanguage)) },
+                        onClick = {
+                            appViewModel.selectCourse(course.id)
+                            expanded = false
+                        }
+                    )
+                }
             }
         }
 
@@ -80,11 +88,28 @@ fun TeachingControlPanel(
     }
 }
 
+private fun courseDisplayName(course: CourseEntry, language: Language): String =
+    if (language == Language.RU) course.nameRu ?: course.titleEn else course.titleEn
+
 @SuppressLint("LocalContextResourcesRead")
 @Preview(showBackground = true, widthDp = 1000)
 @Composable
 fun TeachingControlPanelPreview() {
+    val previewAppViewModel: AppViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return AppViewModel(
+                    com.example.cardiosimulator.domain.AppBuilder().addMode(
+                        com.example.cardiosimulator.domain.OperatingModeModel(com.example.cardiosimulator.domain.OperatingMode.Teaching)
+                    ).build(),
+                ) as T
+            }
+        },
+    )
     CardioSimulatorTheme {
-        TeachingControlPanel()
+        TeachingControlPanel(
+            appViewModel = previewAppViewModel
+        )
     }
 }

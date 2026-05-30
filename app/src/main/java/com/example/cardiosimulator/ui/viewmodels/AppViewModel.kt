@@ -118,6 +118,13 @@ class AppViewModel(
             ?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), emptyList())
             ?: MutableStateFlow<List<CourseEntry>>(emptyList()).asStateFlow()
 
+    private val _selectedCourseId = MutableStateFlow<String?>(null)
+    val selectedCourseId: StateFlow<String?> = _selectedCourseId.asStateFlow()
+
+    fun selectCourse(id: String?) {
+        _selectedCourseId.value = id
+    }
+
     private val _isDataConfirmed = MutableStateFlow(false)
     val isDataConfirmed: StateFlow<Boolean> = _isDataConfirmed.asStateFlow()
 
@@ -370,6 +377,7 @@ class AppViewModel(
     fun setCourseDataFolder(context: Context, uri: Uri) {
         val p = prefs ?: return
         if (courseRepository == null) return
+        _isDataConfirmed.value = false
         viewModelScope.launch {
             p.setCoursesTreeUri(uri)
             loadCoursesFromSaf(context, uri, forceUnzip = true)
@@ -382,6 +390,42 @@ class AppViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val sourceDir = File(context.filesDir, PATHOLOGIES_DIR)
             ZipCompressor.zip(context, sourceDir, destUri)
+        }
+    }
+
+    fun exportCoursesZip(context: Context, destUri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val sourceDir = File(context.filesDir, COURSES_DIR)
+            ZipCompressor.zip(context, sourceDir, destUri)
+        }
+    }
+
+    fun uploadCourses() {
+        val socket = tcpSocket ?: return
+        val ctx = appContext ?: return
+        val sourceDir = File(ctx.filesDir, COURSES_DIR)
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val zipFile = ZipCompressor.zipToCache(ctx, sourceDir, "courses_upload.zip") ?: return@launch
+            tcpSendMutex.withLock {
+                try {
+                    val msg = TcpMessage.UploadMessage(
+                        id = java.util.UUID.randomUUID().toString(),
+                        filename = "Courses.zip",
+                        size = zipFile.length()
+                    )
+                    val header = TcpProtocol.encode(msg) + "\n"
+                    val out = socket.getOutputStream()
+                    out.write(header.toByteArray(Charsets.UTF_8))
+                    zipFile.inputStream().use { input ->
+                        input.copyTo(out)
+                    }
+                    out.flush()
+                } catch (_: Exception) {
+                } finally {
+                    zipFile.delete()
+                }
+            }
         }
     }
 

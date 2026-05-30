@@ -1,6 +1,6 @@
 # Trace a real ECG photo into editable samples
 
-**Status:** proposed (awaiting sign-off; flip to `active` on approval)
+**Status:** active — Phase A (PR #1) implemented; Phases B & C pending
 **Owner:** alexandr.beresov@gmail.com
 **Started:** 2026-05-29
 **Related issues / PRs:** —
