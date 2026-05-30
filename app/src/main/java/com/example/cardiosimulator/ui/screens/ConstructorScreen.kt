@@ -1,34 +1,30 @@
 package com.example.cardiosimulator.ui.screens
 
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Image
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import android.net.Uri
-import coil.compose.AsyncImage
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.R
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.cardiosimulator.data.LocalPixelScale
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.EcgPointType
 import com.example.cardiosimulator.domain.Lead
@@ -39,11 +35,16 @@ import com.example.cardiosimulator.ui.display.EditableLead
 import com.example.cardiosimulator.ui.display.Monitor
 import com.example.cardiosimulator.ui.panels.RhythmSelector
 import com.example.cardiosimulator.ui.panels.SignificantPointSelector
+import com.example.cardiosimulator.ui.utils.TraceExtractor
 import com.example.cardiosimulator.ui.utils.toDisplayString
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.ConstructorViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
+import com.example.cardiosimulator.ui.viewmodels.ToolMode
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * A side panel for marking significant ECG points on the selected sample.
@@ -82,7 +83,6 @@ fun SignificantPointPanel(
                     style = MaterialTheme.typography.bodySmall
                 )
 
-                // Group points by wave type for better organization
                 val waves = listOf(
                     stringResource(R.string.constructor_p_wave) to listOf(EcgPointType.P_START, EcgPointType.P_PEAK, EcgPointType.P_END),
                     stringResource(R.string.constructor_qrs_complex) to listOf(EcgPointType.QRS_START, EcgPointType.Q_PEAK, EcgPointType.R_PEAK, EcgPointType.S_PEAK, EcgPointType.QRS_END),
@@ -110,7 +110,7 @@ fun SignificantPointPanel(
                                         text = type.toDisplayString(),
                                         modifier = Modifier.fillMaxWidth(),
                                         style = MaterialTheme.typography.labelSmall,
-                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                        textAlign = TextAlign.Center
                                     )
                                 },
                                 modifier = Modifier.fillMaxWidth()
@@ -123,29 +123,98 @@ fun SignificantPointPanel(
                     Text(
                         text = stringResource(R.string.constructor_select_point_hint),
                         style = MaterialTheme.typography.bodySmall,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
                 }
             }
 
-            // Intervals section (Always visible if multiple R peaks exist)
             val rPeaks = significantPoints.filter { it.type == EcgPointType.R_PEAK }.sortedBy { it.index }
             if (rPeaks.size >= 2) {
                 HorizontalDivider()
                 Text(
-                    text = stringResource(R.string.constructor_rhythms_title), // Use existing "Rhythms" title or new one?
+                    text = stringResource(R.string.constructor_rhythms_title),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                rPeaks.windowed(2).forEachIndexed { index, (r1, r2) ->
+                rPeaks.windowed(2).forEach { (r1, r2) ->
                     val durationS = (r2.index - r1.index).toFloat() / sampleRate
                     Text(
                         text = stringResource(R.string.ecg_rr_value_format, durationS),
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF2E7D32) // Match the overlay color
+                        color = Color(0xFF2E7D32)
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun ToolModeSwitcher(
+    currentMode: ToolMode,
+    onModeChange: (ToolMode) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    SingleChoiceSegmentedButtonRow(modifier = modifier) {
+        ToolMode.entries.forEachIndexed { index, mode ->
+            SegmentedButton(
+                selected = currentMode == mode,
+                onClick = { onModeChange(mode) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = ToolMode.entries.size),
+                label = {
+                    Text(
+                        text = when (mode) {
+                            ToolMode.Select -> stringResource(R.string.tool_mode_select)
+                            ToolMode.Trace -> stringResource(R.string.tool_mode_trace)
+                            ToolMode.Position -> stringResource(R.string.tool_mode_position)
+                        },
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun ImagePositionPanel(
+    alpha: Float,
+    onAlphaChange: (Float) -> Unit,
+    isLocked: Boolean,
+    onLockToggle: (Boolean) -> Unit,
+    onReset: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.width(200.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 4.dp
+    ) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.image_panel_title), style = MaterialTheme.typography.labelLarge)
+            
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.image_panel_opacity), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                Slider(
+                    value = alpha,
+                    onValueChange = onAlphaChange,
+                    modifier = Modifier.width(100.dp)
+                )
+            }
+            
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.image_panel_lock), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                Switch(checked = isLocked, onCheckedChange = onLockToggle)
+            }
+            
+            Button(
+                onClick = onReset,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLocked
+            ) {
+                Text(stringResource(R.string.image_panel_reset))
             }
         }
     }
@@ -168,10 +237,20 @@ fun ConstructorScreen(
     val dirtyLeads by constructorViewModel.dirtyLeads.collectAsState()
     val isMetadataDirty by constructorViewModel.isMetadataDirty.collectAsState()
     val rhythms by rhythmViewModel.rhythms.collectAsState()
-    val courses by appViewModel.courses.collectAsState()
     val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
     val monitorMode by monitorViewModel.monitorMode.collectAsState()
     val referenceImageUri by constructorViewModel.referenceImageUri.collectAsState()
+    val toolMode by constructorViewModel.toolMode.collectAsState()
+    val imageOffset by constructorViewModel.imageOffset.collectAsState()
+    val imageScale by constructorViewModel.imageScale.collectAsState()
+    val imageRotationDeg by constructorViewModel.imageRotationDeg.collectAsState()
+    val imageAlpha by constructorViewModel.imageAlpha.collectAsState()
+    val imageLocked by constructorViewModel.imageLocked.collectAsState()
+    val ghostTrace by constructorViewModel.ghostTrace.collectAsState()
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -219,12 +298,12 @@ fun ConstructorScreen(
                     constructorViewModel.calculateDerivedLeads()
                     showCalculateDerivedDialog = false
                 }) {
-                    Text(stringResource(R.string.constructor_rename_ok)) // Reuse "OK"
+                    Text(stringResource(R.string.constructor_rename_ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showCalculateDerivedDialog = false }) {
-                    Text(stringResource(R.string.constructor_rename_cancel)) // Reuse "Cancel"
+                    Text(stringResource(R.string.constructor_rename_cancel))
                 }
             }
         )
@@ -270,9 +349,7 @@ fun ConstructorScreen(
     val rhythmListState = rememberLazyListState()
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Main Area
         Column(modifier = Modifier.fillMaxSize()) {
-            // ... (rest of the Toolbar and Lead Tabs code)
             // Toolbar
             Surface(
                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -296,6 +373,22 @@ fun ConstructorScreen(
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.weight(1f)
                     )
+
+                    if (referenceImageUri != null) {
+                        ToolModeSwitcher(
+                            currentMode = toolMode,
+                            onModeChange = { constructorViewModel.setToolMode(it) }
+                        )
+                        
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = { constructorViewModel.undo(focusedLead) }) {
+                                Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.constructor_undo))
+                            }
+                            IconButton(onClick = { constructorViewModel.redo(focusedLead) }) {
+                                Icon(Icons.AutoMirrored.Filled.Redo, contentDescription = stringResource(R.string.cd_redo))
+                            }
+                        }
+                    }
 
                     if (targetFile != null) {
                         IconButton(onClick = { showRenameDialog = true }) {
@@ -368,72 +461,133 @@ fun ConstructorScreen(
                     val baseline = rhythmViewModel.repository.manifest()?.baseline ?: 1024
                     
                     Row(modifier = Modifier.fillMaxSize()) {
-                        Monitor(
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(start = 24.dp),
-                            monitorViewModel = monitorViewModel,
-                            staticGrid = true,
-                            showGridBackground = referenceImageUri == null,
-                            backgroundContent = {
-                                referenceImageUri?.let { uri ->
-                                    AsyncImage(
-                                        model = uri,
-                                        contentDescription = null,
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Fit,
-                                        alpha = 0.5f
-                                    )
+                        Box(modifier = Modifier.weight(1f)) {
+                            Monitor(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(start = 24.dp),
+                                monitorViewModel = monitorViewModel,
+                                staticGrid = true,
+                                showGridBackground = referenceImageUri == null,
+                                gesturesEnabled = toolMode == ToolMode.Select
+                            ) { _, _, xOffset, scheme ->
+                                if (stream != null) {
+                                    val isEditable = constructorViewModel.isLeadEditable(focusedLead)
+                                    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                                        val viewWidthPx = constraints.maxWidth.toFloat()
+                                        val viewHeightPx = constraints.maxHeight.toFloat()
+                                        val scale = LocalPixelScale.current
+
+                                        Column(modifier = Modifier.fillMaxSize()) {
+                                            Spacer(modifier = Modifier.height(132.dp))
+
+                                            EditableLead(
+                                                stream = stream,
+                                                significantPoints = file.significantPoints,
+                                                baseline = baseline,
+                                                selectedIndex = selectedIndex,
+                                                onIndexSelected = { constructorViewModel.selectIndex(it) },
+                                                isEditable = isEditable,
+                                                modifier = Modifier.weight(1f),
+                                                referenceImageUri = referenceImageUri,
+                                                imageOffset = imageOffset,
+                                                imageScale = imageScale,
+                                                imageRotationDeg = imageRotationDeg,
+                                                imageAlpha = imageAlpha,
+                                                toolMode = toolMode,
+                                                onImageTransform = { offset, s, r ->
+                                                    constructorViewModel.setImageOffset(offset)
+                                                    constructorViewModel.setImageScale(s)
+                                                    constructorViewModel.setImageRotation(r)
+                                                },
+                                                onStrokeStart = { constructorViewModel.startStroke(focusedLead) },
+                                                onTrace = { constructorViewModel.traceSamples(focusedLead, it) },
+                                                ghostTrace = ghostTrace,
+                                                onApplyGhostTrace = { constructorViewModel.applyGhostTrace() },
+                                                onCancelGhostTrace = { constructorViewModel.setGhostTrace(null) }
+                                            )
+
+                                            val points = remember(stream, baseline) {
+                                                Points(stream.samples.map { (it - baseline).toFloat() })
+                                            }
+                                            Surface(
+                                                modifier = Modifier
+                                                    .padding(16.dp)
+                                                    .fillMaxWidth()
+                                                    .height(100.dp),
+                                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
+                                                tonalElevation = 4.dp,
+                                                shape = MaterialTheme.shapes.medium
+                                            ) {
+                                                PreviewPane(
+                                                    points = points,
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    isRunning = monitorMode.isRunning,
+                                                    externalXOffsetPx = xOffset,
+                                                    gridScheme = scheme
+                                                )
+                                            }
+                                        }
+                                        
+                                        // Auto-detect button overlay
+                                        if (referenceImageUri != null && toolMode == ToolMode.Trace && ghostTrace == null) {
+                                            Button(
+                                                onClick = {
+                                                    scope.launch {
+                                                        val bitmap = withContext(Dispatchers.IO) {
+                                                            context.contentResolver.openInputStream(referenceImageUri!!)?.use {
+                                                                BitmapFactory.decodeStream(it)
+                                                            }
+                                                        }
+                                                        if (bitmap != null) {
+                                                            val extracted = TraceExtractor.extract(
+                                                                bitmap = bitmap,
+                                                                sampleCount = stream.samples.size,
+                                                                baseline = baseline,
+                                                                stepX = scale.pxPerSample,
+                                                                stepY = scale.pxPerAdcCount,
+                                                                imageOffset = imageOffset,
+                                                                imageScale = imageScale,
+                                                                imageRotationDeg = imageRotationDeg,
+                                                                viewWidth = viewWidthPx,
+                                                                viewHeight = viewHeightPx
+                                                            )
+                                                            constructorViewModel.setGhostTrace(extracted)
+                                                        }
+                                                    }
+                                                },
+                                                modifier = Modifier
+                                                    .align(Alignment.BottomEnd)
+                                                    .padding(16.dp)
+                                                    .offset(y = (-132).dp) // Above preview pane
+                                            ) {
+                                                Icon(Icons.Default.AutoFixHigh, contentDescription = null)
+                                                Spacer(Modifier.width(8.dp))
+                                                Text(stringResource(R.string.constructor_auto_detect))
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                        Text(stringResource(R.string.constructor_lead_not_present, focusedLead.name))
+                                    }
                                 }
                             }
-                        ) { _, _, xOffset, scheme ->
-                            if (stream != null) {
-                                val isEditable = constructorViewModel.isLeadEditable(focusedLead)
-                                Column(modifier = Modifier.fillMaxSize()) {
-                                    // Balance the PreviewPane at the bottom (100dp + 16dp*2 padding) 
-                                    // to center the EditableLead baseline in the monitor
-                                    Spacer(modifier = Modifier.height(132.dp))
-
-                                    EditableLead(
-                                        stream = stream,
-                                        significantPoints = file.significantPoints,
-                                        baseline = baseline,
-                                        selectedIndex = selectedIndex,
-                                        onIndexSelected = { constructorViewModel.selectIndex(it) },
-                                        isEditable = isEditable,
-                                        modifier = Modifier.weight(1f)
-                                    )
-
-                                    // Looping Preview at the bottom of the monitor
-                                    val points = remember(stream, baseline) {
-                                        Points(stream.samples.map { (it - baseline).toFloat() })
-                                    }
-                                    Surface(
-                                        modifier = Modifier
-                                            .padding(16.dp)
-                                            .fillMaxWidth()
-                                            .height(100.dp),
-                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
-                                        tonalElevation = 4.dp,
-                                        shape = MaterialTheme.shapes.medium
-                                    ) {
-                                        PreviewPane(
-                                            points = points,
-                                            modifier = Modifier.fillMaxSize(),
-                                            isRunning = monitorMode.isRunning,
-                                            externalXOffsetPx = xOffset,
-                                            gridScheme = scheme
-                                        )
-                                    }
-                                }
-                            } else {
-                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Text(stringResource(R.string.constructor_lead_not_present, focusedLead.name))
-                                }
+                            
+                            if (toolMode == ToolMode.Position && referenceImageUri != null) {
+                                ImagePositionPanel(
+                                    alpha = imageAlpha,
+                                    onAlphaChange = { constructorViewModel.setImageAlpha(it) },
+                                    isLocked = imageLocked,
+                                    onLockToggle = { constructorViewModel.setImageLocked(it) },
+                                    onReset = { constructorViewModel.resetImageTransform() },
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(16.dp)
+                                )
                             }
                         }
 
-                        // Right Side Panel for marking points
                         SignificantPointPanel(
                             significantPoints = file.significantPoints,
                             selectedIndex = selectedIndex,
@@ -449,13 +603,11 @@ fun ConstructorScreen(
                     }
                 }
 
-                // Side Drawers
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
                         .align(Alignment.TopStart)
                 ) {
-                    // Rhythm List (Drawer)
                     SideDrawer(
                         isExpanded = isRhythmDrawerExpanded,
                         onExpandedChange = { isRhythmDrawerExpanded = it },
@@ -485,7 +637,6 @@ fun ConstructorScreen(
                         modifier = Modifier.fillMaxHeight()
                     )
 
-                    // Significant Points List (Drawer)
                     SideDrawer(
                         isExpanded = isPointsDrawerExpanded,
                         onExpandedChange = { isPointsDrawerExpanded = it },

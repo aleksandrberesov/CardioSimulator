@@ -196,4 +196,17 @@
     <string name="ecg_interval_qt">QT</string>
     <string name="ecg_interval_rr">R-R</string>
     <string name="ecg_rr_value_format">R-R: %1$.3f s</string>
+
+    <string name="tool_mode_select">Seleccionar</string>
+    <string name="tool_mode_trace">Trazar</string>
+    <string name="tool_mode_position">Posicionar</string>
+    <string name="image_panel_title">Transformación de foto</string>
+    <string name="image_panel_opacity">Opacidad</string>
+    <string name="image_panel_lock">Bloquear</string>
+    <string name="image_panel_reset">Restablecer transformación</string>
+    <string name="constructor_auto_detect">Autodetección</string>
+    <string name="constructor_apply_ghost_trace">¿Aplicar trazo autodetectado?</string>
+    <string name="cd_redo">Rehacer</string>
+    <string name="cd_apply">Aplicar</string>
+    <string name="cd_cancel">Cancelar</string>
 </resources>

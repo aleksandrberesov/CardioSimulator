@@ -187,4 +187,17 @@
     <string name="ecg_interval_qt">QT</string>
     <string name="ecg_interval_rr">R-R</string>
     <string name="ecg_rr_value_format">R-R: %1$.3f 秒</string>
+
+    <string name="tool_mode_select">选择</string>
+    <string name="tool_mode_trace">描记</string>
+    <string name="tool_mode_position">定位</string>
+    <string name="image_panel_title">照片变换</string>
+    <string name="image_panel_opacity">不透明度</string>
+    <string name="image_panel_lock">锁定</string>
+    <string name="image_panel_reset">重置变换</string>
+    <string name="constructor_auto_detect">自动检测</string>
+    <string name="constructor_apply_ghost_trace">应用自动检测的描记？</string>
+    <string name="cd_redo">重做</string>
+    <string name="cd_apply">应用</string>
+    <string name="cd_cancel">取消</string>
 </resources>

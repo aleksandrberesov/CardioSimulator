@@ -12,6 +12,7 @@ import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.PathologyFile
 import com.example.cardiosimulator.domain.SignificantPoint
+import androidx.compose.ui.geometry.Offset
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,6 +26,12 @@ enum class EditingAlgorithm {
     Bezier,
     LOESS,
     MLS
+}
+
+enum class ToolMode {
+    Select,
+    Trace,
+    Position
 }
 
 /**
@@ -73,8 +80,81 @@ class ConstructorViewModel(
     private val _referenceImageUri = MutableStateFlow<Uri?>(null)
     val referenceImageUri: StateFlow<Uri?> = _referenceImageUri.asStateFlow()
 
+    private val _toolMode = MutableStateFlow(ToolMode.Select)
+    val toolMode: StateFlow<ToolMode> = _toolMode.asStateFlow()
+
+    private val _imageOffset = MutableStateFlow(Offset.Zero)
+    val imageOffset: StateFlow<Offset> = _imageOffset.asStateFlow()
+
+    private val _imageScale = MutableStateFlow(1f)
+    val imageScale: StateFlow<Float> = _imageScale.asStateFlow()
+
+    private val _imageRotationDeg = MutableStateFlow(0f)
+    val imageRotationDeg: StateFlow<Float> = _imageRotationDeg.asStateFlow()
+
+    private val _imageAlpha = MutableStateFlow(0.5f)
+    val imageAlpha: StateFlow<Float> = _imageAlpha.asStateFlow()
+
+    private val _imageLocked = MutableStateFlow(false)
+    val imageLocked: StateFlow<Boolean> = _imageLocked.asStateFlow()
+
+    private val _ghostTrace = MutableStateFlow<IntArray?>(null)
+    val ghostTrace: StateFlow<IntArray?> = _ghostTrace.asStateFlow()
+
+    fun setToolMode(mode: ToolMode) {
+        _toolMode.value = mode
+        if (mode != ToolMode.Trace) {
+            _ghostTrace.value = null
+        }
+    }
+
+    fun setGhostTrace(trace: IntArray?) {
+        _ghostTrace.value = trace
+    }
+
+    fun applyGhostTrace() {
+        val trace = _ghostTrace.value ?: return
+        val lead = _focusedLead.value
+        startStroke(lead)
+        val updates = trace.withIndex().associate { it.index to it.value }
+        traceSamples(lead, updates)
+        _ghostTrace.value = null
+    }
+
+    fun setImageOffset(offset: Offset) {
+        if (!_imageLocked.value) _imageOffset.value = offset
+    }
+
+    fun setImageScale(scale: Float) {
+        if (!_imageLocked.value) _imageScale.value = scale
+    }
+
+    fun setImageRotation(deg: Float) {
+        if (!_imageLocked.value) _imageRotationDeg.value = deg
+    }
+
+    fun setImageAlpha(alpha: Float) {
+        _imageAlpha.value = alpha
+    }
+
+    fun setImageLocked(locked: Boolean) {
+        _imageLocked.value = locked
+    }
+
+    fun resetImageTransform() {
+        _imageOffset.value = Offset.Zero
+        _imageScale.value = 1f
+        _imageRotationDeg.value = 0f
+    }
+
     fun setReferenceImageUri(uri: Uri?) {
         _referenceImageUri.value = uri
+        if (uri != null) {
+            _toolMode.value = ToolMode.Position
+        } else {
+            _toolMode.value = ToolMode.Select
+        }
+        resetImageTransform()
     }
 
     /**
@@ -422,10 +502,85 @@ class ConstructorViewModel(
         }
     }
 
+    private val undoStacks = mutableMapOf<Lead, MutableList<IntArray>>()
+    private val redoStacks = mutableMapOf<Lead, MutableList<IntArray>>()
+
+    fun startStroke(lead: Lead) {
+        val currentFile = _targetFile.value ?: return
+        val stream = currentFile.leads[lead] ?: return
+        
+        val undoStack = undoStacks.getOrPut(lead) { mutableListOf() }
+        undoStack.add(stream.samples.copyOf())
+        if (undoStack.size > MAX_UNDO_DEPTH) undoStack.removeAt(0)
+        
+        redoStacks[lead]?.clear()
+    }
+
+    fun traceSamples(lead: Lead, updates: Map<Int, Int>) {
+        if (!isLeadEditable(lead)) return
+        val currentFile = _targetFile.value ?: return
+        val stream = currentFile.leads[lead] ?: return
+        
+        val newSamples = stream.samples.copyOf()
+        val floatBuf = floatBufferFor(lead, stream.samples)
+        
+        updates.forEach { (index, value) ->
+            if (index in newSamples.indices) {
+                val clampedValue = value.coerceIn(ADC_MIN, ADC_MAX)
+                newSamples[index] = clampedValue
+                floatBuf[index] = clampedValue.toFloat()
+            }
+        }
+
+        val newLeads = currentFile.leads.toMutableMap()
+        newLeads[lead] = stream.copy(samples = newSamples)
+        _targetFile.value = currentFile.copy(leads = newLeads)
+        _dirtyLeads.value += lead
+    }
+
+    fun undo(lead: Lead) {
+        val undoStack = undoStacks[lead] ?: return
+        if (undoStack.isEmpty()) return
+        
+        val currentFile = _targetFile.value ?: return
+        val stream = currentFile.leads[lead] ?: return
+        
+        val redoStack = redoStacks.getOrPut(lead) { mutableListOf() }
+        redoStack.add(stream.samples.copyOf())
+        
+        val previousSamples = undoStack.removeAt(undoStack.size - 1)
+        restoreLeadSamples(lead, previousSamples)
+    }
+
+    fun redo(lead: Lead) {
+        val redoStack = redoStacks[lead] ?: return
+        if (redoStack.isEmpty()) return
+        
+        val currentFile = _targetFile.value ?: return
+        val stream = currentFile.leads[lead] ?: return
+        
+        val undoStack = undoStacks.getOrPut(lead) { mutableListOf() }
+        undoStack.add(stream.samples.copyOf())
+        
+        val nextSamples = redoStack.removeAt(redoStack.size - 1)
+        restoreLeadSamples(lead, nextSamples)
+    }
+
+    private fun restoreLeadSamples(lead: Lead, samples: IntArray) {
+        val currentFile = _targetFile.value ?: return
+        val newLeads = currentFile.leads.toMutableMap()
+        newLeads[lead] = currentFile.leads[lead]?.copy(samples = samples) ?: return
+        
+        _targetFile.value = currentFile.copy(leads = newLeads)
+        _dirtyLeads.value += lead
+        floatBuffers.remove(lead) // Force re-sync from restored ints
+    }
+
     companion object {
         const val DEFAULT_EDITING_RADIUS = 100
         const val MIN_EDITING_RADIUS = 1
         const val MAX_EDITING_RADIUS = 1000
+        const val MAX_UNDO_DEPTH = 20
 
         // Valid raw ADC range; edits can never push a sample outside this.
         const val ADC_MIN = 0

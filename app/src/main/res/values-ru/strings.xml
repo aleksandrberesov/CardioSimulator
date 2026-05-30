@@ -205,4 +205,17 @@
     <string name="ecg_interval_qt">QT</string>
     <string name="ecg_interval_rr">R-R</string>
     <string name="ecg_rr_value_format">R-R: %1$.3f с</string>
+
+    <string name="tool_mode_select">Выбор</string>
+    <string name="tool_mode_trace">Отрисовка</string>
+    <string name="tool_mode_position">Привязка</string>
+    <string name="image_panel_title">Трансформация фото</string>
+    <string name="image_panel_opacity">Прозрачность</string>
+    <string name="image_panel_lock">Блокировка</string>
+    <string name="image_panel_reset">Сбросить трансформацию</string>
+    <string name="constructor_auto_detect">Автопоиск</string>
+    <string name="constructor_apply_ghost_trace">Применить найденную кривую?</string>
+    <string name="cd_redo">Вернуть</string>
+    <string name="cd_apply">Применить</string>
+    <string name="cd_cancel">Отмена</string>
 </resources>

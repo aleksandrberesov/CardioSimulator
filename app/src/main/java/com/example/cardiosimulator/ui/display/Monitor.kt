@@ -56,6 +56,7 @@ fun Monitor(
     monitorViewModel: MonitorViewModel,
     staticGrid: Boolean = false,
     showGridBackground: Boolean = true,
+    gesturesEnabled: Boolean = true,
     backgroundContent: @Composable () -> Unit = {},
     content: @Composable ColumnScope.(rows: Int, columns: Int, xOffsetPx: Float, scheme: GridScheme) -> Unit
 ){
@@ -122,16 +123,18 @@ fun Monitor(
         val containerHeight = constraints.maxHeight.toFloat()
 
         val state = rememberTransformableState { _, zoomChange, offsetChange, _ ->
-            scale = (scale * zoomChange).coerceIn(1f, 5f)
+            if (gesturesEnabled) {
+                scale = (scale * zoomChange).coerceIn(1f, 5f)
 
-            val maxX = (containerWidth * (scale - 1)) / 2
-            val maxY = (containerHeight * (scale - 1)) / 2
+                val maxX = (containerWidth * (scale - 1)) / 2
+                val maxY = (containerHeight * (scale - 1)) / 2
 
-            val newOffset = offset + offsetChange
-            offset = Offset(
-                x = newOffset.x.coerceIn(-maxX, maxX),
-                y = newOffset.y.coerceIn(-maxY, maxY)
-            )
+                val newOffset = offset + offsetChange
+                offset = Offset(
+                    x = newOffset.x.coerceIn(-maxX, maxX),
+                    y = newOffset.y.coerceIn(-maxY, maxY)
+                )
+            }
         }
 
         LaunchedEffect(scale) {
@@ -143,7 +146,7 @@ fun Monitor(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .transformable(state = state)
+                    .then(if (gesturesEnabled) Modifier.transformable(state = state) else Modifier)
                     .graphicsLayer(
                         scaleX = scale,
                         scaleY = scale,
