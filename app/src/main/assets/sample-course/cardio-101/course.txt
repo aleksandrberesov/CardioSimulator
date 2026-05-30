@@ -1,0 +1,9 @@
+course:cardio-101
+title:Cardiology Basics
+name:Основы кардиологии
+authors:Sample Author
+language:en,ru
+pathologies:1abblock,wpwrightlat
+
+lecture:01-intro;title:Introduction;name:Введение
+lecture:02-axis;title:Electrical Axis & ECG;name:Электрическая ось

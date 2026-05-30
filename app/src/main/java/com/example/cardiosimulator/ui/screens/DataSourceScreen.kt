@@ -135,7 +135,8 @@ fun DataSourceScreen(
             state = courseState,
             onPickFile = { pickCourseZipFile.launch(ZIP_MIME) },
             readyText = { count -> stringResource(R.string.course_data_source_loaded_format, count) },
-            onShowDetails = { showCourseDetails = true }
+            onShowDetails = { showCourseDetails = true },
+            onUseSample = { appViewModel.loadSampleCourses(context) },
         )
 
         Spacer(Modifier.height(48.dp))
@@ -197,7 +198,8 @@ private fun DataSourceSection(
     state: DataState,
     onPickFile: () -> Unit,
     readyText: @Composable (Int) -> String,
-    onShowDetails: (() -> Unit)? = null
+    onShowDetails: (() -> Unit)? = null,
+    onUseSample: (() -> Unit)? = null,
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
@@ -233,6 +235,12 @@ private fun DataSourceSection(
                 Button(onClick = onPickFile) {
                     Text(stringResource(R.string.data_source_retry))
                 }
+                if (onUseSample != null) {
+                    Spacer(Modifier.height(8.dp))
+                    TextButton(onClick = onUseSample) {
+                        Text(stringResource(R.string.course_data_source_use_sample))
+                    }
+                }
             }
             is DataState.Ready -> {
                 Text(text = readyText(state.pathologyCount))
@@ -252,6 +260,12 @@ private fun DataSourceSection(
             DataState.NotConfigured -> {
                 Button(onClick = onPickFile) {
                     Text(stringResource(R.string.data_source_pick_folder))
+                }
+                if (onUseSample != null) {
+                    Spacer(Modifier.height(8.dp))
+                    TextButton(onClick = onUseSample) {
+                        Text(stringResource(R.string.course_data_source_use_sample))
+                    }
                 }
             }
         }

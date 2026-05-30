@@ -426,14 +426,6 @@ fun SettingsContent(
                     Text(stringResource(R.string.course_data_source_export))
                 }
 
-                val tcpState by appViewModel.tcpConnectionState.collectAsState()
-                if (tcpState == TcpConnectionState.Connected) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    OutlinedButton(onClick = { appViewModel.uploadCourses() }) {
-                        Text(stringResource(R.string.course_data_source_upload))
-                    }
-                }
-
                 Spacer(modifier = Modifier.height(24.dp))
             }
 

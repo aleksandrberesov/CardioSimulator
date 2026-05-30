@@ -13,11 +13,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -35,16 +43,25 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.R
+import com.example.cardiosimulator.data.EcgTrace
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.ComparisonTarget
+import com.example.cardiosimulator.domain.CourseEntry
 import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.domain.Lead
+import com.example.cardiosimulator.domain.Lecture
+import com.example.cardiosimulator.domain.LectureEntry
+import com.example.cardiosimulator.ui.components.LectureWebView
 import com.example.cardiosimulator.ui.components.SideDrawer
+import com.example.cardiosimulator.ui.display.LEAD_ORDER
 import com.example.cardiosimulator.ui.display.Lead as LeadView
 import com.example.cardiosimulator.ui.display.LeadsGrid
 import com.example.cardiosimulator.ui.display.Monitor
+import com.example.cardiosimulator.ui.panels.CourseSelector
+import com.example.cardiosimulator.ui.panels.LectureSelector
 import com.example.cardiosimulator.ui.panels.RhythmSelector
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
+import com.example.cardiosimulator.ui.viewmodels.CourseViewerViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
@@ -53,6 +70,7 @@ fun TeachingScreen(
     appViewModel: AppViewModel,
     monitorViewModel: MonitorViewModel,
     rhythmViewModel: RhythmViewModel,
+    courseViewerViewModel: CourseViewerViewModel,
 ) {
     val rhythms by rhythmViewModel.rhythms.collectAsState()
     val courses by appViewModel.courses.collectAsState()
@@ -66,6 +84,29 @@ fun TeachingScreen(
     var showSavePresetDialog by remember { mutableStateOf(false) }
 
     val mode by monitorViewModel.monitorMode.collectAsState()
+
+    // ── Course viewer (additive overlay; the monitor below is untouched) ──
+    val selectedCourseId by courseViewerViewModel.selectedCourseId.collectAsState()
+    val lectures by courseViewerViewModel.lectures.collectAsState()
+    val selectedLectureId by courseViewerViewModel.selectedLectureId.collectAsState()
+    val viewerLecture by courseViewerViewModel.lecture.collectAsState()
+    var showCourseOverlay by remember { mutableStateOf(false) }
+
+    val pathologyRepo = appViewModel.repository
+    val resolveEcg = remember(pathologyRepo) {
+        { pathologyId: String, lead: Lead? ->
+            val leads = if (lead != null) listOf(lead) else LEAD_ORDER
+            leads.mapNotNull { l -> pathologyRepo?.leadWaveform(pathologyId, l)?.let { EcgTrace(l, it) } }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        courseViewerViewModel.setLanguage(selectedLanguage.tag)
+        courseViewerViewModel.restore()
+    }
+    LaunchedEffect(selectedLanguage) {
+        courseViewerViewModel.setLanguage(selectedLanguage.tag)
+    }
 
     LaunchedEffect(mode.comparisonTargets) {
         mode.comparisonTargets.forEach { (index, target) ->
@@ -251,5 +292,111 @@ fun TeachingScreen(
             },
             modifier = Modifier.fillMaxHeight().align(Alignment.TopStart)
         )
+
+        // Course-viewer entry point — additive; does not touch the monitor.
+        IconButton(
+            onClick = { showCourseOverlay = true },
+            modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Default.School,
+                contentDescription = stringResource(R.string.course_drawer_title),
+            )
+        }
+
+        if (showCourseOverlay) {
+            CourseViewerOverlay(
+                appViewModel = appViewModel,
+                courses = courses,
+                selectedCourseId = selectedCourseId,
+                lectures = lectures,
+                selectedLectureId = selectedLectureId,
+                lecture = viewerLecture,
+                language = selectedLanguage,
+                resolveEcg = resolveEcg,
+                onCourseSelect = { courseViewerViewModel.selectCourse(it.id) },
+                onLectureSelect = { courseViewerViewModel.selectLecture(it.id) },
+                onClose = { showCourseOverlay = false },
+            )
+        }
     }
 }
+
+@Composable
+private fun CourseViewerOverlay(
+    appViewModel: AppViewModel,
+    courses: List<CourseEntry>,
+    selectedCourseId: String?,
+    lectures: List<LectureEntry>,
+    selectedLectureId: String?,
+    lecture: Lecture?,
+    language: Language,
+    resolveEcg: (String, Lead?) -> List<EcgTrace>,
+    onCourseSelect: (CourseEntry) -> Unit,
+    onLectureSelect: (LectureEntry) -> Unit,
+    onClose: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+        tonalElevation = 2.dp,
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 4.dp) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = lecture?.frontMatter?.title?.takeIf { it.isNotBlank() }
+                            ?: courses.find { it.id == selectedCourseId }?.let { courseDisplayName(it, language) }
+                            ?: stringResource(R.string.course_drawer_title),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    IconButton(onClick = onClose) {
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_close))
+                    }
+                }
+            }
+            Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                Column(modifier = Modifier.width(280.dp).fillMaxHeight()) {
+                    CourseSelector(
+                        appViewModel = appViewModel,
+                        courses = courses,
+                        selectedCourseId = selectedCourseId,
+                        onCourseSelect = onCourseSelect,
+                        modifier = Modifier.weight(1f),
+                    )
+                    HorizontalDivider()
+                    LectureSelector(
+                        lectures = lectures,
+                        language = language,
+                        selectedLectureId = selectedLectureId,
+                        onLectureSelect = onLectureSelect,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                VerticalDivider()
+                Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                    if (lecture != null) {
+                        LectureWebView(
+                            lecture = lecture,
+                            resolveEcg = resolveEcg,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.course_viewer_select_lecture),
+                            modifier = Modifier.align(Alignment.Center).padding(16.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun courseDisplayName(course: CourseEntry, language: Language): String =
+    if (language == Language.RU) course.nameRu ?: course.titleEn else course.titleEn

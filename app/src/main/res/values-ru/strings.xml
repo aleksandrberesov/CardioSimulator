@@ -69,6 +69,17 @@
     <!-- Rhythm panel -->
     <string name="rhythm_drawer_title">Ритм</string>
     <string name="course_drawer_title">Курсы</string>
+    <string name="lecture_selector_title">Лекции</string>
+    <string name="course_viewer_select_lecture">Выберите лекцию</string>
+    <string name="cd_close">Закрыть</string>
+    <string name="course_constructor_revert">Отменить</string>
+    <string name="course_constructor_new_course">Новый курс</string>
+    <string name="course_constructor_new_lecture">Новая лекция</string>
+    <string name="course_constructor_rename">Переименовать</string>
+    <string name="course_constructor_delete">Удалить</string>
+    <string name="course_constructor_id_hint">Идентификатор</string>
+    <string name="course_constructor_title_hint">Заголовок</string>
+    <string name="course_constructor_delete_confirm">Удалить эту лекцию?</string>
     <string name="points_drawer_title">Точки</string>
     <string name="rhythm_search_placeholder">Ритм…</string>
     <string name="rhythm_search_content_description">Поиск</string>
@@ -103,6 +114,7 @@
     <string name="course_data_source_pick">Выбрать ZIP с курсами</string>
     <string name="course_data_source_change">Сменить ZIP с курсами</string>
     <string name="course_data_source_export">Экспорт ZIP с курсами</string>
+    <string name="course_data_source_use_sample">Использовать образец курса</string>
     <string name="course_data_source_upload">Загрузить курсы на сервер</string>
     <string name="course_data_source_loaded_format">Загружено курсов: %1$d</string>
     <string name="constructor_save">Сохранить</string>

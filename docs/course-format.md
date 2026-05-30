@@ -3,9 +3,9 @@
 Specification of the `Courses.zip` bundle consumed by the Course
 Constructor (see [plan](plans/active/2026-05-course-constructor.md)).
 Pattern mirrors [`data-structure.md`](data-structure.md): UTF-8 text,
-LF line endings, key-value headers for metadata, Markdown for rich
-content, custom fenced blocks for the things plain Markdown can't
-express.
+LF line endings, key-value headers for metadata, and **HTML** for rich
+lecture content (rendered in a single per-lecture `WebView`), with a
+custom `<ecg>` element for embedded ECG references.
 
 ## 1. Overview
 
@@ -15,7 +15,7 @@ Courses.zip
 ├── <course-id>/
 │   ├── course.txt               ← course metadata + lecture index
 │   ├── lectures/
-│   │   ├── <lecture-id>.<lang>.md
+│   │   ├── <lecture-id>.<lang>.html
 │   │   └── …
 │   └── assets/
 │       └── <image-or-svg>
@@ -23,10 +23,10 @@ Courses.zip
 ```
 
 Multilingual content lives in **one file per language**
-(`<lecture-id>.en.md`, `<lecture-id>.ru.md`), mirroring the
+(`<lecture-id>.en.html`, `<lecture-id>.ru.html`), mirroring the
 `values-ru/`, `values-zh/` Android resource pattern. At read time the
 viewer picks the file matching the active `Language.tag`, falling back
-to `.en.md`.
+to `.en.html`.
 
 `<course-id>` and `<lecture-id>` are ASCII alphanumeric + `-` / `_`.
 
@@ -78,7 +78,7 @@ lecture:02-axis;title:Electrical Axis;name:Электрическая ось
 ```
 
 The lecture rows define the **display order**. Each row references one
-or more `<lecture-id>.<lang>.md` files in `lectures/`.
+or more `<lecture-id>.<lang>.html` files in `lectures/`.
 
 The optional `pathologies` header key is a comma-separated list of
 `PathologyEntry.id`s — the **authoritative** set of pathologies the
@@ -88,34 +88,31 @@ so a viewer (e.g. `ui/panels/RhythmSelector.kt`) can restrict the
 selectable rhythm list to the active course. The generator keeps the
 manifest row's `pathologies` field (§2) in sync with this list.
 
-## 4. `<lecture-id>.<lang>.md`
+## 4. `<lecture-id>.<lang>.html`
 
-YAML front matter + Markdown body. The front matter is delimited by
-`---` lines and parsed as `key: value` (one entry per line).
-The body is standard CommonMark + GFM tables + KaTeX math + the custom
-fenced blocks defined in §5.
+YAML-lite front matter + HTML body. The front matter is delimited by
+`---` lines and parsed as `key: value` (one entry per line). The body is
+HTML rendered in a single `WebView`: standard tags for text, KaTeX
+`$…$` / `$$…$$` math (auto-rendered in one DOM pass), `<img>` for images,
+plus the custom constructs in §5.
 
-```markdown
+```html
 ---
 id: 02-axis
 order: 2
 title: Electrical Axis
 schemaVersion: 1
 ---
+<h1>Cardiac Axis</h1>
 
-# Cardiac Axis
+<p>The mean QRS axis lies between <strong>−30°</strong> and
+<strong>+90°</strong>.</p>
 
-The mean QRS axis lies between **-30°** and **+90°**.
+<p>Inline math: $\theta = \arctan(aVF / I)$.</p>
 
-Inline math: $\theta = \arctan(aVF / I)$.
+$$ \theta = \arctan\!\left(\frac{aVF}{I}\right) $$
 
-Block math:
-
-$$
-\theta = \arctan\!\left(\frac{aVF}{I}\right)
-$$
-
-![Hexaxial reference](assets/ecg-axis.svg)
+<img src="assets/ecg-axis.svg" alt="Hexaxial reference">
 ```
 
 **Front-matter keys recognised by the parser:**
@@ -125,63 +122,67 @@ $$
 | `id` | string | Should match the filename's lecture id. |
 | `order` | int | Display order within the course (fallback when not set in `course.txt`). |
 | `title` | string | Display title in this language. Falls back to the title in `course.txt`. |
-| `schemaVersion` | int | Defaults to `1`. Loader skips unknown fenced-block types when a higher schema is observed. |
+| `schemaVersion` | int | Defaults to `1`. The renderer ignores unknown custom elements when a higher schema is observed. |
 
 Unknown keys are preserved verbatim and re-emitted on save.
 
-## 5. Custom fenced blocks
+The body after the closing `---` is stored verbatim as `Lecture.rawHtml`
+and handed to the `WebView` unchanged except for the `<ecg>` → inline-SVG
+rewrite (§5.1); it is **not** decomposed into structured blocks.
 
-The two things Markdown can't express natively are an embedded ECG
-reference and an editable quiz table. Both are introduced as fenced
-code blocks with custom info-strings, so editors that don't understand
-them still render the source intact rather than mangle it.
+## 5. Custom constructs
 
-### 5.1 `ecg` — embedded ECG reference
+The two things plain HTML can't express on its own are an embedded ECG
+reference and a write-back-able quiz table. Both are authored as HTML — so
+any browser renders the source intact — and the app gives them extra
+behaviour at runtime.
 
+### 5.1 `<ecg>` — embedded ECG reference
+
+```html
+<ecg pathology="lad" lead="II" caption="Left axis deviation, lead II"></ecg>
 ```
-\```ecg
-pathology: lad
-lead: II
-caption: Left axis deviation, lead II
-\```
-```
 
-| Body key | Required | Notes |
+| Attribute | Required | Notes |
 |---|---|---|
 | `pathology` | yes | `PathologyEntry.id` resolvable through `PathologyRepository`. |
 | `lead` | no | `Lead.fromToken` value (`I`, `II`, …, `V6`). Omit to display all 12 leads. |
 | `caption` | no | Free text rendered below the trace. |
 
-Rendering reuses `ui/display/Lead.kt` plus
-`PathologyRepository.leadWaveform` — no duplicate pipeline.
+At load time the renderer rewrites each `<ecg>` element into a `<figure>`
+holding an inline `<svg>` produced by `EcgSvgRenderer`, which reuses
+`PathologyRepository.leadWaveform` and the same projection math as the
+on-screen monitor (`ui/components/ChartCanvas.kt`, `projectPath`). The
+figure is **static** — no scroll/sweep animation. `<ecg>` is an inert
+custom element, so a missed rewrite degrades gracefully instead of
+breaking the page.
 
-### 5.2 `table` — quiz / reference table
+### 5.2 `<table>` — quiz / reference table
 
+A standard HTML table. Quiz behaviour is opt-in via `data-` attributes:
+
+```html
+<table data-quiz-id="axis-quadrants" data-editable="true">
+  <tr><th>Axis</th><th>I</th><th>aVF</th><th>Range</th></tr>
+  <tr><td>Normal</td><td>+</td><td>+</td><td><input></td></tr>
+  <tr><td>LAD</td><td>+</td><td>−</td><td><input></td></tr>
+</table>
 ```
-\```table
-id: axis-quadrants
-editable: true
----
-| Axis   | I | aVF | Range       |
-|--------|---|-----|-------------|
-| Normal | + | +   | -30°…+90°   |
-| LAD    | + | -   | -30°…-90°   |
-\```
-```
 
-| Header key | Required | Notes |
+| Attribute | Required | Notes |
 |---|---|---|
-| `id` | yes | Stable identifier — used as the key for `.answers.json` cell state. |
-| `editable` | no | Default `false`. When `true`, the runtime mounts each cell as a `TextField`. |
+| `data-quiz-id` | yes (when editable) | Stable identifier — the key for `.answers.json` cell state. |
+| `data-editable` | no | Default absent / `false`. When `"true"`, `<input>` cells are writable and their edits are persisted (§6). |
 
-The `---` line separates the key-value header from the GFM table source.
-Cell-grid parsing lives in the renderer (Phase 2 read-only, Phase 3
-write-back).
+Cells the learner fills in are authored as `<input>` elements. In the
+constructor, edits flow back through a `@JavascriptInterface` bridge keyed
+by `data-quiz-id` + the cell's `(row, col)`; in the read-only viewer the
+saved values are injected into the inputs and left non-editable.
 
 ## 6. Editable-table answers (`<lecture-id>.<lang>.answers.json`)
 
-Sibling file to a `.md` lecture. Only created when the user actually
-edits a cell. Keeps the `.md` author-pristine for diffs and grading.
+Sibling file to a `.html` lecture. Only created when the user actually
+edits a cell. Keeps the `.html` author-pristine for diffs and grading.
 
 ```json
 {
@@ -192,16 +193,16 @@ edits a cell. Keeps the `.md` author-pristine for diffs and grading.
 }
 ```
 
-Keys are `"<rowIndex>,<colIndex>"` (0-based, counting only data rows —
-the header row is excluded).
+Keys are `"<rowIndex>,<colIndex>"` (0-based, counting only data `<tr>`
+rows — the header row is excluded).
 
 ## 7. Versioning
 
 - `manifest.version` is bundle-wide.
-- `LectureFrontMatter.schemaVersion` is per-lecture, allowing individual
-  lectures to evolve fenced-block syntax without re-versioning the
-  bundle. Loaders skip unknown fence types with a warning rather than
-  failing.
+- `LectureFrontMatter.schemaVersion` is per-lecture, letting individual
+  lectures introduce new custom elements without re-versioning the
+  bundle. The renderer leaves unknown custom elements inert in the DOM
+  rather than failing.
 
 ## 8. Encoding & line endings
 

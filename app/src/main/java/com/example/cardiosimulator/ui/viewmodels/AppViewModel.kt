@@ -13,6 +13,7 @@ import com.example.cardiosimulator.data.FileCourseSource
 import com.example.cardiosimulator.data.FilePathologySource
 import com.example.cardiosimulator.data.PathologyRepository
 import com.example.cardiosimulator.data.PathologyZipExtractor
+import com.example.cardiosimulator.data.SampleCourseSeeder
 import com.example.cardiosimulator.domain.AppStateModel
 import com.example.cardiosimulator.domain.CourseEntry
 import com.example.cardiosimulator.domain.Language
@@ -169,12 +170,21 @@ class AppViewModel(
                     } catch (_: Exception) {}
                 }
 
-                // Courses pipeline — restore the user's last picked
-                // bundle if one exists. Failures are silent here; the
-                // UI surfaces them via [courseDataState].
+                // Courses pipeline — restore the user's last picked bundle
+                // if one exists, else pick up a previously seeded / extracted
+                // `filesDir/courses/` (e.g. the sample template). Failures are
+                // silent here; the UI surfaces them via [courseDataState].
                 if (courseRepository != null) {
                     val coursesUri = p.coursesTreeUri.first()
-                    if (coursesUri != null) loadCoursesFromSaf(ctx, coursesUri)
+                    if (coursesUri != null) {
+                        loadCoursesFromSaf(ctx, coursesUri)
+                    } else {
+                        val source = FileCourseSource(File(ctx.filesDir, COURSES_DIR))
+                        if (source.isValid()) {
+                            courseRepository.setSource(source)
+                            reloadCourses(courseRepository)
+                        }
+                    }
                 }
             }
         } else if (repo != null) {
@@ -381,6 +391,32 @@ class AppViewModel(
         viewModelScope.launch {
             p.setCoursesTreeUri(uri)
             loadCoursesFromSaf(context, uri, forceUnzip = true)
+        }
+    }
+
+    /**
+     * Seeds the bundled starter course into `filesDir/courses/` and loads it
+     * — the "New course from template" path for authors with no bundle of
+     * their own. Clears any saved SAF courses URI so the seeded copy (not a
+     * stale picked zip) is what reloads next launch.
+     */
+    fun loadSampleCourses(context: Context) {
+        val repo = courseRepository ?: return
+        _isDataConfirmed.value = false
+        viewModelScope.launch {
+            _courseDataState.value = DataState.Loading
+            prefs?.setCoursesTreeUri(null)
+            val targetDir = File(context.filesDir, COURSES_DIR)
+            val ok = withContext(Dispatchers.IO) { SampleCourseSeeder.seed(context, targetDir) }
+            if (ok) {
+                val source = FileCourseSource(targetDir)
+                if (source.isValid()) {
+                    repo.setSource(source)
+                    reloadCourses(repo)
+                    return@launch
+                }
+            }
+            _courseDataState.value = DataState.Error(DataState.Error.Reason.Empty)
         }
     }
 

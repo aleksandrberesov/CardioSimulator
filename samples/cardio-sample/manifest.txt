@@ -1,0 +1,6 @@
+version:1.0
+created:2026-05-30T12:00:00
+encoding:utf-8
+line_endings:lf
+
+course:cardio-101;lectures:2;title:Cardiology Basics;name:Основы кардиологии;pathologies:1abblock,wpwrightlat

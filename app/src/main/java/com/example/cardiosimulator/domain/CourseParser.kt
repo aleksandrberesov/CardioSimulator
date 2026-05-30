@@ -11,10 +11,10 @@ package com.example.cardiosimulator.domain
  *    (identical shape to [PathologyParser.parseManifest]).
  * 2. `<course-id>/course.txt` — key:value header + semicolon-delimited
  *    lecture rows.
- * 3. `<lecture-id>.<lang>.md` — YAML-lite front matter delimited by
- *    `---` lines, then a Markdown body that the parser splits into a
- *    list of [CourseBlock]s by extracting the custom fenced blocks
- *    (`ecg`, `table`); everything else stays in [CourseBlock.Markdown].
+ * 3. `<lecture-id>.<lang>.html` — YAML-lite front matter delimited by
+ *    `---` lines, then an HTML body kept verbatim as [Lecture.rawHtml].
+ *    The body is rendered in a single `WebView`; it is not decomposed
+ *    into structured blocks here.
  */
 object CourseParser {
 
@@ -114,31 +114,30 @@ object CourseParser {
         }
     }
 
-    // ─── <lecture-id>.<lang>.md ─────────────────────────────────────────
+    // ─── <lecture-id>.<lang>.html ───────────────────────────────────────
 
     /**
      * Parses a lecture file. [courseId] and [language] are injected by
      * the source layer (they're encoded in the file's directory and
-     * filename, not the content).
+     * filename, not the content). The HTML body after the front matter is
+     * kept verbatim on [Lecture.rawHtml]; it is not decomposed here.
      */
     fun parseLecture(text: String, courseId: String, language: String): Lecture {
         val (fmText, body) = splitFrontMatter(text)
         val fm = parseFrontMatter(fmText)
-        val blocks = extractBlocks(body)
         return Lecture(
             id = fm.id,
             courseId = courseId,
             language = language,
             frontMatter = fm,
-            blocks = blocks,
-            rawMarkdown = body,
+            rawHtml = body,
         )
     }
 
     /**
      * Serializes a lecture back to the on-disk format. Re-emits the
      * front matter (preserving unknown [LectureFrontMatter.extras] keys)
-     * followed by [Lecture.rawMarkdown] verbatim.
+     * followed by [Lecture.rawHtml] verbatim.
      */
     fun serializeLecture(lecture: Lecture): String = buildString {
         append("---\n")
@@ -151,15 +150,15 @@ object CourseParser {
             append(k).append(": ").append(v).append('\n')
         }
         append("---\n")
-        append(lecture.rawMarkdown)
+        append(lecture.rawHtml)
     }
 
     // ─── front matter ───────────────────────────────────────────────────
 
     /**
      * Splits a lecture file into its `---`-delimited front matter and
-     * the Markdown body. If no front matter is present, returns an
-     * empty header and the whole text as the body.
+     * the HTML body. If no front matter is present, returns an empty
+     * header and the whole text as the body.
      */
     private fun splitFrontMatter(text: String): Pair<String, String> {
         val lines = text.split('\n')
@@ -200,86 +199,11 @@ object CourseParser {
         )
     }
 
-    // ─── fenced-block extraction ────────────────────────────────────────
-
-    private val FENCE_LINE = Regex("""^```\s*(\w+)\s*$""")
-
-    /**
-     * Walks [body] line by line, accumulating Markdown until a custom
-     * fenced block (` ```ecg ` or ` ```table `) is encountered. Standard
-     * code fences with any other info-string (`js`, `kotlin`, …) stay
-     * inside Markdown runs untouched.
-     */
-    private fun extractBlocks(body: String): List<CourseBlock> {
-        if (body.isEmpty()) return emptyList()
-        val out = mutableListOf<CourseBlock>()
-        val current = StringBuilder()
-        val lines = body.split('\n')
-
-        fun flushMarkdown() {
-            val text = current.toString()
-            if (text.isNotEmpty()) out += CourseBlock.Markdown(text)
-            current.clear()
-        }
-
-        var i = 0
-        while (i < lines.size) {
-            val line = lines[i]
-            val fence = FENCE_LINE.matchEntire(line.trimEnd('\r'))
-            val tag = fence?.groupValues?.get(1)
-            if (tag == "ecg" || tag == "table") {
-                flushMarkdown()
-                val end = (i + 1 until lines.size).firstOrNull { idx ->
-                    lines[idx].trimEnd('\r').trim() == "```"
-                } ?: lines.size
-                val inner = lines.subList(i + 1, end).joinToString("\n")
-                out += when (tag) {
-                    "ecg" -> parseEcgFence(inner)
-                    "table" -> parseTableFence(inner)
-                    else -> error("unreachable")
-                }
-                i = end + 1
-                continue
-            }
-            current.append(line)
-            if (i != lines.lastIndex) current.append('\n')
-            i++
-        }
-        flushMarkdown()
-        return out
-    }
-
-    private fun parseEcgFence(inner: String): CourseBlock.EcgEmbed {
-        val fields = parseKeyValueLines(inner)
-        val pathology = fields["pathology"].orEmpty()
-        val leadToken = fields["lead"]
-        return CourseBlock.EcgEmbed(
-            pathologyId = pathology,
-            lead = leadToken?.takeIf { it.isNotBlank() }?.let { Lead.fromToken(it) },
-            caption = fields["caption"]?.takeIf { it.isNotBlank() },
-        )
-    }
-
-    private fun parseTableFence(inner: String): CourseBlock.EditableTable {
-        // Split header (key:value lines) from GFM body on the first
-        // bare `---` line.
-        val lines = inner.split('\n')
-        val separator = lines.indexOfFirst { it.trimEnd('\r').trim() == "---" }
-        val headerLines = if (separator >= 0) lines.subList(0, separator) else emptyList()
-        val rawLines = if (separator >= 0) lines.subList(separator + 1, lines.size) else lines
-        val header = parseKeyValueLines(headerLines.joinToString("\n"))
-        return CourseBlock.EditableTable(
-            id = header["id"].orEmpty(),
-            editable = header["editable"]?.trim()?.lowercase() == "true",
-            raw = rawLines.joinToString("\n").trim('\n'),
-        )
-    }
-
     /** Splits a comma-separated value list, trimming and dropping blanks. */
     private fun parseCsv(raw: String?): List<String> =
         raw?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
 
     // Shared grammar primitives (splitHeader / splitKeyValue /
-    // parseSemicolonFields / parseKeyValueLines) live in
-    // domain/ParserHelpers.kt and are used inline above.
+    // parseSemicolonFields) live in domain/ParserHelpers.kt and are used
+    // inline above.
 }

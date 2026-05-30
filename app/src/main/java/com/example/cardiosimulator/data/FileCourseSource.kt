@@ -34,7 +34,7 @@ class FileCourseSource(
 
     override fun readLecture(courseId: String, lectureId: String, language: String): Lecture? {
         for (lang in fallbackLanguages(language)) {
-            val file = File(root, "$courseId/lectures/$lectureId.$lang.md")
+            val file = File(root, "$courseId/lectures/$lectureId.$lang.html")
             if (!file.canRead()) continue
             return runCatching {
                 CourseParser.parseLecture(file.readText(Charsets.UTF_8), courseId, lang)
@@ -50,16 +50,16 @@ class FileCourseSource(
 
     override fun listLectures(courseId: String): List<String> =
         File(root, "$courseId/lectures")
-            .listFiles { f -> f.isFile && f.name.endsWith(".md") }
+            .listFiles { f -> f.isFile && f.name.endsWith(".html") }
             ?.map { it.name.substringBeforeLast('.').substringBeforeLast('.') }
             ?.distinct()
             ?: emptyList()
 
     // ─── writes ─────────────────────────────────────────────────────────
 
-    /** Atomically writes [lecture] as `<courseId>/lectures/<id>.<lang>.md`. */
+    /** Atomically writes [lecture] as `<courseId>/lectures/<id>.<lang>.html`. */
     fun writeLecture(lecture: Lecture): Boolean = atomicWriteText(
-        File(root, "${lecture.courseId}/lectures/${lecture.id}.${lecture.language}.md"),
+        File(root, "${lecture.courseId}/lectures/${lecture.id}.${lecture.language}.html"),
         CourseParser.serializeLecture(lecture),
     )
 
@@ -79,13 +79,13 @@ class FileCourseSource(
     }
 
     /**
-     * Persists raw [body] (front matter + Markdown) for a lecture
-     * without re-parsing. Used by the constructor's text-editor flow
-     * where the user has edited the source directly and we want to
-     * write back byte-for-byte.
+     * Persists raw [body] (front matter + HTML) for a lecture without
+     * re-parsing. Used by the constructor's text-editor flow where the
+     * user has edited the source directly and we want to write back
+     * byte-for-byte.
      */
     fun writeLectureRaw(courseId: String, lectureId: String, language: String, body: String): Boolean =
-        atomicWriteText(File(root, "$courseId/lectures/$lectureId.$language.md"), body)
+        atomicWriteText(File(root, "$courseId/lectures/$lectureId.$language.html"), body)
 
     /** Writes the sibling `<lecture-id>.<lang>.answers.json` cell-state file. */
     fun writeAnswers(courseId: String, lectureId: String, language: String, json: String): Boolean =
@@ -97,10 +97,10 @@ class FileCourseSource(
     }.getOrNull()
 
     fun deleteLecture(courseId: String, lectureId: String, language: String): Boolean {
-        val md = File(root, "$courseId/lectures/$lectureId.$language.md")
+        val html = File(root, "$courseId/lectures/$lectureId.$language.html")
         val answers = File(root, "$courseId/lectures/$lectureId.$language.answers.json")
         var ok = true
-        if (md.exists()) ok = md.delete() && ok
+        if (html.exists()) ok = html.delete() && ok
         if (answers.exists()) ok = answers.delete() && ok
         return ok
     }

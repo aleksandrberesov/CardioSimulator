@@ -5,13 +5,13 @@ package com.example.cardiosimulator.domain
  * `docs/course-format.md`:
  *
  * - One [Course] per `<course-id>/` directory.
- * - One [Lecture] per `<lecture-id>.<lang>.md` file inside `lectures/`.
- * - Rich-content lectures decompose into a flat sequence of [CourseBlock]s
- *   so the renderer can interleave Markdown text with native Compose
- *   overlays for ECG embeds and editable tables.
+ * - One [Lecture] per `<lecture-id>.<lang>.html` file inside `lectures/`.
+ * - A lecture body is HTML rendered in a single `WebView`; it is not
+ *   decomposed into structured blocks. ECG embeds (`<ecg>`) and editable
+ *   quiz tables are handled by the renderer, not the data model.
  *
- * Parsing lives in [CourseParser]; the parser keeps the raw Markdown body
- * around on [Lecture.rawMarkdown] so the constructor can write back the
+ * Parsing lives in [CourseParser]; the parser keeps the raw HTML body
+ * around on [Lecture.rawHtml] so the constructor can write back the
  * author-pristine source rather than a round-tripped one.
  */
 
@@ -64,19 +64,19 @@ data class LectureEntry(
     val nameRu: String?,
 )
 
-/** Parsed `<lecture-id>.<lang>.md`. */
+/** Parsed `<lecture-id>.<lang>.html`. */
 data class Lecture(
     val id: String,
     val courseId: String,
     val language: String,
     val frontMatter: LectureFrontMatter,
-    val blocks: List<CourseBlock>,
     /**
-     * The original Markdown body (everything after the closing `---` of
-     * the front matter). Retained verbatim so the constructor can write
-     * back source exactly as the author typed it.
+     * The original HTML body (everything after the closing `---` of the
+     * front matter). Retained verbatim so the constructor can write back
+     * source exactly as the author typed it, and so the renderer can hand
+     * it to the `WebView` unchanged (apart from the `<ecg>` → SVG rewrite).
      */
-    val rawMarkdown: String,
+    val rawHtml: String,
 )
 
 /**
@@ -91,30 +91,3 @@ data class LectureFrontMatter(
     val schemaVersion: Int = 1,
     val extras: Map<String, String> = emptyMap(),
 )
-
-/**
- * One renderable segment of a lecture body.
- *
- * The parser only carves out the segments that need structured
- * handling at the data layer: the custom fenced blocks (`ecg`, `table`)
- * and everything else as opaque [Markdown] runs. The renderer turns
- * Markdown runs into Compose content via a Markdown library (Phase 2);
- * KaTeX `$...$` math, GFM tables, images, and links stay inside the
- * Markdown runs and are not extracted here.
- */
-sealed class CourseBlock {
-    data class Markdown(val text: String) : CourseBlock()
-
-    data class EcgEmbed(
-        val pathologyId: String,
-        val lead: Lead?,
-        val caption: String?,
-    ) : CourseBlock()
-
-    data class EditableTable(
-        val id: String,
-        val editable: Boolean,
-        /** GFM table source — cell parsing is deferred to the renderer. */
-        val raw: String,
-    ) : CourseBlock()
-}

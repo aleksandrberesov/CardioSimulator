@@ -69,6 +69,17 @@
     <!-- Rhythm panel -->
     <string name="rhythm_drawer_title">Ritmo</string>
     <string name="course_drawer_title">Cursos</string>
+    <string name="lecture_selector_title">Lecciones</string>
+    <string name="course_viewer_select_lecture">Selecciona una lección</string>
+    <string name="cd_close">Cerrar</string>
+    <string name="course_constructor_revert">Revertir</string>
+    <string name="course_constructor_new_course">Nuevo curso</string>
+    <string name="course_constructor_new_lecture">Nueva lección</string>
+    <string name="course_constructor_rename">Renombrar</string>
+    <string name="course_constructor_delete">Eliminar</string>
+    <string name="course_constructor_id_hint">Id</string>
+    <string name="course_constructor_title_hint">Título</string>
+    <string name="course_constructor_delete_confirm">¿Eliminar esta lección?</string>
     <string name="rhythm_search_placeholder">Ritmo…</string>
     <string name="rhythm_search_content_description">Buscar</string>
 
@@ -98,6 +109,7 @@
     <string name="course_data_source_pick">Seleccionar archivo ZIP de cursos</string>
     <string name="course_data_source_change">Cambiar ZIP de cursos</string>
     <string name="course_data_source_export">Exportar ZIP de cursos</string>
+    <string name="course_data_source_use_sample">Usar curso de ejemplo</string>
     <string name="course_data_source_upload">Subir cursos al servidor</string>
     <string name="course_data_source_loaded_format">Cursos cargados: %1$d</string>
     <string name="constructor_save">Guardar</string>

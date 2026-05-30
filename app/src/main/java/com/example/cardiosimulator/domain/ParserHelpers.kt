@@ -34,21 +34,6 @@ internal fun parseSemicolonFields(line: String): Map<String, String> {
 }
 
 /**
- * Splits a `key:value`-per-line text block into a map. Blank lines are
- * skipped; whitespace around keys and values is trimmed.
- */
-internal fun parseKeyValueLines(text: String): Map<String, String> {
-    val map = linkedMapOf<String, String>()
-    for (raw in text.split('\n')) {
-        val line = raw.trimEnd('\r')
-        if (line.isBlank()) continue
-        val (k, v) = splitKeyValue(line) ?: continue
-        map[k.trim()] = v.trim()
-    }
-    return map
-}
-
-/**
  * Splits a file's `key:value` header block from its body lines. The
  * header runs until the first blank line; the body is everything after,
  * with blank lines filtered out.

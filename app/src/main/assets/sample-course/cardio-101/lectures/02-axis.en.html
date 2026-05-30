@@ -1,0 +1,29 @@
+---
+id: 02-axis
+order: 2
+title: Electrical Axis & ECG
+schemaVersion: 1
+---
+<h1>Cardiac Axis</h1>
+
+<p>The mean QRS axis normally lies between <strong>−30°</strong> and
+<strong>+90°</strong>. It can be estimated from leads I and aVF:</p>
+
+<p>Inline: $\theta = \arctan(aVF / I)$.</p>
+
+$$ \theta = \arctan\!\left(\frac{aVF}{I}\right) $$
+
+<h2>Single-lead reference</h2>
+<ecg pathology="1abblock" lead="II" caption="First-degree AV block — lead II"></ecg>
+
+<h2>Twelve-lead reference</h2>
+<ecg pathology="wpwrightlat" caption="WPW (right lateral) — all leads"></ecg>
+
+<h2>Quick check</h2>
+<p>Fill in the expected axis range for each pattern:</p>
+<table data-quiz-id="axis-quadrants" data-editable="true">
+  <tr><th>Axis</th><th>Lead I</th><th>aVF</th><th>Range</th></tr>
+  <tr><td>Normal</td><td>+</td><td>+</td><td><input></td></tr>
+  <tr><td>Left axis deviation</td><td>+</td><td>−</td><td><input></td></tr>
+  <tr><td>Right axis deviation</td><td>−</td><td>+</td><td><input></td></tr>
+</table>

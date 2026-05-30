@@ -26,6 +26,7 @@ import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.panels.BottomControlPanel
 import com.example.cardiosimulator.ui.panels.ConstructorControlPanel
+import com.example.cardiosimulator.ui.panels.CourseConstructorControlPanel
 import com.example.cardiosimulator.ui.panels.MonitorControlPanel
 import com.example.cardiosimulator.ui.panels.TopControlPanel
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
@@ -33,6 +34,7 @@ import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.DataState
 import com.example.cardiosimulator.ui.viewmodels.ConstructorViewModel
 import com.example.cardiosimulator.ui.viewmodels.CourseConstructorViewModel
+import com.example.cardiosimulator.ui.viewmodels.CourseViewerViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
@@ -101,6 +103,20 @@ fun MainScreen(appViewModel: AppViewModel) {
         }
     )
 
+    val courseViewerViewModel: CourseViewerViewModel = viewModel(
+        key = selectedMode.id.name + "_course_viewer",
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return CourseViewerViewModel(
+                    repository = appViewModel.courseRepository!!,
+                    mode = selectedMode.id,
+                    prefs = appViewModel.prefs
+                ) as T
+            }
+        }
+    )
+
     LaunchedEffect(dataState, rhythmViewModel) {
         if (dataState is DataState.Ready) {
             rhythmViewModel.loadManifest()
@@ -151,6 +167,7 @@ fun MainScreen(appViewModel: AppViewModel) {
                     appViewModel = appViewModel,
                     monitorViewModel = monitorViewModel,
                     rhythmViewModel = rhythmViewModel,
+                    courseViewerViewModel = courseViewerViewModel,
                 )
                 OperatingMode.Testing -> TestingScreen(
                     appViewModel = appViewModel,
@@ -209,8 +226,9 @@ fun MainScreen(appViewModel: AppViewModel) {
                         )
                     }
                     OperatingMode.CourseConstructor -> {
-                        // Placeholder for Phase 3b
-                        Text("Course Constructor Panel (Stub)", color = androidx.compose.ui.graphics.Color.Gray)
+                        CourseConstructorControlPanel(
+                            courseConstructorViewModel = courseConstructorViewModel
+                        )
                     }
                     else -> {}
                 }
