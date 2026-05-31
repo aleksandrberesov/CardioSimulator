@@ -42,11 +42,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.EcgTrace
 import com.example.cardiosimulator.data.Points
-import com.example.cardiosimulator.domain.ComparisonTarget
 import com.example.cardiosimulator.domain.CourseEntry
 import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.domain.Lead
@@ -58,7 +56,6 @@ import com.example.cardiosimulator.ui.display.LEAD_ORDER
 import com.example.cardiosimulator.ui.display.Lead as LeadView
 import com.example.cardiosimulator.ui.display.LeadsGrid
 import com.example.cardiosimulator.ui.display.Monitor
-import com.example.cardiosimulator.ui.panels.CourseSelector
 import com.example.cardiosimulator.ui.panels.LectureSelector
 import com.example.cardiosimulator.ui.panels.RhythmSelector
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
@@ -85,8 +82,7 @@ fun TeachingScreen(
     var showSavePresetDialog by remember { mutableStateOf(false) }
 
     val mode by monitorViewModel.monitorMode.collectAsState()
-
-    // ── Course viewer (additive overlay; the monitor below is untouched) ──
+    
     val selectedCourseId by courseViewerViewModel.selectedCourseId.collectAsState()
     val lectures by courseViewerViewModel.lectures.collectAsState()
     val selectedLectureId by courseViewerViewModel.selectedLectureId.collectAsState()
@@ -295,6 +291,7 @@ fun TeachingScreen(
             Icon(
                 imageVector = Icons.Default.School,
                 contentDescription = stringResource(R.string.course_drawer_title),
+                tint = Color.White
             )
         }
 
