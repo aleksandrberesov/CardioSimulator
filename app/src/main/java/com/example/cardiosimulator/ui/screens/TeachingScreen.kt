@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -297,20 +298,34 @@ fun TeachingScreen(
             )
         }
 
-        if (showCourseOverlay) {
-            CourseViewerOverlay(
-                appViewModel = appViewModel,
-                courses = courses,
-                selectedCourseId = selectedCourseId,
-                lectures = lectures,
-                selectedLectureId = selectedLectureId,
-                lecture = viewerLecture,
-                language = selectedLanguage,
-                resolveEcg = resolveEcg,
-                onCourseSelect = { courseViewerViewModel.selectCourse(it.id) },
-                onLectureSelect = { courseViewerViewModel.selectLecture(it.id) },
-                onClose = { showCourseOverlay = false },
-            )
+        var hasOpenedCourseViewer by remember { mutableStateOf(false) }
+        if (showCourseOverlay) hasOpenedCourseViewer = true
+
+        if (hasOpenedCourseViewer) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        // Using translation and alpha to hide/show while keeping the WebView in composition
+                        // so that its scroll position and state are preserved.
+                        translationX = if (showCourseOverlay) 0f else 10000f
+                        alpha = if (showCourseOverlay) 1f else 0f
+                    }
+            ) {
+                CourseViewerOverlay(
+                    appViewModel = appViewModel,
+                    courses = courses,
+                    selectedCourseId = selectedCourseId,
+                    lectures = lectures,
+                    selectedLectureId = selectedLectureId,
+                    lecture = viewerLecture,
+                    language = selectedLanguage,
+                    resolveEcg = resolveEcg,
+                    onCourseSelect = { courseViewerViewModel.selectCourse(it.id) },
+                    onLectureSelect = { courseViewerViewModel.selectLecture(it.id) },
+                    onClose = { showCourseOverlay = false },
+                )
+            }
         }
     }
 }
@@ -329,6 +344,8 @@ private fun CourseViewerOverlay(
     onLectureSelect: (LectureEntry) -> Unit,
     onClose: () -> Unit,
 ) {
+    var isLecturesDrawerExpanded by remember { mutableStateOf(false) }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
@@ -352,40 +369,51 @@ private fun CourseViewerOverlay(
                     }
                 }
             }
-            Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                Column(modifier = Modifier.width(280.dp).fillMaxHeight()) {
-                    CourseSelector(
-                        appViewModel = appViewModel,
-                        courses = courses,
-                        selectedCourseId = selectedCourseId,
-                        onCourseSelect = onCourseSelect,
-                        modifier = Modifier.weight(1f),
+            Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                if (lecture != null) {
+                    LectureWebView(
+                        lecture = lecture,
+                        resolveEcg = resolveEcg,
+                        modifier = Modifier.fillMaxSize(),
                     )
-                    HorizontalDivider()
-                    LectureSelector(
-                        lectures = lectures,
-                        language = language,
-                        selectedLectureId = selectedLectureId,
-                        onLectureSelect = onLectureSelect,
-                        modifier = Modifier.weight(1f),
+                } else {
+                    Text(
+                        text = stringResource(R.string.course_viewer_select_lecture),
+                        modifier = Modifier.align(Alignment.Center).padding(16.dp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                VerticalDivider()
-                Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                    if (lecture != null) {
-                        LectureWebView(
-                            lecture = lecture,
-                            resolveEcg = resolveEcg,
+
+                SideDrawer(
+                    isExpanded = isLecturesDrawerExpanded,
+                    onExpandedChange = { isLecturesDrawerExpanded = it },
+                    drawerWidth = 300.dp,
+                    drawerContent = {
+                        LectureSelector(
+                            lectures = lectures,
+                            language = language,
+                            selectedLectureId = selectedLectureId,
+                            onLectureSelect = {
+                                onLectureSelect(it)
+                                isLecturesDrawerExpanded = false
+                            },
                             modifier = Modifier.fillMaxSize(),
                         )
-                    } else {
+                    },
+                    handlerContent = {
                         Text(
-                            text = stringResource(R.string.course_viewer_select_lecture),
-                            modifier = Modifier.align(Alignment.Center).padding(16.dp),
+                            text = stringResource(R.string.lecture_selector_title),
+                            modifier = Modifier
+                                .requiredWidth(64.dp)
+                                .rotate(-90f),
+                            style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            textAlign = TextAlign.Center
                         )
-                    }
-                }
+                    },
+                    modifier = Modifier.fillMaxHeight().align(Alignment.TopStart)
+                )
             }
         }
     }

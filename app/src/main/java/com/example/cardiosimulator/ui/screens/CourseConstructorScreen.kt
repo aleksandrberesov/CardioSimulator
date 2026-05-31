@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -53,7 +54,10 @@ fun CourseConstructorScreen(
     rhythmViewModel: RhythmViewModel,
     courseConstructorViewModel: CourseConstructorViewModel,
 ) {
-    val courses by appViewModel.courses.collectAsState()
+    val allCourses by appViewModel.courses.collectAsState()
+    val courses = remember(allCourses) {
+        allCourses.filterNot { it.id == AppViewModel.ALL_RHYTHMS_ID }
+    }
     val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
     val selectedCourseId by courseConstructorViewModel.selectedCourseId.collectAsState()
     val lectures by courseConstructorViewModel.lectures.collectAsState()
@@ -63,7 +67,8 @@ fun CourseConstructorScreen(
     val isDirty by courseConstructorViewModel.isDirty.collectAsState()
     val isSaving by courseConstructorViewModel.isSaving.collectAsState()
     val answers by courseConstructorViewModel.answers.collectAsState()
-    var isDrawerExpanded by remember { mutableStateOf(false) }
+    var isCourseDrawerExpanded by remember { mutableStateOf(false) }
+    var isLectureDrawerExpanded by remember { mutableStateOf(false) }
 
     val pathologyRepo = appViewModel.repository
     val resolveEcg = remember(pathologyRepo) {
@@ -145,27 +150,17 @@ fun CourseConstructorScreen(
         }
 
         SideDrawer(
-            isExpanded = isDrawerExpanded,
-            onExpandedChange = { isDrawerExpanded = it },
+            isExpanded = isCourseDrawerExpanded,
+            onExpandedChange = { isCourseDrawerExpanded = it },
             drawerWidth = 300.dp,
             drawerContent = {
-                Column(modifier = Modifier.fillMaxSize()) {
-                    CourseSelector(
-                        appViewModel = appViewModel,
-                        courses = courses,
-                        selectedCourseId = selectedCourseId,
-                        onCourseSelect = { courseConstructorViewModel.selectCourse(it.id) },
-                        modifier = Modifier.weight(1f),
-                    )
-                    HorizontalDivider()
-                    LectureSelector(
-                        lectures = lectures,
-                        language = selectedLanguage,
-                        selectedLectureId = selectedLectureId,
-                        onLectureSelect = { courseConstructorViewModel.selectLecture(it.id) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
+                CourseSelector(
+                    appViewModel = appViewModel,
+                    courses = courses,
+                    selectedCourseId = selectedCourseId,
+                    onCourseSelect = { courseConstructorViewModel.selectCourse(it.id) },
+                    modifier = Modifier.fillMaxSize(),
+                )
             },
             handlerContent = {
                 Text(
@@ -175,7 +170,33 @@ fun CourseConstructorScreen(
                     style = MaterialTheme.typography.labelLarge,
                 )
             },
-            modifier = Modifier.fillMaxHeight().align(Alignment.TopStart),
+            handlerModifier = Modifier.offset(y = (-40).dp),
+            modifier = Modifier.fillMaxHeight(),
+        )
+
+        SideDrawer(
+            isExpanded = isLectureDrawerExpanded,
+            onExpandedChange = { isLectureDrawerExpanded = it },
+            drawerWidth = 300.dp,
+            drawerContent = {
+                LectureSelector(
+                    lectures = lectures,
+                    language = selectedLanguage,
+                    selectedLectureId = selectedLectureId,
+                    onLectureSelect = { courseConstructorViewModel.selectLecture(it.id) },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            },
+            handlerContent = {
+                Text(
+                    text = stringResource(R.string.lecture_selector_title),
+                    modifier = Modifier.requiredWidth(64.dp).rotate(-90f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelLarge,
+                )
+            },
+            handlerModifier = Modifier.offset(y = 40.dp),
+            modifier = Modifier.fillMaxHeight(),
         )
     }
 }
