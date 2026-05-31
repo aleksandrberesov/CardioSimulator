@@ -50,6 +50,7 @@ course:arrhythmia-adv;lectures:12;title:Arrhythmias;name:Аритмии;patholog
 | `created` | no | ISO-8601 local time of generation. |
 | `encoding` | no | Always `utf-8`. |
 | `line_endings` | no | Always `lf`. |
+| `courses` | no | Total number of course rows (written by `CourseParser.serializeManifest`; ignored by the parser but useful as a consistency check). |
 
 Below the blank-line-terminated header, one semicolon-delimited row per
 course: `course:<id>;lectures:<n>;title:<en>;name:<ru>;pathologies:<csv>`.
