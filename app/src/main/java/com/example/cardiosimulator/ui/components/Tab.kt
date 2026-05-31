@@ -36,6 +36,7 @@ import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 fun Tab(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     isRepeatable: Boolean = false,
     text: String? = null,
     subText: String? = null,
@@ -53,17 +54,19 @@ fun Tab(
     val baseModifier = modifier
         .fillMaxHeight(1f)
         .defaultMinSize(minWidth = 35.dp)
-        .border(borderWidth, Color.Black, shape)
-        .background(backgroundColor, shape)
+        .border(borderWidth, if (enabled) Color.Black else Color.Gray, shape)
+        .background(if (enabled) backgroundColor else Color.LightGray.copy(alpha = 0.3f), shape)
         .clip(shape)
 
     val clickModifier = if (isRepeatable) {
         Modifier
             .indication(interactionSource, ripple())
-            .repeatingClickable(onClick = onClick, interactionSource = interactionSource)
+            .repeatingClickable(onClick = onClick, enabled = enabled, interactionSource = interactionSource)
     } else {
-        Modifier.clickable(interactionSource = interactionSource, indication = ripple(), onClick = onClick)
+        Modifier.clickable(interactionSource = interactionSource, indication = ripple(), enabled = enabled, onClick = onClick)
     }
+
+    val displayContentColor = if (enabled) contentColor else Color.Gray
 
     Column(
         modifier = baseModifier.then(clickModifier),
@@ -75,7 +78,7 @@ fun Tab(
                 Icon(
                     imageVector = icon,
                     contentDescription = iconContentDescription ?: text,
-                    tint = contentColor,
+                    tint = displayContentColor,
                     modifier = iconModifier.padding(4.dp)
                 )
             }
@@ -87,7 +90,7 @@ fun Tab(
                     AutoResizeText(
                         text = text,
                         style = MaterialTheme.typography.labelSmall,
-                        color = contentColor,
+                        color = displayContentColor,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
                         softWrap = false,
@@ -97,7 +100,7 @@ fun Tab(
                     AutoResizeText(
                         text = subText,
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                        color = contentColor,
+                        color = displayContentColor,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
                         softWrap = false,
@@ -110,7 +113,7 @@ fun Tab(
                 AutoResizeText(
                     text = text,
                     style = MaterialTheme.typography.labelLarge,
-                    color = contentColor,
+                    color = displayContentColor,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
                     softWrap = false,

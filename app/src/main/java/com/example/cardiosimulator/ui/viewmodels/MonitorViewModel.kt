@@ -27,6 +27,12 @@ class MonitorViewModel(
     private val _monitorMode = MutableStateFlow(MonitorModeModel())
     val monitorMode: StateFlow<MonitorModeModel> = _monitorMode.asStateFlow()
 
+    val availableSeriesCounts: List<Int>
+        get() = if (_monitorMode.value.isCompareMode) listOf(1, 2, 3, 4, 5, 6, 12) else listOf(1, 6, 12)
+    val availableSeriesSchemes = SeriesScheme.entries
+    val availableSpeeds = if (mode == OperatingMode.Teaching) listOf(12.5f, 25f, 50f) else listOf(25f, 50f)
+    val availableScales = listOf(1.0f, 2.0f, 3.0f, 4.0f, 5.0f)
+
     init {
         viewModelScope.launch {
             val modeName = mode.name

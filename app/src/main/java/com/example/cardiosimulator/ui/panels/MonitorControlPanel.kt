@@ -73,7 +73,7 @@ fun MonitorControlPanel(
                 expanded = countMenuExpanded,
                 onDismissRequest = { countMenuExpanded = false }
             ) {
-                listOf(1, 6, 12).forEach { count ->
+                viewModel.availableSeriesCounts.forEach { count ->
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.monitor_count_format, count)) },
                         onClick = {
@@ -100,27 +100,23 @@ fun MonitorControlPanel(
                 expanded = schemeMenuExpanded,
                 onDismissRequest = { schemeMenuExpanded = false }
             ) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.monitor_columns_one)) },
-                    onClick = {
-                        viewModel.setSeriesScheme(SeriesScheme.OneColumn)
-                        schemeMenuExpanded = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.monitor_columns_two)) },
-                    onClick = {
-                        viewModel.setSeriesScheme(SeriesScheme.TwoColumn)
-                        schemeMenuExpanded = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.monitor_columns_grid)) },
-                    onClick = {
-                        viewModel.setSeriesScheme(SeriesScheme.Grid)
-                        schemeMenuExpanded = false
-                    }
-                )
+                viewModel.availableSeriesSchemes.forEach { scheme ->
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                when (scheme) {
+                                    SeriesScheme.OneColumn -> stringResource(R.string.monitor_columns_one)
+                                    SeriesScheme.TwoColumn -> stringResource(R.string.monitor_columns_two)
+                                    SeriesScheme.Grid -> stringResource(R.string.monitor_columns_grid)
+                                }
+                            )
+                        },
+                        onClick = {
+                            viewModel.setSeriesScheme(scheme)
+                            schemeMenuExpanded = false
+                        }
+                    )
+                }
             }
         }
 
@@ -137,8 +133,7 @@ fun MonitorControlPanel(
                 expanded = speedMenuExpanded,
                 onDismissRequest = { speedMenuExpanded = false }
             ) {
-                val speeds = if (viewModel.mode == OperatingMode.Teaching) listOf(12.5f, 25f, 50f) else listOf(25f, 50f)
-                speeds.forEach { speed ->
+                viewModel.availableSpeeds.forEach { speed ->
                     val displaySpeed = if (speed % 1 == 0f) speed.toInt().toString() else speed.toString()
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.monitor_speed_format, displaySpeed)) },
@@ -162,7 +157,7 @@ fun MonitorControlPanel(
                 expanded = scaleMenuExpanded,
                 onDismissRequest = { scaleMenuExpanded = false }
             ) {
-                listOf(1.0f, 2.0f, 3.0f, 4.0f, 5.0f).forEach { scaleOption ->
+                viewModel.availableScales.forEach { scaleOption ->
                     DropdownMenuItem(
                         text = { Text("${(scaleOption * 100).toInt()}%") },
                         onClick = {
@@ -179,16 +174,19 @@ fun MonitorControlPanel(
         Tab(
             text = stringResource(R.string.monitor_electrodes),
             onClick = { },
+            enabled = false,
             modifier = Modifier.weight(1.5f)
         )
         Tab(
             text = stringResource(R.string.monitor_emd_ebpa),
             onClick = { },
+            enabled = false,
             modifier = Modifier.weight(1.5f)
         )
         Tab(
             text = stringResource(R.string.monitor_muscle),
             onClick = { },
+            enabled = false,
             modifier = Modifier.weight(1.5f)
         )
 
@@ -218,6 +216,7 @@ fun MonitorControlPanel(
         Tab(
             text = stringResource(R.string.monitor_tips),
             onClick = onTipsClick,
+            enabled = false,
             modifier = Modifier.weight(1f)
         )
 
@@ -238,6 +237,7 @@ fun MonitorControlPanel(
             iconModifier = Modifier.rotate(-45f),
             iconContentDescription = stringResource(R.string.cd_ruler),
             onClick = onRulerClick,
+            enabled = false,
             modifier = Modifier.weight(0.8f)
         )
         Tab(
