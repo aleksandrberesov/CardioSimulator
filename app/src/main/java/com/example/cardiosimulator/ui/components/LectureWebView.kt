@@ -111,6 +111,7 @@ fun LectureWebView(
                     }
                 }
                 settings.javaScriptEnabled = true
+                settings.domStorageEnabled = true
                 settings.allowFileAccess = false
                 settings.allowContentAccess = false
                 onCellEdit?.let { addJavascriptInterface(QuizBridge(it), "Android") }
@@ -160,7 +161,7 @@ private fun buildDocument(body: String, css: String, interactive: Boolean): Stri
 <body>
 $body
 <script src="/assets/katex/katex.min.js"></script>
-<script src="/assets/katex/auto-render.min.js"></script>
+<script src="/assets/katex/contrib/auto-render.min.js"></script>
 <script>
 (function(){
   function render(){
@@ -168,7 +169,9 @@ $body
       renderMathInElement(document.body, {
         delimiters:[
           {left:"$$",right:"$$",display:true},
-          {left:"$",right:"$",display:false}
+          {left:"$",right:"$",display:false},
+          {left:"\\(",right:"\\)",display:false},
+          {left:"\\[",right:"\\]",display:true}
         ],
         throwOnError:false
       });
