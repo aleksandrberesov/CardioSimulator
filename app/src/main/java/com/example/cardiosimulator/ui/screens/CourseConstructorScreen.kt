@@ -12,9 +12,16 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -37,7 +44,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.EcgTrace
+import com.example.cardiosimulator.domain.HtmlBlock
 import com.example.cardiosimulator.domain.Lead
+import com.example.cardiosimulator.ui.components.HtmlBlockEditor
 import com.example.cardiosimulator.ui.components.LectureWebView
 import com.example.cardiosimulator.ui.components.SideDrawer
 import com.example.cardiosimulator.ui.display.LEAD_ORDER
@@ -64,6 +73,7 @@ fun CourseConstructorScreen(
     val lectures by courseConstructorViewModel.lectures.collectAsState()
     val selectedLectureId by courseConstructorViewModel.selectedLectureId.collectAsState()
     val draft by courseConstructorViewModel.draft.collectAsState()
+    val blocks by courseConstructorViewModel.blocks.collectAsState()
     val previewLecture by courseConstructorViewModel.previewLecture.collectAsState()
     val isDirty by courseConstructorViewModel.isDirty.collectAsState()
     val isSaving by courseConstructorViewModel.isSaving.collectAsState()
@@ -75,6 +85,7 @@ fun CourseConstructorScreen(
     var showNewLecture by remember { mutableStateOf(false) }
     var showRename by remember { mutableStateOf(false) }
     var showDelete by remember { mutableStateOf(false) }
+    var showAddBlockMenu by remember { mutableStateOf(false) }
 
     if (showNewCourse) {
         OneFieldDialog(
@@ -144,85 +155,131 @@ fun CourseConstructorScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 4.dp) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(
-                        text = previewLecture?.frontMatter?.title?.takeIf { it.isNotBlank() }
-                            ?: selectedLectureId
-                            ?: stringResource(R.string.course_viewer_select_lecture),
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        TextButton(onClick = { showNewCourse = true }) {
-                            Text(stringResource(R.string.course_constructor_new_course))
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            floatingActionButton = {
+                if (selectedLectureId != null) {
+                    Box {
+                        FloatingActionButton(onClick = { showAddBlockMenu = true }) {
+                            Icon(Icons.Default.Add, contentDescription = "Add Block")
                         }
-                        TextButton(onClick = { showNewLecture = true }) {
-                            Text(stringResource(R.string.course_constructor_new_lecture))
-                        }
-                        TextButton(
-                            onClick = { showRename = true },
-                            enabled = selectedLectureId != null
+                        DropdownMenu(
+                            expanded = showAddBlockMenu,
+                            onDismissRequest = { showAddBlockMenu = false }
                         ) {
-                            Text(stringResource(R.string.course_constructor_rename))
-                        }
-                        TextButton(
-                            onClick = { showDelete = true },
-                            enabled = selectedLectureId != null
-                        ) {
-                            Text(stringResource(R.string.course_constructor_delete))
-                        }
-                        
-                        VerticalDivider(modifier = Modifier.height(32.dp).padding(horizontal = 8.dp))
-
-                        TextButton(
-                            onClick = { courseConstructorViewModel.revert() },
-                            enabled = isDirty && !isSaving,
-                        ) {
-                            Text(stringResource(R.string.course_constructor_revert))
-                        }
-                        TextButton(
-                            onClick = { courseConstructorViewModel.save() },
-                            enabled = isDirty && !isSaving,
-                        ) {
-                            Text(stringResource(R.string.constructor_save))
+                            DropdownMenuItem(
+                                text = { Text("Header (H1)") },
+                                onClick = { courseConstructorViewModel.addBlock(HtmlBlock.Header(level = 1, text = "")); showAddBlockMenu = false }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Header (H2)") },
+                                onClick = { courseConstructorViewModel.addBlock(HtmlBlock.Header(level = 2, text = "")); showAddBlockMenu = false }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Paragraph") },
+                                onClick = { courseConstructorViewModel.addBlock(HtmlBlock.Paragraph(html = "")); showAddBlockMenu = false }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Image") },
+                                onClick = { courseConstructorViewModel.addBlock(HtmlBlock.Image(src = "", alt = "")); showAddBlockMenu = false }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("KaTeX Math") },
+                                onClick = { courseConstructorViewModel.addBlock(HtmlBlock.KaTeX(expression = "", displayMode = true)); showAddBlockMenu = false }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("ECG Reference") },
+                                onClick = { courseConstructorViewModel.addBlock(HtmlBlock.Ecg(pathology = "", lead = null, caption = "")); showAddBlockMenu = false }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Raw HTML / Table") },
+                                onClick = { courseConstructorViewModel.addBlock(HtmlBlock.RawHtml(html = "")); showAddBlockMenu = false }
+                            )
                         }
                     }
                 }
             }
-
-            Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                OutlinedTextField(
-                    value = draft,
-                    onValueChange = { courseConstructorViewModel.setHtml(it) },
-                    modifier = Modifier.weight(1f).fillMaxHeight().padding(8.dp),
-                    textStyle = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 13.sp),
-                    enabled = selectedLectureId != null,
-                )
-                VerticalDivider()
-                Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                    val preview = previewLecture
-                    if (preview != null) {
-                        LectureWebView(
-                            lecture = preview,
-                            resolveEcg = resolveEcg,
-                            answers = answers,
-                            onCellEdit = { quizId, row, col, value ->
-                                courseConstructorViewModel.setTableCell(quizId, row, col, value)
-                            },
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    } else {
+        ) { paddingValues ->
+            Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+                Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 4.dp) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
                         Text(
-                            text = stringResource(R.string.course_viewer_select_lecture),
-                            modifier = Modifier.align(Alignment.Center).padding(16.dp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            text = previewLecture?.frontMatter?.title?.takeIf { it.isNotBlank() }
+                                ?: selectedLectureId
+                                ?: stringResource(R.string.course_viewer_select_lecture),
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.weight(1f)
                         )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            TextButton(onClick = { showNewCourse = true }) {
+                                Text(stringResource(R.string.course_constructor_new_course))
+                            }
+                            TextButton(onClick = { showNewLecture = true }) {
+                                Text(stringResource(R.string.course_constructor_new_lecture))
+                            }
+                            TextButton(
+                                onClick = { showRename = true },
+                                enabled = selectedLectureId != null
+                            ) {
+                                Text(stringResource(R.string.course_constructor_rename))
+                            }
+                            TextButton(
+                                onClick = { showDelete = true },
+                                enabled = selectedLectureId != null
+                            ) {
+                                Text(stringResource(R.string.course_constructor_delete))
+                            }
+                            
+                            VerticalDivider(modifier = Modifier.height(32.dp).padding(horizontal = 8.dp))
+
+                            TextButton(
+                                onClick = { courseConstructorViewModel.revert() },
+                                enabled = isDirty && !isSaving,
+                            ) {
+                                Text(stringResource(R.string.course_constructor_revert))
+                            }
+                            TextButton(
+                                onClick = { courseConstructorViewModel.save() },
+                                enabled = isDirty && !isSaving,
+                            ) {
+                                Text(stringResource(R.string.constructor_save))
+                            }
+                        }
+                    }
+                }
+
+                Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                    HtmlBlockEditor(
+                        blocks = blocks,
+                        onUpdateBlock = { id, updated -> courseConstructorViewModel.updateBlock(id, updated) },
+                        onDeleteBlock = { id -> courseConstructorViewModel.deleteBlock(id) },
+                        onMoveBlock = { id, delta -> courseConstructorViewModel.moveBlock(id, delta) },
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                    )
+                    VerticalDivider()
+                    Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                        val preview = previewLecture
+                        if (preview != null) {
+                            LectureWebView(
+                                lecture = preview,
+                                resolveEcg = resolveEcg,
+                                answers = answers,
+                                onCellEdit = { quizId, row, col, value ->
+                                    courseConstructorViewModel.setTableCell(quizId, row, col, value)
+                                },
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        } else {
+                            Text(
+                                text = stringResource(R.string.course_viewer_select_lecture),
+                                modifier = Modifier.align(Alignment.Center).padding(16.dp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
             }

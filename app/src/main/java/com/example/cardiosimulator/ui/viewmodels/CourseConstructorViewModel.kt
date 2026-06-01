@@ -6,6 +6,8 @@ import com.example.cardiosimulator.data.CourseRepository
 import com.example.cardiosimulator.data.DataSourcePrefs
 import com.example.cardiosimulator.domain.Course
 import com.example.cardiosimulator.domain.CourseParser
+import com.example.cardiosimulator.domain.HtmlBlock
+import com.example.cardiosimulator.domain.HtmlCompiler
 import com.example.cardiosimulator.domain.Lecture
 import com.example.cardiosimulator.domain.LectureEntry
 import com.example.cardiosimulator.domain.LectureFrontMatter
@@ -23,6 +25,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.util.Collections
 
 /**
  * Course Constructor editing state (Phase 3 of
@@ -69,6 +72,9 @@ class CourseConstructorViewModel(
     private val _previewLecture = MutableStateFlow<Lecture?>(null)
     val previewLecture: StateFlow<Lecture?> = _previewLecture.asStateFlow()
 
+    private val _blocks = MutableStateFlow<List<HtmlBlock>>(emptyList())
+    val blocks: StateFlow<List<HtmlBlock>> = _blocks.asStateFlow()
+
     val isDirty: StateFlow<Boolean> =
         combine(_draft, _savedText, _answers, _savedAnswers) { draft, saved, ans, savedAns ->
             draft != saved || ans != savedAns
@@ -111,6 +117,7 @@ class CourseConstructorViewModel(
             _answers.value = decoded
             _savedAnswers.value = decoded
             _previewLecture.value = lecture
+            _blocks.value = HtmlCompiler.parse(lecture?.rawHtml ?: "")
         }
     }
 
@@ -123,7 +130,46 @@ class CourseConstructorViewModel(
             val parsed = withContext(Dispatchers.Default) {
                 runCatching { CourseParser.parseLecture(text, courseId, loadedLang) }.getOrNull()
             }
-            if (parsed != null) _previewLecture.value = parsed
+            if (parsed != null) {
+                _previewLecture.value = parsed
+                // Sync blocks if they weren't just edited visually (or always sync if preferred)
+                // For now, we only sync blocks on initial load or if text is edited manually.
+                // But wait, if the user edits text, blocks should update too.
+                _blocks.value = HtmlCompiler.parse(parsed.rawHtml)
+            }
+        }
+    }
+
+    /** Updates blocks from UI and compiles back to [draft]. */
+    fun setBlocks(newBlocks: List<HtmlBlock>) {
+        _blocks.value = newBlocks
+        val newHtml = HtmlCompiler.compile(newBlocks)
+        val currentLec = _previewLecture.value ?: return
+        val updatedLec = currentLec.copy(rawHtml = newHtml)
+        _previewLecture.value = updatedLec
+        _draft.value = CourseParser.serializeLecture(updatedLec)
+    }
+
+    fun addBlock(block: HtmlBlock) {
+        setBlocks(_blocks.value + block)
+    }
+
+    fun updateBlock(id: String, updated: HtmlBlock) {
+        setBlocks(_blocks.value.map { if (it.id == id) updated else it })
+    }
+
+    fun deleteBlock(id: String) {
+        setBlocks(_blocks.value.filterNot { it.id == id })
+    }
+
+    fun moveBlock(id: String, delta: Int) {
+        val current = _blocks.value.toMutableList()
+        val index = current.indexOfFirst { it.id == id }
+        if (index == -1) return
+        val newIndex = index + delta
+        if (newIndex in current.indices) {
+            Collections.swap(current, index, newIndex)
+            setBlocks(current)
         }
     }
 
