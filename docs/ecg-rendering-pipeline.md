@@ -32,7 +32,8 @@ Pathologies.zip
   │
   ▼
 [Stage 5]  Line rendering          (ChartCanvas / CalibrationPulse / ekgGrid)
-  │        [Constructor only]      (SampleHandleOverlay + SignificantPointOverlay)
+  │        [Constructor only]      (reference-image underlay + SampleHandleOverlay
+  │                                 + SignificantPointOverlay + TraceOverlay)
   │        [Blank scheme]          PreviewPane "Sweep" carrier rendering
 ```
 
@@ -399,14 +400,18 @@ Shape: baseline → wing(4 dp) → up pulseHeight → across pulseWidth → down
 
 - Stroke width: **1.5 dp** · Wing width: **4 dp** · Start offset: **8 dp**
 
-### 5c. Constructor handles
+### 5c. Constructor handles & tracing overlays
 
-**File:** `ui/components/SampleHandleOverlay.kt`
+**Files:** `ui/components/SampleHandleOverlay.kt`, `ui/components/TraceOverlay.kt`
 
-In Constructor mode, `SampleHandleOverlay(samples: IntArray, baseline: Int,
-selectedIndex, onIndexSelected, isEditable)` draws **a single handle for
-the currently selected sample**, using the same projection (with explicit
-`baseline`):
+In Constructor mode the `EditableLead` waveform box stacks four layers from
+bottom to top: reference-image underlay → `ChartCanvas` → `SignificantPointOverlay`
+→ either `SampleHandleOverlay` (in `Select` mode) or `TraceOverlay` (in `Trace`
+mode), gated by `ConstructorViewModel.toolMode`.
+
+**SampleHandleOverlay** — `SampleHandleOverlay(samples, baseline, selectedIndex,
+onIndexSelected, isEditable)` draws **a single handle for the currently selected
+sample**, using the same projection (with explicit `baseline`):
 
 ```
 y[i] = baselineY - (samples[i] - baseline) * pxPerAdcCount
@@ -420,11 +425,36 @@ y[i] = baselineY - (samples[i] - baseline) * pxPerAdcCount
   cross inside. The colour is **red** when `isEditable`, **gray** otherwise.
   Read-only state is set for derived leads (see `ConstructorViewModel
   .isLeadEditable`).
-- Movement is done outside the overlay: `ConstructorViewModel
-  .moveSelectedUp/Down` shifts the selected sample by ±1 ADC count, and
-  `setSample` writes any value directly. There are no draggable handles
-  on every sample — selection plus side-panel controls is the editing
-  model.
+- Movement via `ConstructorViewModel.moveSelectedUp/Down` / `setSample`
+  applies a weighted cosine/spline/bezier/LOESS/MLS kernel over a
+  configurable radius (1–1000 samples, default 100) to produce smooth bumps
+  rather than single-sample spikes. Sub-integer contributions accumulate in
+  a per-lead `FloatArray` buffer.
+
+**TraceOverlay** — `TraceOverlay(sampleCount, baseline, onStrokeStart, onTrace)`
+captures **drag gestures** and converts each pointer position into a batch of
+ADC sample updates:
+
+```
+index = x / stepX                                 (column → sample index)
+value = baseline + (baselineY - y) / stepY        (y pixel → ADC count)
+```
+
+Fast sweeps are linearly interpolated across skipped columns so the traced
+waveform is always continuous. The overlay delegates sample writing to
+`ConstructorViewModel.traceSamples(lead, updates)` — a direct write (no kernel),
+keeping `floatBuffers` in sync. `onStrokeStart` calls `startStroke(lead)` first
+to snapshot the current lead into the undo stack.
+
+**Reference-image underlay** — `ConstructorViewModel.referenceImageUri` holds a
+SAF URI picked by the user. When set, the `EditableLead` bottom layer renders the
+image via `AsyncImage` with `graphicsLayer(translationX/Y, scaleX/Y, rotationZ,
+alpha)` driven by `imageOffset/Scale/RotationDeg/Alpha`. In `Position` mode,
+`transformable` gestures on the image layer update these values; in `Select`/
+`Trace` mode the image is inert. The `imageLocked` flag freezes the image
+transform regardless of tool mode. The `ghostTrace` field holds a candidate
+`IntArray` from auto-detect (Phase C), shown as a dimmed trace until the user
+confirms with `applyGhostTrace()`.
 
 ### 5d. ECG grid
 
@@ -633,3 +663,14 @@ For readers familiar with the previous Parts/Series-based pipeline:
   every `PreviewPane` so the grid and trace move together.
 - **Sweep mode** is new: the `Blank` grid scheme switches `PreviewPane`
   into a stationary-waveform / moving-carrier model.
+- **Freehand tracing** is new: `TraceOverlay` captures drag gestures and
+  writes sample values directly via `ConstructorViewModel.traceSamples`,
+  with per-lead undo/redo stacks (depth 20).
+- **Reference-image underlay** is new: in `Position` tool mode, a photo
+  loaded from SAF is displayed beneath the trace in `EditableLead` and can
+  be panned, scaled, rotated, and faded via `ConstructorViewModel` image
+  transform state. `ToolMode` gates whether gestures route to the image,
+  the trace, or the sample-select handle.
+- **Weighted editing kernel** is new: `moveSelectedUp/Down` and `setSample`
+  now spread changes over a configurable radius using one of five algorithms
+  (Cosine, Spline, Bezier, LOESS, MLS) via a sub-integer float accumulator.
