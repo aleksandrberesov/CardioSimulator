@@ -59,8 +59,8 @@ fun Modifier.ekgGrid(
 
     baseModifier
         .drawWithCache {
-            val thinStroke = 0.5.dp.toPx()
-            val thickStroke = 1.5.dp.toPx()
+            val thinStroke = 0.5.dp.toPx() / scale.zoom
+            val thickStroke = 1.5.dp.toPx() / scale.zoom
 
             val smallPath = Path()
             val largePath = Path()

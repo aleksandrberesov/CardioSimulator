@@ -14,6 +14,7 @@ data class PixelScale(
     val paperSpeedMmPerSec: Float,
     val gainZoomY: Float,
     val cal: EcgCalibration,
+    val zoom: Float = 1f,
 ) {
     val pxPerMv: Float = cal.gainMmPerMv * pxPerMm * gainZoomY
     val pxPerSec: Float = paperSpeedMmPerSec * pxPerMm

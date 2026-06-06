@@ -86,12 +86,13 @@ fun Monitor(
     // displayScale is a global shrink/zoom factor so the whole picture (grid + trace
     // + cal pulse) fits the monitor without breaking the mm-based relationships.
     val pxPerMm = density.density * (160f / 25.4f) * mode.displayScale
-    val pixelScale = remember(pxPerMm, mode.speed, mode.calibration) {
+    val pixelScale = remember(pxPerMm, mode.speed, mode.calibration, scale) {
         PixelScale(
             pxPerMm = pxPerMm,
             paperSpeedMmPerSec = mode.speed,
             gainZoomY = 1.0f,
             cal = mode.calibration,
+            zoom = scale
         )
     }
 

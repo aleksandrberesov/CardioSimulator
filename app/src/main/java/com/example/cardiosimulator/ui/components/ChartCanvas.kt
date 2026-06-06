@@ -43,12 +43,12 @@ fun projectPath(
 /**
  * Shared drawing routine for the waveform line using a cached Path.
  */
-fun DrawScope.drawWaveform(path: Path, color: Color) {
+fun DrawScope.drawWaveform(path: Path, color: Color, strokeWidth: Float) {
     drawPath(
         path = path,
         color = color,
         style = Stroke(
-            width = 1.5.dp.toPx(),
+            width = strokeWidth,
             cap = StrokeCap.Round
         )
     )
@@ -80,7 +80,8 @@ fun ChartCanvas(
                 val path = projectPath(dataPoints, stepX, stepY, baselineY)
                 
                 onDrawBehind {
-                    drawWaveform(path, color)
+                    val strokeWidth = 1.5.dp.toPx() / scale.zoom
+                    drawWaveform(path, color, strokeWidth)
                 }
             }
     )

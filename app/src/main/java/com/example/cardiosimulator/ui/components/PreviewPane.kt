@@ -76,6 +76,7 @@ fun PreviewPane(
                 val path = projectPath(points.values, stepX, stepY, baselineY)
 
                 onDrawBehind {
+                    val strokeWidth = 1.5.dp.toPx() / scale.zoom
                     if (gridScheme == GridScheme.Blank) {
                         // Sweep mode: waveform is stationary, revealed by the carrier moving across.
                         val dist = if (externalXOffsetPx != null) -externalXOffsetPx else (phase * periodPx)
@@ -95,7 +96,7 @@ fun PreviewPane(
                                 val s = baseScroll % periodPx
                                 for (i in 0..iterations) {
                                     withTransform({ translate(left = s + i * periodPx) }) {
-                                        drawWaveform(path, color)
+                                        drawWaveform(path, color, strokeWidth)
                                     }
                                 }
                             }
@@ -103,7 +104,7 @@ fun PreviewPane(
                                 val s = (baseScroll + size.width) % periodPx
                                 for (i in 0..iterations) {
                                     withTransform({ translate(left = s + i * periodPx) }) {
-                                        drawWaveform(path, color)
+                                        drawWaveform(path, color, strokeWidth)
                                     }
                                 }
                             }
@@ -114,7 +115,7 @@ fun PreviewPane(
                                 val s = baseScroll % periodPx
                                 for (i in 0..iterations) {
                                     withTransform({ translate(left = s + i * periodPx) }) {
-                                        drawWaveform(path, color)
+                                        drawWaveform(path, color, strokeWidth)
                                     }
                                 }
                             }
@@ -136,7 +137,7 @@ fun PreviewPane(
                             withTransform({
                                 translate(left = scroll + i * periodPx)
                             }) {
-                                drawWaveform(path, color)
+                                drawWaveform(path, color, strokeWidth)
                             }
                         }
                     }
