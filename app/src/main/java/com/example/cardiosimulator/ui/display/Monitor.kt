@@ -96,6 +96,13 @@ fun Monitor(
     }
 
     val timeState = remember { mutableFloatStateOf(0f) }
+
+    LaunchedEffect(mode.isCompareMode, mode.gridScheme, mode.seriesScheme, mode.comparisonTargets, mode.count) {
+        if (mode.isCompareMode) {
+            timeState.floatValue = 0f
+        }
+    }
+
     LaunchedEffect(mode.isRunning) {
         if (mode.isRunning) {
             var lastTime = 0L
