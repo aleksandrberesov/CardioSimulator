@@ -101,12 +101,12 @@ Create exactly these ViewModel roles. Do not consolidate them.
 
 | ViewModel | Key state emitted | Key actions |
 |---|---|---|
-| **AppViewModel** (central hub) | selectedMode, selectedLanguage, dataState × 2, tcpState, courses | updateLanguage, updateMode, setDataFolder×2, exportZip×2, sendStart/Stop, uploadArchive |
-| **MonitorViewModel** (display config) | monitorMode (speed, scale, scheme, isRunning, isCompareMode, comparisonTargets, presets) | setSpeed, setScale, setGridScheme, toggleCompareMode, setComparisonTarget, savePreset, applyPreset |
-| **RhythmViewModel** (selection) | rhythms (course-filtered in Teaching), selectedRhythm, waveforms, comparisonWaveforms | loadManifest, selectRhythm, loadComparisonWaveform |
-| **ConstructorViewModel** (editor) | targetFile, focusedLead, selectedIndex, dirtyLeads, toolMode, imageUri + transform, ghostTrace | setSample (weighted kernel), traceSamples (batch), startStroke, undo/redo (per-lead depth 20), save, calculateDerivedLeads |
-| **[Secondary]ConstructorViewModel** | selectedCourseId, lectures, draft, previewContent, isDirty | selectCourse, selectLecture, setContent, save, revert, createCourse, createLecture, deleteLecture |
-| **[Secondary]ViewerViewModel** | selectedCourseId, lectures, selectedLecture | setLanguage, selectCourse, selectLecture, closeLecture, restore |
+| **AppViewModel** (central hub) | selectedOperatingMode, selectedLanguage, dataState, courseDataState, tcpConnectionState, courses | updateLanguage, updateOperatingMode, setDataFolder, setCourseDataFolder, exportZip, exportCoursesZip, sendStart/Stop, sendUploadArchive, uploadCourses |
+| **MonitorViewModel** (display config) | monitorMode (speed, scale, gridScheme, seriesScheme, isRunning, isCompareMode, comparisonTargets, comparisonPresets) | setSpeed, setScale, setGridScheme, setSeriesScheme, toggleCompareMode, setComparisonTarget, saveCurrentAsPreset, applyPreset |
+| **RhythmViewModel** (selection) | rhythms (course-filtered in Teaching), selectedRhythm, waveforms, comparisonWaveforms, significantPoints | loadManifest, selectRhythm, loadComparisonWaveform |
+| **ConstructorViewModel** (editor) | targetFile (markers), focusedLead, selectedIndex, dirtyLeads, isMetadataDirty, toolMode, editingAlgorithm, editingRadius, imageUri + transform (offset, scale, rot, alpha, locked), ghostTrace | selectPathology, setSample (weighted kernel), toggleSignificantPoint, selectSignificantPoint, startStroke, undo/redo (per-lead depth 20), save, calculateDerivedLeads, duplicate/delete |
+| **CourseConstructorViewModel** | selectedCourseId, lectures, selectedLectureId, draft (HTML), answers, previewLecture, isDirty | selectCourse, selectLecture, setHtml, insertSnippet, setTableCell, save, revert, createCourse/Lecture, renameLecture, deleteLecture |
+| **CourseViewerViewModel** | selectedCourseId, lectures, selectedLectureId, lecture | setLanguage, selectCourse, selectLecture, closeLecture, restore |
 
 Each ViewModel is keyed by `mode.name` so multiple modes can hold
 independent instances. ViewModels persist their last selection to
@@ -122,12 +122,12 @@ slot, and independently keyed ViewModels.
 
 ```
 enum OperatingMode {
-    [Viewing]          // read-only playback / display
-    [Testing]          // assessment / evaluation
-    [Examination]      // placeholder — reserved
-    [OSKE]             // placeholder — reserved
-    [PrimaryEditor]    // edit raw domain objects
-    [SecondaryEditor]  // author structured content
+    Teaching           // read-only playback / display
+    Testing            // assessment / evaluation
+    Examination        // placeholder — reserved
+    OSKE               // placeholder — reserved
+    Constructor        // edit raw domain objects
+    CourseConstructor  // author structured content
 }
 ```
 
@@ -153,10 +153,11 @@ RootTheme(darkTheme)
 
 ### Side drawers
 
-All list-based selectors (rhythm list, lecture list, course list) live in
-`SideDrawer` components that slide in from an edge. The drawer handle is
-always visible; the panel slides open on tap. Never put a persistent list
-alongside the main canvas — it steals space on landscape/tablet layouts.
+All list-based selectors (rhythm list, lecture list, course list, significant
+points list) live in `SideDrawer` components that slide in from an edge.
+The drawer handle is always visible; the panel slides open on tap. Never
+put a persistent list alongside the main canvas — it steals space on
+landscape/tablet layouts.
 
 ### Control panels
 
@@ -214,15 +215,16 @@ version:1.0
 
 ```
 # Single header block
-[type]:[id]
+pathology:[id]
 title:[english display name]
 name:[localized display name]   ← optional for non-en content
-[type-specific keys]
+leads:[count]
+markers:[index]:[TYPE],[index]:[TYPE]... ← optional ECG landmarks
 
-# Data blocks (one per sub-item, blank-line separated)
-[sub-type]:[id]
-[key]:[value]
-data:[comma-separated values]
+# Data blocks (one per lead, blank-line separated)
+lead:[name]
+count:[int]
+points:[comma-separated values]
 ```
 
 ### Content files (lecture / article)
@@ -349,10 +351,17 @@ lets the UI show which specific items are dirty and offer targeted
 Revert-Lead operations, not just a blanket "unsaved changes" flag.
 
 ```
-dirtyLeads: Set<LeadId>   // or dirtyItems: Set<ItemId>
-isMetadataDirty: Boolean  // title / name / global annotations
+dirtyLeads: Set<LeadId>   // for waveform edits
+isMetadataDirty: Boolean  // title / name / markers / global annotations
 isSaving: Boolean         // guard against concurrent saves
 ```
+
+### Significant ECG landmarks (markers)
+
+The app supports marking key points (P_START, R_PEAK, etc.) globally for
+a pathology. These are stored in the `markers:` header field as
+`index:TYPE` pairs. The editor provides a dedicated panel for toggling
+these points at the `selectedIndex`.
 
 ### Weighted editing kernel
 
@@ -364,9 +373,15 @@ physical valid range on every write.
 
 ### Undo / redo
 
-Per-item, snapshot-based. Snapshot before each discrete stroke / gesture
-begins (`startStroke`). Cap the stack at 20 entries. Redo stack clears
-on any new edit.
+Per-lead, snapshot-based for waveform edits. Snapshot before each discrete
+stroke / gesture begins (`startStroke`). Cap the stack at 20 entries per
+lead. Redo stack clears on any new edit.
+
+### Derived leads calculation
+
+Automatically fill III, aVR, aVL, aVF from leads I and II (Einthoven/Goldberger),
+and V1, V3, V4, V5 from V2 and V6 (V-projection). Derivable leads are
+read-only in the editor.
 
 ### Live preview
 
@@ -392,7 +407,7 @@ rhythm.
 
 ```
 isCompareMode: Boolean
-comparisonTargets: Map<PaneIndex, ComparisonTarget(itemId, channelId)>
+comparisonTargets: Map<PaneIndex, ComparisonTarget(pathologyId, lead)>
 comparisonPresets: List<ComparisonPreset(name, targets)>
 ```
 
@@ -414,15 +429,17 @@ diagram) as a tracing aid:
 
 1. Load the image into a `Uri` / URL held in ViewModel state only
    (not persisted to the saved file).
-2. Render the image **inside the same coordinate frame as the editable
+2. Maintain a set of transform states for the image: `offset`, `scale`,
+   `rotationDeg`, `alpha` (transparency), and `isLocked`.
+3. Render the image **inside the same coordinate frame as the editable
    canvas** — not in a separate background layer. This guarantees that a
    pointer gesture on the photo pixel maps directly to a data index.
-3. Gate all gestures through an explicit `ToolMode` enum
+4. Gate all gestures through an explicit `ToolMode` enum
    (`Position | Trace | Select`). Never let image-positioning drags and
    data-editing drags compete over the same gesture recogniser.
-4. In `Trace` mode, convert each drag point to `(index, value)` using the
+5. In `Trace` mode, convert each drag point to `(index, value)` using the
    inverse of the canvas projection, then call `traceSamples(updates)`.
-5. Provide an auto-detect path (`ghostTrace`) that proposes a candidate
+6. Provide an auto-detect path (`ghostTrace`) that proposes a candidate
    array without committing it; the user confirms with `applyGhostTrace()`.
 
 ---

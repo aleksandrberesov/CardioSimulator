@@ -2,7 +2,6 @@ package com.example.cardiosimulator.ui.panels
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -15,8 +14,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -64,6 +64,7 @@ fun RhythmSelector(
     listState: LazyListState = rememberLazyListState(),
 ) {
     val currentLanguage by appViewModel.selectedLanguage.collectAsState()
+    val isDrawerFixed by appViewModel.isDrawerFixed.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
 
     val filtered = remember(rhythms, searchQuery, currentLanguage) {
@@ -94,6 +95,25 @@ fun RhythmSelector(
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
         )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Checkbox(
+                checked = isDrawerFixed,
+                onCheckedChange = { appViewModel.setDrawerFixed(it) },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = MaterialTheme.colorScheme.primary,
+                    uncheckedColor = Color.Black
+                )
+            )
+            Text(
+                text = stringResource(R.string.fix_drawer),
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Black
+            )
+        }
         Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
             OutlinedTextField(
                 value = searchQuery,

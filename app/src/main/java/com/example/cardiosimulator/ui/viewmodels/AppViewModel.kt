@@ -94,6 +94,9 @@ class AppViewModel(
     private val _isDarkTheme = MutableStateFlow(true)
     val isDarkTheme: StateFlow<Boolean> = _isDarkTheme.asStateFlow()
 
+    private val _isDrawerFixed = MutableStateFlow(false)
+    val isDrawerFixed: StateFlow<Boolean> = _isDrawerFixed.asStateFlow()
+
     private val _tcpConnectionState = MutableStateFlow<TcpConnectionState>(TcpConnectionState.Disconnected)
     val tcpConnectionState: StateFlow<TcpConnectionState> = _tcpConnectionState.asStateFlow()
 
@@ -246,6 +249,10 @@ class AppViewModel(
     fun updateDarkTheme(isDark: Boolean) {
         _isDarkTheme.value = isDark
         viewModelScope.launch { prefs?.setDarkTheme(isDark) }
+    }
+
+    fun setDrawerFixed(fixed: Boolean) {
+        _isDrawerFixed.value = fixed
     }
 
     fun toggleTcpConnection() {

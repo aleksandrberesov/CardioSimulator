@@ -154,6 +154,7 @@
     <string name="cd_ruler">Линейка</string>
 
     <string name="rhythm_selector_title">ЭКГ ритмы</string>
+    <string name="fix_drawer">Закрепить панель</string>
 
     <!-- Экран конструктора -->
     <string name="constructor_title">Конструктор ЭКГ</string>

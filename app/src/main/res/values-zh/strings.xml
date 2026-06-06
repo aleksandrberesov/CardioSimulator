@@ -69,6 +69,7 @@
     <string name="rhythm_drawer_title">心律</string>
     <string name="rhythm_search_placeholder">心律…</string>
     <string name="rhythm_search_content_description">搜索</string>
+    <string name="fix_drawer">固定面板</string>
     <string name="course_drawer_title">课程</string>
     <string name="lecture_selector_title">讲座</string>
     <string name="course_viewer_select_lecture">选择一节讲座</string>

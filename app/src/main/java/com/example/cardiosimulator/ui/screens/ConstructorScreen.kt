@@ -247,6 +247,7 @@ fun ConstructorScreen(
     val imageAlpha by constructorViewModel.imageAlpha.collectAsState()
     val imageLocked by constructorViewModel.imageLocked.collectAsState()
     val ghostTrace by constructorViewModel.ghostTrace.collectAsState()
+    val isDrawerFixed by appViewModel.isDrawerFixed.collectAsState()
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -348,322 +349,336 @@ fun ConstructorScreen(
     var isPointsDrawerExpanded by remember { mutableStateOf(false) }
     val rhythmListState = rememberLazyListState()
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Toolbar
-            Surface(
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 4.dp
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+    val rhythmDrawer = @Composable {
+        SideDrawer(
+            isExpanded = isRhythmDrawerExpanded,
+            onExpandedChange = { isRhythmDrawerExpanded = it },
+            drawerWidth = 300.dp,
+            drawerContent = {
+                RhythmSelector(
+                    appViewModel = appViewModel,
+                    rhythms = rhythms,
+                    selectedId = targetFile?.id,
+                    onRhythmSelect = { constructorViewModel.selectPathology(it.id) },
+                    listState = rhythmListState,
+                )
+            },
+            handlerContent = {
+                Text(
+                    text = stringResource(R.string.rhythm_drawer_title),
+                    modifier = Modifier
+                        .requiredWidth(64.dp)
+                        .rotate(-90f),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    textAlign = TextAlign.Center
+                )
+            },
+            handlerModifier = Modifier.offset(y = (-40).dp),
+            modifier = Modifier.fillMaxHeight()
+        )
+    }
+
+    val pointsDrawer = @Composable {
+        SideDrawer(
+            isExpanded = isPointsDrawerExpanded,
+            onExpandedChange = { isPointsDrawerExpanded = it },
+            handlerColor = MaterialTheme.colorScheme.secondaryContainer,
+            drawerContent = {
+                SignificantPointSelector(
+                    points = targetFile?.significantPoints?.sortedBy { it.index } ?: emptyList(),
+                    selectedIndex = selectedIndex,
+                    sampleRateHz = monitorMode.calibration.sampleRateHz,
+                    onPointSelect = { constructorViewModel.selectIndex(it.index) }
+                )
+            },
+            handlerContent = {
+                Text(
+                    text = stringResource(R.string.points_drawer_title),
+                    modifier = Modifier
+                        .requiredWidth(64.dp)
+                        .rotate(-90f),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    maxLines = 1,
+                    textAlign = TextAlign.Center
+                )
+            },
+            handlerModifier = Modifier.offset(y = 40.dp),
+            modifier = Modifier.fillMaxHeight()
+        )
+    }
+
+    Row(modifier = Modifier.fillMaxSize()) {
+        if (isDrawerFixed) {
+            rhythmDrawer()
+        }
+        Box(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Toolbar
+                Surface(
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 4.dp
                 ) {
-                    val displayTitle = targetFile?.let {
-                        if (selectedLanguage == com.example.cardiosimulator.domain.Language.RU) 
-                            it.nameRu ?: it.titleEn 
-                        else 
-                            it.titleEn
-                    } ?: stringResource(R.string.constructor_no_pathology_selected)
-                    
-                    Text(
-                        text = displayTitle,
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.weight(1f)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        val displayTitle = targetFile?.let {
+                            if (selectedLanguage == com.example.cardiosimulator.domain.Language.RU)
+                                it.nameRu ?: it.titleEn
+                            else
+                                it.titleEn
+                        } ?: stringResource(R.string.constructor_no_pathology_selected)
 
-                    if (referenceImageUri != null) {
-                        ToolModeSwitcher(
-                            currentMode = toolMode,
-                            onModeChange = { constructorViewModel.setToolMode(it) }
+                        Text(
+                            text = displayTitle,
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.weight(1f)
                         )
-                        
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = { constructorViewModel.undo(focusedLead) }) {
-                                Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.constructor_undo))
-                            }
-                            IconButton(onClick = { constructorViewModel.redo(focusedLead) }) {
-                                Icon(Icons.AutoMirrored.Filled.Redo, contentDescription = stringResource(R.string.cd_redo))
-                            }
-                        }
-                    }
 
-                    if (targetFile != null) {
-                        IconButton(onClick = { showRenameDialog = true }) {
-                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.cd_rename))
-                        }
-
-                        IconButton(onClick = { constructorViewModel.duplicateCurrentPathology() }) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.cd_copy))
-                        }
-
-                        IconButton(onClick = { launcher.launch("image/*") }) {
-                            Icon(
-                                Icons.Default.Image,
-                                contentDescription = stringResource(R.string.cd_load_reference)
+                        if (referenceImageUri != null) {
+                            ToolModeSwitcher(
+                                currentMode = toolMode,
+                                onModeChange = { constructorViewModel.setToolMode(it) }
                             )
-                        }
 
-                        IconButton(onClick = { showDeleteConfirmDialog = true }) {
-                            Icon(
-                                Icons.Default.Delete,
-                                contentDescription = stringResource(R.string.constructor_anchor_delete),
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                        
-                        OutlinedButton(onClick = { showCalculateDerivedDialog = true }) {
-                            Text(stringResource(R.string.constructor_generate_derived))
-                        }
-                    }
-                    
-                    if (dirtyLeads.isNotEmpty() || isMetadataDirty) {
-                        Button(onClick = { constructorViewModel.save() }) {
-                            Text(stringResource(R.string.constructor_save))
-                        }
-                        if (dirtyLeads.isNotEmpty()) {
-                            OutlinedButton(onClick = { constructorViewModel.revertLead(focusedLead) }) {
-                                Text(stringResource(R.string.constructor_revert_lead_btn))
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Lead Tabs
-            TabRow(
-                selectedTabIndex = Lead.entries.indexOf(focusedLead),
-                containerColor = MaterialTheme.colorScheme.surface
-            ) {
-                Lead.entries.forEach { lead ->
-                    Tab(
-                        selected = focusedLead == lead,
-                        onClick = { constructorViewModel.selectLead(lead) },
-                        text = {
-                            Text(
-                                text = lead.name,
-                                style = MaterialTheme.typography.labelSmall,
-                                maxLines = 1,
-                                color = if (dirtyLeads.contains(lead)) Color.Red else Color.Unspecified
-                            )
-                        }
-                    )
-                }
-            }
-
-            // Monitor / Editor Canvas
-            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                val file = targetFile
-                if (file != null) {
-                    val stream = file.leads[focusedLead]
-                    val baseline = rhythmViewModel.repository.manifest()?.baseline ?: 1024
-                    
-                    Row(modifier = Modifier.fillMaxSize()) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            Monitor(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(start = 24.dp),
-                                monitorViewModel = monitorViewModel,
-                                staticGrid = true,
-                                showGridBackground = referenceImageUri == null,
-                                gesturesEnabled = toolMode == ToolMode.Select
-                            ) { _, _, xOffset, scheme ->
-                                if (stream != null) {
-                                    val isEditable = constructorViewModel.isLeadEditable(focusedLead)
-                                    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-                                        val viewWidthPx = constraints.maxWidth.toFloat()
-                                        val viewHeightPx = constraints.maxHeight.toFloat()
-                                        val scale = LocalPixelScale.current
-
-                                        Column(modifier = Modifier.fillMaxSize()) {
-                                            Spacer(modifier = Modifier.height(132.dp))
-
-                                            EditableLead(
-                                                stream = stream,
-                                                significantPoints = file.significantPoints,
-                                                baseline = baseline,
-                                                selectedIndex = selectedIndex,
-                                                onIndexSelected = { constructorViewModel.selectIndex(it) },
-                                                isEditable = isEditable,
-                                                modifier = Modifier.weight(1f),
-                                                referenceImageUri = referenceImageUri,
-                                                imageOffset = imageOffset,
-                                                imageScale = imageScale,
-                                                imageRotationDeg = imageRotationDeg,
-                                                imageAlpha = imageAlpha,
-                                                toolMode = toolMode,
-                                                onImageTransform = { offset, s, r ->
-                                                    constructorViewModel.setImageOffset(offset)
-                                                    constructorViewModel.setImageScale(s)
-                                                    constructorViewModel.setImageRotation(r)
-                                                },
-                                                onStrokeStart = { constructorViewModel.startStroke(focusedLead) },
-                                                onTrace = { constructorViewModel.traceSamples(focusedLead, it) },
-                                                ghostTrace = ghostTrace,
-                                                onApplyGhostTrace = { constructorViewModel.applyGhostTrace() },
-                                                onCancelGhostTrace = { constructorViewModel.setGhostTrace(null) }
-                                            )
-
-                                            val points = remember(stream, baseline) {
-                                                Points(stream.samples.map { (it - baseline).toFloat() })
-                                            }
-                                            Surface(
-                                                modifier = Modifier
-                                                    .padding(16.dp)
-                                                    .fillMaxWidth()
-                                                    .height(100.dp),
-                                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
-                                                tonalElevation = 4.dp,
-                                                shape = MaterialTheme.shapes.medium
-                                            ) {
-                                                PreviewPane(
-                                                    points = points,
-                                                    modifier = Modifier.fillMaxSize(),
-                                                    isRunning = monitorMode.isRunning,
-                                                    externalXOffsetPx = xOffset,
-                                                    gridScheme = scheme
-                                                )
-                                            }
-                                        }
-                                        
-                                        // Auto-detect button overlay
-                                        if (referenceImageUri != null && toolMode == ToolMode.Trace && ghostTrace == null) {
-                                            Button(
-                                                onClick = {
-                                                    scope.launch {
-                                                        val bitmap = withContext(Dispatchers.IO) {
-                                                            context.contentResolver.openInputStream(referenceImageUri!!)?.use {
-                                                                BitmapFactory.decodeStream(it)
-                                                            }
-                                                        }
-                                                        if (bitmap != null) {
-                                                            val extracted = TraceExtractor.extract(
-                                                                bitmap = bitmap,
-                                                                sampleCount = stream.samples.size,
-                                                                baseline = baseline,
-                                                                stepX = scale.pxPerSample,
-                                                                stepY = scale.pxPerAdcCount,
-                                                                imageOffset = imageOffset,
-                                                                imageScale = imageScale,
-                                                                imageRotationDeg = imageRotationDeg,
-                                                                viewWidth = viewWidthPx,
-                                                                viewHeight = viewHeightPx
-                                                            )
-                                                            constructorViewModel.setGhostTrace(extracted)
-                                                        }
-                                                    }
-                                                },
-                                                modifier = Modifier
-                                                    .align(Alignment.BottomEnd)
-                                                    .padding(16.dp)
-                                                    .offset(y = (-132).dp) // Above preview pane
-                                            ) {
-                                                Icon(Icons.Default.AutoFixHigh, contentDescription = null)
-                                                Spacer(Modifier.width(8.dp))
-                                                Text(stringResource(R.string.constructor_auto_detect))
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                        Text(stringResource(R.string.constructor_lead_not_present, focusedLead.name))
-                                    }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(onClick = { constructorViewModel.undo(focusedLead) }) {
+                                    Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.constructor_undo))
+                                }
+                                IconButton(onClick = { constructorViewModel.redo(focusedLead) }) {
+                                    Icon(Icons.AutoMirrored.Filled.Redo, contentDescription = stringResource(R.string.cd_redo))
                                 }
                             }
-                            
-                            if (toolMode == ToolMode.Position && referenceImageUri != null) {
-                                ImagePositionPanel(
-                                    alpha = imageAlpha,
-                                    onAlphaChange = { constructorViewModel.setImageAlpha(it) },
-                                    isLocked = imageLocked,
-                                    onLockToggle = { constructorViewModel.setImageLocked(it) },
-                                    onReset = { constructorViewModel.resetImageTransform() },
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .padding(16.dp)
+                        }
+
+                        if (targetFile != null) {
+                            IconButton(onClick = { showRenameDialog = true }) {
+                                Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.cd_rename))
+                            }
+
+                            IconButton(onClick = { constructorViewModel.duplicateCurrentPathology() }) {
+                                Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.cd_copy))
+                            }
+
+                            IconButton(onClick = { launcher.launch("image/*") }) {
+                                Icon(
+                                    Icons.Default.Image,
+                                    contentDescription = stringResource(R.string.cd_load_reference)
                                 )
+                            }
+
+                            IconButton(onClick = { showDeleteConfirmDialog = true }) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = stringResource(R.string.constructor_anchor_delete),
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+
+                            OutlinedButton(onClick = { showCalculateDerivedDialog = true }) {
+                                Text(stringResource(R.string.constructor_generate_derived))
                             }
                         }
 
-                        SignificantPointPanel(
-                            significantPoints = file.significantPoints,
-                            selectedIndex = selectedIndex,
-                            sampleRate = monitorMode.calibration.sampleRateHz,
-                            onPointToggle = { idx, type -> 
-                                constructorViewModel.toggleSignificantPoint(focusedLead, idx, type) 
+                        if (dirtyLeads.isNotEmpty() || isMetadataDirty) {
+                            Button(onClick = { constructorViewModel.save() }) {
+                                Text(stringResource(R.string.constructor_save))
                             }
-                        )
-                    }
-                } else {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(stringResource(R.string.constructor_select_from_panel_hint))
+                            if (dirtyLeads.isNotEmpty()) {
+                                OutlinedButton(onClick = { constructorViewModel.revertLead(focusedLead) }) {
+                                    Text(stringResource(R.string.constructor_revert_lead_btn))
+                                }
+                            }
+                        }
                     }
                 }
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .align(Alignment.TopStart)
+                // Lead Tabs
+                TabRow(
+                    selectedTabIndex = Lead.entries.indexOf(focusedLead),
+                    containerColor = MaterialTheme.colorScheme.surface
                 ) {
-                    SideDrawer(
-                        isExpanded = isRhythmDrawerExpanded,
-                        onExpandedChange = { isRhythmDrawerExpanded = it },
-                        drawerWidth = 300.dp,
-                        drawerContent = {
-                            RhythmSelector(
-                                appViewModel = appViewModel,
-                                rhythms = rhythms,
-                                selectedId = targetFile?.id,
-                                onRhythmSelect = { constructorViewModel.selectPathology(it.id) },
-                                listState = rhythmListState,
-                            )
-                        },
-                        handlerContent = {
-                            Text(
-                                text = stringResource(R.string.rhythm_drawer_title),
-                                modifier = Modifier
-                                    .requiredWidth(64.dp)
-                                    .rotate(-90f),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                textAlign = TextAlign.Center
-                            )
-                        },
-                        handlerModifier = Modifier.offset(y = (-40).dp),
-                        modifier = Modifier.fillMaxHeight()
-                    )
+                    Lead.entries.forEach { lead ->
+                        Tab(
+                            selected = focusedLead == lead,
+                            onClick = { constructorViewModel.selectLead(lead) },
+                            text = {
+                                Text(
+                                    text = lead.name,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    maxLines = 1,
+                                    color = if (dirtyLeads.contains(lead)) Color.Red else Color.Unspecified
+                                )
+                            }
+                        )
+                    }
+                }
 
-                    SideDrawer(
-                        isExpanded = isPointsDrawerExpanded,
-                        onExpandedChange = { isPointsDrawerExpanded = it },
-                        handlerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        drawerContent = {
-                            SignificantPointSelector(
-                                points = targetFile?.significantPoints?.sortedBy { it.index } ?: emptyList(),
+                // Monitor / Editor Canvas
+                Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                    val file = targetFile
+                    if (file != null) {
+                        val stream = file.leads[focusedLead]
+                        val baseline = rhythmViewModel.repository.manifest()?.baseline ?: 1024
+
+                        Row(modifier = Modifier.fillMaxSize()) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                Monitor(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(start = if (isDrawerFixed) 0.dp else 24.dp),
+                                    monitorViewModel = monitorViewModel,
+                                    staticGrid = true,
+                                    showGridBackground = referenceImageUri == null,
+                                    gesturesEnabled = toolMode == ToolMode.Select
+                                ) { _, _, xOffset, scheme ->
+                                    if (stream != null) {
+                                        val isEditable = constructorViewModel.isLeadEditable(focusedLead)
+                                        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                                            val viewWidthPx = constraints.maxWidth.toFloat()
+                                            val viewHeightPx = constraints.maxHeight.toFloat()
+                                            val scale = LocalPixelScale.current
+
+                                            Column(modifier = Modifier.fillMaxSize()) {
+                                                Spacer(modifier = Modifier.height(132.dp))
+
+                                                EditableLead(
+                                                    stream = stream,
+                                                    significantPoints = file.significantPoints,
+                                                    baseline = baseline,
+                                                    selectedIndex = selectedIndex,
+                                                    onIndexSelected = { constructorViewModel.selectIndex(it) },
+                                                    isEditable = isEditable,
+                                                    modifier = Modifier.weight(1f),
+                                                    referenceImageUri = referenceImageUri,
+                                                    imageOffset = imageOffset,
+                                                    imageScale = imageScale,
+                                                    imageRotationDeg = imageRotationDeg,
+                                                    imageAlpha = imageAlpha,
+                                                    toolMode = toolMode,
+                                                    onImageTransform = { offset, s, r ->
+                                                        constructorViewModel.setImageOffset(offset)
+                                                        constructorViewModel.setImageScale(s)
+                                                        constructorViewModel.setImageRotation(r)
+                                                    },
+                                                    onStrokeStart = { constructorViewModel.startStroke(focusedLead) },
+                                                    onTrace = { constructorViewModel.traceSamples(focusedLead, it) },
+                                                    ghostTrace = ghostTrace,
+                                                    onApplyGhostTrace = { constructorViewModel.applyGhostTrace() },
+                                                    onCancelGhostTrace = { constructorViewModel.setGhostTrace(null) }
+                                                )
+
+                                                val points = remember(stream, baseline) {
+                                                    Points(stream.samples.map { (it - baseline).toFloat() })
+                                                }
+                                                Surface(
+                                                    modifier = Modifier
+                                                        .padding(16.dp)
+                                                        .fillMaxWidth()
+                                                        .height(100.dp),
+                                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
+                                                    tonalElevation = 4.dp,
+                                                    shape = MaterialTheme.shapes.medium
+                                                ) {
+                                                    PreviewPane(
+                                                        points = points,
+                                                        modifier = Modifier.fillMaxSize(),
+                                                        isRunning = monitorMode.isRunning,
+                                                        externalXOffsetPx = xOffset,
+                                                        gridScheme = scheme
+                                                    )
+                                                }
+                                            }
+
+                                            // Auto-detect button overlay
+                                            if (referenceImageUri != null && toolMode == ToolMode.Trace && ghostTrace == null) {
+                                                Button(
+                                                    onClick = {
+                                                        scope.launch {
+                                                            val bitmap = withContext(Dispatchers.IO) {
+                                                                context.contentResolver.openInputStream(referenceImageUri!!)?.use {
+                                                                    BitmapFactory.decodeStream(it)
+                                                                }
+                                                            }
+                                                            if (bitmap != null) {
+                                                                val extracted = TraceExtractor.extract(
+                                                                    bitmap = bitmap,
+                                                                    sampleCount = stream.samples.size,
+                                                                    baseline = baseline,
+                                                                    stepX = scale.pxPerSample,
+                                                                    stepY = scale.pxPerAdcCount,
+                                                                    imageOffset = imageOffset,
+                                                                    imageScale = imageScale,
+                                                                    imageRotationDeg = imageRotationDeg,
+                                                                    viewWidth = viewWidthPx,
+                                                                    viewHeight = viewHeightPx
+                                                                )
+                                                                constructorViewModel.setGhostTrace(extracted)
+                                                            }
+                                                        }
+                                                    },
+                                                    modifier = Modifier
+                                                        .align(Alignment.BottomEnd)
+                                                        .padding(16.dp)
+                                                        .offset(y = (-132).dp) // Above preview pane
+                                                ) {
+                                                    Icon(Icons.Default.AutoFixHigh, contentDescription = null)
+                                                    Spacer(Modifier.width(8.dp))
+                                                    Text(stringResource(R.string.constructor_auto_detect))
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                            Text(stringResource(R.string.constructor_lead_not_present, focusedLead.name))
+                                        }
+                                    }
+                                }
+
+                                if (toolMode == ToolMode.Position && referenceImageUri != null) {
+                                    ImagePositionPanel(
+                                        alpha = imageAlpha,
+                                        onAlphaChange = { constructorViewModel.setImageAlpha(it) },
+                                        isLocked = imageLocked,
+                                        onLockToggle = { constructorViewModel.setImageLocked(it) },
+                                        onReset = { constructorViewModel.resetImageTransform() },
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(16.dp)
+                                    )
+                                }
+                            }
+
+                            SignificantPointPanel(
+                                significantPoints = file.significantPoints,
                                 selectedIndex = selectedIndex,
-                                sampleRateHz = monitorMode.calibration.sampleRateHz,
-                                onPointSelect = { constructorViewModel.selectIndex(it.index) }
+                                sampleRate = monitorMode.calibration.sampleRateHz,
+                                onPointToggle = { idx, type ->
+                                    constructorViewModel.toggleSignificantPoint(focusedLead, idx, type)
+                                }
                             )
-                        },
-                        handlerContent = {
-                            Text(
-                                text = stringResource(R.string.points_drawer_title),
-                                modifier = Modifier
-                                    .requiredWidth(64.dp)
-                                    .rotate(-90f),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                maxLines = 1,
-                                textAlign = TextAlign.Center
-                            )
-                        },
-                        handlerModifier = Modifier.offset(y = 40.dp),
-                        modifier = Modifier.fillMaxHeight()
-                    )
+                        }
+                    } else {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(stringResource(R.string.constructor_select_from_panel_hint))
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .align(Alignment.TopStart)
+                    ) {
+                        if (!isDrawerFixed) {
+                            rhythmDrawer()
+                        }
+                        pointsDrawer()
+                    }
                 }
             }
         }

@@ -155,6 +155,7 @@
     <string name="cd_ruler">Ruler</string>
 
     <string name="rhythm_selector_title">ECG Rhythms</string>
+    <string name="fix_drawer">Fix Drawer</string>
 
     <!-- Constructor Screen -->
     <string name="constructor_title">ECG Constructor</string>

@@ -146,6 +146,8 @@ fun CourseConstructorScreen(
         }
     }
 
+    val rhythms by rhythmViewModel.rhythms.collectAsState()
+
     LaunchedEffect(Unit) {
         courseConstructorViewModel.setLanguage(selectedLanguage.tag)
         courseConstructorViewModel.restore()
@@ -254,6 +256,8 @@ fun CourseConstructorScreen(
 
                 Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
                     HtmlBlockEditor(
+                        appViewModel = appViewModel,
+                        rhythms = rhythms,
                         blocks = blocks,
                         onUpdateBlock = { id, updated -> courseConstructorViewModel.updateBlock(id, updated) },
                         onDeleteBlock = { id -> courseConstructorViewModel.deleteBlock(id) },

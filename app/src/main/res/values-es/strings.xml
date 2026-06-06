@@ -82,6 +82,7 @@
     <string name="course_constructor_delete_confirm">¿Eliminar esta lección?</string>
     <string name="rhythm_search_placeholder">Ritmo…</string>
     <string name="rhythm_search_content_description">Buscar</string>
+    <string name="fix_drawer">Fijar panel</string>
 
     <!-- Testing panel -->
     <string name="testing_question_format">Pregunta %1$d</string>

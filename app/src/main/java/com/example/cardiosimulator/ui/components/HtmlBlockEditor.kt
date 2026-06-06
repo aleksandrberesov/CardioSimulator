@@ -18,8 +18,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.cardiosimulator.domain.HtmlBlock
 
+import com.example.cardiosimulator.domain.Lead
+import com.example.cardiosimulator.domain.PathologyEntry
+import com.example.cardiosimulator.ui.screens.ComparisonTargetDialog
+import com.example.cardiosimulator.ui.viewmodels.AppViewModel
+
 @Composable
 fun HtmlBlockEditor(
+    appViewModel: AppViewModel,
+    rhythms: List<PathologyEntry>,
     blocks: List<HtmlBlock>,
     onUpdateBlock: (String, HtmlBlock) -> Unit,
     onDeleteBlock: (String) -> Unit,
@@ -41,7 +48,7 @@ fun HtmlBlockEditor(
                     is HtmlBlock.Paragraph -> ParagraphEditor(block) { onUpdateBlock(block.id, it) }
                     is HtmlBlock.Image -> ImageEditor(block) { onUpdateBlock(block.id, it) }
                     is HtmlBlock.KaTeX -> KaTeXEditor(block) { onUpdateBlock(block.id, it) }
-                    is HtmlBlock.Ecg -> EcgEditor(block) { onUpdateBlock(block.id, it) }
+                    is HtmlBlock.Ecg -> EcgEditor(appViewModel, rhythms, block) { onUpdateBlock(block.id, it) }
                     is HtmlBlock.RawHtml -> RawHtmlEditor(block) { onUpdateBlock(block.id, it) }
                 }
             }
@@ -152,25 +159,56 @@ private fun KaTeXEditor(block: HtmlBlock.KaTeX, onUpdate: (HtmlBlock.KaTeX) -> U
 }
 
 @Composable
-private fun EcgEditor(block: HtmlBlock.Ecg, onUpdate: (HtmlBlock.Ecg) -> Unit) {
+private fun EcgEditor(
+    appViewModel: AppViewModel,
+    rhythms: List<PathologyEntry>,
+    block: HtmlBlock.Ecg,
+    onUpdate: (HtmlBlock.Ecg) -> Unit
+) {
+    var showSelector by remember { mutableStateOf(false) }
+
+    if (showSelector) {
+        ComparisonTargetDialog(
+            appViewModel = appViewModel,
+            rhythms = rhythms,
+            onDismiss = { showSelector = false },
+            onTargetSelected = { target ->
+                onUpdate(block.copy(pathology = target.pathologyId, lead = target.lead.name))
+                showSelector = false
+            }
+        )
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("ECG Reference", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextField(
-                value = block.pathology,
-                onValueChange = { onUpdate(block.copy(pathology = it)) },
-                label = { Text("Pathology ID") },
-                modifier = Modifier.weight(1f),
-                singleLine = true
-            )
-            TextField(
-                value = block.lead ?: "",
-                onValueChange = { onUpdate(block.copy(lead = it.takeIf { it.isNotBlank() })) },
-                label = { Text("Lead (optional)") },
-                modifier = Modifier.width(100.dp),
-                singleLine = true
-            )
+        
+        OutlinedCard(
+            onClick = { showSelector = true },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(Icons.Default.Waves, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (block.pathology.isBlank()) "Select Rhythm..." else block.pathology,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    if (block.lead != null) {
+                        Text(
+                            text = "Lead: ${block.lead}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Icon(Icons.Default.Edit, contentDescription = "Edit Selection", modifier = Modifier.size(20.dp))
+            }
         }
+
         TextField(
             value = block.caption,
             onValueChange = { onUpdate(block.copy(caption = it)) },
