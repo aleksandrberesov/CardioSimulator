@@ -89,7 +89,7 @@ fun CourseConstructorScreen(
     val isDirty by courseConstructorViewModel.isDirty.collectAsState()
     val isSaving by courseConstructorViewModel.isSaving.collectAsState()
     val answers by courseConstructorViewModel.answers.collectAsState()
-    val lastAddedBlockId by courseConstructorViewModel.lastAddedBlockId.collectAsState()
+    val focusedBlockId by courseConstructorViewModel.focusedBlockId.collectAsState()
     var isCourseDrawerExpanded by remember { mutableStateOf(false) }
     var isLectureDrawerExpanded by remember { mutableStateOf(false) }
 
@@ -305,7 +305,7 @@ fun CourseConstructorScreen(
                             onUpdateBlock = { id, updated -> courseConstructorViewModel.updateBlock(id, updated) },
                             onDeleteBlock = { id -> courseConstructorViewModel.deleteBlock(id) },
                             onMoveBlock = { id, delta -> courseConstructorViewModel.moveBlock(id, delta) },
-                            scrollToBlockId = lastAddedBlockId,
+                            scrollToBlockId = focusedBlockId,
                             modifier = Modifier.weight(1f).fillMaxHeight(),
                         )
                     }
@@ -320,7 +320,7 @@ fun CourseConstructorScreen(
                                     lecture = preview,
                                     resolveEcg = resolveEcg,
                                     answers = answers,
-                                    scrollToBlockId = lastAddedBlockId,
+                                    scrollToBlockId = focusedBlockId,
                                     onCellEdit = { quizId, row, col, value ->
                                         courseConstructorViewModel.setTableCell(quizId, row, col, value)
                                     },

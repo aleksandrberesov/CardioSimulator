@@ -113,7 +113,9 @@ fun LectureWebView(
                     override fun onPageFinished(view: WebView, url: String) {
                         view.evaluateJavascript(injectRef.value, null)
                         scrollRef.value?.let { id ->
-                            view.evaluateJavascript("document.getElementById('$id')?.scrollIntoView({behavior: 'smooth'})", null)
+                            // Use behavior: 'auto' (instant jump) rather than 'smooth' to avoid
+                            // distracting animations during every debounced keystroke update.
+                            view.evaluateJavascript("document.getElementById('$id')?.scrollIntoView({behavior: 'auto'})", null)
                         }
                     }
                 }
@@ -139,7 +141,7 @@ fun LectureWebView(
                 )
             } else if (current != null && scrollToBlockId != null) {
                 // If the content didn't change but the scroll ID did, scroll now.
-                web.evaluateJavascript("document.getElementById('$scrollToBlockId')?.scrollIntoView({behavior: 'smooth'})", null)
+                web.evaluateJavascript("document.getElementById('$scrollToBlockId')?.scrollIntoView({behavior: 'auto'})", null)
             }
         },
         onRelease = { it.destroy() },

@@ -6,6 +6,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -17,7 +18,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.cardiosimulator.domain.HtmlBlock
@@ -156,17 +159,63 @@ private fun ImageEditor(block: HtmlBlock.Image, onUpdate: (HtmlBlock.Image) -> U
     }
 }
 
+private val KatexSymbols = listOf(
+    "\\alpha" to "α", "\\beta" to "β", "\\gamma" to "γ", "\\delta" to "δ", "\\theta" to "θ", "\\lambda" to "λ", "\\pi" to "π", "\\sigma" to "σ", "\\omega" to "ω",
+    "\\Delta" to "Δ", "\\Sigma" to "Σ", "\\Omega" to "Ω",
+    "\\infty" to "∞", "\\approx" to "≈", "\\neq" to "≠", "\\le" to "≤", "\\ge" to "≥", "\\pm" to "±",
+    "\\times" to "×", "\\div" to "÷", "\\sqrt{}" to "√", "\\frac{}{}" to "n/m", "^" to "xⁿ", "_" to "xₙ"
+)
+
 @Composable
 private fun KaTeXEditor(block: HtmlBlock.KaTeX, onUpdate: (HtmlBlock.KaTeX) -> Unit) {
+    var textFieldValue by remember(block.id) {
+        mutableStateOf(TextFieldValue(block.expression, selection = TextRange(block.expression.length)))
+    }
+
+    LaunchedEffect(block.expression) {
+        if (block.expression != textFieldValue.text) {
+            textFieldValue = textFieldValue.copy(
+                text = block.expression,
+                selection = TextRange(block.expression.length)
+            )
+        }
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("KaTeX Math", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
             Text("Display Mode", style = MaterialTheme.typography.labelSmall)
             Checkbox(checked = block.displayMode, onCheckedChange = { onUpdate(block.copy(displayMode = it)) })
         }
+
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            contentPadding = PaddingValues(vertical = 4.dp)
+        ) {
+            items(KatexSymbols) { (code, display) ->
+                AssistChip(
+                    onClick = {
+                        val text = textFieldValue.text
+                        val selection = textFieldValue.selection
+                        val newText = text.substring(0, selection.start) + code + text.substring(selection.end)
+                        val newSelection = TextRange(selection.start + code.length)
+                        textFieldValue = TextFieldValue(newText, newSelection)
+                        onUpdate(block.copy(expression = newText))
+                    },
+                    label = { Text(display) }
+                )
+            }
+        }
+
         OutlinedTextField(
-            value = block.expression,
-            onValueChange = { onUpdate(block.copy(expression = it)) },
+            value = textFieldValue,
+            onValueChange = {
+                textFieldValue = it
+                if (it.text != block.expression) {
+                    onUpdate(block.copy(expression = it.text))
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("e.g. E = mc^2") },
             textStyle = androidx.compose.ui.text.TextStyle(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)

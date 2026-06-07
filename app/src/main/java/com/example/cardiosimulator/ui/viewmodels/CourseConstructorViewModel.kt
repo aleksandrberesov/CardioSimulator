@@ -75,8 +75,8 @@ class CourseConstructorViewModel(
     private val _blocks = MutableStateFlow<List<HtmlBlock>>(emptyList())
     val blocks: StateFlow<List<HtmlBlock>> = _blocks.asStateFlow()
 
-    private val _lastAddedBlockId = MutableStateFlow<String?>(null)
-    val lastAddedBlockId: StateFlow<String?> = _lastAddedBlockId.asStateFlow()
+    private val _focusedBlockId = MutableStateFlow<String?>(null)
+    val focusedBlockId: StateFlow<String?> = _focusedBlockId.asStateFlow()
 
     val isDirty: StateFlow<Boolean> =
         combine(_draft, _savedText, _answers, _savedAnswers) { draft, saved, ans, savedAns ->
@@ -105,6 +105,7 @@ class CourseConstructorViewModel(
     fun selectLecture(lectureId: String) {
         val courseId = _selectedCourseId.value ?: return
         _selectedLectureId.value = lectureId
+        _focusedBlockId.value = null
         viewModelScope.launch {
             prefs?.setLastLectureId(mode.name, lectureId)
             val lecture = withContext(Dispatchers.IO) {
@@ -155,10 +156,15 @@ class CourseConstructorViewModel(
 
     fun addBlock(block: HtmlBlock) {
         setBlocks(_blocks.value + block)
-        _lastAddedBlockId.value = block.id
+        _focusedBlockId.value = block.id
+    }
+
+    fun clearFocusedBlockId() {
+        _focusedBlockId.value = null
     }
 
     fun updateBlock(id: String, updated: HtmlBlock) {
+        _focusedBlockId.value = id
         setBlocks(_blocks.value.map { if (it.id == id) updated else it })
     }
 
@@ -331,6 +337,7 @@ class CourseConstructorViewModel(
     private fun clearLecture() {
         previewJob?.cancel()
         _selectedLectureId.value = null
+        _focusedBlockId.value = null
         _draft.value = ""
         _savedText.value = ""
         _answers.value = emptyMap()
