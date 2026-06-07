@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -56,6 +57,7 @@ import com.example.cardiosimulator.ui.display.LEAD_ORDER
 import com.example.cardiosimulator.ui.display.Lead as LeadView
 import com.example.cardiosimulator.ui.display.LeadsGrid
 import com.example.cardiosimulator.ui.display.Monitor
+import com.example.cardiosimulator.ui.panels.CourseSelector
 import com.example.cardiosimulator.ui.panels.LectureSelector
 import com.example.cardiosimulator.ui.panels.RhythmSelector
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
@@ -85,6 +87,7 @@ fun TeachingScreen(
     val isDrawerFixed by appViewModel.isDrawerFixed.collectAsState()
     
     val selectedCourseId by courseViewerViewModel.selectedCourseId.collectAsState()
+    val appSelectedCourseId by appViewModel.selectedCourseId.collectAsState()
     val lectures by courseViewerViewModel.lectures.collectAsState()
     val selectedLectureId by courseViewerViewModel.selectedLectureId.collectAsState()
     val viewerLecture by courseViewerViewModel.lecture.collectAsState()
@@ -104,6 +107,12 @@ fun TeachingScreen(
     }
     LaunchedEffect(selectedLanguage) {
         courseViewerViewModel.setLanguage(selectedLanguage.tag)
+    }
+
+    LaunchedEffect(showCourseOverlay) {
+        if (showCourseOverlay && selectedCourseId == null && appSelectedCourseId != null && appSelectedCourseId != AppViewModel.ALL_RHYTHMS_ID) {
+            courseViewerViewModel.selectCourse(appSelectedCourseId!!)
+        }
     }
 
     LaunchedEffect(mode.comparisonTargets) {
@@ -359,6 +368,11 @@ private fun CourseViewerOverlay(
     onClose: () -> Unit,
 ) {
     var isLecturesDrawerExpanded by remember { mutableStateOf(false) }
+    var isCoursesDrawerExpanded by remember { mutableStateOf(false) }
+
+    val filteredCourses = remember(courses) {
+        courses.filterNot { it.id == AppViewModel.ALL_RHYTHMS_ID }
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -374,7 +388,7 @@ private fun CourseViewerOverlay(
                 ) {
                     Text(
                         text = lecture?.frontMatter?.title?.takeIf { it.isNotBlank() }
-                            ?: courses.find { it.id == selectedCourseId }?.let { courseDisplayName(it, language) }
+                            ?: filteredCourses.find { it.id == selectedCourseId }?.let { courseDisplayName(it, language) }
                             ?: stringResource(R.string.course_drawer_title),
                         style = MaterialTheme.typography.titleMedium,
                     )
@@ -397,6 +411,38 @@ private fun CourseViewerOverlay(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+
+                SideDrawer(
+                    isExpanded = isCoursesDrawerExpanded,
+                    onExpandedChange = { isCoursesDrawerExpanded = it },
+                    drawerWidth = 300.dp,
+                    drawerContent = {
+                        CourseSelector(
+                            appViewModel = appViewModel,
+                            courses = filteredCourses,
+                            selectedCourseId = selectedCourseId,
+                            onCourseSelect = {
+                                onCourseSelect(it)
+                                isCoursesDrawerExpanded = false
+                            },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    },
+                    handlerContent = {
+                        Text(
+                            text = stringResource(R.string.course_drawer_title),
+                            modifier = Modifier
+                                .requiredWidth(64.dp)
+                                .rotate(-90f),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            textAlign = TextAlign.Center
+                        )
+                    },
+                    handlerModifier = Modifier.offset(y = (-40).dp),
+                    modifier = Modifier.fillMaxHeight().align(Alignment.TopStart)
+                )
 
                 SideDrawer(
                     isExpanded = isLecturesDrawerExpanded,
@@ -426,6 +472,7 @@ private fun CourseViewerOverlay(
                             textAlign = TextAlign.Center
                         )
                     },
+                    handlerModifier = Modifier.offset(y = 40.dp),
                     modifier = Modifier.fillMaxHeight().align(Alignment.TopStart)
                 )
             }
