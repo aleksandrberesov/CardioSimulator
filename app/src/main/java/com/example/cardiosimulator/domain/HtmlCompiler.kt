@@ -20,39 +20,49 @@ object HtmlCompiler {
         val blocks = mutableListOf<HtmlBlock>()
 
         for (element in body.children()) {
+            val elementId = element.id().takeIf { it.isNotBlank() }
             val block = when (element.tagName()) {
                 "h1", "h2", "h3", "h4", "h5", "h6" -> {
                     val level = element.tagName().substring(1).toInt()
-                    HtmlBlock.Header(level = level, text = element.text())
+                    if (elementId != null) HtmlBlock.Header(id = elementId, level = level, text = element.text())
+                    else HtmlBlock.Header(level = level, text = element.text())
                 }
                 "p" -> {
                     val content = element.html().trim()
                     // Check if it's a KaTeX display block: $$ expression $$
                     if (content.startsWith("$$") && content.endsWith("$$")) {
-                        HtmlBlock.KaTeX(
-                            expression = content.substring(2, content.length - 2).trim(),
-                            displayMode = true
-                        )
+                        if (elementId != null) HtmlBlock.KaTeX(id = elementId, expression = content.substring(2, content.length - 2).trim(), displayMode = true)
+                        else HtmlBlock.KaTeX(expression = content.substring(2, content.length - 2).trim(), displayMode = true)
                     } else {
-                        HtmlBlock.Paragraph(html = content)
+                        // Sometimes tables are incorrectly wrapped in <p> tags
+                        val nestedTable = element.selectFirst("table")
+                        if (nestedTable != null && element.children().size == 1 && element.child(0) == nestedTable) {
+                            parseTable(nestedTable)
+                        } else {
+                            if (elementId != null) HtmlBlock.Paragraph(id = elementId, html = content)
+                            else HtmlBlock.Paragraph(html = content)
+                        }
                     }
                 }
                 "img" -> {
-                    HtmlBlock.Image(
-                        src = element.attr("src"),
-                        alt = element.attr("alt")
-                    )
+                    if (elementId != null) HtmlBlock.Image(id = elementId, src = element.attr("src"), alt = element.attr("alt"))
+                    else HtmlBlock.Image(src = element.attr("src"), alt = element.attr("alt"))
                 }
                 "ecg" -> {
-                    HtmlBlock.Ecg(
-                        pathology = element.attr("pathology"),
-                        lead = element.attr("lead").takeIf { it.isNotBlank() },
-                        caption = element.attr("caption")
-                    )
+                    if (elementId != null) HtmlBlock.Ecg(id = elementId, pathology = element.attr("pathology"), lead = element.attr("lead").takeIf { it.isNotBlank() }, caption = element.attr("caption"))
+                    else HtmlBlock.Ecg(pathology = element.attr("pathology"), lead = element.attr("lead").takeIf { it.isNotBlank() }, caption = element.attr("caption"))
                 }
-                // Handle raw HTML for anything else (divs, tables, etc.)
+                "table" -> parseTable(element)
+                // Handle unknown tags as paragraphs
                 else -> {
-                    HtmlBlock.RawHtml(html = element.outerHtml())
+                    val nestedTable = element.selectFirst("table")
+                    // If this element contains ONLY a table (ignoring whitespace), treat it as a table block
+                    if (nestedTable != null && element.text().trim() == nestedTable.text().trim()) {
+                        parseTable(nestedTable)
+                    } else {
+                        if (elementId != null) HtmlBlock.Paragraph(id = elementId, html = element.outerHtml())
+                        else HtmlBlock.Paragraph(html = element.outerHtml())
+                    }
                 }
             }
             blocks.add(block)
@@ -62,6 +72,15 @@ object HtmlCompiler {
         return blocks
     }
 
+    private fun parseTable(element: Element): HtmlBlock.Table {
+        val elementId = element.id().takeIf { it.isNotBlank() }
+        val rows = element.select("tr").map { tr ->
+            tr.select("td, th").map { it.html().trim() }
+        }
+        return if (elementId != null) HtmlBlock.Table(id = elementId, rows = rows)
+        else HtmlBlock.Table(rows = rows)
+    }
+
     /**
      * Compiles a list of blocks back into a standards-compliant HTML string.
      */
@@ -69,28 +88,37 @@ object HtmlCompiler {
         for (block in blocks) {
             when (block) {
                 is HtmlBlock.Header -> {
-                    append("<h${block.level}>").append(block.text).append("</h${block.level}>\n")
+                    append("<h${block.level} id=\"${block.id}\">").append(block.text).append("</h${block.level}>\n")
                 }
                 is HtmlBlock.Paragraph -> {
-                    append("<p>").append(block.html).append("</p>\n")
+                    append("<p id=\"${block.id}\">").append(block.html).append("</p>\n")
                 }
                 is HtmlBlock.Image -> {
-                    append("<img src=\"").append(block.src).append("\" alt=\"").append(block.alt).append("\">\n")
+                    append("<img id=\"${block.id}\" src=\"").append(block.src).append("\" alt=\"").append(block.alt).append("\">\n")
                 }
                 is HtmlBlock.KaTeX -> {
                     if (block.displayMode) {
-                        append("<p>$$ ").append(block.expression).append(" $$</p>\n")
+                        append("<p id=\"${block.id}\">$$ ").append(block.expression).append(" $$</p>\n")
                     } else {
-                        append("$").append(block.expression).append("$\n")
+                        // Inline KaTeX doesn't easily support a wrapper ID without a span
+                        append("<span id=\"${block.id}\">$").append(block.expression).append("$</span>\n")
                     }
                 }
                 is HtmlBlock.Ecg -> {
-                    append("<ecg pathology=\"").append(block.pathology).append("\"")
+                    append("<ecg id=\"${block.id}\" pathology=\"").append(block.pathology).append("\"")
                     if (block.lead != null) append(" lead=\"").append(block.lead).append("\"")
                     append(" caption=\"").append(block.caption).append("\"></ecg>\n")
                 }
-                is HtmlBlock.RawHtml -> {
-                    append(block.html).append("\n")
+                is HtmlBlock.Table -> {
+                    append("<table id=\"${block.id}\">\n")
+                    for (row in block.rows) {
+                        append("  <tr>\n")
+                        for (cell in row) {
+                            append("    <td>").append(cell).append("</td>\n")
+                        }
+                        append("  </tr>\n")
+                    }
+                    append("</table>\n")
                 }
             }
             append("\n") // Spacer between blocks

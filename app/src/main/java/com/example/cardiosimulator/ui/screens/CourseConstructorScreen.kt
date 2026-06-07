@@ -1,5 +1,6 @@
 package com.example.cardiosimulator.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,14 +12,23 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.VerticalSplit
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -37,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -56,6 +67,8 @@ import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.CourseConstructorViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
+
+enum class ConstructorViewMode { EDITOR, PREVIEW, BOTH }
 
 @Composable
 fun CourseConstructorScreen(
@@ -78,8 +91,11 @@ fun CourseConstructorScreen(
     val isDirty by courseConstructorViewModel.isDirty.collectAsState()
     val isSaving by courseConstructorViewModel.isSaving.collectAsState()
     val answers by courseConstructorViewModel.answers.collectAsState()
+    val lastAddedBlockId by courseConstructorViewModel.lastAddedBlockId.collectAsState()
     var isCourseDrawerExpanded by remember { mutableStateOf(false) }
     var isLectureDrawerExpanded by remember { mutableStateOf(false) }
+
+    var viewMode by remember { mutableStateOf(ConstructorViewMode.BOTH) }
 
     var showNewCourse by remember { mutableStateOf(false) }
     var showNewLecture by remember { mutableStateOf(false) }
@@ -160,7 +176,7 @@ fun CourseConstructorScreen(
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             floatingActionButton = {
-                if (selectedLectureId != null) {
+                if (selectedLectureId != null && viewMode != ConstructorViewMode.PREVIEW) {
                     Box {
                         FloatingActionButton(onClick = { showAddBlockMenu = true }) {
                             Icon(Icons.Default.Add, contentDescription = "Add Block")
@@ -194,8 +210,8 @@ fun CourseConstructorScreen(
                                 onClick = { courseConstructorViewModel.addBlock(HtmlBlock.Ecg(pathology = "", lead = null, caption = "")); showAddBlockMenu = false }
                             )
                             DropdownMenuItem(
-                                text = { Text("Raw HTML / Table") },
-                                onClick = { courseConstructorViewModel.addBlock(HtmlBlock.RawHtml(html = "")); showAddBlockMenu = false }
+                                text = { Text("Structured Table") },
+                                onClick = { courseConstructorViewModel.addBlock(HtmlBlock.Table(rows = listOf(listOf("", ""), listOf("", "")))); showAddBlockMenu = false }
                             )
                         }
                     }
@@ -238,6 +254,34 @@ fun CourseConstructorScreen(
                             
                             VerticalDivider(modifier = Modifier.height(32.dp).padding(horizontal = 8.dp))
 
+                            Row(
+                                modifier = Modifier
+                                    .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small)
+                                    .padding(2.dp),
+                                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                val modes = listOf(
+                                    ConstructorViewMode.EDITOR to Icons.Default.EditNote,
+                                    ConstructorViewMode.BOTH to Icons.Default.VerticalSplit,
+                                    ConstructorViewMode.PREVIEW to Icons.Default.Visibility
+                                )
+                                modes.forEach { (mode, icon) ->
+                                    val selected = viewMode == mode
+                                    IconButton(
+                                        onClick = { viewMode = mode },
+                                        modifier = Modifier.size(32.dp),
+                                        colors = IconButtonDefaults.iconButtonColors(
+                                            containerColor = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                            contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    ) {
+                                        Icon(icon, contentDescription = mode.name, modifier = Modifier.size(20.dp))
+                                    }
+                                }
+                            }
+
+                            VerticalDivider(modifier = Modifier.height(32.dp).padding(horizontal = 8.dp))
+
                             TextButton(
                                 onClick = { courseConstructorViewModel.revert() },
                                 enabled = isDirty && !isSaving,
@@ -255,34 +299,42 @@ fun CourseConstructorScreen(
                 }
 
                 Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                    HtmlBlockEditor(
-                        appViewModel = appViewModel,
-                        rhythms = rhythms,
-                        blocks = blocks,
-                        onUpdateBlock = { id, updated -> courseConstructorViewModel.updateBlock(id, updated) },
-                        onDeleteBlock = { id -> courseConstructorViewModel.deleteBlock(id) },
-                        onMoveBlock = { id, delta -> courseConstructorViewModel.moveBlock(id, delta) },
-                        modifier = Modifier.weight(1f).fillMaxHeight(),
-                    )
-                    VerticalDivider()
-                    Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                        val preview = previewLecture
-                        if (preview != null) {
-                            LectureWebView(
-                                lecture = preview,
-                                resolveEcg = resolveEcg,
-                                answers = answers,
-                                onCellEdit = { quizId, row, col, value ->
-                                    courseConstructorViewModel.setTableCell(quizId, row, col, value)
-                                },
-                                modifier = Modifier.fillMaxSize(),
-                            )
-                        } else {
-                            Text(
-                                text = stringResource(R.string.course_viewer_select_lecture),
-                                modifier = Modifier.align(Alignment.Center).padding(16.dp),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                    if (viewMode == ConstructorViewMode.EDITOR || viewMode == ConstructorViewMode.BOTH) {
+                        HtmlBlockEditor(
+                            appViewModel = appViewModel,
+                            rhythms = rhythms,
+                            blocks = blocks,
+                            onUpdateBlock = { id, updated -> courseConstructorViewModel.updateBlock(id, updated) },
+                            onDeleteBlock = { id -> courseConstructorViewModel.deleteBlock(id) },
+                            onMoveBlock = { id, delta -> courseConstructorViewModel.moveBlock(id, delta) },
+                            scrollToBlockId = lastAddedBlockId,
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                        )
+                    }
+                    if (viewMode == ConstructorViewMode.BOTH) {
+                        VerticalDivider()
+                    }
+                    if (viewMode == ConstructorViewMode.PREVIEW || viewMode == ConstructorViewMode.BOTH) {
+                        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            val preview = previewLecture
+                            if (preview != null) {
+                                LectureWebView(
+                                    lecture = preview,
+                                    resolveEcg = resolveEcg,
+                                    answers = answers,
+                                    scrollToBlockId = lastAddedBlockId,
+                                    onCellEdit = { quizId, row, col, value ->
+                                        courseConstructorViewModel.setTableCell(quizId, row, col, value)
+                                    },
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            } else {
+                                Text(
+                                    text = stringResource(R.string.course_viewer_select_lecture),
+                                    modifier = Modifier.align(Alignment.Center).padding(16.dp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 }

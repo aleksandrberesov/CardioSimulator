@@ -14,10 +14,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
@@ -26,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,11 +51,26 @@ fun ComparisonTargetDialog(
     appViewModel: AppViewModel,
     rhythms: List<PathologyEntry>,
     onDismiss: () -> Unit,
-    onTargetSelected: (ComparisonTarget) -> Unit
+    onTargetSelected: (ComparisonTarget) -> Unit,
+    initialPathologyId: String? = null,
+    initialLead: Lead? = null
 ) {
     val currentLanguage by appViewModel.selectedLanguage.collectAsState()
-    var selectedPathology by remember { mutableStateOf<PathologyEntry?>(null) }
-    var selectedLead by remember { mutableStateOf<Lead?>(null) }
+    var selectedPathology by remember(initialPathologyId, rhythms) {
+        mutableStateOf(rhythms.find { it.id == initialPathologyId })
+    }
+    var selectedLead by remember(initialLead) {
+        mutableStateOf(initialLead)
+    }
+
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(initialPathologyId, rhythms) {
+        val index = rhythms.indexOfFirst { it.id == initialPathologyId }
+        if (index >= 0) {
+            listState.scrollToItem(index)
+        }
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -80,6 +97,7 @@ fun ComparisonTargetDialog(
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
                         LazyColumn(
+                            state = listState,
                             modifier = Modifier
                                 .fillMaxHeight()
                                 .padding(end = 8.dp)

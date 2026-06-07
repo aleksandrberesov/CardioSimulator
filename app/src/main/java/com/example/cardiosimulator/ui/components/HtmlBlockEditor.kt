@@ -2,9 +2,13 @@ package com.example.cardiosimulator.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -17,7 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.cardiosimulator.domain.HtmlBlock
-
+import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.PathologyEntry
 import com.example.cardiosimulator.ui.screens.ComparisonTargetDialog
@@ -31,9 +35,21 @@ fun HtmlBlockEditor(
     onUpdateBlock: (String, HtmlBlock) -> Unit,
     onDeleteBlock: (String) -> Unit,
     onMoveBlock: (String, Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    lazyListState: LazyListState = rememberLazyListState(),
+    scrollToBlockId: String? = null,
 ) {
+    LaunchedEffect(scrollToBlockId) {
+        if (scrollToBlockId != null) {
+            val index = blocks.indexOfFirst { it.id == scrollToBlockId }
+            if (index != -1) {
+                lazyListState.animateScrollToItem(index)
+            }
+        }
+    }
+
     LazyColumn(
+        state = lazyListState,
         modifier = modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -49,7 +65,7 @@ fun HtmlBlockEditor(
                     is HtmlBlock.Image -> ImageEditor(block) { onUpdateBlock(block.id, it) }
                     is HtmlBlock.KaTeX -> KaTeXEditor(block) { onUpdateBlock(block.id, it) }
                     is HtmlBlock.Ecg -> EcgEditor(appViewModel, rhythms, block) { onUpdateBlock(block.id, it) }
-                    is HtmlBlock.RawHtml -> RawHtmlEditor(block) { onUpdateBlock(block.id, it) }
+                    is HtmlBlock.Table -> TableEditor(block) { onUpdateBlock(block.id, it) }
                 }
             }
         }
@@ -166,6 +182,7 @@ private fun EcgEditor(
     onUpdate: (HtmlBlock.Ecg) -> Unit
 ) {
     var showSelector by remember { mutableStateOf(false) }
+    val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
 
     if (showSelector) {
         ComparisonTargetDialog(
@@ -175,7 +192,9 @@ private fun EcgEditor(
             onTargetSelected = { target ->
                 onUpdate(block.copy(pathology = target.pathologyId, lead = target.lead.name))
                 showSelector = false
-            }
+            },
+            initialPathologyId = block.pathology,
+            initialLead = block.lead?.let { Lead.fromToken(it) }
         )
     }
 
@@ -193,8 +212,19 @@ private fun EcgEditor(
             ) {
                 Icon(Icons.Default.Waves, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Column(modifier = Modifier.weight(1f)) {
+                    val displayTitle = remember(block.pathology, rhythms, selectedLanguage) {
+                        if (block.pathology.isBlank()) "Select Rhythm..."
+                        else {
+                            val entry = rhythms.find { it.id == block.pathology }
+                            if (entry != null) {
+                                if (selectedLanguage == Language.RU) entry.nameRu ?: entry.titleEn else entry.titleEn
+                            } else {
+                                block.pathology
+                            }
+                        }
+                    }
                     Text(
-                        text = if (block.pathology.isBlank()) "Select Rhythm..." else block.pathology,
+                        text = displayTitle,
                         style = MaterialTheme.typography.bodyLarge
                     )
                     if (block.lead != null) {
@@ -220,15 +250,104 @@ private fun EcgEditor(
 }
 
 @Composable
-private fun RawHtmlEditor(block: HtmlBlock.RawHtml, onUpdate: (HtmlBlock.RawHtml) -> Unit) {
-    Column {
-        Text("Raw HTML / Table", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-        OutlinedTextField(
-            value = block.html,
-            onValueChange = { onUpdate(block.copy(html = it)) },
-            modifier = Modifier.fillMaxWidth(),
-            textStyle = androidx.compose.ui.text.TextStyle(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, fontSize = 12.sp),
-            minLines = 3
-        )
+private fun TableEditor(block: HtmlBlock.Table, onUpdate: (HtmlBlock.Table) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Table", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+
+        val rows = block.rows
+        val rowCount = rows.size
+        val colCount = if (rowCount > 0) rows[0].size else 0
+
+        // Table controls
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TextButton(onClick = {
+                val newRows = if (rowCount == 0) {
+                    listOf(listOf(""))
+                } else {
+                    rows.map { it + "" }
+                }
+                onUpdate(block.copy(rows = newRows))
+            }) {
+                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Add Col")
+            }
+            TextButton(onClick = {
+                val newRows = rows + listOf(List(colCount.coerceAtLeast(1)) { "" })
+                onUpdate(block.copy(rows = newRows))
+            }) {
+                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Add Row")
+            }
+        }
+
+        // Grid of text fields
+        if (rowCount > 0) {
+            Column(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+                for (rowIndex in 0 until rowCount) {
+                    Row(
+                        modifier = Modifier.padding(vertical = 2.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        for (colIndex in 0 until colCount) {
+                            OutlinedTextField(
+                                value = rows[rowIndex][colIndex],
+                                onValueChange = { newValue ->
+                                    val newRows = rows.mapIndexed { r, row ->
+                                        if (r == rowIndex) {
+                                            row.mapIndexed { c, cell ->
+                                                if (c == colIndex) newValue else cell
+                                            }
+                                        } else row
+                                    }
+                                    onUpdate(block.copy(rows = newRows))
+                                },
+                                modifier = Modifier.width(180.dp),
+                                textStyle = MaterialTheme.typography.bodySmall,
+                                minLines = 1,
+                                maxLines = 5,
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent
+                                )
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                val newRows = rows.filterIndexed { r, _ -> r != rowIndex }
+                                onUpdate(block.copy(rows = newRows))
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(Icons.Default.RemoveCircleOutline, contentDescription = "Delete Row", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                        }
+                    }
+                }
+
+                // Column delete buttons
+                Row(
+                    modifier = Modifier.padding(vertical = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    for (colIndex in 0 until colCount) {
+                        Box(modifier = Modifier.width(180.dp), contentAlignment = Alignment.Center) {
+                            IconButton(
+                                onClick = {
+                                    val newRows = rows.map { row ->
+                                        row.filterIndexed { c, _ -> c != colIndex }
+                                    }.filter { it.isNotEmpty() }
+                                    onUpdate(block.copy(rows = newRows))
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(Icons.Default.RemoveCircleOutline, contentDescription = "Delete Col", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

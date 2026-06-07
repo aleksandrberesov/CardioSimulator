@@ -75,6 +75,9 @@ class CourseConstructorViewModel(
     private val _blocks = MutableStateFlow<List<HtmlBlock>>(emptyList())
     val blocks: StateFlow<List<HtmlBlock>> = _blocks.asStateFlow()
 
+    private val _lastAddedBlockId = MutableStateFlow<String?>(null)
+    val lastAddedBlockId: StateFlow<String?> = _lastAddedBlockId.asStateFlow()
+
     val isDirty: StateFlow<Boolean> =
         combine(_draft, _savedText, _answers, _savedAnswers) { draft, saved, ans, savedAns ->
             draft != saved || ans != savedAns
@@ -152,6 +155,7 @@ class CourseConstructorViewModel(
 
     fun addBlock(block: HtmlBlock) {
         setBlocks(_blocks.value + block)
+        _lastAddedBlockId.value = block.id
     }
 
     fun updateBlock(id: String, updated: HtmlBlock) {

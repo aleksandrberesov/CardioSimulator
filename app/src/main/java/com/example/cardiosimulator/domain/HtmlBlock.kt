@@ -38,8 +38,8 @@ sealed interface HtmlBlock {
         val caption: String
     ) : HtmlBlock
 
-    data class RawHtml(
+    data class Table(
         override val id: String = UUID.randomUUID().toString(),
-        val html: String
+        val rows: List<List<String>> = listOf(listOf(""))
     ) : HtmlBlock
 }

@@ -155,6 +155,7 @@ fun TeachingScreen(
     }
 
     editingPaneIndex?.let { index ->
+        val currentTarget = mode.comparisonTargets[index]
         ComparisonTargetDialog(
             appViewModel = appViewModel,
             rhythms = rhythms,
@@ -162,7 +163,9 @@ fun TeachingScreen(
             onTargetSelected = { target ->
                 monitorViewModel.setComparisonTarget(index, target)
                 editingPaneIndex = null
-            }
+            },
+            initialPathologyId = currentTarget?.pathologyId,
+            initialLead = currentTarget?.lead
         )
     }
 

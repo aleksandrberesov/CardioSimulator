@@ -56,6 +56,7 @@ fun LectureWebView(
     modifier: Modifier = Modifier,
     resolveEcg: (pathologyId: String, lead: Lead?) -> List<EcgTrace> = { _, _ -> emptyList() },
     answers: Map<String, Map<String, String>> = emptyMap(),
+    scrollToBlockId: String? = null,
     onCellEdit: ((quizId: String, row: Int, col: Int, value: String) -> Unit)? = null,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -89,6 +90,9 @@ fun LectureWebView(
     val injectRef = remember { mutableStateOf(injectScript) }
     injectRef.value = injectScript
 
+    val scrollRef = remember { mutableStateOf<String?>(null) }
+    scrollRef.value = scrollToBlockId
+
     AndroidView(
         modifier = modifier,
         factory = { ctx ->
@@ -108,6 +112,9 @@ fun LectureWebView(
 
                     override fun onPageFinished(view: WebView, url: String) {
                         view.evaluateJavascript(injectRef.value, null)
+                        scrollRef.value?.let { id ->
+                            view.evaluateJavascript("document.getElementById('$id')?.scrollIntoView({behavior: 'smooth'})", null)
+                        }
                     }
                 }
                 settings.javaScriptEnabled = true
@@ -130,6 +137,9 @@ fun LectureWebView(
                     "utf-8",
                     null,
                 )
+            } else if (current != null && scrollToBlockId != null) {
+                // If the content didn't change but the scroll ID did, scroll now.
+                web.evaluateJavascript("document.getElementById('$scrollToBlockId')?.scrollIntoView({behavior: 'smooth'})", null)
             }
         },
         onRelease = { it.destroy() },
