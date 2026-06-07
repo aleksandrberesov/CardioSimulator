@@ -49,10 +49,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.EcgTrace
 import com.example.cardiosimulator.domain.HtmlBlock
@@ -360,6 +358,7 @@ fun CourseConstructorScreen(
                     modifier = Modifier.requiredWidth(64.dp).rotate(-90f),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelLarge,
+                    textAlign = TextAlign.Center
                 )
             },
             handlerModifier = Modifier.offset(y = (-40).dp),
@@ -385,6 +384,7 @@ fun CourseConstructorScreen(
                     modifier = Modifier.requiredWidth(64.dp).rotate(-90f),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelLarge,
+                    textAlign = TextAlign.Center
                 )
             },
             handlerModifier = Modifier.offset(y = 40.dp),

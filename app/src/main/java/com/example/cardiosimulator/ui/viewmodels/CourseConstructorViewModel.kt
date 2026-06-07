@@ -177,13 +177,6 @@ class CourseConstructorViewModel(
         }
     }
 
-    /** Appends an HTML [snippet] to the body (insert-block helpers). */
-    fun insertSnippet(snippet: String) {
-        if (_selectedLectureId.value == null) return
-        val current = _draft.value
-        setHtml(if (current.isBlank()) snippet else current.trimEnd() + "\n\n" + snippet)
-    }
-
     /** Records an edited quiz cell; persisted to `.answers.json` on [save]. */
     fun setTableCell(quizId: String, row: Int, col: Int, value: String) {
         val key = "$row,$col"

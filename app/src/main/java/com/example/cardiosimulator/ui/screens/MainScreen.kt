@@ -26,7 +26,6 @@ import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.panels.BottomControlPanel
 import com.example.cardiosimulator.ui.panels.ConstructorControlPanel
-import com.example.cardiosimulator.ui.panels.CourseConstructorControlPanel
 import com.example.cardiosimulator.ui.panels.MonitorControlPanel
 import com.example.cardiosimulator.ui.panels.TopControlPanel
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
@@ -220,11 +219,6 @@ fun MainScreen(appViewModel: AppViewModel) {
                         ConstructorControlPanel(
                             constructorViewModel = constructorViewModel,
                             monitorViewModel = monitorViewModel
-                        )
-                    }
-                    OperatingMode.CourseConstructor -> {
-                        CourseConstructorControlPanel(
-                            courseConstructorViewModel = courseConstructorViewModel
                         )
                     }
                     else -> {}
