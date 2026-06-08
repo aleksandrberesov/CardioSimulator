@@ -62,9 +62,14 @@ fun EditableLead(
         (stream.samples.size * scale.pxPerSample).toDp()
     }
 
+    val waveformHeightDp = with(density) {
+        (2048 * scale.pxPerAdcCount).toDp()
+    }
+
     Box(
         modifier = modifier
-            .leadArea()
+            .fillMaxWidth()
+            .height(waveformHeightDp)
             .clipToBounds(),
         contentAlignment = Alignment.Center
     ) {

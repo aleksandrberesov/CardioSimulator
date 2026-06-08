@@ -253,6 +253,13 @@ fun ConstructorScreen(
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
 
+    // Set a larger scale for the editor by default if it's too small
+    LaunchedEffect(Unit) {
+        if (monitorViewModel.monitorMode.value.displayScale < 0.7f) {
+            monitorViewModel.setDisplayScale(0.8f)
+        }
+    }
+
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -539,39 +546,52 @@ fun ConstructorScreen(
                                 ) { _, _, xOffset, scheme ->
                                     if (stream != null) {
                                         val isEditable = constructorViewModel.isLeadEditable(focusedLead)
+                                        val scrollState = rememberScrollState()
+                                        LaunchedEffect(scrollState.maxValue) {
+                                            if (scrollState.maxValue > 0) {
+                                                scrollState.scrollTo(scrollState.maxValue / 2)
+                                            }
+                                        }
                                         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                                             val viewWidthPx = constraints.maxWidth.toFloat()
                                             val viewHeightPx = constraints.maxHeight.toFloat()
                                             val scale = LocalPixelScale.current
 
                                             Column(modifier = Modifier.fillMaxSize()) {
-                                                Spacer(modifier = Modifier.height(132.dp))
+                                                Column(
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .fillMaxWidth()
+                                                        .verticalScroll(scrollState)
+                                                ) {
+                                                    Spacer(modifier = Modifier.height(64.dp))
 
-                                                EditableLead(
-                                                    stream = stream,
-                                                    significantPoints = file.significantPoints,
-                                                    baseline = baseline,
-                                                    selectedIndex = selectedIndex,
-                                                    onIndexSelected = { constructorViewModel.selectIndex(it) },
-                                                    isEditable = isEditable,
-                                                    modifier = Modifier.weight(1f),
-                                                    referenceImageUri = referenceImageUri,
-                                                    imageOffset = imageOffset,
-                                                    imageScale = imageScale,
-                                                    imageRotationDeg = imageRotationDeg,
-                                                    imageAlpha = imageAlpha,
-                                                    toolMode = toolMode,
-                                                    onImageTransform = { offset, s, r ->
-                                                        constructorViewModel.setImageOffset(offset)
-                                                        constructorViewModel.setImageScale(s)
-                                                        constructorViewModel.setImageRotation(r)
-                                                    },
-                                                    onStrokeStart = { constructorViewModel.startStroke(focusedLead) },
-                                                    onTrace = { constructorViewModel.traceSamples(focusedLead, it) },
-                                                    ghostTrace = ghostTrace,
-                                                    onApplyGhostTrace = { constructorViewModel.applyGhostTrace() },
-                                                    onCancelGhostTrace = { constructorViewModel.setGhostTrace(null) }
-                                                )
+                                                    EditableLead(
+                                                        stream = stream,
+                                                        significantPoints = file.significantPoints,
+                                                        baseline = baseline,
+                                                        selectedIndex = selectedIndex,
+                                                        onIndexSelected = { constructorViewModel.selectIndex(it) },
+                                                        isEditable = isEditable,
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        referenceImageUri = referenceImageUri,
+                                                        imageOffset = imageOffset,
+                                                        imageScale = imageScale,
+                                                        imageRotationDeg = imageRotationDeg,
+                                                        imageAlpha = imageAlpha,
+                                                        toolMode = toolMode,
+                                                        onImageTransform = { offset, s, r ->
+                                                            constructorViewModel.setImageOffset(offset)
+                                                            constructorViewModel.setImageScale(s)
+                                                            constructorViewModel.setImageRotation(r)
+                                                        },
+                                                        onStrokeStart = { constructorViewModel.startStroke(focusedLead) },
+                                                        onTrace = { constructorViewModel.traceSamples(focusedLead, it) },
+                                                        ghostTrace = ghostTrace,
+                                                        onApplyGhostTrace = { constructorViewModel.applyGhostTrace() },
+                                                        onCancelGhostTrace = { constructorViewModel.setGhostTrace(null) }
+                                                    )
+                                                }
 
                                                 val points = remember(stream, baseline) {
                                                     Points(stream.samples.map { (it - baseline).toFloat() })
