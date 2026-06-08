@@ -73,8 +73,12 @@ class EcgSvgRendererTest {
     @Test
     fun `svg path uses a locale-independent decimal point`() {
         val out = EcgSvgRenderer.figureHtml(listOf(EcgTrace(Lead.II, sample)), caption = null)
-        val path = out.substringAfter("<path d=\"").substringBefore("\"")
-        assertTrue("path should start with a moveto", path.startsWith("M0 "))
-        assertFalse("coordinates must not use a comma decimal separator", path.contains(","))
+        // The trace path is the one with TRACE_COLOR (#111111)
+        val path = out.substringAfter("stroke=\"#111111\"").substringBeforeLast("<path d=\"")
+        // Wait, that's not right. substringAfter finds what's AFTER.
+        // Let's use a more robust way to find the trace path.
+        val tracePath = out.split("<path d=\"").last().substringBefore("\"")
+        assertTrue("path should start with a moveto", tracePath.startsWith("M0 "))
+        assertFalse("coordinates must not use a comma decimal separator", tracePath.contains(","))
     }
 }

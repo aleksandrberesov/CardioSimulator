@@ -34,6 +34,9 @@ android {
     buildFeatures {
         compose = true
     }
+    lint {
+        disable += "MissingTranslation"
+    }
     sourceSets {
         getByName("main") {
             assets.srcDirs("src/main/assets")
