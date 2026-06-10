@@ -30,7 +30,7 @@ enum class EditingAlgorithm {
 
 enum class ToolMode {
     Select,
-    Draw,
+    Trace,
     Position,
     Points,
     Photo
@@ -100,12 +100,15 @@ class ConstructorViewModel(
     private val _imageLocked = MutableStateFlow(false)
     val imageLocked: StateFlow<Boolean> = _imageLocked.asStateFlow()
 
+    private val _imageVisible = MutableStateFlow(true)
+    val imageVisible: StateFlow<Boolean> = _imageVisible.asStateFlow()
+
     private val _ghostTrace = MutableStateFlow<IntArray?>(null)
     val ghostTrace: StateFlow<IntArray?> = _ghostTrace.asStateFlow()
 
     fun setToolMode(mode: ToolMode) {
         _toolMode.value = mode
-        if (mode != ToolMode.Draw) {
+        if (mode != ToolMode.Trace) {
             _ghostTrace.value = null
         }
     }
@@ -143,6 +146,10 @@ class ConstructorViewModel(
         _imageLocked.value = locked
     }
 
+    fun setImageVisible(visible: Boolean) {
+        _imageVisible.value = visible
+    }
+
     fun resetImageTransform() {
         _imageOffset.value = Offset.Zero
         _imageScale.value = 1f
@@ -152,9 +159,7 @@ class ConstructorViewModel(
     fun setReferenceImageUri(uri: Uri?) {
         _referenceImageUri.value = uri
         if (uri != null) {
-            _toolMode.value = ToolMode.Position
-        } else {
-            _toolMode.value = ToolMode.Select
+            _toolMode.value = ToolMode.Photo
         }
         resetImageTransform()
     }

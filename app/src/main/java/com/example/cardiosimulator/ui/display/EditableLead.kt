@@ -4,9 +4,6 @@ import android.net.Uri
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -17,10 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.LocalPixelScale
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.LeadStream
@@ -50,9 +45,7 @@ fun EditableLead(
     onImageTransform: (Offset, Float, Float) -> Unit = { _, _, _ -> },
     onStrokeStart: () -> Unit = {},
     onTrace: (Map<Int, Int>) -> Unit = {},
-    ghostTrace: IntArray? = null,
-    onApplyGhostTrace: () -> Unit = {},
-    onCancelGhostTrace: () -> Unit = {}
+    ghostTrace: IntArray? = null
 ) {
     val points = Points(stream.samples.map { (it - baseline).toFloat() })
     val scale = LocalPixelScale.current
@@ -152,7 +145,7 @@ fun EditableLead(
                     )
                 }
 
-                if (toolMode == ToolMode.Draw && isEditable) {
+                if (toolMode == ToolMode.Trace && isEditable) {
                     TraceOverlay(
                         sampleCount = stream.samples.size,
                         baseline = baseline,
@@ -160,32 +153,6 @@ fun EditableLead(
                         onTrace = onTrace,
                         modifier = Modifier.fillMaxSize()
                     )
-                }
-            }
-        }
-        
-        // Ghost trace controls
-        if (ghostTrace != null) {
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 16.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
-                shape = MaterialTheme.shapes.medium,
-                tonalElevation = 4.dp
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(stringResource(R.string.constructor_apply_ghost_trace), style = MaterialTheme.typography.labelMedium)
-                    IconButton(onClick = onApplyGhostTrace) {
-                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.cd_apply), tint = Color(0xFF2E7D32))
-                    }
-                    IconButton(onClick = onCancelGhostTrace) {
-                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_cancel), tint = MaterialTheme.colorScheme.error)
-                    }
                 }
             }
         }

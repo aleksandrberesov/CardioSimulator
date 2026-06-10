@@ -17,6 +17,9 @@ import com.example.cardiosimulator.R
 fun ReferenceImagePanel(
     referenceImageUri: Uri?,
     onLoadImage: () -> Unit,
+    onDeleteImage: () -> Unit,
+    imageVisible: Boolean,
+    onToggleVisibility: (Boolean) -> Unit,
     imageAlpha: Float,
     onAlphaChange: (Float) -> Unit,
     imageScale: Float,
@@ -30,7 +33,7 @@ fun ReferenceImagePanel(
 ) {
     Surface(
         modifier = modifier
-            .width(200.dp)
+            .width(240.dp)
             .fillMaxHeight(),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         tonalElevation = 2.dp
@@ -58,17 +61,32 @@ fun ReferenceImagePanel(
                     )
                 }
 
-                IconButton(onClick = { onLockToggle(!imageLocked) }) {
+                IconButton(onClick = { onToggleVisibility(!imageVisible) }, enabled = referenceImageUri != null) {
+                    Icon(
+                        if (imageVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                        contentDescription = null
+                    )
+                }
+
+                IconButton(onClick = { onLockToggle(!imageLocked) }, enabled = referenceImageUri != null) {
                     Icon(
                         if (imageLocked) Icons.Default.Lock else Icons.Default.LockOpen,
                         contentDescription = stringResource(R.string.image_panel_lock)
                     )
                 }
 
-                IconButton(onClick = onResetImage, enabled = !imageLocked) {
+                IconButton(onClick = onResetImage, enabled = referenceImageUri != null && !imageLocked) {
                     Icon(
                         Icons.Default.Refresh,
                         contentDescription = stringResource(R.string.image_panel_reset)
+                    )
+                }
+
+                IconButton(onClick = onDeleteImage, enabled = referenceImageUri != null) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.course_constructor_delete),
+                        tint = if (referenceImageUri != null) MaterialTheme.colorScheme.error else LocalContentColor.current.copy(alpha = 0.38f)
                     )
                 }
             }
@@ -87,7 +105,7 @@ fun ReferenceImagePanel(
                     Slider(
                         value = imageAlpha,
                         onValueChange = onAlphaChange,
-                        modifier = Modifier.width(180.dp)
+                        modifier = Modifier.width(220.dp)
                     )
                 }
 
@@ -103,7 +121,7 @@ fun ReferenceImagePanel(
                         value = imageScale,
                         onValueChange = onScaleChange,
                         valueRange = 0.1f..5f,
-                        modifier = Modifier.width(180.dp),
+                        modifier = Modifier.width(220.dp),
                         enabled = !imageLocked
                     )
                 }
@@ -120,7 +138,7 @@ fun ReferenceImagePanel(
                         value = imageRotation,
                         onValueChange = onRotationChange,
                         valueRange = -180f..180f,
-                        modifier = Modifier.width(180.dp),
+                        modifier = Modifier.width(220.dp),
                         enabled = !imageLocked
                     )
                 }

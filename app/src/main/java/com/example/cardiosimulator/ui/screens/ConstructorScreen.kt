@@ -79,6 +79,7 @@ fun ConstructorScreen(
     val imageRotationDeg by constructorViewModel.imageRotationDeg.collectAsState()
     val imageAlpha by constructorViewModel.imageAlpha.collectAsState()
     val imageLocked by constructorViewModel.imageLocked.collectAsState()
+    val imageVisible by constructorViewModel.imageVisible.collectAsState()
     val ghostTrace by constructorViewModel.ghostTrace.collectAsState()
     val isDrawerFixed by appViewModel.isDrawerFixed.collectAsState()
 
@@ -397,7 +398,7 @@ fun ConstructorScreen(
                                                                 scheme = scheme,
                                                                 showBackground = referenceImageUri == null
                                                             ),
-                                                        referenceImageUri = referenceImageUri,
+                                                        referenceImageUri = if (imageVisible) referenceImageUri else null,
                                                         imageOffset = imageOffset,
                                                         imageScale = imageScale,
                                                         imageRotationDeg = imageRotationDeg,
@@ -410,9 +411,7 @@ fun ConstructorScreen(
                                                         },
                                                         onStrokeStart = { constructorViewModel.startStroke(focusedLead) },
                                                         onTrace = { constructorViewModel.traceSamples(focusedLead, it) },
-                                                        ghostTrace = ghostTrace,
-                                                        onApplyGhostTrace = { constructorViewModel.applyGhostTrace() },
-                                                        onCancelGhostTrace = { constructorViewModel.setGhostTrace(null) }
+                                                        ghostTrace = ghostTrace
                                                     )
                                                 }
 
@@ -450,8 +449,13 @@ fun ConstructorScreen(
 
                             when (toolMode) {
                                 ToolMode.Select -> SelectPanel()
-                                ToolMode.Draw -> DrawPanel(
+                                ToolMode.Trace -> DrawPanel(
                                     showAutoDetect = referenceImageUri != null && ghostTrace == null,
+                                    hasGhostTrace = ghostTrace != null,
+                                    onApplyGhostTrace = { constructorViewModel.applyGhostTrace() },
+                                    onCancelGhostTrace = { constructorViewModel.setGhostTrace(null) },
+                                    onUndo = { constructorViewModel.undo(focusedLead) },
+                                    canUndo = true, // We could add a flow to check stack size
                                     onAutoDetect = {
                                         scope.launch {
                                             val bitmap = withContext(Dispatchers.IO) {
@@ -500,6 +504,9 @@ fun ConstructorScreen(
                                 ToolMode.Photo -> ReferenceImagePanel(
                                     referenceImageUri = referenceImageUri,
                                     onLoadImage = { launcher.launch("image/*") },
+                                    onDeleteImage = { constructorViewModel.setReferenceImageUri(null) },
+                                    imageVisible = imageVisible,
+                                    onToggleVisibility = { constructorViewModel.setImageVisible(it) },
                                     imageAlpha = imageAlpha,
                                     onAlphaChange = { constructorViewModel.setImageAlpha(it) },
                                     imageScale = imageScale,

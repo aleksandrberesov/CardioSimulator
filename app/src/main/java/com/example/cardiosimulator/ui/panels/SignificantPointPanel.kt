@@ -29,7 +29,7 @@ fun SignificantPointPanel(
 ) {
     Surface(
         modifier = modifier
-            .width(200.dp)
+            .width(240.dp)
             .fillMaxHeight(),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         tonalElevation = 2.dp

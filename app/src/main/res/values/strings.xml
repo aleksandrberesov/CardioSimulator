@@ -228,7 +228,7 @@
     <string name="ecg_rr_value_format">R-R: %1$.3f s</string>
 
     <string name="tool_mode_select">Select</string>
-    <string name="tool_mode_draw">Draw</string>
+    <string name="tool_mode_trace">Trace</string>
     <string name="tool_mode_position">Position</string>
     <string name="image_panel_title">Reference Photo</string>
     <string name="image_panel_opacity">Opacity</string>
