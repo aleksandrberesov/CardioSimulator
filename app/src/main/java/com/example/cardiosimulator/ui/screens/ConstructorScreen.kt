@@ -481,8 +481,11 @@ fun ConstructorScreen(
                                 )
                             }
 
-                            OutlinedButton(onClick = { showCalculateDerivedDialog = true }) {
-                                Text(stringResource(R.string.constructor_generate_derived))
+                            IconButton(onClick = { showCalculateDerivedDialog = true }) {
+                                Icon(
+                                    Icons.Default.Calculate,
+                                    contentDescription = stringResource(R.string.constructor_generate_derived)
+                                )
                             }
                         }
 
