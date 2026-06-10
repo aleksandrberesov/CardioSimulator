@@ -31,7 +31,9 @@ enum class EditingAlgorithm {
 enum class ToolMode {
     Select,
     Trace,
-    Position
+    Position,
+    Points,
+    Photo
 }
 
 /**

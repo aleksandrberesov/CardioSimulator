@@ -229,11 +229,12 @@
     <string name="tool_mode_select">Выбор</string>
     <string name="tool_mode_trace">Отрисовка</string>
     <string name="tool_mode_position">Привязка</string>
-    <string name="image_panel_title">Трансформация фото</string>
+    <string name="image_panel_title">Эталонное фото</string>
     <string name="image_panel_opacity">Прозрачность</string>
     <string name="image_panel_lock">Блокировка</string>
-    <string name="image_panel_reset">Сбросить трансформацию</string>
+    <string name="image_panel_reset">Сброс трансформации</string>
     <string name="constructor_auto_detect">Автопоиск</string>
+    <string name="constructor_tool_mode">Режим</string>
     <string name="constructor_apply_ghost_trace">Применить найденную кривую?</string>
     <string name="cd_redo">Вернуть</string>
     <string name="cd_apply">Применить</string>

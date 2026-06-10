@@ -107,7 +107,7 @@ fun EditableLead(
                                 alpha = imageAlpha
                             )
                             .then(
-                                if (toolMode == ToolMode.Position) {
+                                if (toolMode == ToolMode.Photo) {
                                     Modifier.transformable(
                                         state = rememberTransformableState { zoomChange, offsetChange, rotationChange ->
                                             onImageTransform(
@@ -141,13 +141,13 @@ fun EditableLead(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                if (toolMode == ToolMode.Select) {
+                if (toolMode == ToolMode.Select || toolMode == ToolMode.Points) {
                     SampleHandleOverlay(
                         samples = stream.samples,
                         baseline = baseline,
                         selectedIndex = selectedIndex,
                         onIndexSelected = onIndexSelected,
-                        isEditable = isEditable,
+                        isEditable = isEditable && toolMode == ToolMode.Select,
                         modifier = Modifier.fillMaxSize()
                     )
                 }

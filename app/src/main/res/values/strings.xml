@@ -230,11 +230,12 @@
     <string name="tool_mode_select">Select</string>
     <string name="tool_mode_trace">Trace</string>
     <string name="tool_mode_position">Position</string>
-    <string name="image_panel_title">Photo Transform</string>
+    <string name="image_panel_title">Reference Photo</string>
     <string name="image_panel_opacity">Opacity</string>
     <string name="image_panel_lock">Lock</string>
     <string name="image_panel_reset">Reset Transform</string>
     <string name="constructor_auto_detect">Auto-detect</string>
+    <string name="constructor_tool_mode">Tool Mode</string>
     <string name="constructor_apply_ghost_trace">Apply auto-detected trace?</string>
     <string name="cd_redo">Redo</string>
     <string name="cd_apply">Apply</string>
