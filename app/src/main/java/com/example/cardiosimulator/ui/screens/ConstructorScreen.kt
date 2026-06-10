@@ -35,8 +35,11 @@ import com.example.cardiosimulator.ui.components.SideDrawer
 import com.example.cardiosimulator.ui.display.EditableLead
 import com.example.cardiosimulator.ui.display.Monitor
 import com.example.cardiosimulator.ui.display.ekgGrid
+import com.example.cardiosimulator.ui.panels.DrawPanel
+import com.example.cardiosimulator.ui.panels.PositionPanel
 import com.example.cardiosimulator.ui.panels.ReferenceImagePanel
 import com.example.cardiosimulator.ui.panels.RhythmSelector
+import com.example.cardiosimulator.ui.panels.SelectPanel
 import com.example.cardiosimulator.ui.panels.SignificantPointPanel
 import com.example.cardiosimulator.ui.panels.SignificantPointSelector
 import com.example.cardiosimulator.ui.panels.ToolModePanel
@@ -445,24 +448,9 @@ fun ConstructorScreen(
                                 }
                             }
 
-                            if (toolMode == ToolMode.Points) {
-                                SignificantPointPanel(
-                                    significantPoints = file.significantPoints,
-                                    selectedIndex = selectedIndex,
-                                    sampleRate = monitorMode.calibration.sampleRateHz,
-                                    onPointToggle = { idx, type ->
-                                        constructorViewModel.toggleSignificantPoint(focusedLead, idx, type)
-                                    }
-                                )
-                            } else if (toolMode == ToolMode.Photo) {
-                                ReferenceImagePanel(
-                                    referenceImageUri = referenceImageUri,
-                                    onLoadImage = { launcher.launch("image/*") },
-                                    imageAlpha = imageAlpha,
-                                    onAlphaChange = { constructorViewModel.setImageAlpha(it) },
-                                    imageLocked = imageLocked,
-                                    onLockToggle = { constructorViewModel.setImageLocked(it) },
-                                    onResetImage = { constructorViewModel.resetImageTransform() },
+                            when (toolMode) {
+                                ToolMode.Select -> SelectPanel()
+                                ToolMode.Draw -> DrawPanel(
                                     showAutoDetect = referenceImageUri != null && ghostTrace == null,
                                     onAutoDetect = {
                                         scope.launch {
@@ -499,6 +487,28 @@ fun ConstructorScreen(
                                             }
                                         }
                                     }
+                                )
+                                ToolMode.Position -> PositionPanel()
+                                ToolMode.Points -> SignificantPointPanel(
+                                    significantPoints = file.significantPoints,
+                                    selectedIndex = selectedIndex,
+                                    sampleRate = monitorMode.calibration.sampleRateHz,
+                                    onPointToggle = { idx, type ->
+                                        constructorViewModel.toggleSignificantPoint(focusedLead, idx, type)
+                                    }
+                                )
+                                ToolMode.Photo -> ReferenceImagePanel(
+                                    referenceImageUri = referenceImageUri,
+                                    onLoadImage = { launcher.launch("image/*") },
+                                    imageAlpha = imageAlpha,
+                                    onAlphaChange = { constructorViewModel.setImageAlpha(it) },
+                                    imageScale = imageScale,
+                                    onScaleChange = { constructorViewModel.setImageScale(it) },
+                                    imageRotation = imageRotationDeg,
+                                    onRotationChange = { constructorViewModel.setImageRotation(it) },
+                                    imageLocked = imageLocked,
+                                    onLockToggle = { constructorViewModel.setImageLocked(it) },
+                                    onResetImage = { constructorViewModel.resetImageTransform() }
                                 )
                             }
 

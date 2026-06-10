@@ -3,13 +3,11 @@ package com.example.cardiosimulator.ui.panels
 import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoFixHigh
-import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -21,16 +19,18 @@ fun ReferenceImagePanel(
     onLoadImage: () -> Unit,
     imageAlpha: Float,
     onAlphaChange: (Float) -> Unit,
+    imageScale: Float,
+    onScaleChange: (Float) -> Unit,
+    imageRotation: Float,
+    onRotationChange: (Float) -> Unit,
     imageLocked: Boolean,
     onLockToggle: (Boolean) -> Unit,
     onResetImage: () -> Unit,
-    onAutoDetect: () -> Unit,
-    showAutoDetect: Boolean,
     modifier: Modifier = Modifier
 ) {
     Surface(
         modifier = modifier
-            .width(180.dp)
+            .width(200.dp)
             .fillMaxHeight(),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         tonalElevation = 2.dp
@@ -46,73 +46,83 @@ fun ReferenceImagePanel(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            HorizontalDivider()
-
-            Button(
-                onClick = onLoadImage,
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.constructor_load_reference),
-                    style = MaterialTheme.typography.labelSmall
-                )
+                IconButton(onClick = onLoadImage) {
+                    Icon(
+                        Icons.Default.Image,
+                        contentDescription = stringResource(R.string.constructor_load_reference)
+                    )
+                }
+
+                IconButton(onClick = { onLockToggle(!imageLocked) }) {
+                    Icon(
+                        if (imageLocked) Icons.Default.Lock else Icons.Default.LockOpen,
+                        contentDescription = stringResource(R.string.image_panel_lock)
+                    )
+                }
+
+                IconButton(onClick = onResetImage, enabled = !imageLocked) {
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = stringResource(R.string.image_panel_reset)
+                    )
+                }
             }
 
-            if (referenceImageUri != null) {
-                HorizontalDivider()
+            HorizontalDivider()
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            if (referenceImageUri != null) {
+                // Opacity Adjuster
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        stringResource(R.string.image_panel_opacity),
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodySmall
+                        text = stringResource(R.string.image_panel_opacity),
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Start
                     )
                     Slider(
                         value = imageAlpha,
                         onValueChange = onAlphaChange,
-                        modifier = Modifier.width(80.dp)
+                        modifier = Modifier.width(180.dp)
                     )
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // Scale Adjuster
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        stringResource(R.string.image_panel_lock),
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Switch(
-                        checked = imageLocked,
-                        onCheckedChange = onLockToggle,
-                        modifier = Modifier.scale(0.7f)
-                    )
-                }
-
-                OutlinedButton(
-                    onClick = onResetImage,
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !imageLocked,
-                    contentPadding = PaddingValues(4.dp)
-                ) {
-                    Text(stringResource(R.string.image_panel_reset), style = MaterialTheme.typography.labelSmall)
-                }
-
-                if (showAutoDetect) {
-                    Spacer(Modifier.weight(1f))
-                    Button(
-                        onClick = onAutoDetect,
+                        text = stringResource(R.string.image_panel_scale),
+                        style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.tertiary
-                        ),
-                        contentPadding = PaddingValues(8.dp)
-                    ) {
-                        Icon(Icons.Default.AutoFixHigh, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.constructor_auto_detect), style = MaterialTheme.typography.labelSmall)
-                    }
+                        textAlign = TextAlign.Start
+                    )
+                    Slider(
+                        value = imageScale,
+                        onValueChange = onScaleChange,
+                        valueRange = 0.1f..5f,
+                        modifier = Modifier.width(180.dp),
+                        enabled = !imageLocked
+                    )
+                }
+
+                // Rotation Adjuster
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = stringResource(R.string.image_panel_rotation),
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Start
+                    )
+                    Slider(
+                        value = imageRotation,
+                        onValueChange = onRotationChange,
+                        valueRange = -180f..180f,
+                        modifier = Modifier.width(180.dp),
+                        enabled = !imageLocked
+                    )
                 }
             } else {
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {

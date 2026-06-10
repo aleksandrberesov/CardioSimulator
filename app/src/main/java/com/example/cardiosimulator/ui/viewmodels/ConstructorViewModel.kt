@@ -30,7 +30,7 @@ enum class EditingAlgorithm {
 
 enum class ToolMode {
     Select,
-    Trace,
+    Draw,
     Position,
     Points,
     Photo
@@ -105,7 +105,7 @@ class ConstructorViewModel(
 
     fun setToolMode(mode: ToolMode) {
         _toolMode.value = mode
-        if (mode != ToolMode.Trace) {
+        if (mode != ToolMode.Draw) {
             _ghostTrace.value = null
         }
     }

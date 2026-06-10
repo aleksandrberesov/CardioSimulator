@@ -227,10 +227,12 @@
     <string name="ecg_rr_value_format">R-R: %1$.3f с</string>
 
     <string name="tool_mode_select">Выбор</string>
-    <string name="tool_mode_trace">Отрисовка</string>
+    <string name="tool_mode_draw">Отрисовка</string>
     <string name="tool_mode_position">Привязка</string>
     <string name="image_panel_title">Эталонное фото</string>
     <string name="image_panel_opacity">Прозрачность</string>
+    <string name="image_panel_rotation">Поворот</string>
+    <string name="image_panel_scale">Масштаб</string>
     <string name="image_panel_lock">Блокировка</string>
     <string name="image_panel_reset">Сброс трансформации</string>
     <string name="constructor_auto_detect">Автопоиск</string>

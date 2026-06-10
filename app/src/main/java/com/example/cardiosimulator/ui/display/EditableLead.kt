@@ -152,7 +152,7 @@ fun EditableLead(
                     )
                 }
 
-                if (toolMode == ToolMode.Trace && isEditable) {
+                if (toolMode == ToolMode.Draw && isEditable) {
                     TraceOverlay(
                         sampleCount = stream.samples.size,
                         baseline = baseline,
