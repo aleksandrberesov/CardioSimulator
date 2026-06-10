@@ -56,6 +56,7 @@ fun Monitor(
     monitorViewModel: MonitorViewModel,
     staticGrid: Boolean = false,
     showGridBackground: Boolean = true,
+    showGridLines: Boolean = true,
     gesturesEnabled: Boolean = true,
     backgroundContent: @Composable () -> Unit = {},
     content: @Composable ColumnScope.(rows: Int, columns: Int, xOffsetPx: Float, scheme: GridScheme) -> Unit
@@ -167,7 +168,7 @@ fun Monitor(
                     modifier = Modifier
                         .fillMaxSize()
                         .ekgGrid(
-                            scheme = mode.gridScheme,
+                            scheme = if (showGridLines) mode.gridScheme else GridScheme.Blank,
                             xOffsetPx = if (staticGrid) 0f else xOffsetPx,
                             showBackground = showGridBackground
                         )

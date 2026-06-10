@@ -33,6 +33,7 @@ import com.example.cardiosimulator.ui.components.PreviewPane
 import com.example.cardiosimulator.ui.components.SideDrawer
 import com.example.cardiosimulator.ui.display.EditableLead
 import com.example.cardiosimulator.ui.display.Monitor
+import com.example.cardiosimulator.ui.display.ekgGrid
 import com.example.cardiosimulator.ui.panels.RhythmSelector
 import com.example.cardiosimulator.ui.panels.SignificantPointSelector
 import com.example.cardiosimulator.ui.utils.TraceExtractor
@@ -252,13 +253,6 @@ fun ConstructorScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
-
-    // Set a larger scale for the editor by default if it's too small
-    LaunchedEffect(Unit) {
-        if (monitorViewModel.monitorMode.value.displayScale < 0.7f) {
-            monitorViewModel.setDisplayScale(0.8f)
-        }
-    }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -542,6 +536,7 @@ fun ConstructorScreen(
                                     monitorViewModel = monitorViewModel,
                                     staticGrid = true,
                                     showGridBackground = referenceImageUri == null,
+                                    showGridLines = false,
                                     gesturesEnabled = toolMode == ToolMode.Select
                                 ) { _, _, xOffset, scheme ->
                                     if (stream != null) {
@@ -573,7 +568,12 @@ fun ConstructorScreen(
                                                         selectedIndex = selectedIndex,
                                                         onIndexSelected = { constructorViewModel.selectIndex(it) },
                                                         isEditable = isEditable,
-                                                        modifier = Modifier.fillMaxWidth(),
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .ekgGrid(
+                                                                scheme = scheme,
+                                                                showBackground = referenceImageUri == null
+                                                            ),
                                                         referenceImageUri = referenceImageUri,
                                                         imageOffset = imageOffset,
                                                         imageScale = imageScale,
@@ -607,7 +607,9 @@ fun ConstructorScreen(
                                                 ) {
                                                     PreviewPane(
                                                         points = points,
-                                                        modifier = Modifier.fillMaxSize(),
+                                                        modifier = Modifier
+                                                            .fillMaxSize()
+                                                            .ekgGrid(scheme = scheme),
                                                         isRunning = monitorMode.isRunning,
                                                         externalXOffsetPx = xOffset,
                                                         gridScheme = scheme
@@ -626,6 +628,8 @@ fun ConstructorScreen(
                                                                 }
                                                             }
                                                             if (bitmap != null) {
+                                                                val waveformWidthPx = stream.samples.size * scale.pxPerSample
+                                                                val waveformHeightPx = 2048 * scale.pxPerAdcCount
                                                                 val extracted = TraceExtractor.extract(
                                                                     bitmap = bitmap,
                                                                     sampleCount = stream.samples.size,
@@ -635,8 +639,8 @@ fun ConstructorScreen(
                                                                     imageOffset = imageOffset,
                                                                     imageScale = imageScale,
                                                                     imageRotationDeg = imageRotationDeg,
-                                                                    viewWidth = viewWidthPx,
-                                                                    viewHeight = viewHeightPx
+                                                                    viewWidth = waveformWidthPx,
+                                                                    viewHeight = waveformHeightPx
                                                                 )
                                                                 constructorViewModel.setGhostTrace(extracted)
                                                             }
