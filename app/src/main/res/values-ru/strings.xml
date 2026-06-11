@@ -81,6 +81,10 @@
     <string name="course_constructor_id_hint">Идентификатор</string>
     <string name="course_constructor_title_hint">Заголовок</string>
     <string name="course_constructor_delete_confirm">Удалить эту лекцию?</string>
+    <string name="course_insert_image">Изображение</string>
+    <string name="course_constructor_image_src">Источник (URL или путь в assets)</string>
+    <string name="course_constructor_image_alt">Заголовок / Подпись</string>
+    <string name="course_constructor_image_upload">Загрузить изображение</string>
     <string name="points_drawer_title">Точки</string>
     <string name="rhythm_search_placeholder">Ритм…</string>
     <string name="rhythm_search_content_description">Поиск</string>

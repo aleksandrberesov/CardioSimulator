@@ -305,6 +305,7 @@ fun CourseConstructorScreen(
                             onUpdateBlock = { id, updated -> courseConstructorViewModel.updateBlock(id, updated) },
                             onDeleteBlock = { id -> courseConstructorViewModel.deleteBlock(id) },
                             onMoveBlock = { id, delta -> courseConstructorViewModel.moveBlock(id, delta) },
+                            onImportImage = { name, bytes -> courseConstructorViewModel.importImage(name, bytes) },
                             scrollToBlockId = focusedBlockId,
                             modifier = Modifier.weight(1f).fillMaxHeight(),
                         )

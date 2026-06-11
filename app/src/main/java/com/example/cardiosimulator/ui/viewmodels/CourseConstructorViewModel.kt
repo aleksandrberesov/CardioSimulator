@@ -168,6 +168,15 @@ class CourseConstructorViewModel(
         setBlocks(_blocks.value.map { if (it.id == id) updated else it })
     }
 
+    /**
+     * Saves an image to the course's asset folder and returns the relative path.
+     */
+    fun importImage(fileName: String, bytes: ByteArray): String? {
+        val courseId = _selectedCourseId.value ?: return null
+        val ok = repository.importAsset(courseId, fileName, bytes)
+        return if (ok) "assets/$fileName" else null
+    }
+
     fun deleteBlock(id: String) {
         setBlocks(_blocks.value.filterNot { it.id == id })
     }

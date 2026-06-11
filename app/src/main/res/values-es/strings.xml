@@ -80,6 +80,10 @@
     <string name="course_constructor_id_hint">Id</string>
     <string name="course_constructor_title_hint">Título</string>
     <string name="course_constructor_delete_confirm">¿Eliminar esta lección?</string>
+    <string name="course_insert_image">Imagen</string>
+    <string name="course_constructor_image_src">Origen (URL o ruta de assets)</string>
+    <string name="course_constructor_image_alt">Título / Leyenda</string>
+    <string name="course_constructor_image_upload">Subir imagen</string>
     <string name="rhythm_search_placeholder">Ritmo…</string>
     <string name="rhythm_search_content_description">Buscar</string>
     <string name="fix_drawer">Fijar panel</string>

@@ -96,6 +96,10 @@ class FileCourseSource(
             .takeIf { it.canRead() }?.readText(Charsets.UTF_8)
     }.getOrNull()
 
+    /** Writes a binary asset (e.g. image) to `<courseId>/assets/<fileName>`. */
+    fun writeAsset(courseId: String, fileName: String, bytes: ByteArray): Boolean =
+        atomicWriteBytes(File(root, "$courseId/assets/$fileName"), bytes)
+
     fun deleteLecture(courseId: String, lectureId: String, language: String): Boolean {
         val html = File(root, "$courseId/lectures/$lectureId.$language.html")
         val answers = File(root, "$courseId/lectures/$lectureId.$language.answers.json")

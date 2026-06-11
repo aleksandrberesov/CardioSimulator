@@ -65,6 +65,9 @@ class CourseRepository(private var source: CourseSource) {
     fun writeAnswers(courseId: String, lectureId: String, language: String, json: String): Boolean =
         withFileSource { it.writeAnswers(courseId, lectureId, language, json) }
 
+    fun importAsset(courseId: String, fileName: String, bytes: ByteArray): Boolean =
+        withFileSource { it.writeAsset(courseId, fileName, bytes) }
+
     fun deleteLecture(courseId: String, lectureId: String, language: String): Boolean =
         withFileSource { it.deleteLecture(courseId, lectureId, language) }
 

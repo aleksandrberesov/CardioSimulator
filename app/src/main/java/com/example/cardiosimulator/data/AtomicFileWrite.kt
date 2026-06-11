@@ -25,3 +25,15 @@ internal fun atomicWriteText(target: File, text: String): Boolean = runCatching 
     if (target.exists()) target.delete()
     tmp.renameTo(target)
 }.getOrDefault(false)
+
+/**
+ * Atomically writes [bytes] to [target] via a `.tmp` + rename.
+ */
+internal fun atomicWriteBytes(target: File, bytes: ByteArray): Boolean = runCatching {
+    val parent = target.parentFile ?: return false
+    parent.mkdirs()
+    val tmp = File(parent, target.name + ".tmp")
+    tmp.writeBytes(bytes)
+    if (target.exists()) target.delete()
+    tmp.renameTo(target)
+}.getOrDefault(false)

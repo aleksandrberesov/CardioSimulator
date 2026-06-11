@@ -1,5 +1,7 @@
 package com.example.cardiosimulator.ui.components
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -18,17 +20,23 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.cardiosimulator.R
 import com.example.cardiosimulator.domain.HtmlBlock
 import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.PathologyEntry
 import com.example.cardiosimulator.ui.screens.ComparisonTargetDialog
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
+import android.net.Uri
+import android.provider.OpenableColumns
+import android.content.Context
 
 @Composable
 fun HtmlBlockEditor(
@@ -38,6 +46,7 @@ fun HtmlBlockEditor(
     onUpdateBlock: (String, HtmlBlock) -> Unit,
     onDeleteBlock: (String) -> Unit,
     onMoveBlock: (String, Int) -> Unit,
+    onImportImage: (String, ByteArray) -> String? = { _, _ -> null },
     modifier: Modifier = Modifier,
     lazyListState: LazyListState = rememberLazyListState(),
     scrollToBlockId: String? = null,
@@ -65,7 +74,7 @@ fun HtmlBlockEditor(
                 when (block) {
                     is HtmlBlock.Header -> HeaderEditor(block) { onUpdateBlock(block.id, it) }
                     is HtmlBlock.Paragraph -> ParagraphEditor(block) { onUpdateBlock(block.id, it) }
-                    is HtmlBlock.Image -> ImageEditor(block) { onUpdateBlock(block.id, it) }
+                    is HtmlBlock.Image -> ImageEditor(block, onImportImage) { onUpdateBlock(block.id, it) }
                     is HtmlBlock.KaTeX -> KaTeXEditor(block) { onUpdateBlock(block.id, it) }
                     is HtmlBlock.Ecg -> EcgEditor(appViewModel, rhythms, block) { onUpdateBlock(block.id, it) }
                     is HtmlBlock.Table -> TableEditor(block) { onUpdateBlock(block.id, it) }
@@ -139,24 +148,63 @@ private fun ParagraphEditor(block: HtmlBlock.Paragraph, onUpdate: (HtmlBlock.Par
 }
 
 @Composable
-private fun ImageEditor(block: HtmlBlock.Image, onUpdate: (HtmlBlock.Image) -> Unit) {
+private fun ImageEditor(
+    block: HtmlBlock.Image,
+    onImportImage: (String, ByteArray) -> String?,
+    onUpdate: (HtmlBlock.Image) -> Unit
+) {
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            val bytes = context.contentResolver.openInputStream(it)?.readBytes()
+            if (bytes != null) {
+                val fileName = getFileName(context, it) ?: "image_${System.currentTimeMillis()}.png"
+                val newPath = onImportImage(fileName, bytes)
+                if (newPath != null) {
+                    onUpdate(block.copy(src = newPath))
+                }
+            }
+        }
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Image", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-        TextField(
-            value = block.src,
-            onValueChange = { onUpdate(block.copy(src = it)) },
-            label = { Text("Source (URL or assets/path)") },
+        Text(stringResource(R.string.course_insert_image), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TextField(
+                value = block.src,
+                onValueChange = { onUpdate(block.copy(src = it)) },
+                label = { Text(stringResource(R.string.course_constructor_image_src)) },
+                modifier = Modifier.weight(1f),
+                singleLine = true
+            )
+            IconButton(onClick = { launcher.launch("image/*") }) {
+                Icon(Icons.Default.FileUpload, contentDescription = stringResource(R.string.course_constructor_image_upload))
+            }
+        }
         TextField(
             value = block.alt,
             onValueChange = { onUpdate(block.copy(alt = it)) },
-            label = { Text("Alt Text") },
+            label = { Text(stringResource(R.string.course_constructor_image_alt)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
     }
+}
+
+private fun getFileName(context: Context, uri: Uri): String? {
+    if (uri.scheme == "content") {
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (index != -1) return cursor.getString(index)
+            }
+        }
+    }
+    return uri.path?.substringAfterLast('/')
 }
 
 private val KatexSymbols = listOf(

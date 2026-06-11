@@ -82,6 +82,10 @@
     <string name="course_constructor_id_hint">Id</string>
     <string name="course_constructor_title_hint">Title</string>
     <string name="course_constructor_delete_confirm">Delete this lecture?</string>
+    <string name="course_insert_image">Image</string>
+    <string name="course_constructor_image_src">Source (URL or assets/path)</string>
+    <string name="course_constructor_image_alt">Caption / Title</string>
+    <string name="course_constructor_image_upload">Upload Image</string>
     <string name="points_drawer_title">Points</string>
     <string name="rhythm_search_placeholder">Rhythm…</string>
     <string name="rhythm_search_content_description">Search</string>

@@ -218,9 +218,9 @@ th{background:var(--surface)}
 input,textarea{font:inherit;color:inherit;background:transparent;
   border:1px solid var(--border);border-radius:4px;padding:2px 6px;
   width:100%;box-sizing:border-box}
-figure.ecg-figure{margin:1em 0}
+figure.ecg-figure, figure.image-figure{margin:1.5em 0}
 svg.ecg-lead{max-width:100%;height:auto;display:block;margin:2px 0}
-figure.ecg-figure figcaption{font-size:.9em;color:var(--muted);margin-top:4px}
+figcaption{font-size:.9em;color:var(--muted);margin-top:6px;text-align:center;font-style:italic}
 .ecg-missing figcaption{color:#b00020}
 """.trimIndent()
 }

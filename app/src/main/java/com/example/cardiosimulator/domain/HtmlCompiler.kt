@@ -48,6 +48,18 @@ object HtmlCompiler {
                     if (elementId != null) HtmlBlock.Image(id = elementId, src = element.attr("src"), alt = element.attr("alt"))
                     else HtmlBlock.Image(src = element.attr("src"), alt = element.attr("alt"))
                 }
+                "figure" -> {
+                    val img = element.selectFirst("img")
+                    if (img != null) {
+                        val figcaption = element.selectFirst("figcaption")
+                        val alt = figcaption?.text() ?: img.attr("alt")
+                        if (elementId != null) HtmlBlock.Image(id = elementId, src = img.attr("src"), alt = alt)
+                        else HtmlBlock.Image(src = img.attr("src"), alt = alt)
+                    } else {
+                        if (elementId != null) HtmlBlock.Paragraph(id = elementId, html = element.outerHtml())
+                        else HtmlBlock.Paragraph(html = element.outerHtml())
+                    }
+                }
                 "ecg" -> {
                     if (elementId != null) HtmlBlock.Ecg(id = elementId, pathology = element.attr("pathology"), lead = element.attr("lead").takeIf { it.isNotBlank() }, caption = element.attr("caption"))
                     else HtmlBlock.Ecg(pathology = element.attr("pathology"), lead = element.attr("lead").takeIf { it.isNotBlank() }, caption = element.attr("caption"))
@@ -94,7 +106,14 @@ object HtmlCompiler {
                     append("<p id=\"${block.id}\">").append(block.html).append("</p>\n")
                 }
                 is HtmlBlock.Image -> {
-                    append("<img id=\"${block.id}\" src=\"").append(block.src).append("\" alt=\"").append(block.alt).append("\">\n")
+                    if (block.alt.isNotBlank()) {
+                        append("<figure id=\"${block.id}\" class=\"image-figure\">\n")
+                        append("  <img src=\"").append(block.src).append("\" alt=\"").append(block.alt).append("\">\n")
+                        append("  <figcaption>").append(block.alt).append("</figcaption>\n")
+                        append("</figure>\n")
+                    } else {
+                        append("<img id=\"${block.id}\" src=\"").append(block.src).append("\" alt=\"\">\n")
+                    }
                 }
                 is HtmlBlock.KaTeX -> {
                     if (block.displayMode) {

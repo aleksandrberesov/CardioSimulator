@@ -83,6 +83,10 @@
     <string name="course_constructor_id_hint">标识</string>
     <string name="course_constructor_title_hint">标题</string>
     <string name="course_constructor_delete_confirm">删除这节讲座？</string>
+    <string name="course_insert_image">图片</string>
+    <string name="course_constructor_image_src">来源 (URL 或 assets 路径)</string>
+    <string name="course_constructor_image_alt">标题 / 说明</string>
+    <string name="course_constructor_image_upload">上传图片</string>
 
     <!-- Testing panel -->
     <string name="testing_question_format">问题 %1$d</string>
