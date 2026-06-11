@@ -57,7 +57,6 @@ import com.example.cardiosimulator.ui.display.LEAD_ORDER
 import com.example.cardiosimulator.ui.display.Lead as LeadView
 import com.example.cardiosimulator.ui.display.LeadsGrid
 import com.example.cardiosimulator.ui.display.Monitor
-import com.example.cardiosimulator.ui.panels.CourseSelector
 import com.example.cardiosimulator.ui.panels.LectureSelector
 import com.example.cardiosimulator.ui.panels.RhythmSelector
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
@@ -109,8 +108,8 @@ fun TeachingScreen(
         courseViewerViewModel.setLanguage(selectedLanguage.tag)
     }
 
-    LaunchedEffect(showCourseOverlay) {
-        if (showCourseOverlay && selectedCourseId == null && appSelectedCourseId != null && appSelectedCourseId != AppViewModel.ALL_RHYTHMS_ID) {
+    LaunchedEffect(appSelectedCourseId) {
+        if (appSelectedCourseId != null && appSelectedCourseId != AppViewModel.ALL_RHYTHMS_ID) {
             courseViewerViewModel.selectCourse(appSelectedCourseId!!)
         }
     }
@@ -338,7 +337,6 @@ fun TeachingScreen(
                         }
                 ) {
                     CourseViewerOverlay(
-                        appViewModel = appViewModel,
                         courses = courses,
                         selectedCourseId = selectedCourseId,
                         lectures = lectures,
@@ -346,7 +344,6 @@ fun TeachingScreen(
                         lecture = viewerLecture,
                         language = selectedLanguage,
                         resolveEcg = resolveEcg,
-                        onCourseSelect = { courseViewerViewModel.selectCourse(it.id) },
                         onLectureSelect = { courseViewerViewModel.selectLecture(it.id) },
                         onClose = { showCourseOverlay = false },
                     )
@@ -358,7 +355,6 @@ fun TeachingScreen(
 
 @Composable
 private fun CourseViewerOverlay(
-    appViewModel: AppViewModel,
     courses: List<CourseEntry>,
     selectedCourseId: String?,
     lectures: List<LectureEntry>,
@@ -366,12 +362,10 @@ private fun CourseViewerOverlay(
     lecture: Lecture?,
     language: Language,
     resolveEcg: (String, Lead?) -> List<EcgTrace>,
-    onCourseSelect: (CourseEntry) -> Unit,
     onLectureSelect: (LectureEntry) -> Unit,
     onClose: () -> Unit,
 ) {
     var isLecturesDrawerExpanded by remember { mutableStateOf(false) }
-    var isCoursesDrawerExpanded by remember { mutableStateOf(false) }
 
     val filteredCourses = remember(courses) {
         courses.filterNot { it.id == AppViewModel.ALL_RHYTHMS_ID }
@@ -416,38 +410,6 @@ private fun CourseViewerOverlay(
                 }
 
                 SideDrawer(
-                    isExpanded = isCoursesDrawerExpanded,
-                    onExpandedChange = { isCoursesDrawerExpanded = it },
-                    drawerWidth = 300.dp,
-                    drawerContent = {
-                        CourseSelector(
-                            appViewModel = appViewModel,
-                            courses = filteredCourses,
-                            selectedCourseId = selectedCourseId,
-                            onCourseSelect = {
-                                onCourseSelect(it)
-                                isCoursesDrawerExpanded = false
-                            },
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    },
-                    handlerContent = {
-                        Text(
-                            text = stringResource(R.string.course_drawer_title),
-                            modifier = Modifier
-                                .requiredWidth(64.dp)
-                                .rotate(-90f),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            textAlign = TextAlign.Center
-                        )
-                    },
-                    handlerModifier = Modifier.offset(y = (-40).dp),
-                    modifier = Modifier.fillMaxHeight().align(Alignment.TopStart)
-                )
-
-                SideDrawer(
                     isExpanded = isLecturesDrawerExpanded,
                     onExpandedChange = { isLecturesDrawerExpanded = it },
                     drawerWidth = 300.dp,
@@ -475,7 +437,6 @@ private fun CourseViewerOverlay(
                             textAlign = TextAlign.Center
                         )
                     },
-                    handlerModifier = Modifier.offset(y = 40.dp),
                     modifier = Modifier.fillMaxHeight().align(Alignment.TopStart)
                 )
             }
