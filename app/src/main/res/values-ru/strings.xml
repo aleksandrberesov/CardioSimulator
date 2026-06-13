@@ -200,6 +200,7 @@
     <string name="constructor_select_point_hint">Выберите точку на графике, чтобы отметить ее</string>
     <string name="constructor_no_pathology_selected">Патология не выбрана</string>
     <string name="constructor_revert_lead_btn">Сбросить отведение</string>
+    <string name="constructor_new_pathology">Новая патология</string>
     <string name="constructor_lead_not_present">Отведение %1$s отсутствует в файле.</string>
     <string name="constructor_select_from_panel_hint">Выберите патологию на панели слева для конструирования.</string>
     <string name="cd_rename">Переименовать</string>

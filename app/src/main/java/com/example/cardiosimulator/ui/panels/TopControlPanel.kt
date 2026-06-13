@@ -35,12 +35,14 @@ import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
+import com.example.cardiosimulator.ui.viewmodels.ConstructorViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 
 @Composable
 fun TopControlPanel(
     viewModel: AppViewModel,
     monitorViewModel: MonitorViewModel = viewModel(),
+    constructorViewModel: ConstructorViewModel? = null,
     modifier: Modifier = Modifier,
     onStartStopClick: (Boolean) -> Unit = {},
 ) {
@@ -101,7 +103,14 @@ fun TopControlPanel(
                         OperatingMode.Testing -> TestingControlPanel(viewModel = viewModel)
                         OperatingMode.Examination -> {}
                         OperatingMode.OSKE -> {}
-                        OperatingMode.Constructor -> {}
+                        OperatingMode.Constructor -> {
+                            if (constructorViewModel != null) {
+                                ConstructorTopPanel(
+                                    appViewModel = viewModel,
+                                    constructorViewModel = constructorViewModel
+                                )
+                            }
+                        }
                         OperatingMode.CourseConstructor -> {}
                     }
                 }

@@ -148,6 +148,7 @@ fun MainScreen(appViewModel: AppViewModel) {
             TopControlPanel(
                 viewModel = appViewModel,
                 monitorViewModel = monitorViewModel,
+                constructorViewModel = constructorViewModel,
                 onStartStopClick = { isRunning ->
                     if (isRunning) {
                         appViewModel.sendStartCommand(selectedRhythm?.id, selectedRhythm?.titleEn)

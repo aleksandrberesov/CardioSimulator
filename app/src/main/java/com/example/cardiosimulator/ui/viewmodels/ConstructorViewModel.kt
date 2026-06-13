@@ -220,6 +220,8 @@ class ConstructorViewModel(
             floatBuffers.clear()
             _dirtyLeads.value = emptySet()
             _isMetadataDirty.value = false
+            undoStacks.clear()
+            redoStacks.clear()
             _focusedLead.value = Lead.II
             _selectedIndex.value = 0
             if (persist) {
@@ -435,6 +437,20 @@ class ConstructorViewModel(
         val id = _targetFile.value?.id ?: return
         viewModelScope.launch {
             val newId = repository.duplicatePathology(id)
+            if (newId != null) {
+                selectPathology(newId)
+            }
+        }
+    }
+
+    fun createNewPathology() {
+        viewModelScope.launch {
+            val id = "new_pathology_" + System.currentTimeMillis().toString().takeLast(4)
+            val newId = repository.createPathology(
+                id = id,
+                titleEn = "New Pathology",
+                nameRu = "Новая патология"
+            )
             if (newId != null) {
                 selectPathology(newId)
             }

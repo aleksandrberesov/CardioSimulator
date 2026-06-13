@@ -83,6 +83,25 @@ class PathologyRepository(private var source: PathologySource) {
         return if (writePathology(newFile)) newId else null
     }
 
+    fun createPathology(id: String, titleEn: String, nameRu: String?): String? {
+        val baseline = manifest()?.baseline ?: DEFAULT_BASELINE
+        val leadOrder = manifest()?.leadOrder ?: Lead.entries
+        val sampleCount = 5000 // 10 seconds at 500Hz
+        val blankSamples = IntArray(sampleCount) { baseline }
+        
+        val leads = leadOrder.associateWith { lead ->
+            LeadStream(lead, blankSamples.copyOf())
+        }
+        
+        val newFile = PathologyFile(
+            id = id,
+            titleEn = titleEn,
+            nameRu = nameRu,
+            leads = leads
+        )
+        return if (writePathology(newFile)) id else null
+    }
+
     /**
      * Returns the baseline-zeroed [Points] for one lead of one pathology,
      * synthesizing the lead via [DerivedLeads] if the file does not ship

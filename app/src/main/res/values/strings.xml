@@ -201,6 +201,7 @@
     <string name="constructor_select_point_hint">Select a point on the chart to mark it</string>
     <string name="constructor_no_pathology_selected">No pathology selected</string>
     <string name="constructor_revert_lead_btn">Revert Lead</string>
+    <string name="constructor_new_pathology">New Pathology</string>
     <string name="constructor_lead_not_present">Lead %1$s not present in file.</string>
     <string name="constructor_select_from_panel_hint">Select a pathology from the left panel for construction.</string>
     <string name="cd_rename">Rename</string>
