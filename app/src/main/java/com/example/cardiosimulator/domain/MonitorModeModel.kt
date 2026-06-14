@@ -13,6 +13,7 @@ enum class GridScheme(@param:StringRes val labelRes: Int) {
 enum class SeriesScheme {
     OneColumn,
     TwoColumn,
+    ThreeByFour,
     Grid
 }
 

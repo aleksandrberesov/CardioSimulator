@@ -149,6 +149,7 @@ fun MainScreen(appViewModel: AppViewModel) {
                 viewModel = appViewModel,
                 monitorViewModel = monitorViewModel,
                 constructorViewModel = constructorViewModel,
+                courseConstructorViewModel = courseConstructorViewModel,
                 onStartStopClick = { isRunning ->
                     if (isRunning) {
                         appViewModel.sendStartCommand(selectedRhythm?.id, selectedRhythm?.titleEn)

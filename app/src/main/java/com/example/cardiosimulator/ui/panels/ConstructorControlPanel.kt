@@ -45,6 +45,7 @@ fun ConstructorControlPanel(
     val showTimeDialog = remember { mutableStateOf(value = false) }
     val showAdcDialog = remember { mutableStateOf(value = false) }
     val showSmoothingDialog = remember { mutableStateOf(value = false) }
+    val showLibraryDialog = remember { mutableStateOf(value = false) }
 
     val samples = targetFile?.leads?.get(focusedLead)?.samples
     val currentAdc = if (samples != null && (selectedIndex in samples.indices)) samples[selectedIndex] else 0
@@ -235,6 +236,38 @@ fun ConstructorControlPanel(
         )
     }
 
+    if (showLibraryDialog.value) {
+        AlertDialog(
+            onDismissRequest = { showLibraryDialog.value = false },
+            title = { Text("ECG Element Library") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = { constructorViewModel.insertP(); showLibraryDialog.value = false }) {
+                        Text("Insert P-wave")
+                    }
+                    TextButton(onClick = { constructorViewModel.insertQRS(); showLibraryDialog.value = false }) {
+                        Text("Insert QRS-complex")
+                    }
+                    TextButton(onClick = { constructorViewModel.insertT(); showLibraryDialog.value = false }) {
+                        Text("Insert T-wave")
+                    }
+                    TextButton(onClick = { constructorViewModel.insertFullCycle(); showLibraryDialog.value = false }) {
+                        Text("Insert Normal Cycle (P-QRS-T)")
+                    }
+                    TextButton(onClick = { constructorViewModel.insertBaseline(); showLibraryDialog.value = false }) {
+                        Text("Insert Baseline (100ms)")
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showLibraryDialog.value = false }) {
+                    Text(stringResource(R.string.constructor_rename_cancel))
+                }
+            }
+        )
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -333,6 +366,15 @@ fun ConstructorControlPanel(
                 modifier = Modifier.weight(1f)
             )
         }
+
+        ControlPanelDivider()
+
+        Tab(
+            icon = Icons.Default.LibraryAdd,
+            iconContentDescription = "Library",
+            onClick = { showLibraryDialog.value = true },
+            modifier = Modifier.weight(0.5f)
+        )
 
         ControlPanelDivider()
 

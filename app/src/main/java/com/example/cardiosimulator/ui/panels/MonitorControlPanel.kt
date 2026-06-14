@@ -91,6 +91,7 @@ fun MonitorControlPanel(
                 text = when (monitorMode.seriesScheme) {
                     SeriesScheme.OneColumn -> stringResource(R.string.monitor_columns_one_short)
                     SeriesScheme.TwoColumn -> stringResource(R.string.monitor_columns_two_short)
+                    SeriesScheme.ThreeByFour -> stringResource(R.string.monitor_columns_three_by_four_short)
                     SeriesScheme.Grid -> stringResource(R.string.monitor_columns_grid_short)
                 },
                 onClick = { schemeMenuExpanded = true },
@@ -107,6 +108,7 @@ fun MonitorControlPanel(
                                 when (scheme) {
                                     SeriesScheme.OneColumn -> stringResource(R.string.monitor_columns_one)
                                     SeriesScheme.TwoColumn -> stringResource(R.string.monitor_columns_two)
+                                    SeriesScheme.ThreeByFour -> stringResource(R.string.monitor_columns_three_by_four)
                                     SeriesScheme.Grid -> stringResource(R.string.monitor_columns_grid)
                                 }
                             )

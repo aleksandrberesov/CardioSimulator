@@ -79,7 +79,11 @@ fun LectureWebView(
     val html by produceState<String?>(initialValue = null, lecture, css, interactive) {
         value = withContext(Dispatchers.IO) {
             val body = EcgSvgRenderer.substituteEcgTags(lecture.rawHtml, resolveEcg)
-            buildDocument(body = body, css = css, interactive = interactive)
+            if (lecture.isStandalone) {
+                buildStandaloneDocument(body = body, css = css, interactive = interactive)
+            } else {
+                buildDocument(body = body, css = css, interactive = interactive)
+            }
         }
     }
 
@@ -158,6 +162,48 @@ private class QuizBridge(
     fun onCell(quizId: String, row: Int, col: Int, value: String) {
         main.post { callback(quizId, row, col, value) }
     }
+}
+
+private fun buildStandaloneDocument(body: String, css: String, interactive: Boolean): String {
+    val bridge = if (interactive) QUIZ_BRIDGE_JS else ""
+    val katexCss = """<link rel="stylesheet" href="/assets/katex/katex.min.css">"""
+    val katexJs = """<script src="/assets/katex/katex.min.js"></script>
+<script src="/assets/katex/contrib/auto-render.min.js"></script>"""
+    val style = """<style>$css</style>"""
+
+    var doc = body
+    if (!doc.contains("<base", ignoreCase = true)) {
+        val base = """<base href="$ASSET_DOMAIN/course/">"""
+        doc = doc.replaceFirst("<head>", "<head>\n$base", ignoreCase = true)
+    }
+
+    doc = doc.replaceFirst("</head>", "$katexCss\n$style\n</head>", ignoreCase = true)
+
+    val scripts = """
+$katexJs
+<script>
+(function(){
+  function render(){
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, {
+        delimiters:[
+          {left:"$$",right:"$$",display:true},
+          {left:"$",right:"$",display:false},
+          {left:"\\(",right:"\\)",display:false},
+          {left:"\\[",right:"\\]",display:true}
+        ],
+        throwOnError:false
+      });
+    }
+  }
+  if (document.readyState!=="loading") render();
+  else document.addEventListener("DOMContentLoaded", render);
+$bridge
+})();
+</script>
+""".trimIndent()
+
+    return doc.replaceFirst("</body>", "$scripts\n</body>", ignoreCase = true)
 }
 
 private fun buildDocument(body: String, css: String, interactive: Boolean): String {

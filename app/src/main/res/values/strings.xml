@@ -44,9 +44,11 @@
     <!-- Monitor control panel -->
     <string name="monitor_columns_one">1 Column</string>
     <string name="monitor_columns_two">2 Columns</string>
+    <string name="monitor_columns_three_by_four">3\u00D74 Layout</string>
     <string name="monitor_columns_grid">Grid</string>
     <string name="monitor_columns_one_short">1 Col</string>
     <string name="monitor_columns_two_short">2 Cols</string>
+    <string name="monitor_columns_three_by_four_short">3\u00D74</string>
     <string name="monitor_columns_grid_short">Grid</string>
     <string name="monitor_speed_unit">mm/s</string>
     <string name="monitor_speed_format">%1$s mm/s</string>

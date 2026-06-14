@@ -12,6 +12,7 @@ import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.PathologyFile
 import com.example.cardiosimulator.domain.SignificantPoint
+import com.example.cardiosimulator.domain.generators.EcgGenerators
 import androidx.compose.ui.geometry.Offset
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -115,6 +116,69 @@ class ConstructorViewModel(
 
     fun setGhostTrace(trace: IntArray?) {
         _ghostTrace.value = trace
+    }
+
+    fun insertElement(samples: IntArray) {
+        val lead = _focusedLead.value
+        if (!isLeadEditable(lead)) return
+        val currentFile = _targetFile.value ?: return
+        val stream = currentFile.leads[lead] ?: return
+        val startIndex = _selectedIndex.value
+
+        if (startIndex !in stream.samples.indices) return
+
+        startStroke(lead)
+
+        val newSamples = stream.samples.copyOf()
+        val floatBuf = floatBufferFor(lead, stream.samples)
+
+        for (i in samples.indices) {
+            val targetIndex = startIndex + i
+            if (targetIndex >= newSamples.size) break
+            newSamples[targetIndex] = samples[i].coerceIn(ADC_MIN, ADC_MAX)
+            floatBuf[targetIndex] = newSamples[targetIndex].toFloat()
+        }
+
+        val newLeads = currentFile.leads.toMutableMap()
+        newLeads[lead] = stream.copy(samples = newSamples)
+        _targetFile.value = currentFile.copy(leads = newLeads)
+        _dirtyLeads.value += lead
+
+        // Move selection to the end of inserted segment
+        _selectedIndex.value = (startIndex + samples.size).coerceAtMost(newSamples.size - 1)
+    }
+
+    fun insertP(width: Int = 50, height: Int = 100) {
+        val baseline = repository.manifest()?.baseline ?: 1024
+        insertElement(EcgGenerators.generateP(width, height, baseline))
+    }
+
+    fun insertQRS(
+        qWidth: Int = 10, qHeight: Int = 50,
+        rWidth: Int = 20, rHeight: Int = 600,
+        sWidth: Int = 15, sHeight: Int = 100
+    ) {
+        val baseline = repository.manifest()?.baseline ?: 1024
+        insertElement(EcgGenerators.generateQRS(qWidth, qHeight, rWidth, rHeight, sWidth, sHeight, baseline))
+    }
+
+    fun insertT(width: Int = 80, height: Int = 150) {
+        val baseline = repository.manifest()?.baseline ?: 1024
+        insertElement(EcgGenerators.generateT(width, height, baseline))
+    }
+
+    fun insertBaseline(width: Int = 100) {
+        val baseline = repository.manifest()?.baseline ?: 1024
+        insertElement(EcgGenerators.generateBaseline(width, baseline))
+    }
+
+    fun insertFullCycle() {
+        insertP()
+        insertBaseline(20)
+        insertQRS()
+        insertBaseline(30)
+        insertT()
+        insertBaseline(50)
     }
 
     fun applyGhostTrace() {

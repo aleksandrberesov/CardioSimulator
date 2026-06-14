@@ -27,6 +27,8 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.util.Collections
 
+enum class ConstructorViewMode { EDITOR, PREVIEW, BOTH }
+
 /**
  * Course Constructor editing state (Phase 3 of
  * docs/plans/active/2026-05-course-constructor.md). The author edits the
@@ -82,6 +84,13 @@ class CourseConstructorViewModel(
         combine(_draft, _savedText, _answers, _savedAnswers) { draft, saved, ans, savedAns ->
             draft != saved || ans != savedAns
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), false)
+
+    private val _viewMode = MutableStateFlow(ConstructorViewMode.BOTH)
+    val viewMode: StateFlow<ConstructorViewMode> = _viewMode.asStateFlow()
+
+    fun setViewMode(mode: ConstructorViewMode) {
+        _viewMode.value = mode
+    }
 
     private var languageTag: String = "en"
     private var loadedLang: String = "en"
@@ -198,6 +207,30 @@ class CourseConstructorViewModel(
         val current = _answers.value
         val cells = current[quizId].orEmpty().toMutableMap().apply { put(key, value) }
         _answers.value = current.toMutableMap().apply { put(quizId, cells) }
+    }
+
+    fun importFullPage(html: String) {
+        val courseId = _selectedCourseId.value ?: return
+        val isFull = html.contains("<!doctype", ignoreCase = true) || html.contains("<html", ignoreCase = true)
+        val currentLecture = _previewLecture.value
+
+        val newFm = if (isFull) {
+            val fm = currentLecture?.frontMatter ?: LectureFrontMatter(id = _selectedLectureId.value ?: "new_lecture")
+            fm.copy(extras = fm.extras + ("layout" to "standalone"))
+        } else {
+            currentLecture?.frontMatter ?: LectureFrontMatter(id = _selectedLectureId.value ?: "new_lecture")
+        }
+
+        val newLecture = currentLecture?.copy(frontMatter = newFm, rawHtml = html)
+            ?: Lecture(
+                id = newFm.id,
+                courseId = courseId,
+                language = languageTag,
+                frontMatter = newFm,
+                rawHtml = html
+            )
+
+        setHtml(CourseParser.serializeLecture(newLecture))
     }
 
     fun revert() {

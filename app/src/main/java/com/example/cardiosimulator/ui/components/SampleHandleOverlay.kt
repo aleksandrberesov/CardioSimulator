@@ -69,11 +69,18 @@ fun SampleHandleOverlay(
             val x = selectedIndex * stepX
             val y = baselineY - (sample - baseline) * stepY
 
+            // Outer glow for prominence
+            drawCircle(
+                color = handleColor.copy(alpha = 0.2f),
+                radius = selectedRadiusPx * 2.5f,
+                center = Offset(x, y)
+            )
+
             drawCircle(
                 color = handleColor,
                 radius = selectedRadiusPx,
                 center = Offset(x, y),
-                style = Stroke(width = strokeWidthPx)
+                style = Stroke(width = strokeWidthPx * 1.5f)
             )
 
             // Draw a cross inside
@@ -82,12 +89,20 @@ fun SampleHandleOverlay(
                 color = handleColor,
                 start = Offset(x - arm, y),
                 end = Offset(x + arm, y),
-                strokeWidth = strokeWidthPx
+                strokeWidth = strokeWidthPx * 1.5f
             )
             drawLine(
                 color = handleColor,
                 start = Offset(x, y - arm),
                 end = Offset(x, y + arm),
+                strokeWidth = strokeWidthPx * 1.5f
+            )
+            
+            // Vertical cursor line
+            drawLine(
+                color = handleColor.copy(alpha = 0.4f),
+                start = Offset(x, 0f),
+                end = Offset(x, size.height),
                 strokeWidth = strokeWidthPx
             )
         }

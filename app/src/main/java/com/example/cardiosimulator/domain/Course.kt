@@ -77,7 +77,14 @@ data class Lecture(
      * it to the `WebView` unchanged (apart from the `<ecg>` → SVG rewrite).
      */
     val rawHtml: String,
-)
+) {
+    /**
+     * Whether this lecture is a standalone HTML document (layout: standalone).
+     * If true, [rawHtml] contains the full document (<!DOCTYPE html> etc.),
+     * and [LectureWebView] serves it as-is (with KaTeX/SVG injection).
+     */
+    val isStandalone: Boolean get() = frontMatter.extras["layout"] == "standalone"
+}
 
 /**
  * Front-matter `key: value` pairs. Known keys are surfaced as fields;

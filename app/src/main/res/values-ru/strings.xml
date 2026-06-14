@@ -44,9 +44,11 @@
     <!-- Monitor control panel -->
     <string name="monitor_columns_one">1 столбец</string>
     <string name="monitor_columns_two">2 столбца</string>
+    <string name="monitor_columns_three_by_four">Сетка 3\u00D74</string>
     <string name="monitor_columns_grid">Сетка</string>
     <string name="monitor_columns_one_short">1 ст.</string>
     <string name="monitor_columns_two_short">2 ст.</string>
+    <string name="monitor_columns_three_by_four_short">3\u00D74</string>
     <string name="monitor_columns_grid_short">Сетка</string>
     <string name="monitor_speed_unit">мм/с</string>
     <string name="monitor_speed_format">%1$s мм/с</string>

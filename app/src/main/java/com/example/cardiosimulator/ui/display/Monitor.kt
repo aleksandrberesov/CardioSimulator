@@ -76,6 +76,7 @@ fun Monitor(
     val maxColumns = when (mode.seriesScheme) {
         SeriesScheme.OneColumn -> 1
         SeriesScheme.TwoColumn -> 2
+        SeriesScheme.ThreeByFour -> 4
         SeriesScheme.Grid -> 4
     }
 
