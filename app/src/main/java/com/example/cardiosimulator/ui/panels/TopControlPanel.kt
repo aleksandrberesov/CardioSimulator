@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DropdownMenu
@@ -58,6 +59,7 @@ fun TopControlPanel(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .fillMaxHeight()
                 .padding(horizontal = 0.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
@@ -65,12 +67,13 @@ fun TopControlPanel(
             Row(
                 modifier = Modifier
                     .weight(1f)
+                    .fillMaxHeight()
                     .padding(0.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
-                    modifier = Modifier.weight(1.5f).fillMaxWidth()
+                    modifier = Modifier.weight(1.5f).fillMaxWidth().fillMaxHeight()
                 ) {
                     Tab(
                         text = stringResource(selectedOperatingMode.id.titleRes),
@@ -92,7 +95,7 @@ fun TopControlPanel(
                     }
                 }
                 Box(
-                    modifier = Modifier.weight(5f).fillMaxWidth()
+                    modifier = Modifier.weight(5f).fillMaxWidth().fillMaxHeight()
                 ){
                     when (selectedOperatingMode.id) {
                         OperatingMode.Teaching -> TeachingControlPanel(
@@ -117,7 +120,8 @@ fun TopControlPanel(
             }
             Image(
                 painter = painterResource(id = R.drawable.main_logo),
-                contentDescription = "Company Logo"
+                contentDescription = "Company Logo",
+                modifier = Modifier.fillMaxHeight()
             )
         }
     }
@@ -126,21 +130,56 @@ fun TopControlPanel(
 @Preview(showBackground = true, widthDp = 1000, heightDp = 100)
 @Composable
 fun TopControlPanelPreview() {
+    val mockRepo = com.example.cardiosimulator.data.PathologyRepository(
+        source = object : com.example.cardiosimulator.data.PathologySource {
+            override fun readManifest(): com.example.cardiosimulator.domain.PathologyManifest? = null
+            override fun readPathology(id: String): com.example.cardiosimulator.domain.PathologyFile? = null
+            override fun listPathologies(): List<String> = emptyList()
+        }
+    )
+
     val previewViewModel: AppViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return AppViewModel(
                     appState = AppBuilder()
-                        .addMode(OperatingModeModel(OperatingMode.Teaching))
+                        .addMode(OperatingModeModel(OperatingMode.Constructor))
                         .build(),
+                    repository = mockRepo
                 ) as T
             }
         }
     )
+
+    val previewConstructorViewModel: ConstructorViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return ConstructorViewModel(
+                    repository = mockRepo,
+                    mode = OperatingMode.Constructor
+                ) as T
+            }
+        }
+    )
+
+    val previewMonitorViewModel: MonitorViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return MonitorViewModel(
+                    mode = OperatingMode.Constructor
+                ) as T
+            }
+        }
+    )
+
     CardioSimulatorTheme {
         TopControlPanel(
-            viewModel = previewViewModel
+            viewModel = previewViewModel,
+            monitorViewModel = previewMonitorViewModel,
+            constructorViewModel = previewConstructorViewModel
         )
     }
 }

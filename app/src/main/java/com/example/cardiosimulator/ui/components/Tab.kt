@@ -73,15 +73,16 @@ fun Tab(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = iconContentDescription ?: text,
+                tint = displayContentColor,
+                modifier = iconModifier.padding(4.dp)
+            )
+        }
+        
         when {
-            icon != null -> {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = iconContentDescription ?: text,
-                    tint = displayContentColor,
-                    modifier = iconModifier.padding(4.dp)
-                )
-            }
             text != null && subText != null -> {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,

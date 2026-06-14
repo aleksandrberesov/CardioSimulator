@@ -274,6 +274,10 @@ fun ConstructorScreen(
                             modifier = Modifier.weight(1f)
                         )
 
+                        IconButton(onClick = { constructorViewModel.createNewPathology() }) {
+                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.constructor_new_pathology))
+                        }
+
                         if (referenceImageUri != null) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 IconButton(onClick = { constructorViewModel.undo(focusedLead) }) {
