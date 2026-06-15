@@ -39,9 +39,7 @@ import com.example.cardiosimulator.domain.HtmlBlock
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.ui.components.HtmlBlockEditor
 import com.example.cardiosimulator.ui.components.LectureWebView
-import com.example.cardiosimulator.ui.components.SideDrawer
 import com.example.cardiosimulator.ui.display.LEAD_ORDER
-import com.example.cardiosimulator.ui.panels.LectureSelector
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.ConstructorViewMode
 import com.example.cardiosimulator.ui.viewmodels.CourseConstructorViewModel
@@ -64,7 +62,6 @@ fun CourseConstructorScreen(
     val focusedBlockId by courseConstructorViewModel.focusedBlockId.collectAsState()
     val viewMode by courseConstructorViewModel.viewMode.collectAsState()
     
-    var isLectureDrawerExpanded by remember { mutableStateOf(false) }
     var showAddBlockMenu by remember { mutableStateOf(false) }
 
     val pathologyRepo = appViewModel.repository
@@ -175,31 +172,5 @@ fun CourseConstructorScreen(
                 }
             }
         }
-
-        SideDrawer(
-            isExpanded = isLectureDrawerExpanded,
-            onExpandedChange = { isLectureDrawerExpanded = it },
-            drawerWidth = 300.dp,
-            drawerContent = {
-                LectureSelector(
-                    lectures = lectures,
-                    language = selectedLanguage,
-                    selectedLectureId = selectedLectureId,
-                    onLectureSelect = { courseConstructorViewModel.selectLecture(it.id) },
-                    modifier = Modifier.fillMaxSize(),
-                )
-            },
-            handlerContent = {
-                Text(
-                    text = stringResource(R.string.lecture_selector_title),
-                    modifier = Modifier.requiredWidth(64.dp).rotate(-90f),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.labelLarge,
-                    textAlign = TextAlign.Center
-                )
-            },
-            handlerModifier = Modifier.offset(y = 40.dp),
-            modifier = Modifier.fillMaxHeight(),
-        )
     }
 }
