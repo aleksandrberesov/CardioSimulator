@@ -14,6 +14,10 @@ import com.example.cardiosimulator.data.FilePathologySource
 import com.example.cardiosimulator.data.PathologyRepository
 import com.example.cardiosimulator.data.PathologyZipExtractor
 import com.example.cardiosimulator.data.SampleCourseSeeder
+import com.example.cardiosimulator.data.FileOskeSource
+import com.example.cardiosimulator.data.OskeRepository
+import com.example.cardiosimulator.data.OskeResultStore
+import com.example.cardiosimulator.data.SampleOskeSeeder
 import com.example.cardiosimulator.domain.AppStateModel
 import com.example.cardiosimulator.domain.CourseEntry
 import com.example.cardiosimulator.domain.Language
@@ -72,6 +76,8 @@ class AppViewModel(
     private val appState: AppStateModel,
     val repository: PathologyRepository? = null,
     val courseRepository: CourseRepository? = null,
+    val oskeRepository: OskeRepository? = null,
+    val oskeResultStore: OskeResultStore? = null,
     private val appContext: Context? = null,
     val prefs: DataSourcePrefs? = null,
     private val tcpReconnectIntervalMs: Long = 5000L,
@@ -195,6 +201,20 @@ class AppViewModel(
                         if (source.isValid()) {
                             courseRepository.setSource(source)
                             reloadCourses(courseRepository)
+                        }
+                    }
+                }
+
+                // OSKE pipeline
+                if (oskeRepository != null) {
+                    val targetDir = File(ctx.filesDir, OSKE_DIR)
+                    val source = FileOskeSource(targetDir)
+                    if (File(targetDir, "manifest.txt").canRead()) {
+                        oskeRepository.swapSource(source)
+                    } else {
+                        withContext(Dispatchers.IO) {
+                            SampleOskeSeeder.seed(ctx, targetDir)
+                            oskeRepository.swapSource(FileOskeSource(targetDir))
                         }
                     }
                 }
@@ -575,6 +595,9 @@ class AppViewModel(
 
         /** Subdirectory under `filesDir` where the extracted course bundle lives. */
         const val COURSES_DIR: String = "courses"
+
+        /** Subdirectory under `filesDir` where the OSKE data lives. */
+        const val OSKE_DIR: String = "oske"
 
         /** Virtual course ID representing the unfiltered list of all rhythms. */
         const val ALL_RHYTHMS_ID: String = "all_rhythms"

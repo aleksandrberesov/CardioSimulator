@@ -108,6 +108,7 @@ fun TopControlPanel(
                         OperatingMode.Testing -> TestingControlPanel(viewModel = viewModel)
                         OperatingMode.Examination -> {}
                         OperatingMode.OSKE -> {}
+                        OperatingMode.OSKEConstructor -> {}
                         OperatingMode.Constructor -> {
                             if (constructorViewModel != null) {
                                 ConstructorTopPanel(

@@ -8,6 +8,7 @@ enum class OperatingMode(@param:StringRes val titleRes: Int) {
     Testing(R.string.mode_testing),
     Examination(R.string.mode_examination),
     OSKE(R.string.mode_oske),
+    OSKEConstructor(R.string.mode_oske_constructor),
     Constructor(R.string.mode_editor),
     CourseConstructor(R.string.mode_course_constructor)
 }

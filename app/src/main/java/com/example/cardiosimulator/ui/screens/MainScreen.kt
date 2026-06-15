@@ -28,6 +28,7 @@ import com.example.cardiosimulator.ui.panels.BottomControlPanel
 import com.example.cardiosimulator.ui.panels.ConstructorControlPanel
 import com.example.cardiosimulator.ui.panels.CourseConstructorControlPanel
 import com.example.cardiosimulator.ui.panels.MonitorControlPanel
+import com.example.cardiosimulator.ui.panels.OskeConstructorControlPanel
 import com.example.cardiosimulator.ui.panels.TopControlPanel
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
@@ -36,6 +37,7 @@ import com.example.cardiosimulator.ui.viewmodels.ConstructorViewModel
 import com.example.cardiosimulator.ui.viewmodels.CourseConstructorViewModel
 import com.example.cardiosimulator.ui.viewmodels.CourseViewerViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
+import com.example.cardiosimulator.ui.viewmodels.OskeViewModel
 import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
 @Composable
@@ -117,6 +119,20 @@ fun MainScreen(appViewModel: AppViewModel) {
         }
     )
 
+    val oskeViewModel: OskeViewModel = viewModel(
+        key = selectedMode.id.name + "_oske",
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return OskeViewModel(
+                    repository = appViewModel.oskeRepository!!,
+                    resultStore = appViewModel.oskeResultStore!!,
+                    pathologyRepository = appViewModel.repository!!
+                ) as T
+            }
+        }
+    )
+
     LaunchedEffect(dataState, rhythmViewModel) {
         if (dataState is DataState.Ready) {
             rhythmViewModel.loadManifest()
@@ -182,6 +198,13 @@ fun MainScreen(appViewModel: AppViewModel) {
                     appViewModel = appViewModel,
                     monitorViewModel = monitorViewModel,
                     rhythmViewModel = rhythmViewModel,
+                    oskeViewModel = oskeViewModel,
+                )
+                OperatingMode.OSKEConstructor -> OskeConstructorScreen(
+                    appViewModel = appViewModel,
+                    monitorViewModel = monitorViewModel,
+                    rhythmViewModel = rhythmViewModel,
+                    oskeViewModel = oskeViewModel,
                 )
                 OperatingMode.Constructor -> ConstructorScreen(
                     appViewModel = appViewModel,
@@ -228,6 +251,12 @@ fun MainScreen(appViewModel: AppViewModel) {
                         CourseConstructorControlPanel(
                             appViewModel = appViewModel,
                             courseConstructorViewModel = courseConstructorViewModel
+                        )
+                    }
+                    OperatingMode.OSKEConstructor -> {
+                        OskeConstructorControlPanel(
+                            oskeViewModel = oskeViewModel,
+                            rhythmViewModel = rhythmViewModel
                         )
                     }
                     else -> {}

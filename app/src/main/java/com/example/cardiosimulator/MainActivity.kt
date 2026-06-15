@@ -17,6 +17,9 @@ import com.example.cardiosimulator.data.CourseRepository
 import com.example.cardiosimulator.data.DataSourcePrefs
 import com.example.cardiosimulator.data.FileCourseSource
 import com.example.cardiosimulator.data.PathologyRepository
+import com.example.cardiosimulator.data.FileOskeSource
+import com.example.cardiosimulator.data.OskeRepository
+import com.example.cardiosimulator.data.OskeResultStore
 import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
@@ -38,6 +41,7 @@ class MainActivity : AppCompatActivity() {
                 factory = object : ViewModelProvider.Factory {
                     @Suppress("UNCHECKED_CAST")
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        val oskeDir = File(this@MainActivity.filesDir, AppViewModel.OSKE_DIR)
                         return AppViewModel(
                             appState = appBuilder.build(initialMode = OperatingMode.Teaching),
                             // Boot from assets; swapped to a FilePathologySource once
@@ -53,6 +57,12 @@ class MainActivity : AppCompatActivity() {
                             // While empty, RhythmSelector simply shows all pathologies.
                             courseRepository = CourseRepository(
                                 FileCourseSource(File(this@MainActivity.filesDir, AppViewModel.COURSES_DIR)),
+                            ),
+                            oskeRepository = OskeRepository(
+                                FileOskeSource(oskeDir)
+                            ),
+                            oskeResultStore = OskeResultStore(
+                                File(oskeDir, "results")
                             ),
                             appContext = this@MainActivity.applicationContext,
                             prefs = DataSourcePrefs(this@MainActivity.applicationContext),

@@ -6,6 +6,7 @@
     <string name="mode_testing">Testing</string>
     <string name="mode_examination">Examination</string>
     <string name="mode_oske">OSKE</string>
+    <string name="mode_oske_constructor">OSKE Constructor</string>
     <string name="mode_editor">Constructor ECG</string>
     <string name="mode_course_constructor">Course Constructor</string>
 
@@ -249,4 +250,22 @@
     <string name="cd_redo">Redo</string>
     <string name="cd_apply">Apply</string>
     <string name="cd_cancel">Cancel</string>
+
+    <!-- OSCE Screen -->
+    <string name="oske_tab_exam">Exam</string>
+    <string name="oske_tab_results">Results</string>
+    <string name="oske_tab_constructor">Constructor</string>
+    <string name="oske_start_title">OSCE Start</string>
+    <string name="oske_student_name">Full Name</string>
+    <string name="oske_student_group">Group</string>
+    <string name="oske_specialty">Specialty</string>
+    <string name="oske_ecg_pick">Select ECG</string>
+    <string name="oske_start_button">Start Exam</string>
+    <string name="oske_submit_button">Finish</string>
+    <string name="oske_result_title">Exam Result</string>
+    <string name="oske_passed">Passed</string>
+    <string name="oske_failed">Failed</string>
+    <string name="oske_score_format">Score: %1$d/%2$d</string>
+    <string name="oske_new_attempt">New Attempt</string>
+    <string name="oske_no_key_warning">No answer key exists for this ECG and specialty.</string>
 </resources>

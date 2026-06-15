@@ -6,6 +6,7 @@
     <string name="mode_testing">Тестирование</string>
     <string name="mode_examination">Экзамен</string>
     <string name="mode_oske">ОСКЭ</string>
+    <string name="mode_oske_constructor">Конструктор ОСКЭ</string>
     <string name="mode_editor">Конструктор ЭКГ</string>
     <string name="mode_course_constructor">Конструктор курсов</string>
 
@@ -248,4 +249,22 @@
     <string name="cd_redo">Вернуть</string>
     <string name="cd_apply">Применить</string>
     <string name="cd_cancel">Отмена</string>
+
+    <!-- OSCE Screen -->
+    <string name="oske_tab_exam">Экзамен</string>
+    <string name="oske_tab_results">Результаты</string>
+    <string name="oske_tab_constructor">Конструктор</string>
+    <string name="oske_start_title">Начало ОСКЭ</string>
+    <string name="oske_student_name">ФИО</string>
+    <string name="oske_student_group">Группа</string>
+    <string name="oske_specialty">Специальность</string>
+    <string name="oske_ecg_pick">Выберите ЭКГ</string>
+    <string name="oske_start_button">Начать экзамен</string>
+    <string name="oske_submit_button">Завершить</string>
+    <string name="oske_result_title">Результат экзамена</string>
+    <string name="oske_passed">Сдано</string>
+    <string name="oske_failed">Не сдано</string>
+    <string name="oske_score_format">Баллы: %1$d/%2$d</string>
+    <string name="oske_new_attempt">Новая попытка</string>
+    <string name="oske_no_key_warning">Для данной ЭКГ и специальности не заданы правильные ответы.</string>
 </resources>

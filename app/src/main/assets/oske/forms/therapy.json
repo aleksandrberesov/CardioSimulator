@@ -1,0 +1,133 @@
+{
+  "formId": "therapy",
+  "specialty": "Therapy",
+  "version": "1.0",
+  "questions": [
+    {
+      "id": "rhythm",
+      "number": 1,
+      "title": "Ритм",
+      "kind": "Single",
+      "options": [
+        { "id": "sinus", "text": "Синусовый" },
+        { "id": "low_atrial", "text": "Нижнепредсердный" },
+        { "id": "migration", "text": "Миграция водителя ритма по предсердиям" },
+        { "id": "afib", "text": "Фибрилляция предсердий" },
+        { "id": "flutter", "text": "Трепетание предсердий" },
+        { "id": "avurt", "text": "АВУРТ" }
+      ]
+    },
+    {
+      "id": "hr",
+      "number": 2,
+      "title": "Минимальная и максимальная ЧСС (ЧСЖ)",
+      "kind": "Single",
+      "options": [
+        { "id": "less_50", "text": "Менее 50" },
+        { "id": "50_101", "text": "От 50 до 101" },
+        { "id": "more_101", "text": "101 и более" }
+      ]
+    },
+    {
+      "id": "sv_extrasystole",
+      "number": 3,
+      "title": "Наджелудочковая экстрасистолия (НЖЭС)",
+      "kind": "Single",
+      "options": [
+        { "id": "none", "text": "Нет" },
+        { "id": "single", "text": "Единичная НЖЭС" },
+        { "id": "couplet", "text": "Куплет" },
+        { "id": "triplet", "text": "Триплет" }
+      ]
+    },
+    {
+      "id": "v_extrasystole",
+      "number": 4,
+      "title": "Желудочковая экстрасистолия (ЖЭС)",
+      "kind": "Single",
+      "options": [
+        { "id": "none", "text": "Нет" },
+        { "id": "rare_single", "text": "Редкая одиночная ЖЭС" },
+        { "id": "couplet", "text": "Куплет" },
+        { "id": "triplet", "text": "Триплет" }
+      ]
+    },
+    {
+      "id": "av_conduction",
+      "number": 5,
+      "title": "Оценка атриовентрикулярной проводимости",
+      "kind": "Single",
+      "options": [
+        { "id": "none", "text": "Нет нарушений" },
+        { "id": "av_block_1", "text": "АВ-блокада 1 степени" },
+        { "id": "av_block_2_m1", "text": "АВ-блокада 2 степени Мобиц 1" },
+        { "id": "av_block_2_m2", "text": "АВ-блокада 2 степени Мобиц 2" },
+        { "id": "av_block_3", "text": "АВ-блокада 3 степени" },
+        { "id": "flutter_variable", "text": "Трепетание предсердий с переменным коэффициентом проведения" },
+        { "id": "flutter", "text": "Трепетание предсердий" },
+        { "id": "cannot_assess", "text": "Невозможно оценить АВ-проводимость" },
+        { "id": "accessory_pathway", "text": "Имеются признаки дополнительного проводящего пути" }
+      ]
+    },
+    {
+      "id": "iv_conduction",
+      "number": 6,
+      "title": "Оценка внутрижелудочковой проводимости",
+      "kind": "Single",
+      "options": [
+        { "id": "none", "text": "Нет нарушений" },
+        { "id": "rbbb", "text": "Полная блокада правой ножки пучка Гиса (ПБПНПГ)" },
+        { "id": "lbbb", "text": "Полная блокада левой ножки пучка Гиса (ПБЛНПГ)" },
+        { "id": "lahb", "text": "Блокада передней ветви левой ножки пучка Гиса (БПВЛНПГ)" },
+        { "id": "delta_wave", "text": "Увеличение длительности комплекса QRS из-за дельта-волны" }
+      ]
+    },
+    {
+      "id": "lvh",
+      "number": 7,
+      "title": "Оценка гипертрофии левого желудочка",
+      "kind": "Single",
+      "options": [
+        { "id": "none", "text": "Достоверных признаков гипертрофии ЛЖ нет" },
+        { "id": "exists", "text": "Имеются достоверные признаки гипертрофии ЛЖ" }
+      ]
+    },
+    {
+      "id": "pathological_q",
+      "number": 8,
+      "title": "Наличие патологического зубца Q",
+      "kind": "Single",
+      "options": [
+        { "id": "none", "text": "Нет патологического Q зубца" },
+        { "id": "exists", "text": "Есть патологический Q зубец" }
+      ]
+    },
+    {
+      "id": "stemi_signs",
+      "number": 9,
+      "title": "Признаки острого/подострого ИМпST",
+      "kind": "Single",
+      "options": [
+        { "id": "none", "text": "Нет убедительных признаков острого/подострого ИМпST" },
+        { "id": "anteroseptal", "text": "Передне-перегородочный" },
+        { "id": "anteroapical", "text": "Передне-верхушечный" },
+        { "id": "extensive_anterior", "text": "Распространенный передний" },
+        { "id": "inferior", "text": "Нижний" },
+        { "id": "inferolateral", "text": "Нижнебоковой" }
+      ]
+    },
+    {
+      "id": "additional",
+      "number": 10,
+      "title": "Дополнительная информация по данной ЭКГ",
+      "kind": "Single",
+      "options": [
+        { "id": "none", "text": "Нет" },
+        { "id": "bbb", "text": "Полная блокада ножки пучка Гиса" },
+        { "id": "wpw", "text": "Синдром Вольфа-Паркинсона-Уайта (WPW)" },
+        { "id": "nstemi_possible", "text": "Нельзя исключить ОКС без подъёма ST (ОКСбпST)" },
+        { "id": "stemi_possible", "text": "Нельзя исключить ОКС с подъёмом ST (ОКСпST)" }
+      ]
+    }
+  ]
+}
