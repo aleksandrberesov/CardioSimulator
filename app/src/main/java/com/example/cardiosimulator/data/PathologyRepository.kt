@@ -86,7 +86,7 @@ class PathologyRepository(private var source: PathologySource) {
     fun createPathology(id: String, titleEn: String, nameRu: String?): String? {
         val baseline = manifest()?.baseline ?: DEFAULT_BASELINE
         val leadOrder = manifest()?.leadOrder ?: Lead.entries
-        val sampleCount = 5000 // 10 seconds at 500Hz
+        val sampleCount = 501 // 1 second at 500Hz (0..500 indices = 1000ms)
         val blankSamples = IntArray(sampleCount) { baseline }
         
         val leads = leadOrder.associateWith { lead ->
