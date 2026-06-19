@@ -73,6 +73,7 @@
 
     <!-- Rhythm panel -->
     <string name="rhythm_drawer_title">Rhythm</string>
+    <string name="monitor_overlay_title">Monitor</string>
     <string name="course_drawer_title">Courses</string>
     <string name="lecture_selector_title">Lectures</string>
     <string name="course_viewer_select_lecture">Select a lecture to begin</string>

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -27,6 +28,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -53,6 +56,7 @@ import com.example.cardiosimulator.domain.Lecture
 import com.example.cardiosimulator.domain.LectureEntry
 import com.example.cardiosimulator.ui.components.LectureWebView
 import com.example.cardiosimulator.ui.components.SideDrawer
+import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.ui.display.LEAD_ORDER
 import com.example.cardiosimulator.ui.display.Lead as LeadView
 import com.example.cardiosimulator.ui.display.LeadsGrid
@@ -71,26 +75,15 @@ fun TeachingScreen(
     rhythmViewModel: RhythmViewModel,
     courseViewerViewModel: CourseViewerViewModel,
 ) {
-    val rhythms by rhythmViewModel.rhythms.collectAsState()
     val courses by appViewModel.courses.collectAsState()
-    val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
-    val waveforms by rhythmViewModel.waveforms.collectAsState()
-    val comparisonWaveforms by rhythmViewModel.comparisonWaveforms.collectAsState()
     val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
-    var isRhythmDrawerExpanded by remember { mutableStateOf(false) }
-    var editingPaneIndex by remember { mutableStateOf<Int?>(null) }
-    var showPresetsDialog by remember { mutableStateOf(false) }
-    var showSavePresetDialog by remember { mutableStateOf(false) }
 
-    val mode by monitorViewModel.monitorMode.collectAsState()
-    val isDrawerFixed by appViewModel.isDrawerFixed.collectAsState()
-    
     val selectedCourseId by courseViewerViewModel.selectedCourseId.collectAsState()
     val appSelectedCourseId by appViewModel.selectedCourseId.collectAsState()
     val lectures by courseViewerViewModel.lectures.collectAsState()
     val selectedLectureId by courseViewerViewModel.selectedLectureId.collectAsState()
     val viewerLecture by courseViewerViewModel.lecture.collectAsState()
-    var showCourseOverlay by remember { mutableStateOf(false) }
+    var showMonitorOverlay by remember { mutableStateOf(false) }
 
     val pathologyRepo = appViewModel.repository
     val resolveEcg = remember(pathologyRepo) {
@@ -114,6 +107,96 @@ fun TeachingScreen(
         }
     }
 
+    Box(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
+        CourseViewerOverlay(
+            appViewModel = appViewModel,
+            rhythmViewModel = rhythmViewModel,
+            courses = courses,
+            selectedCourseId = appSelectedCourseId,
+            lectures = lectures,
+            selectedLectureId = selectedLectureId,
+            lecture = viewerLecture,
+            language = selectedLanguage,
+            resolveEcg = resolveEcg,
+            onLectureSelect = { courseViewerViewModel.selectLecture(it.id) },
+            onClose = { /* Not used in main mode */ },
+            onMonitorClick = { showMonitorOverlay = true },
+            isMainMode = true
+        )
+
+        if (showMonitorOverlay) {
+            MonitorOverlay(
+                monitorViewModel = monitorViewModel,
+                rhythmViewModel = rhythmViewModel,
+                appViewModel = appViewModel,
+                onClose = { showMonitorOverlay = false }
+            )
+        }
+    }
+}
+
+@Composable
+private fun PathologyDescription(
+    pathology: com.example.cardiosimulator.domain.PathologyEntry?,
+    language: Language,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        if (pathology != null) {
+            Text(
+                text = if (language == Language.RU) pathology.nameRu ?: pathology.titleEn else pathology.titleEn,
+                style = MaterialTheme.typography.headlineMedium,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = stringResource(R.string.constructor_id_label, pathology.id),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp).width(200.dp))
+            Text(
+                text = "Описание патологии будет доступно в следующих обновлениях.", // Placeholder
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            Text(
+                text = stringResource(R.string.constructor_no_pathology_selected),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun MonitorOverlay(
+    monitorViewModel: MonitorViewModel,
+    rhythmViewModel: RhythmViewModel,
+    appViewModel: AppViewModel,
+    onClose: () -> Unit,
+) {
+    val rhythms by rhythmViewModel.rhythms.collectAsState()
+    val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
+    val waveforms by rhythmViewModel.waveforms.collectAsState()
+    val comparisonWaveforms by rhythmViewModel.comparisonWaveforms.collectAsState()
+    val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
+    val mode by monitorViewModel.monitorMode.collectAsState()
+    val isDrawerFixed by appViewModel.isDrawerFixed.collectAsState()
+
+    var isRhythmDrawerExpanded by remember { mutableStateOf(false) }
+    var editingPaneIndex by remember { mutableStateOf<Int?>(null) }
+    var showPresetsDialog by remember { mutableStateOf(false) }
+    var showSavePresetDialog by remember { mutableStateOf(false) }
+
     LaunchedEffect(mode.comparisonTargets) {
         mode.comparisonTargets.forEach { (index, target) ->
             rhythmViewModel.loadComparisonWaveform(index, target.pathologyId, target.lead)
@@ -129,11 +212,11 @@ fun TeachingScreen(
     if (showPresetsDialog) {
         ComparisonPresetsDialog(
             monitorViewModel = monitorViewModel,
-            onDismiss = { 
+            onDismiss = {
                 showPresetsDialog = false
                 if (mode.comparisonTargets.isEmpty()) monitorViewModel.toggleCompareMode()
             },
-            onNewSchemaClick = { 
+            onNewSchemaClick = {
                 showPresetsDialog = false
             },
             onPresetSelected = { preset ->
@@ -197,156 +280,127 @@ fun TeachingScreen(
         )
     }
 
-    Row(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
-        if (isDrawerFixed) {
-            rhythmDrawer()
-        }
-        Box(modifier = Modifier.weight(1f)) {
-            Column(
-                modifier = Modifier.fillMaxSize().middleSectionCenter(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                val displayTitle = if (mode.isCompareMode) {
-                    stringResource(R.string.monitor_compare_mode)
-                } else {
-                    selectedRhythm?.let {
-                        if (selectedLanguage == Language.RU)
-                            it.nameRu ?: it.titleEn
-                        else
-                            it.titleEn
-                    } ?: stringResource(R.string.constructor_no_pathology_selected)
-                }
-
-                Surface(
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 4.dp
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+        tonalElevation = 8.dp
+    ) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            if (isDrawerFixed) {
+                rhythmDrawer()
+            }
+            Box(modifier = Modifier.weight(1f)) {
+                Column(
+                    modifier = Modifier.fillMaxSize().middleSectionCenter(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = displayTitle,
-                            style = MaterialTheme.typography.titleMedium,
-                        )
+                    val displayTitle = if (mode.isCompareMode) {
+                        stringResource(R.string.monitor_compare_mode)
+                    } else {
+                        selectedRhythm?.let {
+                            if (selectedLanguage == Language.RU)
+                                it.nameRu ?: it.titleEn
+                            else
+                                it.titleEn
+                        } ?: stringResource(R.string.constructor_no_pathology_selected)
+                    }
 
-                        if (mode.isCompareMode && mode.comparisonTargets.isNotEmpty()) {
-                            TextButton(onClick = { showSavePresetDialog = true }) {
-                                Text(stringResource(R.string.constructor_save))
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 4.dp
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = displayTitle,
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (mode.isCompareMode && mode.comparisonTargets.isNotEmpty()) {
+                                    TextButton(onClick = { showSavePresetDialog = true }) {
+                                        Text(stringResource(R.string.constructor_save))
+                                    }
+                                }
+                                IconButton(onClick = onClose) {
+                                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_close))
+                                }
                             }
                         }
                     }
-                }
 
-                Monitor(
-                    modifier = Modifier.weight(1f).padding(
-                        top = 8.dp,
-                        start = if (isDrawerFixed) 0.dp else 24.dp
-                    ),
-                    monitorViewModel = monitorViewModel,
-                ) { rows, columns, xOffset, scheme ->
-                    LeadsGrid(
-                        rows = rows,
-                        columns = columns,
-                        itemCount = mode.count,
-                    ) { index, lead ->
-                        if (mode.isCompareMode && !mode.comparisonTargets.containsKey(index)) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(8.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(Color.LightGray.copy(alpha = 0.5f))
-                                    .clickable { editingPaneIndex = index },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.monitor_compare_placeholder),
-                                    textAlign = TextAlign.Center,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.DarkGray
+                    Monitor(
+                        modifier = Modifier.weight(1f).padding(
+                            top = 8.dp,
+                            start = if (isDrawerFixed) 0.dp else 24.dp
+                        ),
+                        monitorViewModel = monitorViewModel,
+                    ) { rows, columns, xOffset, scheme ->
+                        LeadsGrid(
+                            rows = rows,
+                            columns = columns,
+                            itemCount = mode.count,
+                        ) { index, lead ->
+                            if (mode.isCompareMode && !mode.comparisonTargets.containsKey(index)) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(8.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(Color.LightGray.copy(alpha = 0.5f))
+                                        .clickable { editingPaneIndex = index },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.monitor_compare_placeholder),
+                                        textAlign = TextAlign.Center,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color.DarkGray
+                                    )
+                                }
+                            } else {
+                                val (displayPoints, displayTitle) = if (mode.isCompareMode) {
+                                    val target = mode.comparisonTargets[index]
+                                    val points = comparisonWaveforms[index] ?: Points(emptyList())
+                                    val title = if (target != null) {
+                                        val pathology = rhythms.find { it.id == target.pathologyId }
+                                        val pathTitle = if (selectedLanguage == Language.RU) pathology?.nameRu ?: pathology?.titleEn else pathology?.titleEn
+                                        "${pathTitle ?: "???"} (${target.lead.name})"
+                                    } else {
+                                        ""
+                                    }
+                                    points to title
+                                } else {
+                                    val points = lead?.let { waveforms[it] }
+                                        ?.takeIf { it.values.size >= 2 }
+                                        ?: Points(emptyList<Float>())
+                                    points to (lead?.name ?: "")
+                                }
+
+                                LeadView(
+                                    points = displayPoints,
+                                    title = displayTitle,
+                                    isRunning = mode.isRunning,
+                                    xOffsetPx = xOffset,
+                                    gridScheme = scheme,
+                                    isCompareMode = mode.isCompareMode,
+                                    modifier = if (mode.isCompareMode) {
+                                        Modifier.clickable { editingPaneIndex = index }
+                                    } else Modifier
                                 )
                             }
-                        } else {
-                            val (displayPoints, displayTitle) = if (mode.isCompareMode) {
-                                val target = mode.comparisonTargets[index]
-                                val points = comparisonWaveforms[index] ?: Points(emptyList())
-                                val title = if (target != null) {
-                                    val pathology = rhythms.find { it.id == target.pathologyId }
-                                    val pathTitle = if (selectedLanguage == Language.RU) pathology?.nameRu ?: pathology?.titleEn else pathology?.titleEn
-                                    "${pathTitle ?: "???"} (${target.lead.name})"
-                                } else {
-                                    "" // Should not happen due to the placeholder box above
-                                }
-                                points to title
-                            } else {
-                                val points = lead?.let { waveforms[it] }
-                                    ?.takeIf { it.values.size >= 2 }
-                                    ?: Points(emptyList<Float>())
-                                points to (lead?.name ?: "")
-                            }
-
-                            LeadView(
-                                points = displayPoints,
-                                title = displayTitle,
-                                isRunning = mode.isRunning,
-                                xOffsetPx = xOffset,
-                                gridScheme = scheme,
-                                isCompareMode = mode.isCompareMode,
-                                modifier = if (mode.isCompareMode) {
-                                    Modifier.clickable { editingPaneIndex = index }
-                                } else Modifier
-                            )
                         }
                     }
                 }
-            }
 
-            if (!isDrawerFixed) {
-                Box(modifier = Modifier.fillMaxHeight().align(Alignment.TopStart)) {
-                    rhythmDrawer()
-                }
-            }
-
-            // Course-viewer entry point — additive; does not touch the monitor.
-            IconButton(
-                onClick = { showCourseOverlay = true },
-                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.School,
-                    contentDescription = stringResource(R.string.course_drawer_title),
-                    tint = Color.White
-                )
-            }
-
-            var hasOpenedCourseViewer by remember { mutableStateOf(false) }
-            if (showCourseOverlay) hasOpenedCourseViewer = true
-
-            if (hasOpenedCourseViewer) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            // Using translation and alpha to hide/show while keeping the WebView in composition
-                            // so that its scroll position and state are preserved.
-                            translationX = if (showCourseOverlay) 0f else 10000f
-                            alpha = if (showCourseOverlay) 1f else 0f
-                        }
-                ) {
-                    CourseViewerOverlay(
-                        courses = courses,
-                        selectedCourseId = selectedCourseId,
-                        lectures = lectures,
-                        selectedLectureId = selectedLectureId,
-                        lecture = viewerLecture,
-                        language = selectedLanguage,
-                        resolveEcg = resolveEcg,
-                        onLectureSelect = { courseViewerViewModel.selectLecture(it.id) },
-                        onClose = { showCourseOverlay = false },
-                    )
+                if (!isDrawerFixed) {
+                    Box(modifier = Modifier.fillMaxHeight().align(Alignment.TopStart)) {
+                        rhythmDrawer()
+                    }
                 }
             }
         }
@@ -355,6 +409,8 @@ fun TeachingScreen(
 
 @Composable
 private fun CourseViewerOverlay(
+    appViewModel: AppViewModel,
+    rhythmViewModel: RhythmViewModel,
     courses: List<CourseEntry>,
     selectedCourseId: String?,
     lectures: List<LectureEntry>,
@@ -364,12 +420,18 @@ private fun CourseViewerOverlay(
     resolveEcg: (String, Lead?) -> List<EcgTrace>,
     onLectureSelect: (LectureEntry) -> Unit,
     onClose: () -> Unit,
+    onMonitorClick: () -> Unit = {},
+    isMainMode: Boolean = false,
 ) {
-    var isLecturesDrawerExpanded by remember { mutableStateOf(false) }
+    val rhythms by rhythmViewModel.rhythms.collectAsState()
+    val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
+    var dropdownExpanded by remember { mutableStateOf(false) }
 
     val filteredCourses = remember(courses) {
         courses.filterNot { it.id == AppViewModel.ALL_RHYTHMS_ID }
     }
+
+    val isAllRhythms = selectedCourseId == AppViewModel.ALL_RHYTHMS_ID
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -381,21 +443,75 @@ private fun CourseViewerOverlay(
                 Row(
                     modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Text(
-                        text = lecture?.frontMatter?.title?.takeIf { it.isNotBlank() }
-                            ?: filteredCourses.find { it.id == selectedCourseId }?.let { courseDisplayName(it, language) }
-                            ?: stringResource(R.string.course_drawer_title),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    IconButton(onClick = onClose) {
-                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_close))
+                    Box(modifier = Modifier.weight(1f)) {
+                        Tab(
+                            text = if (isAllRhythms) {
+                                selectedRhythm?.let { if (language == Language.RU) it.nameRu ?: it.titleEn else it.titleEn }
+                                    ?: stringResource(R.string.rhythm_course_filter_all)
+                            } else {
+                                lecture?.frontMatter?.title?.takeIf { it.isNotBlank() }
+                                    ?: filteredCourses.find { it.id == selectedCourseId }?.let { courseDisplayName(it, language) }
+                                    ?: stringResource(R.string.course_drawer_title)
+                            },
+                            onClick = { dropdownExpanded = true },
+                            modifier = Modifier.fillMaxHeight().width(400.dp)
+                        )
+
+                        DropdownMenu(
+                            expanded = dropdownExpanded,
+                            onDismissRequest = { dropdownExpanded = false },
+                            modifier = Modifier.width(400.dp).height(500.dp)
+                        ) {
+                            if (isAllRhythms) {
+                                RhythmSelector(
+                                    appViewModel = appViewModel,
+                                    rhythms = rhythms,
+                                    selectedId = selectedRhythm?.id,
+                                    onRhythmSelect = {
+                                        rhythmViewModel.selectRhythm(it.id)
+                                        dropdownExpanded = false
+                                    },
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                LectureSelector(
+                                    lectures = lectures,
+                                    language = language,
+                                    selectedLectureId = selectedLectureId,
+                                    onLectureSelect = {
+                                        onLectureSelect(it)
+                                        dropdownExpanded = false
+                                    },
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            }
+                        }
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (isMainMode) {
+                            IconButton(onClick = onMonitorClick) {
+                                Icon(
+                                    imageVector = Icons.Default.MonitorHeart,
+                                    contentDescription = stringResource(R.string.monitor_overlay_title)
+                                )
+                            }
+                        } else {
+                            IconButton(onClick = onClose) {
+                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_close))
+                            }
+                        }
                     }
                 }
             }
             Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                if (lecture != null) {
+                if (isAllRhythms) {
+                    PathologyDescription(
+                        pathology = selectedRhythm,
+                        language = language
+                    )
+                } else if (lecture != null) {
                     LectureWebView(
                         lecture = lecture,
                         resolveEcg = resolveEcg,
@@ -408,37 +524,6 @@ private fun CourseViewerOverlay(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-
-                SideDrawer(
-                    isExpanded = isLecturesDrawerExpanded,
-                    onExpandedChange = { isLecturesDrawerExpanded = it },
-                    drawerWidth = 300.dp,
-                    drawerContent = {
-                        LectureSelector(
-                            lectures = lectures,
-                            language = language,
-                            selectedLectureId = selectedLectureId,
-                            onLectureSelect = {
-                                onLectureSelect(it)
-                                isLecturesDrawerExpanded = false
-                            },
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    },
-                    handlerContent = {
-                        Text(
-                            text = stringResource(R.string.lecture_selector_title),
-                            modifier = Modifier
-                                .requiredWidth(64.dp)
-                                .rotate(-90f),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            textAlign = TextAlign.Center
-                        )
-                    },
-                    modifier = Modifier.fillMaxHeight().align(Alignment.TopStart)
-                )
             }
         }
     }

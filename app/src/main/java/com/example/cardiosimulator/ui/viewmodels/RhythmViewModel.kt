@@ -108,6 +108,8 @@ class RhythmViewModel(
             val lastId = prefs?.lastRhythmId(mode.name)?.first()
             if (lastId != null && _selectedRhythm.value == null) {
                 selectRhythm(lastId, persist = false)
+            } else if (_selectedRhythm.value == null) {
+                _allRhythms.value.firstOrNull()?.let { selectRhythm(it.id, persist = false) }
             } else {
                 _selectedRhythm.value?.let { current -> selectRhythm(current.id) }
             }

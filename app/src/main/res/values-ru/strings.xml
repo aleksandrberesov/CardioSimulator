@@ -72,6 +72,7 @@
 
     <!-- Rhythm panel -->
     <string name="rhythm_drawer_title">Ритм</string>
+    <string name="monitor_overlay_title">Монитор</string>
     <string name="course_drawer_title">Курсы</string>
     <string name="lecture_selector_title">Лекции</string>
     <string name="course_viewer_select_lecture">Выберите лекцию</string>

@@ -229,17 +229,7 @@ fun MainScreen(appViewModel: AppViewModel) {
             ) {
                 when (selectedMode.id) {
                     OperatingMode.Teaching -> {
-                        MonitorControlPanel(
-                            viewModel = monitorViewModel,
-                            onCompareClick = { monitorViewModel.toggleCompareMode(selectedRhythm?.id) },
-                            onStartStopClick = { isRunning ->
-                                if (isRunning) {
-                                    appViewModel.sendStartCommand(selectedRhythm?.id, selectedRhythm?.titleEn)
-                                } else {
-                                    appViewModel.sendStopCommand()
-                                }
-                            },
-                        )
+                        // Hidden per user request: "hide monitor control panel in course mode"
                     }
                     OperatingMode.Constructor -> {
                         ConstructorControlPanel(
