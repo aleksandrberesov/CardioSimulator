@@ -34,7 +34,11 @@ sealed interface HtmlBlock {
     data class Ecg(
         override val id: String = UUID.randomUUID().toString(),
         val pathology: String,
-        val lead: String?,
+        val lead: String? = null,
+        val leads: List<String> = emptyList(),
+        val gridScheme: String = "Pink",
+        val count: Int = 1,
+        val seriesScheme: String = "OneColumn",
         val caption: String
     ) : HtmlBlock
 

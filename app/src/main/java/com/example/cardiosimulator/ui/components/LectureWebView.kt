@@ -54,10 +54,11 @@ private const val ASSET_DOMAIN = "https://appassets.androidplatform.net"
 fun LectureWebView(
     lecture: Lecture,
     modifier: Modifier = Modifier,
-    resolveEcg: (pathologyId: String, lead: Lead?) -> List<EcgTrace> = { _, _ -> emptyList() },
+    resolveEcg: (pathologyId: String, leads: List<Lead>) -> List<EcgTrace> = { _, _ -> emptyList() },
     answers: Map<String, Map<String, String>> = emptyMap(),
     scrollToBlockId: String? = null,
     onCellEdit: ((quizId: String, row: Int, col: Int, value: String) -> Unit)? = null,
+    onMonitorClick: (() -> Unit)? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     val bgArgb = colors.background.toArgb()
@@ -76,9 +77,13 @@ fun LectureWebView(
     val interactive = onCellEdit != null
     // Build the document off the main thread: <ecg> resolution reads pathology
     // .dat files, so it must not block composition.
-    val html by produceState<String?>(initialValue = null, lecture, css, interactive) {
+    val html by produceState<String?>(initialValue = null, lecture, css, interactive, onMonitorClick) {
         value = withContext(Dispatchers.IO) {
-            val body = EcgSvgRenderer.substituteEcgTags(lecture.rawHtml, resolveEcg)
+            val body = EcgSvgRenderer.substituteEcgTags(
+                lecture.rawHtml,
+                showMonitorButton = onMonitorClick != null,
+                resolve = resolveEcg
+            )
             if (lecture.isStandalone) {
                 buildStandaloneDocument(body = body, css = css, interactive = interactive)
             } else {
@@ -127,7 +132,7 @@ fun LectureWebView(
                 settings.domStorageEnabled = true
                 settings.allowFileAccess = false
                 settings.allowContentAccess = false
-                onCellEdit?.let { addJavascriptInterface(QuizBridge(it), "Android") }
+                addJavascriptInterface(LectureBridge(onCellEdit, onMonitorClick), "Android")
             }
         },
         update = { web ->
@@ -152,15 +157,21 @@ fun LectureWebView(
     )
 }
 
-/** Bridge for editable quiz cells. JS callbacks arrive on a binder thread. */
-private class QuizBridge(
-    private val callback: (quizId: String, row: Int, col: Int, value: String) -> Unit,
+/** Bridge for editable quiz cells and monitor integration. */
+private class LectureBridge(
+    private val onCell: ((quizId: String, row: Int, col: Int, value: String) -> Unit)? = null,
+    private val onMonitor: (() -> Unit)? = null,
 ) {
     private val main = Handler(Looper.getMainLooper())
 
     @JavascriptInterface
     fun onCell(quizId: String, row: Int, col: Int, value: String) {
-        main.post { callback(quizId, row, col, value) }
+        main.post { onCell?.invoke(quizId, row, col, value) }
+    }
+
+    @JavascriptInterface
+    fun onMonitor() {
+        main.post { onMonitor?.invoke() }
     }
 }
 
@@ -266,6 +277,10 @@ input,textarea{font:inherit;color:inherit;background:transparent;
   width:100%;box-sizing:border-box}
 figure.ecg-figure, figure.image-figure{margin:1.5em 0}
 svg.ecg-lead{max-width:100%;height:auto;display:block;margin:2px 0}
+.monitor-btn{display:block;margin:8px auto;padding:6px 16px;background:var(--primary);color:white;border:none;border-radius:4px;font-size:14px;cursor:pointer}
+.ecg-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ecg-grid-3x4{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.ecg-grid-auto{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:8px}
 figcaption{font-size:.9em;color:var(--muted);margin-top:6px;text-align:center;font-style:italic}
 .ecg-missing figcaption{color:#b00020}
 """.trimIndent()

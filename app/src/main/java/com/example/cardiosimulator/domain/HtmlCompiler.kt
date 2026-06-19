@@ -61,8 +61,34 @@ object HtmlCompiler {
                     }
                 }
                 "ecg" -> {
-                    if (elementId != null) HtmlBlock.Ecg(id = elementId, pathology = element.attr("pathology"), lead = element.attr("lead").takeIf { it.isNotBlank() }, caption = element.attr("caption"))
-                    else HtmlBlock.Ecg(pathology = element.attr("pathology"), lead = element.attr("lead").takeIf { it.isNotBlank() }, caption = element.attr("caption"))
+                    val pathology = element.attr("pathology")
+                    val lead = element.attr("lead").takeIf { it.isNotBlank() }
+                    val leadsAttr = element.attr("leads")
+                    val leads = if (leadsAttr.isNotBlank()) leadsAttr.split(",") else emptyList()
+                    val gridScheme = element.attr("gridScheme").takeIf { it.isNotBlank() } ?: "Pink"
+                    val count = element.attr("count").toIntOrNull() ?: 1
+                    val seriesScheme = element.attr("seriesScheme").takeIf { it.isNotBlank() } ?: "OneColumn"
+                    val caption = element.attr("caption")
+
+                    if (elementId != null) HtmlBlock.Ecg(
+                        id = elementId,
+                        pathology = pathology,
+                        lead = lead,
+                        leads = leads,
+                        gridScheme = gridScheme,
+                        count = count,
+                        seriesScheme = seriesScheme,
+                        caption = caption
+                    )
+                    else HtmlBlock.Ecg(
+                        pathology = pathology,
+                        lead = lead,
+                        leads = leads,
+                        gridScheme = gridScheme,
+                        count = count,
+                        seriesScheme = seriesScheme,
+                        caption = caption
+                    )
                 }
                 "table" -> parseTable(element)
                 // Handle unknown tags as paragraphs
@@ -126,6 +152,10 @@ object HtmlCompiler {
                 is HtmlBlock.Ecg -> {
                     append("<ecg id=\"${block.id}\" pathology=\"").append(block.pathology).append("\"")
                     if (block.lead != null) append(" lead=\"").append(block.lead).append("\"")
+                    if (block.leads.isNotEmpty()) append(" leads=\"").append(block.leads.joinToString(",")).append("\"")
+                    append(" gridScheme=\"").append(block.gridScheme).append("\"")
+                    append(" count=\"").append(block.count).append("\"")
+                    append(" seriesScheme=\"").append(block.seriesScheme).append("\"")
                     append(" caption=\"").append(block.caption).append("\"></ecg>\n")
                 }
                 is HtmlBlock.Table -> {

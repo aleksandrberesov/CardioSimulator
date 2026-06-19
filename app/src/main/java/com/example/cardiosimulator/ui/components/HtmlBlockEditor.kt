@@ -32,6 +32,8 @@ import com.example.cardiosimulator.domain.HtmlBlock
 import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.PathologyEntry
+import com.example.cardiosimulator.domain.GridScheme
+import com.example.cardiosimulator.domain.SeriesScheme
 import com.example.cardiosimulator.ui.screens.ComparisonTargetDialog
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import android.net.Uri
@@ -287,11 +289,12 @@ private fun EcgEditor(
             rhythms = rhythms,
             onDismiss = { showSelector = false },
             onTargetSelected = { target ->
-                onUpdate(block.copy(pathology = target.pathologyId, lead = target.lead.name))
+                val newLeads = if (block.leads.contains(target.lead.name)) block.leads else block.leads + target.lead.name
+                onUpdate(block.copy(pathology = target.pathologyId, leads = newLeads))
                 showSelector = false
             },
             initialPathologyId = block.pathology,
-            initialLead = block.lead?.let { Lead.fromToken(it) }
+            initialLead = block.leads.firstOrNull()?.let { Lead.fromToken(it) }
         )
     }
 
@@ -324,15 +327,96 @@ private fun EcgEditor(
                         text = displayTitle,
                         style = MaterialTheme.typography.bodyLarge
                     )
-                    if (block.lead != null) {
-                        Text(
-                            text = "Lead: ${block.lead}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                }
+                Icon(Icons.Default.Edit, contentDescription = "Edit Selection", modifier = Modifier.size(20.dp))
+            }
+        }
+
+        // Multi-lead selection
+        Text("Leads", style = MaterialTheme.typography.labelSmall)
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Lead.entries.forEach { lead ->
+                val isSelected = block.leads.contains(lead.name)
+                FilterChip(
+                    selected = isSelected,
+                    onClick = {
+                        val newLeads = if (isSelected) block.leads - lead.name else block.leads + lead.name
+                        onUpdate(block.copy(leads = newLeads))
+                    },
+                    label = { Text(lead.name) }
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Count
+            var countExpanded by remember { mutableStateOf(false) }
+            Box(modifier = Modifier.weight(1f)) {
+                OutlinedButton(
+                    onClick = { countExpanded = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text("Count: ${block.count}", style = MaterialTheme.typography.bodySmall)
+                    Icon(Icons.Default.ArrowDropDown, null)
+                }
+                DropdownMenu(expanded = countExpanded, onDismissRequest = { countExpanded = false }) {
+                    listOf(1, 2, 3, 4, 6, 12).forEach { c ->
+                        DropdownMenuItem(
+                            text = { Text(c.toString()) },
+                            onClick = { onUpdate(block.copy(count = c)); countExpanded = false }
                         )
                     }
                 }
-                Icon(Icons.Default.Edit, contentDescription = "Edit Selection", modifier = Modifier.size(20.dp))
+            }
+
+            // Grid Scheme
+            var gridExpanded by remember { mutableStateOf(false) }
+            Box(modifier = Modifier.weight(1f)) {
+                OutlinedButton(
+                    onClick = { gridExpanded = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text("Grid: ${block.gridScheme}", style = MaterialTheme.typography.bodySmall)
+                    Icon(Icons.Default.ArrowDropDown, null)
+                }
+                DropdownMenu(expanded = gridExpanded, onDismissRequest = { gridExpanded = false }) {
+                    GridScheme.entries.forEach { gs ->
+                        DropdownMenuItem(
+                            text = { Text(gs.name) },
+                            onClick = { onUpdate(block.copy(gridScheme = gs.name)); gridExpanded = false }
+                        )
+                    }
+                }
+            }
+
+            // Series Scheme
+            var seriesExpanded by remember { mutableStateOf(false) }
+            Box(modifier = Modifier.weight(1f)) {
+                OutlinedButton(
+                    onClick = { seriesExpanded = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text("Layout: ${block.seriesScheme}", style = MaterialTheme.typography.bodySmall)
+                    Icon(Icons.Default.ArrowDropDown, null)
+                }
+                DropdownMenu(expanded = seriesExpanded, onDismissRequest = { seriesExpanded = false }) {
+                    SeriesScheme.entries.forEach { ss ->
+                        DropdownMenuItem(
+                            text = { Text(ss.name) },
+                            onClick = { onUpdate(block.copy(seriesScheme = ss.name)); seriesExpanded = false }
+                        )
+                    }
+                }
             }
         }
 

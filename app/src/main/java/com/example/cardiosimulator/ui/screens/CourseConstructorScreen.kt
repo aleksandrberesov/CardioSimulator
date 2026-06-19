@@ -66,9 +66,9 @@ fun CourseConstructorScreen(
 
     val pathologyRepo = appViewModel.repository
     val resolveEcg = remember(pathologyRepo) {
-        { pathologyId: String, lead: Lead? ->
-            val leads = if (lead != null) listOf(lead) else LEAD_ORDER
-            leads.mapNotNull { l -> pathologyRepo?.leadWaveform(pathologyId, l)?.let { EcgTrace(l, it) } }
+        { pathologyId: String, leads: List<Lead> ->
+            val requested = leads.ifEmpty { LEAD_ORDER }
+            requested.mapNotNull { l -> pathologyRepo?.leadWaveform(pathologyId, l)?.let { EcgTrace(l, it) } }
         }
     }
 

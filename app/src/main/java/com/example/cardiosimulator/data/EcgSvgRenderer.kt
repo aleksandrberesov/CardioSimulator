@@ -36,27 +36,26 @@ object EcgSvgRenderer {
     private val pxPerMv = cal.gainMmPerMv * PX_PER_MM
     private val pxPerAdcCount = pxPerMv / cal.adcCountsPerMv
 
-    // Pink grid scheme — mirrors GridScheme.Pink (docs/ecg-rendering-pipeline.md §5d).
-    private const val GRID_BG = "#FFF5F5"
-    private const val GRID_SMALL = "#FDE4E4"
-    private const val GRID_LARGE = "#F9BDBD"
+    // Grid schemes
+    private data class GridColors(val bg: String, val small: String, val large: String)
+    private val gridSchemes = mapOf(
+        "Pink" to GridColors("#FFF5F5", "#FDE4E4", "#F9BDBD"),
+        "BlueGray" to GridColors("#F5F7FA", "#E4E9F2", "#C0CCDA"),
+        "Blank" to GridColors("#FFFFFF", "#FFFFFF", "#FFFFFF")
+    )
     private const val TRACE_COLOR = "#111111"
 
-    // Quoted attribute values may contain '>' but not an unescaped '"' (escape as &quot;).
     private val ecgTag = Regex("<ecg\\b((?:[^>\"]|\"[^\"]*\")*?)\\s*/?>(?:\\s*</ecg>)?", RegexOption.IGNORE_CASE)
     private val attr = Regex("([\\w-]+)\\s*=\\s*\"([^\"]*)\"")
 
     /**
      * Replaces every `<ecg …>` element in [html] with an inline-SVG figure.
-     * [resolve] maps a `(pathologyId, lead)` to the traces to draw; a null
-     * lead means "all leads" and is the caller's responsibility to expand
-     * (e.g. over `LEAD_ORDER`). When [resolve] yields nothing (unknown
-     * pathology, no data) a small placeholder figure is emitted so the
-     * page never breaks.
+     * [resolve] maps a `(pathologyId, requestedLeads)` to the traces to draw.
      */
     fun substituteEcgTags(
         html: String,
-        resolve: (pathologyId: String, lead: Lead?) -> List<EcgTrace>,
+        showMonitorButton: Boolean = false,
+        resolve: (pathologyId: String, leads: List<Lead>) -> List<EcgTrace>,
     ): String {
         var figureIndex = 0
         return ecgTag.replace(html) { match ->
@@ -64,24 +63,62 @@ object EcgSvgRenderer {
                 .associate { it.groupValues[1].lowercase() to it.groupValues[2] }
             val pathologyId = attrs["pathology"].orEmpty().trim()
             val leadToken = attrs["lead"]?.takeIf { it.isNotBlank() }
-            val lead = leadToken?.let { Lead.fromToken(it) }
+            val leadsAttr = attrs["leads"]?.takeIf { it.isNotBlank() }
+            val gridScheme = attrs["gridscheme"] ?: "Pink"
+            val count = attrs["count"]?.toIntOrNull() ?: 1
+            val seriesScheme = attrs["seriesscheme"] ?: "OneColumn"
             val caption = attrs["caption"]?.takeIf { it.isNotBlank() }
-            val traces = if (pathologyId.isEmpty()) emptyList() else resolve(pathologyId, lead)
-            if (traces.isEmpty()) missingFigure(pathologyId, leadToken)
-            else figureHtml(traces, caption, figureIndex++)
+
+            val requestedLeads = if (leadsAttr != null) {
+                leadsAttr.split(",").mapNotNull { Lead.fromToken(it) }
+            } else if (leadToken != null) {
+                listOfNotNull(Lead.fromToken(leadToken))
+            } else {
+                emptyList()
+            }
+
+            val traces = if (pathologyId.isEmpty()) emptyList() else resolve(pathologyId, requestedLeads)
+            if (traces.isEmpty()) missingFigure(pathologyId, leadToken ?: leadsAttr)
+            else figureHtml(
+                traces = traces,
+                caption = caption,
+                figureIndex = figureIndex++,
+                gridScheme = gridScheme,
+                seriesScheme = seriesScheme,
+                count = count,
+                showMonitorButton = showMonitorButton
+            )
         }
     }
 
     /** Builds a `<figure>` with one stacked `<svg>` per trace. */
-    fun figureHtml(traces: List<EcgTrace>, caption: String?, figureIndex: Int = 0): String {
-        val rows = traces.mapIndexed { i, t -> leadSvg(t, "ecg$figureIndex-$i") }
+    fun figureHtml(
+        traces: List<EcgTrace>,
+        caption: String?,
+        figureIndex: Int = 0,
+        gridScheme: String = "Pink",
+        seriesScheme: String = "OneColumn",
+        count: Int = 1,
+        showMonitorButton: Boolean = false
+    ): String {
+        val colors = gridSchemes[gridScheme] ?: gridSchemes["Pink"]!!
+        val rows = traces.take(count).mapIndexed { i, t -> leadSvg(t, "ecg$figureIndex-$i", colors) }
             .filter { it.isNotEmpty() }
             .joinToString("\n")
         val cap = caption?.let { "\n  <figcaption>${escape(it)}</figcaption>" }.orEmpty()
-        return "<figure class=\"ecg-figure\">\n$rows$cap\n</figure>"
+        val layoutClass = when (seriesScheme) {
+            "TwoColumn" -> " ecg-grid-2"
+            "ThreeByFour" -> " ecg-grid-3x4"
+            "Grid" -> " ecg-grid-auto"
+            else -> ""
+        }
+        val monitorBtn = if (showMonitorButton) {
+            "\n  <button class=\"monitor-btn\" onclick=\"if(window.Android)Android.onMonitor()\">Monitor</button>"
+        } else ""
+        return "<figure class=\"ecg-figure$layoutClass\">\n$rows$monitorBtn$cap\n</figure>"
     }
 
-    private fun leadSvg(trace: EcgTrace, uid: String): String {
+    private fun leadSvg(trace: EcgTrace, uid: String, colors: GridColors): String {
         val values = trace.points.values
         if (values.size < 2) return ""
         val widthPx = max(1f, (values.size - 1) * pxPerSample)
@@ -96,8 +133,8 @@ object EcgSvgRenderer {
             append("viewBox=\"0 0 ${fmt(widthPx)} ${fmt(heightPx)}\" ")
             append("width=\"${fmt(widthPx)}\" height=\"${fmt(heightPx)}\" ")
             append("preserveAspectRatio=\"xMidYMid meet\" role=\"img\" aria-label=\"ECG lead $label\">")
-            append(gridDefs(uid))
-            append("<rect width=\"${fmt(widthPx)}\" height=\"${fmt(heightPx)}\" fill=\"$GRID_BG\"/>")
+            append(gridDefs(uid, colors))
+            append("<rect width=\"${fmt(widthPx)}\" height=\"${fmt(heightPx)}\" fill=\"${colors.bg}\"/>")
             append("<rect width=\"${fmt(widthPx)}\" height=\"${fmt(heightPx)}\" fill=\"url(#$uid)\"/>")
             append("<path d=\"$d\" fill=\"none\" stroke=\"$TRACE_COLOR\" stroke-width=\"1.4\" ")
             append("stroke-linejoin=\"round\" stroke-linecap=\"round\"/>")
@@ -117,16 +154,16 @@ object EcgSvgRenderer {
         return sb.toString()
     }
 
-    private fun gridDefs(uid: String): String {
+    private fun gridDefs(uid: String, colors: GridColors): String {
         val mm = fmt(PX_PER_MM)
         val mm5 = fmt(PX_PER_MM * 5f)
         return "<defs>" +
             "<pattern id=\"${uid}s\" width=\"$mm\" height=\"$mm\" patternUnits=\"userSpaceOnUse\">" +
-            "<path d=\"M$mm 0 L0 0 0 $mm\" fill=\"none\" stroke=\"$GRID_SMALL\" stroke-width=\"0.5\"/>" +
+            "<path d=\"M$mm 0 L0 0 0 $mm\" fill=\"none\" stroke=\"${colors.small}\" stroke-width=\"0.5\"/>" +
             "</pattern>" +
             "<pattern id=\"$uid\" width=\"$mm5\" height=\"$mm5\" patternUnits=\"userSpaceOnUse\">" +
             "<rect width=\"$mm5\" height=\"$mm5\" fill=\"url(#${uid}s)\"/>" +
-            "<path d=\"M$mm5 0 L0 0 0 $mm5\" fill=\"none\" stroke=\"$GRID_LARGE\" stroke-width=\"1\"/>" +
+            "<path d=\"M$mm5 0 L0 0 0 $mm5\" fill=\"none\" stroke=\"${colors.large}\" stroke-width=\"1\"/>" +
             "</pattern></defs>"
     }
 
