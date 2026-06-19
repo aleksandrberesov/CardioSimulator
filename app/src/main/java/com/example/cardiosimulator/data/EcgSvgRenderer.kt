@@ -2,6 +2,7 @@ package com.example.cardiosimulator.data
 
 import com.example.cardiosimulator.domain.Lead
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.round
 
@@ -91,7 +92,7 @@ object EcgSvgRenderer {
         }
     }
 
-    /** Builds a `<figure>` with one stacked `<svg>` per trace. */
+    /** Builds a `<figure>` with a single `<svg>` containing all traces. */
     fun figureHtml(
         traces: List<EcgTrace>,
         caption: String?,
@@ -102,46 +103,61 @@ object EcgSvgRenderer {
         showMonitorButton: Boolean = false
     ): String {
         val colors = gridSchemes[gridScheme] ?: gridSchemes["Pink"]!!
-        val rows = traces.take(count).mapIndexed { i, t -> leadSvg(t, "ecg$figureIndex-$i", colors) }
-            .filter { it.isNotEmpty() }
-            .joinToString("\n")
-        val cap = caption?.let { "\n  <figcaption>${escape(it)}</figcaption>" }.orEmpty()
-        val layoutClass = when (seriesScheme) {
-            "TwoColumn" -> " ecg-grid-2"
-            "ThreeByFour" -> " ecg-grid-3x4"
-            "Grid" -> " ecg-grid-auto"
-            else -> ""
+        val visibleTraces = traces.take(count)
+        if (visibleTraces.isEmpty()) return ""
+
+        val maxCols = when (seriesScheme) {
+            "TwoColumn" -> 2
+            "ThreeByFour" -> 4
+            "Grid" -> 4
+            else -> 1
         }
+        val rows = ceil(visibleTraces.size.toFloat() / maxCols).toInt()
+        val cols = if (rows > 0) ceil(visibleTraces.size.toFloat() / rows).toInt() else 1
+
+        val leadHeight = 20f * PX_PER_MM // 20mm height per lead
+        val maxTraceSamples = visibleTraces.maxOfOrNull { it.points.values.size } ?: 0
+        val leadWidth = max(1f, (maxTraceSamples - 1) * pxPerSample)
+        
+        val totalWidth = leadWidth * cols
+        val totalHeight = leadHeight * rows
+        val uid = "ecg$figureIndex"
+
+        val svg = buildString {
+            append("<svg class=\"ecg-monitor\" xmlns=\"http://www.w3.org/2000/svg\" ")
+            append("viewBox=\"0 0 ${fmt(totalWidth)} ${fmt(totalHeight)}\" ")
+            append("width=\"${fmt(totalWidth)}\" height=\"${fmt(totalHeight)}\" ")
+            append("preserveAspectRatio=\"xMidYMid meet\" role=\"img\" aria-label=\"ECG Monitor\">")
+            append(gridDefs(uid, colors))
+            append("<rect width=\"${fmt(totalWidth)}\" height=\"${fmt(totalHeight)}\" fill=\"${colors.bg}\"/>")
+            append("<rect width=\"${fmt(totalWidth)}\" height=\"${fmt(totalHeight)}\" fill=\"url(#$uid)\"/>")
+            
+            visibleTraces.forEachIndexed { i, trace ->
+                val col = i / rows
+                val row = i % rows
+                val x = col * leadWidth
+                val y = row * leadHeight
+                append("<g transform=\"translate(${fmt(x)}, ${fmt(y)})\">")
+                append(tracePath(trace, leadHeight / 2f))
+                append("<text x=\"6\" y=\"18\" font-family=\"serif\" font-weight=\"bold\" ")
+                append("font-size=\"14\" fill=\"#000\">${trace.lead.name}</text>")
+                append("</g>")
+            }
+            append("</svg>")
+        }
+
+        val cap = caption?.let { "\n  <figcaption>${escape(it)}</figcaption>" }.orEmpty()
         val monitorBtn = if (showMonitorButton) {
             "\n  <button class=\"monitor-btn\" onclick=\"if(window.Android)Android.onMonitor()\">Monitor</button>"
         } else ""
-        return "<figure class=\"ecg-figure$layoutClass\">\n$rows$monitorBtn$cap\n</figure>"
+        return "<figure class=\"ecg-figure\">\n$svg$monitorBtn$cap\n</figure>"
     }
 
-    private fun leadSvg(trace: EcgTrace, uid: String, colors: GridColors): String {
+    private fun tracePath(trace: EcgTrace, baselineY: Float): String {
         val values = trace.points.values
         if (values.size < 2) return ""
-        val widthPx = max(1f, (values.size - 1) * pxPerSample)
-        val maxAbs = values.maxOf { abs(it) }
-        // Half-height: enough to fit the signal, at least 5 mm, plus 2 mm padding.
-        val halfPx = max(5f * PX_PER_MM, maxAbs * pxPerAdcCount + 2f * PX_PER_MM)
-        val heightPx = halfPx * 2f
-        val d = pathData(values, halfPx)
-        val label = trace.lead.name
-        return buildString {
-            append("<svg class=\"ecg-lead\" xmlns=\"http://www.w3.org/2000/svg\" ")
-            append("viewBox=\"0 0 ${fmt(widthPx)} ${fmt(heightPx)}\" ")
-            append("width=\"${fmt(widthPx)}\" height=\"${fmt(heightPx)}\" ")
-            append("preserveAspectRatio=\"xMidYMid meet\" role=\"img\" aria-label=\"ECG lead $label\">")
-            append(gridDefs(uid, colors))
-            append("<rect width=\"${fmt(widthPx)}\" height=\"${fmt(heightPx)}\" fill=\"${colors.bg}\"/>")
-            append("<rect width=\"${fmt(widthPx)}\" height=\"${fmt(heightPx)}\" fill=\"url(#$uid)\"/>")
-            append("<path d=\"$d\" fill=\"none\" stroke=\"$TRACE_COLOR\" stroke-width=\"1.4\" ")
-            append("stroke-linejoin=\"round\" stroke-linecap=\"round\"/>")
-            append("<text x=\"6\" y=\"18\" font-family=\"serif\" font-weight=\"bold\" ")
-            append("font-size=\"16\" fill=\"#000\">$label</text>")
-            append("</svg>")
-        }
+        val d = pathData(values, baselineY)
+        return "<path d=\"$d\" fill=\"none\" stroke=\"$TRACE_COLOR\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>"
     }
 
     private fun pathData(values: List<Float>, baselineY: Float): String {

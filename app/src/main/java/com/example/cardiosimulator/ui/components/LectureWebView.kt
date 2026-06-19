@@ -276,11 +276,8 @@ input,textarea{font:inherit;color:inherit;background:transparent;
   border:1px solid var(--border);border-radius:4px;padding:2px 6px;
   width:100%;box-sizing:border-box}
 figure.ecg-figure, figure.image-figure{margin:1.5em 0}
-svg.ecg-lead{max-width:100%;height:auto;display:block;margin:2px 0}
+svg.ecg-monitor{max-width:100%;height:auto;display:block;margin:0 auto;border:1px solid var(--border);border-radius:4px}
 .monitor-btn{display:block;margin:8px auto;padding:6px 16px;background:var(--primary);color:white;border:none;border-radius:4px;font-size:14px;cursor:pointer}
-.ecg-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.ecg-grid-3x4{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.ecg-grid-auto{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:8px}
 figcaption{font-size:.9em;color:var(--muted);margin-top:6px;text-align:center;font-style:italic}
 .ecg-missing figcaption{color:#b00020}
 """.trimIndent()
