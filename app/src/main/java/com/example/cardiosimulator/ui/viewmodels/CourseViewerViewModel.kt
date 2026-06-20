@@ -55,7 +55,16 @@ class CourseViewerViewModel(
     }
 
     fun selectCourse(courseId: String) {
-        if (_selectedCourseId.value == courseId) return
+        if (_selectedCourseId.value == courseId) {
+            if (_selectedLectureId.value == null) {
+                viewModelScope.launch {
+                    val entries = withContext(Dispatchers.IO) { repository.lectureEntries(courseId) }
+                    _lectures.value = entries
+                    entries.firstOrNull()?.let { selectLecture(it.id) }
+                }
+            }
+            return
+        }
         _selectedCourseId.value = courseId
         _selectedLectureId.value = null
         _lecture.value = null

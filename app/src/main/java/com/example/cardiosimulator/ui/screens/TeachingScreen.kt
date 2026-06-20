@@ -104,6 +104,8 @@ fun TeachingScreen(
     LaunchedEffect(appSelectedCourseId) {
         if (appSelectedCourseId != null && appSelectedCourseId != AppViewModel.ALL_RHYTHMS_ID) {
             courseViewerViewModel.selectCourse(appSelectedCourseId!!)
+        } else {
+            courseViewerViewModel.closeLecture()
         }
     }
 
@@ -439,72 +441,6 @@ private fun CourseViewerOverlay(
         tonalElevation = 2.dp,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 4.dp) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        Tab(
-                            text = if (isAllRhythms) {
-                                selectedRhythm?.let { if (language == Language.RU) it.nameRu ?: it.titleEn else it.titleEn }
-                                    ?: stringResource(R.string.rhythm_course_filter_all)
-                            } else {
-                                lecture?.frontMatter?.title?.takeIf { it.isNotBlank() }
-                                    ?: filteredCourses.find { it.id == selectedCourseId }?.let { courseDisplayName(it, language) }
-                                    ?: stringResource(R.string.course_drawer_title)
-                            },
-                            onClick = { dropdownExpanded = true },
-                            modifier = Modifier.fillMaxHeight().width(400.dp)
-                        )
-
-                        DropdownMenu(
-                            expanded = dropdownExpanded,
-                            onDismissRequest = { dropdownExpanded = false },
-                            modifier = Modifier.width(400.dp).height(500.dp)
-                        ) {
-                            if (isAllRhythms) {
-                                RhythmSelector(
-                                    appViewModel = appViewModel,
-                                    rhythms = rhythms,
-                                    selectedId = selectedRhythm?.id,
-                                    onRhythmSelect = {
-                                        rhythmViewModel.selectRhythm(it.id)
-                                        dropdownExpanded = false
-                                    },
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            } else {
-                                LectureSelector(
-                                    lectures = lectures,
-                                    language = language,
-                                    selectedLectureId = selectedLectureId,
-                                    onLectureSelect = {
-                                        onLectureSelect(it)
-                                        dropdownExpanded = false
-                                    },
-                                    modifier = Modifier.fillMaxSize(),
-                                )
-                            }
-                        }
-                    }
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (isMainMode) {
-                            IconButton(onClick = onMonitorClick) {
-                                Icon(
-                                    imageVector = Icons.Default.MonitorHeart,
-                                    contentDescription = stringResource(R.string.monitor_overlay_title)
-                                )
-                            }
-                        } else {
-                            IconButton(onClick = onClose) {
-                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_close))
-                            }
-                        }
-                    }
-                }
-            }
             Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
                 if (isAllRhythms) {
                     PathologyDescription(

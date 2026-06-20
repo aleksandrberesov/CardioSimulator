@@ -38,6 +38,7 @@ import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.ConstructorViewModel
 import com.example.cardiosimulator.ui.viewmodels.CourseConstructorViewModel
+import com.example.cardiosimulator.ui.viewmodels.CourseViewerViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 
 @Composable
@@ -46,6 +47,7 @@ fun TopControlPanel(
     monitorViewModel: MonitorViewModel = viewModel(),
     constructorViewModel: ConstructorViewModel? = null,
     courseConstructorViewModel: CourseConstructorViewModel? = null,
+    courseViewerViewModel: CourseViewerViewModel? = null,
     modifier: Modifier = Modifier,
     onStartStopClick: (Boolean) -> Unit = {},
 ) {
@@ -100,11 +102,16 @@ fun TopControlPanel(
                     modifier = Modifier.weight(5f).fillMaxWidth().fillMaxHeight()
                 ){
                     when (selectedOperatingMode.id) {
-                        OperatingMode.Teaching -> TeachingControlPanel(
-                            appViewModel = viewModel,
-                            monitorViewModel = monitorViewModel,
-                            onStartStopClick = onStartStopClick
-                        )
+                        OperatingMode.Teaching -> {
+                            if (courseViewerViewModel != null) {
+                                TeachingControlPanel(
+                                    appViewModel = viewModel,
+                                    courseViewerViewModel = courseViewerViewModel,
+                                    monitorViewModel = monitorViewModel,
+                                    onStartStopClick = onStartStopClick
+                                )
+                            }
+                        }
                         OperatingMode.Testing -> TestingControlPanel(viewModel = viewModel)
                         OperatingMode.Examination -> {}
                         OperatingMode.OSKE -> {}

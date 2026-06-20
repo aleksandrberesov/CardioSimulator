@@ -5,7 +5,6 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -181,7 +180,6 @@ fun ConstructorScreen(
 
     var isRhythmDrawerExpanded by remember { mutableStateOf(false) }
     var isPointsDrawerExpanded by remember { mutableStateOf(false) }
-    val rhythmListState = rememberLazyListState()
 
     val rhythmDrawer = @Composable {
         SideDrawer(
@@ -194,7 +192,6 @@ fun ConstructorScreen(
                     rhythms = rhythms,
                     selectedId = targetFile?.id,
                     onRhythmSelect = { constructorViewModel.selectPathology(it.id) },
-                    listState = rhythmListState,
                 )
             },
             handlerContent = {

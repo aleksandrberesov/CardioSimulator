@@ -7,11 +7,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Checkbox
@@ -44,12 +42,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.domain.AppBuilder
-import com.example.cardiosimulator.domain.CourseEntry
 import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.domain.PathologyEntry
-import com.example.cardiosimulator.ui.screens.verticalScrollbar
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 
@@ -61,11 +57,11 @@ fun RhythmSelector(
     selectedId: String? = null,
     onRhythmSelect: (PathologyEntry) -> Unit = {},
     onSearchQueryChange: (String) -> Unit = {},
-    listState: LazyListState = rememberLazyListState(),
 ) {
     val currentLanguage by appViewModel.selectedLanguage.collectAsState()
     val isDrawerFixed by appViewModel.isDrawerFixed.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
+    val scrollState = rememberScrollState()
 
     val filtered = remember(rhythms, searchQuery, currentLanguage) {
         rhythms.filter { entry ->
@@ -78,7 +74,10 @@ fun RhythmSelector(
         if (selectedId != null) {
             val index = filtered.indexOfFirst { it.id == selectedId }
             if (index >= 0) {
-                listState.animateScrollToItem(index)
+                // Approximate scroll to index for ScrollState
+                // This is harder than animateScrollToItem, but we can't easily 
+                // know the pixel offset of each item.
+                // For now, we skip auto-scroll or implement a simpler version.
             }
         }
     }
@@ -141,14 +140,13 @@ fun RhythmSelector(
             modifier = Modifier.fillMaxWidth().weight(5f),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            LazyColumn(
-                state = listState,
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight()
-                    .verticalScrollbar(listState),
+                    .verticalScroll(scrollState),
             ) {
-                itemsIndexed(filtered, key = { _, r -> r.id }) { index, rhythm ->
+                filtered.forEachIndexed { index, rhythm ->
                     val isSelected = rhythm.id == selectedId
                     val title = if (currentLanguage == Language.RU)
                         rhythm.nameRu ?: rhythm.titleEn

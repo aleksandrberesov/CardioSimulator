@@ -11,6 +11,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.domain.Language
+import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.CourseConstructorViewModel
 
@@ -32,24 +33,23 @@ fun CourseConstructorTopPanel(
     Row(
         modifier = modifier.fillMaxSize(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // Course Selector
         var courseExpanded by remember { mutableStateOf(false) }
         Box {
-            TextButton(onClick = { courseExpanded = true }) {
-                val currentCourse = courses.find { it.id == selectedCourseId }
-                val title = if (currentCourse != null) {
-                    if (selectedLanguage == Language.RU) currentCourse.nameRu ?: currentCourse.titleEn else currentCourse.titleEn
-                } else {
-                    stringResource(R.string.course_drawer_title)
-                }
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelLarge
-                )
-                Icon(Icons.Default.ArrowDownward, contentDescription = null, modifier = Modifier.size(16.dp))
-            }
+            Tab(
+                text = remember(selectedCourseId, courses, selectedLanguage) {
+                    val currentCourse = courses.find { it.id == selectedCourseId }
+                    if (currentCourse != null) {
+                        if (selectedLanguage == Language.RU) currentCourse.nameRu ?: currentCourse.titleEn else currentCourse.titleEn
+                    } else {
+                        "Select Course..."
+                    }
+                },
+                onClick = { courseExpanded = true },
+                modifier = Modifier.padding(horizontal = 4.dp).width(200.dp)
+            )
             DropdownMenu(expanded = courseExpanded, onDismissRequest = { courseExpanded = false }) {
                 courses.forEach { course ->
                     val title = if (selectedLanguage == Language.RU) course.nameRu ?: course.titleEn else course.titleEn
@@ -64,34 +64,34 @@ fun CourseConstructorTopPanel(
             }
         }
 
-        VerticalDivider(modifier = Modifier.height(32.dp).padding(horizontal = 4.dp))
-
         // Lecture Selector
-        var lectureExpanded by remember { mutableStateOf(false) }
-        Box {
-            TextButton(
-                onClick = { lectureExpanded = true },
-                enabled = selectedCourseId != null
-            ) {
-                val currentLecture = lectures.find { it.id == selectedLectureId }
-                val title = if (currentLecture != null) {
-                    if (selectedLanguage == Language.RU) currentLecture.nameRu ?: currentLecture.titleEn else currentLecture.titleEn
-                } else {
-                    stringResource(R.string.lecture_selector_title)
-                }
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelLarge
+        if (selectedCourseId != null) {
+            var lectureExpanded by remember { mutableStateOf(false) }
+            Box {
+                Tab(
+                    text = remember(selectedLectureId, lectures, selectedLanguage) {
+                        val currentLecture = lectures.find { it.id == selectedLectureId }
+                        if (currentLecture != null) {
+                            if (selectedLanguage == Language.RU) currentLecture.nameRu ?: currentLecture.titleEn else currentLecture.titleEn
+                        } else {
+                            "Select Lecture..."
+                        }
+                    },
+                    onClick = { lectureExpanded = true },
+                    modifier = Modifier.padding(horizontal = 4.dp).width(200.dp)
                 )
-                Icon(Icons.Default.ArrowDownward, contentDescription = null, modifier = Modifier.size(16.dp))
-            }
-            DropdownMenu(expanded = lectureExpanded, onDismissRequest = { lectureExpanded = false }) {
-                lectures.forEach { lecture ->
-                    val title = if (selectedLanguage == Language.RU) lecture.nameRu ?: lecture.titleEn else lecture.titleEn
-                    DropdownMenuItem(
-                        text = { Text(title) },
-                        onClick = {
-                            courseConstructorViewModel.selectLecture(lecture.id)
+                DropdownMenu(
+                    expanded = lectureExpanded,
+                    onDismissRequest = { lectureExpanded = false },
+                    modifier = Modifier.width(300.dp).height(400.dp)
+                ) {
+                    LectureSelector(
+                        lectures = lectures,
+                        language = selectedLanguage,
+                        selectedLectureId = selectedLectureId,
+                        modifier = Modifier.requiredSize(width = 300.dp, height = 400.dp),
+                        onLectureSelect = {
+                            courseConstructorViewModel.selectLecture(it.id)
                             lectureExpanded = false
                         }
                     )

@@ -8,9 +8,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.domain.CourseEntry
 import com.example.cardiosimulator.domain.Language
-import com.example.cardiosimulator.ui.screens.verticalScrollbar
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 
 @Composable
@@ -36,7 +34,6 @@ fun CourseSelector(
     onCourseSelect: (CourseEntry) -> Unit = {},
 ) {
     val currentLanguage by appViewModel.selectedLanguage.collectAsState()
-    val listState = rememberLazyListState()
 
     Column(
         modifier = modifier
@@ -49,14 +46,13 @@ fun CourseSelector(
             modifier = Modifier.fillMaxWidth().weight(1f),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            LazyColumn(
-                state = listState,
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight()
-                    .verticalScrollbar(listState),
+                    .verticalScroll(rememberScrollState()),
             ) {
-                itemsIndexed(courses, key = { _, c -> c.id }) { index, course ->
+                courses.forEachIndexed { index, course ->
                     val isSelected = course.id == selectedCourseId
                     
                     Column(
@@ -66,7 +62,7 @@ fun CourseSelector(
                             .background(
                                 if (isSelected) MaterialTheme.colorScheme.primaryContainer
                                 else Color.Transparent,
-                                shape = MaterialTheme.shapes.small
+                                shape = MaterialTheme.shapes.small,
                             )
                             .padding(vertical = 12.dp, horizontal = 4.dp)
                     ) {
@@ -86,7 +82,7 @@ fun CourseSelector(
                             style = MaterialTheme.typography.bodyLarge,
                         )
                         
-                        if (course.lecturesCount > 0 || course.id != AppViewModel.ALL_RHYTHMS_ID) {
+                        if ((course.lecturesCount > 0) || (course.id != AppViewModel.ALL_RHYTHMS_ID)) {
                             Text(
                                 text = stringResource(R.string.course_details_lectures_format, course.lecturesCount),
                                 color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f) 

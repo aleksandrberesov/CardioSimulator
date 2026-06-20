@@ -100,7 +100,16 @@ class CourseConstructorViewModel(
     fun setLanguage(tag: String) { languageTag = tag }
 
     fun selectCourse(courseId: String) {
-        if (_selectedCourseId.value == courseId) return
+        if (_selectedCourseId.value == courseId) {
+            if (_selectedLectureId.value == null) {
+                viewModelScope.launch {
+                    val entries = withContext(Dispatchers.IO) { repository.lectureEntries(courseId) }
+                    _lectures.value = entries
+                    entries.firstOrNull()?.let { selectLecture(it.id) }
+                }
+            }
+            return
+        }
         _selectedCourseId.value = courseId
         clearLecture()
         viewModelScope.launch {
@@ -372,7 +381,15 @@ class CourseConstructorViewModel(
         viewModelScope.launch {
             val courseId = p.lastCourseId.first() ?: return@launch
             _selectedCourseId.value = courseId
-            _lectures.value = withContext(Dispatchers.IO) { repository.lectureEntries(courseId) }
+            val entries = withContext(Dispatchers.IO) { repository.lectureEntries(courseId) }
+            _lectures.value = entries
+
+            val lastLectureId = p.lastLectureId(mode.name).first()
+            if (lastLectureId != null && entries.any { it.id == lastLectureId }) {
+                selectLecture(lastLectureId)
+            } else {
+                entries.firstOrNull()?.let { selectLecture(it.id) }
+            }
         }
     }
 

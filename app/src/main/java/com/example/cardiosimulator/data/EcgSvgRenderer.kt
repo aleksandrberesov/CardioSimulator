@@ -124,10 +124,11 @@ object EcgSvgRenderer {
         val uid = "ecg$figureIndex"
 
         val svg = buildString {
+            val label = if (visibleTraces.size == 1) "ECG lead ${visibleTraces[0].lead.name}" else "ECG Monitor"
             append("<svg class=\"ecg-monitor\" xmlns=\"http://www.w3.org/2000/svg\" ")
             append("viewBox=\"0 0 ${fmt(totalWidth)} ${fmt(totalHeight)}\" ")
             append("width=\"${fmt(totalWidth)}\" height=\"${fmt(totalHeight)}\" ")
-            append("preserveAspectRatio=\"xMidYMid meet\" role=\"img\" aria-label=\"ECG Monitor\">")
+            append("preserveAspectRatio=\"xMidYMid meet\" role=\"img\" aria-label=\"$label\">")
             append(gridDefs(uid, colors))
             append("<rect width=\"${fmt(totalWidth)}\" height=\"${fmt(totalHeight)}\" fill=\"${colors.bg}\"/>")
             append("<rect width=\"${fmt(totalWidth)}\" height=\"${fmt(totalHeight)}\" fill=\"url(#$uid)\"/>")

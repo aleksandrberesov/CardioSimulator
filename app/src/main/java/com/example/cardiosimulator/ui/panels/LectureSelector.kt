@@ -7,9 +7,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -36,8 +35,6 @@ fun LectureSelector(
     selectedLectureId: String? = null,
     onLectureSelect: (LectureEntry) -> Unit = {},
 ) {
-    val listState = rememberLazyListState()
-
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -50,14 +47,13 @@ fun LectureSelector(
             style = MaterialTheme.typography.titleSmall,
             modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
         )
-        LazyColumn(
-            state = listState,
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight()
-                .verticalScrollbar(listState),
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
         ) {
-            itemsIndexed(lectures, key = { _, l -> l.id }) { index, lecture ->
+            lectures.forEachIndexed { index, lecture ->
                 val title = if (language == Language.RU) lecture.nameRu ?: lecture.titleEn else lecture.titleEn
                 val isSelected = lecture.id == selectedLectureId
                 Text(
