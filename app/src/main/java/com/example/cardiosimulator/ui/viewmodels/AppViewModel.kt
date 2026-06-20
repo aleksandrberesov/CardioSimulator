@@ -18,11 +18,15 @@ import com.example.cardiosimulator.data.FileOskeSource
 import com.example.cardiosimulator.data.OskeRepository
 import com.example.cardiosimulator.data.OskeResultStore
 import com.example.cardiosimulator.data.SampleOskeSeeder
+import com.example.cardiosimulator.data.FileTestSource
+import com.example.cardiosimulator.data.TestRepository
+import com.example.cardiosimulator.data.ExamResultStore
 import com.example.cardiosimulator.domain.AppStateModel
 import com.example.cardiosimulator.domain.CourseEntry
 import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
+import com.example.cardiosimulator.domain.TestSeed
 import com.example.cardiosimulator.network.TcpConnectionState
 import com.example.cardiosimulator.network.TcpMessage
 import com.example.cardiosimulator.network.TcpProtocol
@@ -78,6 +82,8 @@ class AppViewModel(
     val courseRepository: CourseRepository? = null,
     val oskeRepository: OskeRepository? = null,
     val oskeResultStore: OskeResultStore? = null,
+    val testRepository: TestRepository? = null,
+    val examResultStore: ExamResultStore? = null,
     private val appContext: Context? = null,
     val prefs: DataSourcePrefs? = null,
     private val tcpReconnectIntervalMs: Long = 5000L,
@@ -140,8 +146,18 @@ class AppViewModel(
     private val _selectedCourseId = MutableStateFlow<String?>(ALL_RHYTHMS_ID)
     val selectedCourseId: StateFlow<String?> = _selectedCourseId.asStateFlow()
 
+    private val _showMonitorOverlay = MutableStateFlow(false)
+    val showMonitorOverlay: StateFlow<Boolean> = _showMonitorOverlay.asStateFlow()
+
     fun selectCourse(id: String?) {
         _selectedCourseId.value = id
+        if (id != ALL_RHYTHMS_ID) {
+            _showMonitorOverlay.value = false
+        }
+    }
+
+    fun setShowMonitorOverlay(show: Boolean) {
+        _showMonitorOverlay.value = show
     }
 
     private val _isDataConfirmed = MutableStateFlow(false)
@@ -215,6 +231,26 @@ class AppViewModel(
                         withContext(Dispatchers.IO) {
                             SampleOskeSeeder.seed(ctx, targetDir)
                             oskeRepository.swapSource(FileOskeSource(targetDir))
+                        }
+                    }
+                }
+
+                // Testing & Examination pipeline
+                if (testRepository != null) {
+                    val testsDir = File(ctx.filesDir, TESTS_DIR)
+                    val source = FileTestSource(testsDir)
+                    testRepository.swapSource(source)
+                    
+                    // Seed the demo test once pathologies are loaded if no tests exist
+                    viewModelScope.launch {
+                        dataState.collect { state ->
+                            if (state is DataState.Ready && testRepository.tests().isEmpty()) {
+                                val pathologyIds = repository.pathologies().map { it.id }
+                                if (pathologyIds.isNotEmpty()) {
+                                    val demoTest = TestSeed.sample(pathologyIds)
+                                    testRepository.writeTest(demoTest)
+                                }
+                            }
                         }
                     }
                 }
@@ -598,6 +634,9 @@ class AppViewModel(
 
         /** Subdirectory under `filesDir` where the OSKE data lives. */
         const val OSKE_DIR: String = "oske"
+
+        /** Subdirectory under `filesDir` where the tests live. */
+        const val TESTS_DIR: String = "tests"
 
         /** Virtual course ID representing the unfiltered list of all rhythms. */
         const val ALL_RHYTHMS_ID: String = "all_rhythms"

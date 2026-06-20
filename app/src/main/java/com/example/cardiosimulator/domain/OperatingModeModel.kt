@@ -10,7 +10,8 @@ enum class OperatingMode(@param:StringRes val titleRes: Int) {
     OSKE(R.string.mode_oske),
     OSKEConstructor(R.string.mode_oske_constructor),
     Constructor(R.string.mode_editor),
-    CourseConstructor(R.string.mode_course_constructor)
+    CourseConstructor(R.string.mode_course_constructor),
+    TestConstructor(R.string.mode_test_constructor)
 }
 
 data class OperatingModeModel(

@@ -39,14 +39,15 @@ import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.CourseViewerViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
+import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
 @Composable
 fun TeachingControlPanel(
     appViewModel: AppViewModel,
     courseViewerViewModel: CourseViewerViewModel,
+    rhythmViewModel: RhythmViewModel,
     modifier: Modifier = Modifier,
     monitorViewModel: MonitorViewModel = viewModel(),
-    onStartStopClick: (Boolean) -> Unit = {},
 ) {
     val monitorMode by monitorViewModel.monitorMode.collectAsState()
     val courses by appViewModel.courses.collectAsState()
@@ -89,7 +90,39 @@ fun TeachingControlPanel(
             }
         }
 
-        if (selectedCourseId != AppViewModel.ALL_RHYTHMS_ID && selectedCourseId != null) {
+        val isAllRhythms = selectedCourseId == AppViewModel.ALL_RHYTHMS_ID || selectedCourseId == null
+        if (isAllRhythms) {
+            val rhythms by rhythmViewModel.rhythms.collectAsState()
+            val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
+            var rhythmExpanded by remember { mutableStateOf(false) }
+            val rhythmLabel = selectedRhythm?.let { if (currentLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn }
+                ?: stringResource(R.string.rhythm_selector_title)
+
+            Box {
+                Tab(
+                    text = rhythmLabel,
+                    onClick = { if (rhythms.isNotEmpty()) rhythmExpanded = true },
+                    modifier = Modifier.padding(horizontal = 4.dp).width(200.dp)
+                )
+                if (rhythms.isNotEmpty()) {
+                    DropdownMenu(
+                        expanded = rhythmExpanded,
+                        onDismissRequest = { rhythmExpanded = false },
+                        modifier = Modifier.width(300.dp).height(400.dp)
+                    ) {
+                        RhythmSelector(
+                            appViewModel = appViewModel,
+                            rhythms = rhythms,
+                            selectedId = selectedRhythm?.id,
+                            onRhythmSelect = {
+                                rhythmViewModel.selectRhythm(it.id)
+                                rhythmExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        } else {
             var lectureExpanded by remember { mutableStateOf(false) }
             val lectureLabel = selectedLecture?.let { if (currentLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn }
                 ?: stringResource(R.string.lecture_selector_title)
@@ -120,17 +153,6 @@ fun TeachingControlPanel(
                 }
             }
         }
-
-        Tab(
-            icon = if (monitorMode.isRunning) Icons.Default.Stop else Icons.Default.PlayArrow,
-            iconContentDescription = if (monitorMode.isRunning) stringResource(R.string.cd_stop) else stringResource(R.string.cd_start),
-            onClick = {
-                val newState = !monitorMode.isRunning
-                monitorViewModel.setIsRunning(newState)
-                onStartStopClick(newState)
-            },
-            modifier = Modifier.padding(horizontal = 4.dp)
-        )
     }
 }
 
@@ -141,6 +163,13 @@ private fun courseDisplayName(course: CourseEntry, language: Language): String =
 @Preview(showBackground = true, widthDp = 1000)
 @Composable
 fun TeachingControlPanelPreview() {
+    val mockRepoPathology = com.example.cardiosimulator.data.PathologyRepository(
+        source = object : com.example.cardiosimulator.data.PathologySource {
+            override fun readManifest(): com.example.cardiosimulator.domain.PathologyManifest? = null
+            override fun readPathology(id: String): com.example.cardiosimulator.domain.PathologyFile? = null
+            override fun listPathologies(): List<String> = emptyList()
+        }
+    )
     val mockRepo = com.example.cardiosimulator.data.CourseRepository(
         source = object : com.example.cardiosimulator.data.CourseSource {
             override fun readManifest(): com.example.cardiosimulator.domain.CourseManifest? = null
@@ -175,10 +204,19 @@ fun TeachingControlPanelPreview() {
         )
     }
 
+    val previewRhythmViewModel = remember {
+        RhythmViewModel(
+            repository = mockRepoPathology,
+            mode = com.example.cardiosimulator.domain.OperatingMode.Teaching,
+            appViewModel = previewAppViewModel
+        )
+    }
+
     CardioSimulatorTheme {
         TeachingControlPanel(
             appViewModel = previewAppViewModel,
-            courseViewerViewModel = previewViewerViewModel
+            courseViewerViewModel = previewViewerViewModel,
+            rhythmViewModel = previewRhythmViewModel
         )
     }
 }

@@ -190,6 +190,10 @@ class MonitorViewModel(
         }
     }
 
+    fun setLeadOrder(leads: List<Lead>?) {
+        _monitorMode.update { it.copy(leadOrder = leads, count = leads?.size ?: it.count) }
+    }
+
 
     fun setIsRunning(isRunning: Boolean) {
         _monitorMode.update { it.copy(isRunning = isRunning) }

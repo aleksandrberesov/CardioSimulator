@@ -10,6 +10,8 @@
     <string name="mode_editor">Constructor ECG</string>
     <string name="mode_course_constructor">Course Constructor</string>
 
+    <string name="mode_test_constructor">Test Constructor</string>
+
     <!-- Settings dialog -->
     <string name="settings_title">Settings</string>
     <string name="settings_color_scheme">App Theme</string>
@@ -98,6 +100,59 @@
 
     <!-- Testing panel -->
     <string name="testing_question_format">Question %1$d</string>
+
+    <string name="test_select_title">Test</string>
+    <string name="test_start">Start test</string>
+    <string name="test_empty">No tests yet. Create one in the Test Constructor.</string>
+    <string name="test_counter_format">%1$d of %2$d</string>
+    <string name="test_question_title_format">Question %1$d</string>
+    <string name="test_comment_title">Comment</string>
+    <string name="test_correct_answer_format">Correct answer: %1$d</string>
+    <string name="test_next">Next question</string>
+    <string name="test_finish">Finish</string>
+    <string name="test_time_up">Time\'s up</string>
+    <string name="test_result_title">Test complete</string>
+    <string name="test_result_score_format">Result: %1$d of %2$d</string>
+    <string name="test_restart">Restart</string>
+    <string name="test_ctor_intro">Select a test to edit, or create a new one.</string>
+    <string name="test_ctor_new">New test</string>
+    <string name="test_ctor_new_title">New test</string>
+    <string name="test_ctor_title_label">Test title</string>
+    <string name="test_ctor_time_label">Seconds per question (0 = untimed)</string>
+    <string name="test_ctor_delete">Delete</string>
+    <string name="test_ctor_delete_confirm">Delete this test?</string>
+    <string name="test_ctor_save">Save</string>
+    <string name="test_ctor_saved">Saved</string>
+    <string name="test_ctor_add_question">Add question</string>
+    <string name="test_ctor_add_option">Add option</string>
+    <string name="test_ctor_remove_question">Remove question</string>
+    <string name="test_ctor_question_label_format">Question %1$d</string>
+    <string name="test_ctor_question_text">Question text</string>
+    <string name="test_ctor_option_format">Option %1$d</string>
+    <string name="test_ctor_correct">Correct</string>
+    <string name="test_ctor_comment">Comment (shown after answering)</string>
+    <string name="test_ctor_ecg">ECG on the monitor</string>
+    <string name="test_ctor_ecg_none">— none —</string>
+    <string name="test_ctor_tests_label">Tests</string>
+
+    <string name="exam_tab_exam">Exam</string>
+    <string name="exam_tab_results">Results</string>
+    <string name="exam_start">Start exam</string>
+    <string name="exam_start_title">Start examination</string>
+    <string name="exam_intro">Enter your details and choose a test to begin the examination.</string>
+    <string name="exam_field_full_name">Full name</string>
+    <string name="exam_field_group">Group</string>
+    <string name="exam_field_test">Test</string>
+    <string name="exam_no_tests">No tests available. Create one in the Test Constructor.</string>
+    <string name="exam_finish">Finish</string>
+    <string name="exam_finish_confirm_title">Finish examination?</string>
+    <string name="exam_finish_confirm">Submit your answers for grading? This cannot be undone.</string>
+    <string name="exam_passed">Passed</string>
+    <string name="exam_failed">Failed</string>
+    <string name="exam_score_format">%1$d of %2$d</string>
+    <string name="exam_new_attempt">New attempt</string>
+    <string name="exam_unanswered">Not answered</string>
+    <string name="exam_results_empty">No saved results yet.</string>
 
     <!-- Data source picker -->
     <string name="data_source_title">ECG Data</string>

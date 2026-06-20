@@ -23,6 +23,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -119,7 +121,11 @@ fun CourseConstructorControlPanel(
                     onValueChange = { importText = it },
                     modifier = Modifier.fillMaxWidth().height(300.dp),
                     placeholder = { Text("Paste <!DOCTYPE html>... or fragment here") },
-                    label = { Text("HTML Source") }
+                    label = { Text("HTML Source") },
+                    keyboardOptions = KeyboardOptions(
+                        autoCorrectEnabled = false,
+                        capitalization = KeyboardCapitalization.None
+                    )
                 )
             },
             confirmButton = {
@@ -226,7 +232,16 @@ private fun OneFieldDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            TextField(value = text, onValueChange = { text = it }, label = { Text(label) }, singleLine = true)
+            TextField(
+                value = text,
+                onValueChange = { text = it },
+                label = { Text(label) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    autoCorrectEnabled = false,
+                    capitalization = KeyboardCapitalization.None
+                )
+            )
         },
         confirmButton = {
             TextButton(onClick = { onConfirm(text) }, enabled = text.isNotBlank()) {

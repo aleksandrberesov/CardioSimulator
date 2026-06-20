@@ -10,6 +10,8 @@
     <string name="mode_editor">Конструктор ЭКГ</string>
     <string name="mode_course_constructor">Конструктор курсов</string>
 
+    <string name="mode_test_constructor">Конструктор тестов</string>
+
     <!-- Settings dialog -->
     <string name="settings_title">Настройки</string>
     <string name="settings_color_scheme">Тема приложения</string>
@@ -97,6 +99,58 @@
 
     <!-- Testing panel -->
     <string name="testing_question_format">Вопрос %1$d</string>
+
+    <string name="test_select_title">Тест</string>
+    <string name="test_start">Начать тест</string>
+    <string name="test_empty">Тестов пока нет. Создайте тест в конструкторе тестов.</string>
+    <string name="test_counter_format">%1$d из %2$d</string>
+    <string name="test_question_title_format">%1$d вопрос</string>
+    <string name="test_comment_title">Комментарий</string>
+    <string name="test_correct_answer_format">Правильный ответ: %1$d</string>
+    <string name="test_next">Следующий вопрос</string>
+    <string name="test_finish">Завершить</string>
+    <string name="test_time_up">Время вышло</string>
+    <string name="test_result_title">Тест завершён</string>
+    <string name="test_result_score_format">Результат: %1$d из %2$d</string>
+    <string name="test_restart">Пройти заново</string>
+    <string name="test_ctor_intro">Выберите тест для редактирования или создайте новый.</string>
+    <string name="test_ctor_new">Новый тест</string>
+    <string name="test_ctor_new_title">Новый тест</string>
+    <string name="test_ctor_title_label">Название теста</string>
+    <string name="test_ctor_time_label">Секунд на вопрос (0 — без таймера)</string>
+    <string name="test_ctor_delete">Удалить</string>
+    <string name="test_ctor_delete_confirm">Удалить этот тест?</string>
+    <string name="test_ctor_save">Сохранить</string>
+    <string name="test_ctor_saved">Сохранено</string>
+    <string name="test_ctor_add_question">Добавить вопрос</string>
+    <string name="test_ctor_remove_question">Удалить вопрос</string>
+    <string name="test_ctor_question_label_format">Вопрос %1$d</string>
+    <string name="test_ctor_question_text">Текст вопроса</string>
+    <string name="test_ctor_option_format">Вариант %1$d</string>
+    <string name="test_ctor_correct">Верный</string>
+    <string name="test_ctor_comment">Комментарий (показывается после ответа)</string>
+    <string name="test_ctor_ecg">ЭКГ на мониторе</string>
+    <string name="test_ctor_ecg_none">— нет —</string>
+    <string name="test_ctor_tests_label">Тесты</string>
+
+    <string name="exam_tab_exam">Экзамен</string>
+    <string name="exam_tab_results">Результаты</string>
+    <string name="exam_start">Начать экзамен</string>
+    <string name="exam_start_title">Начало экзамена</string>
+    <string name="exam_intro">Введите свои данные и выберите тест, чтобы начать экзамен.</string>
+    <string name="exam_field_full_name">ФИО</string>
+    <string name="exam_field_group">Группа</string>
+    <string name="exam_field_test">Тест</string>
+    <string name="exam_no_tests">Нет доступных тестов. Создайте тест в конструкторе тестов.</string>
+    <string name="exam_finish">Завершить</string>
+    <string name="exam_finish_confirm_title">Завершить экзамен?</string>
+    <string name="exam_finish_confirm">Отправить ответы на проверку? Отменить будет нельзя.</string>
+    <string name="exam_passed">Сдано</string>
+    <string name="exam_failed">Не сдано</string>
+    <string name="exam_score_format">%1$d из %2$d</string>
+    <string name="exam_new_attempt">Новая попытка</string>
+    <string name="exam_unanswered">Нет ответа</string>
+    <string name="exam_results_empty">Сохранённых результатов пока нет.</string>
 
     <!-- Data source picker -->
     <string name="data_source_title">Данные ЭКГ</string>

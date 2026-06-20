@@ -57,6 +57,16 @@ Good prompts when handing off:
 Keep this list current when you add or move a plan.
 
 ### Active
+- [`2026-06-wfdb-physionet-import.md`](active/2026-06-wfdb-physionet-import.md) —
+  WFDB `.hea`/`.dat`/`.mat` read-write + PhysioNet download + an Import action
+  in the Pathology Constructor. 1:1 port of the shipped, unit-tested Windows
+  feature (`CardioSimulatorWin/.../Data/Wfdb/*`, `Network/PhysioNetClient.cs`).
+  *Spec ready — not started.*
+- [`2026-06-teaching-mode-switch.md`](active/2026-06-teaching-mode-switch.md) —
+  Teaching course selector becomes a mode switch ("All rhythms" → Monitor,
+  default on entry; a course → lectures), context-sensitive lecture/rhythm
+  picker + auto-select, chrome cleanup; plus a Course Constructor RU-name
+  auto-correct fix. Porting behavior already shipped on the Windows port.
 - [`2026-04-localization.md`](active/2026-04-localization.md) — per-app
   language switcher (en/ru/zh/es), string extraction, a11y sweep. Code on
   `claude/charming-hertz-d394c5`; awaiting build + on-device QA + clinician

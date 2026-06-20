@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MonitorHeart
-import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,6 +35,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,6 +54,7 @@ import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.Lecture
 import com.example.cardiosimulator.domain.LectureEntry
+import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.ui.components.LectureWebView
 import com.example.cardiosimulator.ui.components.SideDrawer
 import com.example.cardiosimulator.ui.components.Tab
@@ -83,7 +84,15 @@ fun TeachingScreen(
     val lectures by courseViewerViewModel.lectures.collectAsState()
     val selectedLectureId by courseViewerViewModel.selectedLectureId.collectAsState()
     val viewerLecture by courseViewerViewModel.lecture.collectAsState()
-    var showMonitorOverlay by remember { mutableStateOf(false) }
+    val showMonitorOverlay by appViewModel.showMonitorOverlay.collectAsState()
+
+    var lastBuiltMode by rememberSaveable { mutableStateOf<OperatingMode?>(null) }
+    LaunchedEffect(Unit) {
+        if (lastBuiltMode != OperatingMode.Teaching) {
+            appViewModel.selectCourse(AppViewModel.ALL_RHYTHMS_ID)
+            lastBuiltMode = OperatingMode.Teaching
+        }
+    }
 
     val pathologyRepo = appViewModel.repository
     val resolveEcg = remember(pathologyRepo) {
@@ -110,29 +119,39 @@ fun TeachingScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
-        CourseViewerOverlay(
-            appViewModel = appViewModel,
-            rhythmViewModel = rhythmViewModel,
-            courses = courses,
-            selectedCourseId = appSelectedCourseId,
-            lectures = lectures,
-            selectedLectureId = selectedLectureId,
-            lecture = viewerLecture,
-            language = selectedLanguage,
-            resolveEcg = resolveEcg,
-            onLectureSelect = { courseViewerViewModel.selectLecture(it.id) },
-            onClose = { /* Not used in main mode */ },
-            onMonitorClick = { showMonitorOverlay = true },
-            isMainMode = true
-        )
+        val isAllRhythms = appSelectedCourseId == AppViewModel.ALL_RHYTHMS_ID || appSelectedCourseId == null
 
-        if (showMonitorOverlay) {
+        if (isAllRhythms) {
             MonitorOverlay(
                 monitorViewModel = monitorViewModel,
                 rhythmViewModel = rhythmViewModel,
                 appViewModel = appViewModel,
-                onClose = { showMonitorOverlay = false }
+                onClose = null
             )
+        } else {
+            CourseViewerOverlay(
+                appViewModel = appViewModel,
+                rhythmViewModel = rhythmViewModel,
+                courses = courses,
+                selectedCourseId = appSelectedCourseId,
+                lectures = lectures,
+                selectedLectureId = selectedLectureId,
+                lecture = viewerLecture,
+                language = selectedLanguage,
+                resolveEcg = resolveEcg,
+                onLectureSelect = { courseViewerViewModel.selectLecture(it.id) },
+                onClose = { /* Not used in main mode */ },
+                onMonitorClick = { appViewModel.setShowMonitorOverlay(true) }
+            )
+
+            if (showMonitorOverlay) {
+                MonitorOverlay(
+                    monitorViewModel = monitorViewModel,
+                    rhythmViewModel = rhythmViewModel,
+                    appViewModel = appViewModel,
+                    onClose = { appViewModel.setShowMonitorOverlay(false) }
+                )
+            }
         }
     }
 }
@@ -184,7 +203,7 @@ private fun MonitorOverlay(
     monitorViewModel: MonitorViewModel,
     rhythmViewModel: RhythmViewModel,
     appViewModel: AppViewModel,
-    onClose: () -> Unit,
+    onClose: (() -> Unit)? = null,
 ) {
     val rhythms by rhythmViewModel.rhythms.collectAsState()
     val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
@@ -296,40 +315,29 @@ private fun MonitorOverlay(
                     modifier = Modifier.fillMaxSize().middleSectionCenter(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    val displayTitle = if (mode.isCompareMode) {
-                        stringResource(R.string.monitor_compare_mode)
-                    } else {
-                        selectedRhythm?.let {
-                            if (selectedLanguage == Language.RU)
-                                it.nameRu ?: it.titleEn
-                            else
-                                it.titleEn
-                        } ?: stringResource(R.string.constructor_no_pathology_selected)
-                    }
-
-                    Surface(
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        tonalElevation = 4.dp
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                    if (onClose != null || (mode.isCompareMode && mode.comparisonTargets.isNotEmpty())) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 4.dp
                         ) {
-                            Text(
-                                text = displayTitle,
-                                style = MaterialTheme.typography.titleMedium,
-                            )
-
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.End
+                            ) {
                                 if (mode.isCompareMode && mode.comparisonTargets.isNotEmpty()) {
                                     TextButton(onClick = { showSavePresetDialog = true }) {
                                         Text(stringResource(R.string.constructor_save))
                                     }
                                 }
-                                IconButton(onClick = onClose) {
-                                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_close))
+                                if (onClose != null) {
+                                    IconButton(onClick = onClose) {
+                                        Icon(
+                                            Icons.Default.Close,
+                                            contentDescription = stringResource(R.string.cd_close)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -423,17 +431,10 @@ private fun CourseViewerOverlay(
     onLectureSelect: (LectureEntry) -> Unit,
     onClose: () -> Unit,
     onMonitorClick: () -> Unit = {},
-    isMainMode: Boolean = false,
 ) {
     val rhythms by rhythmViewModel.rhythms.collectAsState()
     val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
     var dropdownExpanded by remember { mutableStateOf(false) }
-
-    val filteredCourses = remember(courses) {
-        courses.filterNot { it.id == AppViewModel.ALL_RHYTHMS_ID }
-    }
-
-    val isAllRhythms = selectedCourseId == AppViewModel.ALL_RHYTHMS_ID
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -441,13 +442,20 @@ private fun CourseViewerOverlay(
         tonalElevation = 2.dp,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                if (isAllRhythms) {
-                    PathologyDescription(
-                        pathology = selectedRhythm,
-                        language = language
+            Row(
+                modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End
+            ) {
+                IconButton(onClick = onMonitorClick) {
+                    Icon(
+                        imageVector = Icons.Default.MonitorHeart,
+                        contentDescription = stringResource(R.string.monitor_overlay_title)
                     )
-                } else if (lecture != null) {
+                }
+            }
+            Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                if (lecture != null) {
                     LectureWebView(
                         lecture = lecture,
                         resolveEcg = resolveEcg,

@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -88,6 +89,10 @@ class RhythmViewModel(
                         _allRhythms.value = entries
                     }
 
+                    if (appViewModel?.selectedCourseId?.value == AppViewModel.ALL_RHYTHMS_ID) {
+                        ensureRhythmSelected()
+                    }
+
                     // Update selected rhythm if it's in the list
                     _selectedRhythm.value?.let { current ->
                         val updated = _allRhythms.value.find { it.id == current.id }
@@ -97,6 +102,28 @@ class RhythmViewModel(
                     }
                 }
             }
+        }
+
+        if (appViewModel != null && mode == OperatingMode.Teaching) {
+            viewModelScope.launch {
+                appViewModel.selectedCourseId.collect { courseId ->
+                    if (courseId == AppViewModel.ALL_RHYTHMS_ID) {
+                        ensureRhythmSelected()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun ensureRhythmSelected() {
+        if (_selectedRhythm.value != null) return
+        viewModelScope.launch {
+            val rhythmsList = _allRhythms.value
+            if (rhythmsList.isEmpty()) return@launch
+
+            val lastId = prefs?.lastRhythmId(mode.name)?.first()
+            val targetId = lastId ?: rhythmsList.first().id
+            selectRhythm(targetId, persist = false)
         }
     }
 

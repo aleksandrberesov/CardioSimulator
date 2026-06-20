@@ -38,5 +38,6 @@ data class MonitorModeModel(
     val isRunning: Boolean = false,
     val isCompareMode: Boolean = false,
     val comparisonTargets: Map<Int, ComparisonTarget> = emptyMap(),
-    val comparisonPresets: List<ComparisonPreset> = emptyList()
+    val comparisonPresets: List<ComparisonPreset> = emptyList(),
+    val leadOrder: List<Lead>? = null
 )

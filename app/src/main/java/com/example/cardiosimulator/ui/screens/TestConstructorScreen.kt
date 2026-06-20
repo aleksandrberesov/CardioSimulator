@@ -284,7 +284,7 @@ fun QuestionEditorCard(
             TextButton(onClick = onAddOption) {
                 Icon(Icons.Default.Add, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.oske_form_add_option))
+                Text(stringResource(R.string.test_ctor_add_option))
             }
 
             Spacer(modifier = Modifier.height(8.dp))

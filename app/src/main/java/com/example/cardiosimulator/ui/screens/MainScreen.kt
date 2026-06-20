@@ -39,6 +39,10 @@ import com.example.cardiosimulator.ui.viewmodels.CourseViewerViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import com.example.cardiosimulator.ui.viewmodels.OskeViewModel
 import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
+import com.example.cardiosimulator.ui.viewmodels.TestViewModel
+import com.example.cardiosimulator.ui.viewmodels.ExaminationViewModel
+import com.example.cardiosimulator.ui.viewmodels.TestConstructorViewModel
+import com.example.cardiosimulator.ui.screens.TestConstructorScreen
 
 @Composable
 fun MainScreen(appViewModel: AppViewModel) {
@@ -133,6 +137,40 @@ fun MainScreen(appViewModel: AppViewModel) {
         }
     )
 
+    val testViewModel: TestViewModel = viewModel(
+        key = selectedMode.id.name + "_test",
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return TestViewModel() as T
+            }
+        }
+    )
+
+    val examinationViewModel: ExaminationViewModel = viewModel(
+        key = selectedMode.id.name + "_exam",
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return ExaminationViewModel(
+                    resultStore = appViewModel.examResultStore!!
+                ) as T
+            }
+        }
+    )
+
+    val testConstructorViewModel: TestConstructorViewModel = viewModel(
+        key = selectedMode.id.name + "_test_ctor",
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return TestConstructorViewModel(
+                    repository = appViewModel.testRepository!!
+                ) as T
+            }
+        }
+    )
+
     LaunchedEffect(dataState, rhythmViewModel) {
         if (dataState is DataState.Ready) {
             rhythmViewModel.loadManifest()
@@ -165,6 +203,7 @@ fun MainScreen(appViewModel: AppViewModel) {
             TopControlPanel(
                 viewModel = appViewModel,
                 monitorViewModel = monitorViewModel,
+                rhythmViewModel = rhythmViewModel,
                 constructorViewModel = constructorViewModel,
                 courseConstructorViewModel = courseConstructorViewModel,
                 courseViewerViewModel = courseViewerViewModel,
@@ -189,11 +228,20 @@ fun MainScreen(appViewModel: AppViewModel) {
                     appViewModel = appViewModel,
                     monitorViewModel = monitorViewModel,
                     rhythmViewModel = rhythmViewModel,
+                    testViewModel = testViewModel,
                 )
                 OperatingMode.Examination -> ExaminationScreen(
                     appViewModel = appViewModel,
                     monitorViewModel = monitorViewModel,
                     rhythmViewModel = rhythmViewModel,
+                    examinationViewModel = examinationViewModel,
+                    testRepository = appViewModel.testRepository!!
+                )
+                OperatingMode.TestConstructor -> TestConstructorScreen(
+                    appViewModel = appViewModel,
+                    monitorViewModel = monitorViewModel,
+                    rhythmViewModel = rhythmViewModel,
+                    testConstructorViewModel = testConstructorViewModel
                 )
                 OperatingMode.OSKE -> OSKEScreen(
                     appViewModel = appViewModel,
@@ -230,7 +278,21 @@ fun MainScreen(appViewModel: AppViewModel) {
             ) {
                 when (selectedMode.id) {
                     OperatingMode.Teaching -> {
-                        // Hidden per user request: "hide monitor control panel in course mode"
+                        val appSelectedCourseId by appViewModel.selectedCourseId.collectAsState()
+                        val showMonitorOverlay by appViewModel.showMonitorOverlay.collectAsState()
+                        val isAllRhythms = appSelectedCourseId == com.example.cardiosimulator.ui.viewmodels.AppViewModel.ALL_RHYTHMS_ID || appSelectedCourseId == null
+                        if (isAllRhythms || showMonitorOverlay) {
+                            MonitorControlPanel(
+                                viewModel = monitorViewModel,
+                                onStartStopClick = { isRunning ->
+                                    if (isRunning) {
+                                        appViewModel.sendStartCommand(selectedRhythm?.id, selectedRhythm?.titleEn)
+                                    } else {
+                                        appViewModel.sendStopCommand()
+                                    }
+                                }
+                            )
+                        }
                     }
                     OperatingMode.Constructor -> {
                         ConstructorControlPanel(

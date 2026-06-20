@@ -40,11 +40,13 @@ import com.example.cardiosimulator.ui.viewmodels.ConstructorViewModel
 import com.example.cardiosimulator.ui.viewmodels.CourseConstructorViewModel
 import com.example.cardiosimulator.ui.viewmodels.CourseViewerViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
+import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
 @Composable
 fun TopControlPanel(
     viewModel: AppViewModel,
     monitorViewModel: MonitorViewModel = viewModel(),
+    rhythmViewModel: RhythmViewModel? = null,
     constructorViewModel: ConstructorViewModel? = null,
     courseConstructorViewModel: CourseConstructorViewModel? = null,
     courseViewerViewModel: CourseViewerViewModel? = null,
@@ -103,17 +105,18 @@ fun TopControlPanel(
                 ){
                     when (selectedOperatingMode.id) {
                         OperatingMode.Teaching -> {
-                            if (courseViewerViewModel != null) {
+                            if (courseViewerViewModel != null && rhythmViewModel != null) {
                                 TeachingControlPanel(
                                     appViewModel = viewModel,
                                     courseViewerViewModel = courseViewerViewModel,
-                                    monitorViewModel = monitorViewModel,
-                                    onStartStopClick = onStartStopClick
+                                    rhythmViewModel = rhythmViewModel,
+                                    monitorViewModel = monitorViewModel
                                 )
                             }
                         }
-                        OperatingMode.Testing -> TestingControlPanel(viewModel = viewModel)
+                        OperatingMode.Testing -> {}
                         OperatingMode.Examination -> {}
+                        OperatingMode.TestConstructor -> {}
                         OperatingMode.OSKE -> {}
                         OperatingMode.OSKEConstructor -> {}
                         OperatingMode.Constructor -> {

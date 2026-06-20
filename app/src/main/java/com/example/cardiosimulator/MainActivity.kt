@@ -20,6 +20,9 @@ import com.example.cardiosimulator.data.PathologyRepository
 import com.example.cardiosimulator.data.FileOskeSource
 import com.example.cardiosimulator.data.OskeRepository
 import com.example.cardiosimulator.data.OskeResultStore
+import com.example.cardiosimulator.data.FileTestSource
+import com.example.cardiosimulator.data.TestRepository
+import com.example.cardiosimulator.data.ExamResultStore
 import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
@@ -42,6 +45,7 @@ class MainActivity : AppCompatActivity() {
                     @Suppress("UNCHECKED_CAST")
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         val oskeDir = File(this@MainActivity.filesDir, AppViewModel.OSKE_DIR)
+                        val testsDir = File(this@MainActivity.filesDir, AppViewModel.TESTS_DIR)
                         return AppViewModel(
                             appState = appBuilder.build(initialMode = OperatingMode.Teaching),
                             // Boot from assets; swapped to a FilePathologySource once
@@ -63,6 +67,12 @@ class MainActivity : AppCompatActivity() {
                             ),
                             oskeResultStore = OskeResultStore(
                                 File(oskeDir, "results")
+                            ),
+                            testRepository = TestRepository(
+                                FileTestSource(testsDir)
+                            ),
+                            examResultStore = ExamResultStore(
+                                File(testsDir, "results")
                             ),
                             appContext = this@MainActivity.applicationContext,
                             prefs = DataSourcePrefs(this@MainActivity.applicationContext),
