@@ -102,6 +102,20 @@ class PathologyRepository(private var source: PathologySource) {
         return if (writePathology(newFile)) id else null
     }
 
+    fun importPathology(file: PathologyFile): String? {
+        val s = source
+        if (s is FilePathologySource) {
+            var uniqueId = file.id.replace(Regex("[^a-zA-Z0-9_]"), "_").lowercase()
+            val existingIds = pathologies().map { it.id }.toSet()
+            if (existingIds.contains(uniqueId)) {
+                uniqueId += "_" + System.currentTimeMillis().toString().takeLast(4)
+            }
+            val importedFile = file.copy(id = uniqueId)
+            return if (writePathology(importedFile)) uniqueId else null
+        }
+        return null
+    }
+
     /**
      * Returns the baseline-zeroed [Points] for one lead of one pathology,
      * synthesizing the lead via [DerivedLeads] if the file does not ship

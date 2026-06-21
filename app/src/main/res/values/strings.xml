@@ -261,6 +261,13 @@
     <string name="constructor_no_pathology_selected">No pathology selected</string>
     <string name="constructor_revert_lead_btn">Revert Lead</string>
     <string name="constructor_new_pathology">New Pathology</string>
+    <string name="constructor_import_wfdb">Import WFDB</string>
+    <string name="constructor_download_physionet">Download from PhysioNet</string>
+    <string name="constructor_import_title">Import Record</string>
+    <string name="constructor_import_stats_format">%1$d signals, %2$d samples @ %3$.1f Hz</string>
+    <string name="constructor_import_label_en">Title (EN)</string>
+    <string name="constructor_import_label_ru">Name (RU)</string>
+    <string name="constructor_import_btn">Import</string>
     <string name="constructor_lead_not_present">Lead %1$s not present in file.</string>
     <string name="constructor_select_from_panel_hint">Select a pathology from the left panel for construction.</string>
     <string name="cd_rename">Rename</string>

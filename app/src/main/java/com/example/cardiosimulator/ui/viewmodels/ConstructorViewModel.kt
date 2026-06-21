@@ -521,6 +521,15 @@ class ConstructorViewModel(
         }
     }
 
+    fun importPathology(file: PathologyFile) {
+        viewModelScope.launch {
+            val id = repository.importPathology(file)
+            if (id != null) {
+                selectPathology(id)
+            }
+        }
+    }
+
     fun save() {
         val file = _targetFile.value ?: return
         if (_dirtyLeads.value.isEmpty() && !_isMetadataDirty.value) return

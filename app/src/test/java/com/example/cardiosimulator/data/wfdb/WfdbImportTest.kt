@@ -17,7 +17,7 @@ class WfdbImportTest {
     fun testImportEndToEnd() {
         val root = tempFolder.newFolder("pathologies")
         val manifestFile = java.io.File(root, "manifest.txt")
-        manifestFile.writeText("version=1.0\nbaseline=1024\nleadOrder=I,II,III,aVR,aVL,aVF,V1,V2,V3,V4,V5,V6\n")
+        manifestFile.writeText("version:1.0\nbaseline:1024\nlead_order:I,II,III,aVR,aVL,aVF,V1,V2,V3,V4,V5,V6\n")
         
         val source = FilePathologySource(root)
         val repository = PathologyRepository(source)

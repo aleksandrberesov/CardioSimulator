@@ -259,6 +259,13 @@
     <string name="constructor_no_pathology_selected">Патология не выбрана</string>
     <string name="constructor_revert_lead_btn">Сбросить отведение</string>
     <string name="constructor_new_pathology">Новая патология</string>
+    <string name="constructor_import_wfdb">Импорт WFDB</string>
+    <string name="constructor_download_physionet">Загрузить из PhysioNet</string>
+    <string name="constructor_import_title">Импорт записи</string>
+    <string name="constructor_import_stats_format">%1$d отведений, %2$d точек @ %3$.1f Гц</string>
+    <string name="constructor_import_label_en">Заголовок (EN)</string>
+    <string name="constructor_import_label_ru">Название (RU)</string>
+    <string name="constructor_import_btn">Импортировать</string>
     <string name="constructor_lead_not_present">Отведение %1$s отсутствует в файле.</string>
     <string name="constructor_select_from_panel_hint">Выберите патологию на панели слева для конструирования.</string>
     <string name="cd_rename">Переименовать</string>

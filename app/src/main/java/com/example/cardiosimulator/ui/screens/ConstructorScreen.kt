@@ -25,10 +25,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import android.provider.OpenableColumns
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.LocalPixelScale
 import com.example.cardiosimulator.data.PixelScale
 import com.example.cardiosimulator.data.Points
+import com.example.cardiosimulator.data.wfdb.WfdbConverter
+import com.example.cardiosimulator.data.wfdb.WfdbHeaderParser
+import com.example.cardiosimulator.data.wfdb.WfdbReader
+import com.example.cardiosimulator.data.wfdb.WfdbRecord
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.SignificantPoint
 import com.example.cardiosimulator.ui.components.PreviewPane
@@ -94,9 +99,45 @@ fun ConstructorScreen(
         constructorViewModel.setReferenceImageUri(uri)
     }
 
+    var pendingImportRecord by remember { mutableStateOf<WfdbRecord?>(null) }
+    val wfdbLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenMultipleDocuments()
+    ) { uris: List<Uri> ->
+        if (uris.isEmpty()) return@rememberLauncherForActivityResult
+        scope.launch {
+            try {
+                val bytesMap = mutableMapOf<String, ByteArray>()
+                var heaContent: String? = null
+                for (uri in uris) {
+                    val name = getFileName(context, uri) ?: continue
+                    val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: continue
+                    bytesMap[name] = bytes
+                    if (name.lowercase().endsWith(".hea")) {
+                        heaContent = String(bytes)
+                    }
+                }
+                if (heaContent != null) {
+                    val header = WfdbHeaderParser.parse(heaContent)
+                    val record = WfdbReader.readRecord(header) { fileName ->
+                        bytesMap[fileName] ?: throw Exception("File $fileName not selected")
+                    }
+                    pendingImportRecord = record
+                }
+            } catch (e: Exception) {
+                // TODO: Error snackbar
+            }
+        }
+    }
+
     var showRenameDialog by remember { mutableStateOf(false) }
     var showCalculateDerivedDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+
+    var showPhysioNetDialog by remember { mutableStateOf(false) }
+    var physioNetProject by remember { mutableStateOf("mitdb/1.0.0") }
+    var physioNetRecord by remember { mutableStateOf("100") }
+    var isDownloading by remember { mutableStateOf(false) }
+    var downloadError by remember { mutableStateOf<String?>(null) }
 
     if (showDeleteConfirmDialog) {
         AlertDialog(
@@ -113,6 +154,63 @@ fun ConstructorScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text(stringResource(R.string.constructor_rename_cancel))
+                }
+            }
+        )
+    }
+
+    if (showPhysioNetDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!isDownloading) showPhysioNetDialog = false },
+            title = { Text(stringResource(R.string.constructor_download_physionet)) },
+            text = {
+                Column {
+                    TextField(
+                        value = physioNetProject,
+                        onValueChange = { physioNetProject = it },
+                        label = { Text("Project Path (e.g. mitdb/1.0.0)") },
+                        enabled = !isDownloading
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    TextField(
+                        value = physioNetRecord,
+                        onValueChange = { physioNetRecord = it },
+                        label = { Text("Record Name (e.g. 100)") },
+                        enabled = !isDownloading
+                    )
+                    if (isDownloading) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top = 16.dp))
+                    }
+                    downloadError?.let {
+                        Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        isDownloading = true
+                        downloadError = null
+                        scope.launch {
+                            try {
+                                val record = com.example.cardiosimulator.network.PhysioNetClient.downloadRecord(physioNetProject, physioNetRecord)
+                                pendingImportRecord = record
+                                showPhysioNetDialog = false
+                            } catch (e: Exception) {
+                                downloadError = e.message
+                            } finally {
+                                isDownloading = false
+                            }
+                        }
+                    },
+                    enabled = !isDownloading && physioNetProject.isNotBlank() && physioNetRecord.isNotBlank()
+                ) {
+                    Text("Download")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPhysioNetDialog = false }, enabled = !isDownloading) {
                     Text(stringResource(R.string.constructor_rename_cancel))
                 }
             }
@@ -178,6 +276,58 @@ fun ConstructorScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showRenameDialog = false }) {
+                    Text(stringResource(R.string.constructor_rename_cancel))
+                }
+            }
+        )
+    }
+
+    if (pendingImportRecord != null) {
+        val record = pendingImportRecord!!
+        var importNameEn by remember { mutableStateOf(record.header.recordName) }
+        var importNameRu by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { pendingImportRecord = null },
+            title = { Text(stringResource(R.string.constructor_import_title)) },
+            text = {
+                Column {
+                    Text(
+                        stringResource(
+                            R.string.constructor_import_stats_format,
+                            record.header.numberOfSignals,
+                            record.header.numberOfSamplesPerSignal,
+                            record.header.samplingFrequency
+                        )
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    TextField(
+                        value = importNameEn,
+                        onValueChange = { importNameEn = it },
+                        label = { Text(stringResource(R.string.constructor_import_label_en)) }
+                    )
+                    TextField(
+                        value = importNameRu,
+                        onValueChange = { importNameRu = it },
+                        label = { Text(stringResource(R.string.constructor_import_label_ru)) }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val pathology = WfdbConverter.toPathologyFile(
+                        record,
+                        record.header.recordName,
+                        importNameEn,
+                        importNameRu
+                    )
+                    constructorViewModel.importPathology(pathology)
+                    pendingImportRecord = null
+                }) {
+                    Text(stringResource(R.string.constructor_import_btn))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingImportRecord = null }) {
                     Text(stringResource(R.string.constructor_rename_cancel))
                 }
             }
@@ -279,6 +429,32 @@ fun ConstructorScreen(
 
                         IconButton(onClick = { constructorViewModel.createNewPathology() }) {
                             Icon(Icons.Default.Add, contentDescription = stringResource(R.string.constructor_new_pathology))
+                        }
+
+                        var showImportMenu by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { showImportMenu = true }) {
+                                Icon(Icons.Default.FileDownload, contentDescription = stringResource(R.string.constructor_import_wfdb))
+                            }
+                            DropdownMenu(
+                                expanded = showImportMenu,
+                                onDismissRequest = { showImportMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.constructor_import_wfdb) + "…") },
+                                    onClick = {
+                                        showImportMenu = false
+                                        wfdbLauncher.launch(arrayOf("*/*"))
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.constructor_download_physionet) + "…") },
+                                    onClick = {
+                                        showImportMenu = false
+                                        showPhysioNetDialog = true
+                                    }
+                                )
+                            }
                         }
 
                         if (referenceImageUri != null) {
@@ -551,4 +727,29 @@ fun ConstructorScreen(
             }
         }
     }
+}
+
+private fun getFileName(context: android.content.Context, uri: Uri): String? {
+    var result: String? = null
+    if (uri.scheme == "content") {
+        val cursor = context.contentResolver.query(uri, null, null, null, null)
+        try {
+            if (cursor != null && cursor.moveToFirst()) {
+                val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (index != -1) {
+                    result = cursor.getString(index)
+                }
+            }
+        } finally {
+            cursor?.close()
+        }
+    }
+    if (result == null) {
+        result = uri.path
+        val cut = result?.lastIndexOf('/') ?: -1
+        if (cut != -1) {
+            result = result?.substring(cut + 1)
+        }
+    }
+    return result
 }
