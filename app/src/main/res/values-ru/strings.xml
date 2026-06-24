@@ -97,6 +97,23 @@
     <string name="rhythm_course_filter_all">Все ритмы</string>
     <string name="rhythm_course_filter_cd">Фильтр ритмов по курсу</string>
 
+    <!-- Rhythm groups -->
+    <string name="group_sinus">Синусовые ритмы</string>
+    <string name="group_arrhythmia">Аритмии</string>
+    <string name="group_conduction">Нарушения проводимости</string>
+    <string name="group_hypertrophy">Гипертрофии</string>
+    <string name="group_ischemia">Ишемия</string>
+    <string name="group_infarction">Инфаркт миокарда</string>
+    <string name="group_electrolyte">Электролитные нарушения</string>
+    <string name="group_syndromes">Синдромы</string>
+    <string name="group_pacemaker">Электрокардиостимуляция</string>
+    <string name="group_special">Особые состояния</string>
+    <string name="group_pediatric">Педиатрия</string>
+    <string name="group_newborn">Новорожденные</string>
+    <string name="group_pregnant">Беременность</string>
+    <string name="group_clinical">Клинические случаи</string>
+    <string name="group_other">Прочее</string>
+
     <!-- Testing panel -->
     <string name="testing_question_format">Вопрос %1$d</string>
 
@@ -274,6 +291,21 @@
     <string name="cd_show_rhythms">Показать ритмы</string>
     <string name="constructor_load_reference">Загрузить эталон</string>
     <string name="cd_load_reference">Загрузить изображение ЭКГ для привязки</string>
+
+    <string name="constructor_group_title">Редактировать группу</string>
+    <string name="constructor_group_label">Выберите группу</string>
+    <string name="constructor_group_no_group">— Без группы —</string>
+    <string name="constructor_group_new_hint">Создать новую группу…</string>
+    <string name="constructor_group_ok">Применить</string>
+
+    <!-- Welcome screen -->
+    <string name="welcome_title">Добро пожаловать в мир ЭКГ</string>
+    <string name="welcome_intro">Кардиосимулятор — это профессиональный инструмент для изучения и анализа электрокардиограмм.</string>
+    <string name="welcome_feature_1">Интерактивный атлас ЭКГ ритмов</string>
+    <string name="welcome_feature_2">Конструктор патологий и курсов</string>
+    <string name="welcome_feature_3">Режимы тестирования и экзамена</string>
+    <string name="welcome_tagline">Давайте начнём!</string>
+    <string name="welcome_start">Начать</string>
 
     <string name="ecg_point_p_start">P начало</string>
     <string name="ecg_point_p_peak">P пик</string>

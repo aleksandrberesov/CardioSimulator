@@ -109,6 +109,12 @@ class AppViewModel(
     private val _isDrawerFixed = MutableStateFlow(false)
     val isDrawerFixed: StateFlow<Boolean> = _isDrawerFixed.asStateFlow()
 
+    private val _isRhythmListGrouped = MutableStateFlow(true)
+    val isRhythmListGrouped: StateFlow<Boolean> = _isRhythmListGrouped.asStateFlow()
+
+    private val _collapsedRhythmGroups = MutableStateFlow<Set<String>>(emptySet())
+    val collapsedRhythmGroups: StateFlow<Set<String>> = _collapsedRhythmGroups.asStateFlow()
+
     private val _tcpConnectionState = MutableStateFlow<TcpConnectionState>(TcpConnectionState.Disconnected)
     val tcpConnectionState: StateFlow<TcpConnectionState> = _tcpConnectionState.asStateFlow()
 
@@ -311,6 +317,19 @@ class AppViewModel(
         _isDrawerFixed.value = fixed
     }
 
+    fun setRhythmListGrouped(grouped: Boolean) {
+        _isRhythmListGrouped.value = grouped
+    }
+
+    fun toggleRhythmGroupCollapsed(groupKey: String) {
+        val current = _collapsedRhythmGroups.value
+        if (current.contains(groupKey)) {
+            _collapsedRhythmGroups.value = current - groupKey
+        } else {
+            _collapsedRhythmGroups.value = current + groupKey
+        }
+    }
+
     fun toggleTcpConnection() {
         val currentState = _tcpConnectionState.value
         if (currentState is TcpConnectionState.Disconnected || currentState is TcpConnectionState.Error) {
@@ -493,6 +512,12 @@ class AppViewModel(
     }
 
     fun confirmData() { _isDataConfirmed.value = true }
+
+    fun setWelcomeShown(shown: Boolean) {
+        viewModelScope.launch {
+            prefs?.setWelcomeShown(shown)
+        }
+    }
 
     fun exportZip(context: Context, destUri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {

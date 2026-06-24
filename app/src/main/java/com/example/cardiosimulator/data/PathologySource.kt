@@ -19,4 +19,5 @@ interface PathologySource {
     fun readManifest(): PathologyManifest?
     fun readPathology(id: String): PathologyFile?
     fun listPathologies(): List<String>
+    fun readGroupsText(): String? = null
 }

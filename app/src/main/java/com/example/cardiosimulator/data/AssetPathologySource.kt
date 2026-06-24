@@ -33,6 +33,8 @@ class AssetPathologySource(
             .map { it.removeSuffix(".dat") }
     }.getOrDefault(emptyList())
 
+    override fun readGroupsText(): String? = readText("$baseDir/groups.txt")
+
     private fun readText(path: String): String? = runCatching {
         assets.open(path).use { String(it.readBytes(), Charsets.UTF_8) }
     }.getOrNull()

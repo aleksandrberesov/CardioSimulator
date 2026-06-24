@@ -278,7 +278,13 @@ class ConstructorViewModel(
 
     fun selectPathology(id: String, persist: Boolean = true) {
         viewModelScope.launch {
-            val file = repository.readPathology(id)
+            var file = repository.readPathology(id)
+            if (file != null && file.group == null) {
+                val manifestEntry = repository.manifest()?.entries?.find { it.id == id }
+                if (manifestEntry?.group != null) {
+                    file = file.copy(group = manifestEntry.group)
+                }
+            }
             _targetFile.value = file
             // A new file is loaded — accumulators from the previous file are stale.
             floatBuffers.clear()
@@ -482,6 +488,25 @@ class ConstructorViewModel(
         if (updatedFile != currentFile) {
             _targetFile.value = updatedFile
             _isMetadataDirty.value = true
+        }
+    }
+
+    fun setGroup(groupKey: String?) {
+        val currentFile = _targetFile.value ?: return
+        if (currentFile.group != groupKey) {
+            _targetFile.value = currentFile.copy(group = groupKey)
+            _isMetadataDirty.value = true
+        }
+    }
+
+    fun createAndSetGroup(name: String) {
+        val currentFile = _targetFile.value ?: return
+        viewModelScope.launch {
+            val key = name.lowercase().replace(Regex("[^a-z0-9]"), "_")
+            val success = repository.createGroup(key, name)
+            if (success) {
+                setGroup(key)
+            }
         }
     }
 

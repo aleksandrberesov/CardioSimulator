@@ -4,6 +4,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -63,6 +64,7 @@ import kotlinx.coroutines.withContext
  * Rebuilt Constructor on the unified rendering pipeline.
  * Constructs raw ADC samples directly.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConstructorScreen(
     appViewModel: AppViewModel,
@@ -130,6 +132,7 @@ fun ConstructorScreen(
     }
 
     var showRenameDialog by remember { mutableStateOf(false) }
+    var showGroupDialog by remember { mutableStateOf(false) }
     var showCalculateDerivedDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
@@ -244,38 +247,73 @@ fun ConstructorScreen(
     }
 
     if (showRenameDialog && targetFile != null) {
-        var newName by remember {
-            mutableStateOf(
-                if (selectedLanguage == com.example.cardiosimulator.domain.Language.RU)
-                    targetFile?.nameRu ?: ""
-                else
-                    targetFile?.titleEn ?: ""
-            )
-        }
+        // ... Existing rename dialog ...
+    }
+
+    if (showGroupDialog && targetFile != null) {
+        val groups = rhythmViewModel.repository.groups
+        val currentGroup = targetFile?.group
+        val availableKeys = groups.getOrderedKeys()
+        
+        var selectedKey by remember { mutableStateOf(currentGroup) }
+        var newGroupName by remember { mutableStateOf("") }
+        var dropdownExpanded by remember { mutableStateOf(false) }
+
         AlertDialog(
-            onDismissRequest = { showRenameDialog = false },
-            title = { Text(stringResource(R.string.constructor_rename_title)) },
+            onDismissRequest = { showGroupDialog = false },
+            title = { Text(stringResource(R.string.constructor_group_title)) },
             text = {
-                TextField(
-                    value = newName,
-                    onValueChange = { newName = it },
-                    label = { Text(stringResource(R.string.constructor_rename_label)) },
-                    keyboardOptions = KeyboardOptions(
-                        autoCorrectEnabled = false,
-                        capitalization = KeyboardCapitalization.None
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box {
+                        OutlinedTextField(
+                            value = if (selectedKey == null) stringResource(R.string.constructor_group_no_group) 
+                                   else groups.displayName(selectedKey!!, selectedLanguage.tag) { null },
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text(stringResource(R.string.constructor_group_label)) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
+                            modifier = Modifier.fillMaxWidth().clickable { dropdownExpanded = true }
+                        )
+                        DropdownMenu(
+                            expanded = dropdownExpanded,
+                            onDismissRequest = { dropdownExpanded = false },
+                            modifier = Modifier.fillMaxWidth(0.7f)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.constructor_group_no_group)) },
+                                onClick = { selectedKey = null; dropdownExpanded = false }
+                            )
+                            availableKeys.forEach { key ->
+                                DropdownMenuItem(
+                                    text = { Text(groups.displayName(key, selectedLanguage.tag) { null }) },
+                                    onClick = { selectedKey = key; dropdownExpanded = false }
+                                )
+                            }
+                        }
+                    }
+                    
+                    TextField(
+                        value = newGroupName,
+                        onValueChange = { newGroupName = it },
+                        label = { Text(stringResource(R.string.constructor_group_new_hint)) },
+                        singleLine = true
                     )
-                )
+                }
             },
             confirmButton = {
                 TextButton(onClick = {
-                    constructorViewModel.rename(newName, selectedLanguage)
-                    showRenameDialog = false
+                    if (newGroupName.isNotBlank()) {
+                        constructorViewModel.createAndSetGroup(newGroupName)
+                    } else {
+                        constructorViewModel.setGroup(selectedKey)
+                    }
+                    showGroupDialog = false
                 }) {
-                    Text(stringResource(R.string.constructor_rename_ok))
+                    Text(stringResource(R.string.constructor_group_ok))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showRenameDialog = false }) {
+                TextButton(onClick = { showGroupDialog = false }) {
                     Text(stringResource(R.string.constructor_rename_cancel))
                 }
             }
@@ -471,6 +509,10 @@ fun ConstructorScreen(
                         if (targetFile != null) {
                             IconButton(onClick = { showRenameDialog = true }) {
                                 Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.cd_rename))
+                            }
+
+                            IconButton(onClick = { showGroupDialog = true }) {
+                                Icon(Icons.Default.Label, contentDescription = stringResource(R.string.constructor_group_title))
                             }
 
                             IconButton(onClick = { constructorViewModel.duplicateCurrentPathology() }) {

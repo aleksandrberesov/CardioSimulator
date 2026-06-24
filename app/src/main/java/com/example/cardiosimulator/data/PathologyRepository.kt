@@ -25,6 +25,8 @@ class PathologyRepository(private var source: PathologySource) {
     private val _manifest = MutableStateFlow<PathologyManifest?>(null)
     val manifestFlow: StateFlow<PathologyManifest?> = _manifest.asStateFlow()
 
+    val groups = com.example.cardiosimulator.domain.PathologyGroups()
+
     fun setSource(newSource: PathologySource) {
         source = newSource
         _manifest.value = null
@@ -33,6 +35,7 @@ class PathologyRepository(private var source: PathologySource) {
     fun loadManifest(): Boolean {
         val m = source.readManifest()
         _manifest.value = m
+        groups.load(source.readGroupsText())
         return m != null
     }
 
@@ -42,6 +45,19 @@ class PathologyRepository(private var source: PathologySource) {
         _manifest.value?.entries?.sortedBy { it.titleEn.lowercase() } ?: emptyList()
 
     fun readPathology(id: String): PathologyFile? = source.readPathology(id)
+
+    fun createGroup(key: String, name: String): Boolean {
+        val s = source
+        if (s is FilePathologySource) {
+            val success = s.appendGroup(key, name)
+            if (success) {
+                // Reload groups catalog
+                groups.load(s.readGroupsText())
+            }
+            return success
+        }
+        return false
+    }
 
     /**
      * Persists [file] back to the source. Only supported if the current source

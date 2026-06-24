@@ -98,6 +98,23 @@
     <string name="rhythm_course_filter_all">All Rhythms</string>
     <string name="rhythm_course_filter_cd">Filter rhythms by course</string>
 
+    <!-- Rhythm groups -->
+    <string name="group_sinus">Sinus Rhythms</string>
+    <string name="group_arrhythmia">Arrhythmias</string>
+    <string name="group_conduction">Conduction Disturbances</string>
+    <string name="group_hypertrophy">Hypertrophy</string>
+    <string name="group_ischemia">Ischemia</string>
+    <string name="group_infarction">Myocardial Infarction</string>
+    <string name="group_electrolyte">Electrolyte Disturbances</string>
+    <string name="group_syndromes">Syndromes</string>
+    <string name="group_pacemaker">Pacemaker</string>
+    <string name="group_special">Special Conditions</string>
+    <string name="group_pediatric">Pediatric</string>
+    <string name="group_newborn">Newborn</string>
+    <string name="group_pregnant">Pregnancy</string>
+    <string name="group_clinical">Clinical Cases</string>
+    <string name="group_other">Other</string>
+
     <!-- Testing panel -->
     <string name="testing_question_format">Question %1$d</string>
 
@@ -276,6 +293,21 @@
     <string name="cd_show_rhythms">Show rhythms</string>
     <string name="constructor_load_reference">Load Reference</string>
     <string name="cd_load_reference">Load Reference ECG Image</string>
+
+    <string name="constructor_group_title">Edit Group</string>
+    <string name="constructor_group_label">Select Group</string>
+    <string name="constructor_group_no_group">— No group —</string>
+    <string name="constructor_group_new_hint">Create new group…</string>
+    <string name="constructor_group_ok">Apply</string>
+
+    <!-- Welcome screen -->
+    <string name="welcome_title">Welcome to the World of ECG</string>
+    <string name="welcome_intro">Cardio Simulator is a professional tool for learning and analyzing electrocardiograms.</string>
+    <string name="welcome_feature_1">Interactive ECG rhythm atlas</string>
+    <string name="welcome_feature_2">Pathology and course constructor</string>
+    <string name="welcome_feature_3">Testing and examination modes</string>
+    <string name="welcome_tagline">Let\'s get started!</string>
+    <string name="welcome_start">Start</string>
 
     <string name="ecg_point_p_start">P Start</string>
     <string name="ecg_point_p_peak">P Peak</string>

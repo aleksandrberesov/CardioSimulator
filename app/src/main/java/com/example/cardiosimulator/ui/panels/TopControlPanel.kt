@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Surface
@@ -79,7 +80,7 @@ fun TopControlPanel(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
-                    modifier = Modifier.weight(1.5f).fillMaxWidth().fillMaxHeight()
+                    modifier = Modifier.width(300.dp).fillMaxHeight()
                 ) {
                     Tab(
                         text = stringResource(selectedOperatingMode.id.titleRes),
@@ -101,7 +102,7 @@ fun TopControlPanel(
                     }
                 }
                 Box(
-                    modifier = Modifier.weight(5f).fillMaxWidth().fillMaxHeight()
+                    modifier = Modifier.weight(1f).fillMaxWidth().fillMaxHeight()
                 ){
                     when (selectedOperatingMode.id) {
                         OperatingMode.Teaching -> {

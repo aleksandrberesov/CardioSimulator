@@ -39,6 +39,7 @@ data class PathologyEntry(
     val nameRu: String?,
     val leadsCount: Int,
     val fileName: String,
+    val group: String? = null
 )
 
 /** One lead block inside a `<pathology>.dat` file. */
@@ -66,5 +67,6 @@ data class PathologyFile(
     val titleEn: String,
     val nameRu: String?,
     val leads: Map<Lead, LeadStream>,
-    val significantPoints: List<SignificantPoint> = emptyList()
+    val significantPoints: List<SignificantPoint> = emptyList(),
+    val group: String? = null
 )

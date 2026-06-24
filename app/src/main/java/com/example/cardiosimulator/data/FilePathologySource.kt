@@ -34,6 +34,17 @@ class FilePathologySource(
             ?.map { it.name.removeSuffix(".dat") }
             ?: emptyList()
 
+    override fun readGroupsText(): String? = runCatching {
+        File(root, "groups.txt").takeIf { it.canRead() }?.readText(Charsets.UTF_8)
+    }.getOrNull()
+
+    fun appendGroup(key: String, name: String): Boolean = runCatching {
+        val file = File(root, "groups.txt")
+        val line = "group:$key;ru:$name;en:$name;zh:$name;es:$name\n"
+        file.appendText(line, Charsets.UTF_8)
+        true
+    }.getOrDefault(false)
+
     /**
      * Atomically writes [file] as `<id>.dat`. Also updates the `manifest.txt`
      * if the pathology's metadata (title/name) has changed or if it's a new entry.
@@ -51,10 +62,10 @@ class FilePathologySource(
             val existingIndex = manifest.entries.indexOfFirst { it.id == file.id }
             val updatedEntries = if (existingIndex != -1) {
                 val existing = manifest.entries[existingIndex]
-                if (existing.titleEn != file.titleEn || existing.nameRu != file.nameRu) {
+                if (existing.titleEn != file.titleEn || existing.nameRu != file.nameRu || existing.group != file.group) {
                     manifest.entries.map {
                         if (it.id == file.id) {
-                            it.copy(titleEn = file.titleEn, nameRu = file.nameRu)
+                            it.copy(titleEn = file.titleEn, nameRu = file.nameRu, group = file.group)
                         } else it
                     }
                 } else null
@@ -64,7 +75,8 @@ class FilePathologySource(
                     titleEn = file.titleEn,
                     nameRu = file.nameRu,
                     leadsCount = file.leads.size,
-                    fileName = "${file.id}.dat"
+                    fileName = "${file.id}.dat",
+                    group = file.group
                 )
             }
             if (updatedEntries != null) {

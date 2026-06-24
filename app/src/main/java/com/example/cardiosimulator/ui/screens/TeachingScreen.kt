@@ -58,6 +58,7 @@ import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.ui.components.LectureWebView
 import com.example.cardiosimulator.ui.components.SideDrawer
 import com.example.cardiosimulator.ui.components.Tab
+import com.example.cardiosimulator.ui.components.WelcomeOverlay
 import com.example.cardiosimulator.ui.display.LEAD_ORDER
 import com.example.cardiosimulator.ui.display.Lead as LeadView
 import com.example.cardiosimulator.ui.display.LeadsGrid
@@ -85,6 +86,15 @@ fun TeachingScreen(
     val selectedLectureId by courseViewerViewModel.selectedLectureId.collectAsState()
     val viewerLecture by courseViewerViewModel.lecture.collectAsState()
     val showMonitorOverlay by appViewModel.showMonitorOverlay.collectAsState()
+
+    val welcomeShown by appViewModel.prefs?.welcomeShown?.collectAsState(initial = true) ?: remember { mutableStateOf(true) }
+    var showWelcome by remember { mutableStateOf(false) }
+
+    LaunchedEffect(welcomeShown) {
+        if (!welcomeShown) {
+            showWelcome = true
+        }
+    }
 
     var lastBuiltMode by rememberSaveable { mutableStateOf<OperatingMode?>(null) }
     LaunchedEffect(Unit) {
@@ -152,6 +162,15 @@ fun TeachingScreen(
                     onClose = { appViewModel.setShowMonitorOverlay(false) }
                 )
             }
+        }
+
+        if (showWelcome) {
+            WelcomeOverlay(
+                onDismiss = {
+                    showWelcome = false
+                    appViewModel.setWelcomeShown(true)
+                }
+            )
         }
     }
 }
@@ -309,6 +328,7 @@ private fun MonitorOverlay(
         Row(modifier = Modifier.fillMaxSize()) {
             if (isDrawerFixed) {
                 rhythmDrawer()
+                VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
             }
             Box(modifier = Modifier.weight(1f)) {
                 Column(
@@ -346,7 +366,7 @@ private fun MonitorOverlay(
                     Monitor(
                         modifier = Modifier.weight(1f).padding(
                             top = 8.dp,
-                            start = if (isDrawerFixed) 0.dp else 24.dp
+                            start = 0.dp
                         ),
                         monitorViewModel = monitorViewModel,
                     ) { rows, columns, xOffset, scheme ->

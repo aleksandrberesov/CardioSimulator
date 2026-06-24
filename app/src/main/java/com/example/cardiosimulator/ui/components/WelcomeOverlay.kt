@@ -1,5 +1,7 @@
 package com.example.cardiosimulator.ui.components
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -7,9 +9,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
@@ -33,25 +37,27 @@ fun WelcomeOverlay(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val scrollState = rememberScrollState()
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(Color.Black.copy(alpha = 0.7f))
-            .padding(32.dp),
+            .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
         Surface(
             shape = MaterialTheme.shapes.extraLarge,
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 8.dp,
-            modifier = Modifier.fillMaxSize(0.8f)
+            modifier = Modifier.fillMaxWidth(0.85f).wrapContentHeight()
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(48.dp),
+                    .fillMaxWidth()
+                    .verticalScroll(scrollState)
+                    .padding(vertical = 32.dp, horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Top
             ) {
                 Text(
                     text = stringResource(R.string.welcome_title),
@@ -66,21 +72,21 @@ fun WelcomeOverlay(
                     text = stringResource(R.string.welcome_intro),
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 32.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 )
                 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
                 
                 Column(
-                    modifier = Modifier.padding(horizontal = 32.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     FeatureRow(stringResource(R.string.welcome_feature_1))
                     FeatureRow(stringResource(R.string.welcome_feature_2))
                     FeatureRow(stringResource(R.string.welcome_feature_3))
                 }
                 
-                Spacer(modifier = Modifier.height(48.dp))
+                Spacer(modifier = Modifier.height(32.dp))
                 
                 Text(
                     text = stringResource(R.string.welcome_tagline),
@@ -91,11 +97,11 @@ fun WelcomeOverlay(
                     color = MaterialTheme.colorScheme.secondary
                 )
                 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
                 
                 Button(
                     onClick = onDismiss,
-                    modifier = Modifier.height(56.dp).padding(horizontal = 48.dp)
+                    modifier = Modifier.height(56.dp).padding(horizontal = 32.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.welcome_start),
