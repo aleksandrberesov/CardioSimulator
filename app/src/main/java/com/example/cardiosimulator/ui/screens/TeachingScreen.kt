@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MonitorHeart
+import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -467,6 +469,16 @@ private fun CourseViewerOverlay(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.End
             ) {
+                TextButton(onClick = {
+                    appViewModel.updateOperatingMode(
+                        appViewModel.operatingModes.find { it.id == OperatingMode.Examination }!!
+                    )
+                }) {
+                    Icon(Icons.Default.Quiz, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.teaching_take_test))
+                }
+                Spacer(modifier = Modifier.width(8.dp))
                 IconButton(onClick = onMonitorClick) {
                     Icon(
                         imageVector = Icons.Default.MonitorHeart,

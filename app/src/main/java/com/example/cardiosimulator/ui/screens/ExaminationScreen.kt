@@ -1,6 +1,10 @@
 package com.example.cardiosimulator.ui.screens
 
+import android.graphics.Bitmap
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -8,16 +12,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.data.TestRepository
@@ -29,6 +36,10 @@ import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.ExaminationViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
+import com.journeyapps.barcodescanner.BarcodeEncoder
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -85,30 +96,38 @@ fun ExamWorkView(
     val waveforms by rhythmViewModel.waveforms.collectAsState()
     val mode by monitorViewModel.monitorMode.collectAsState()
     val remainingSeconds by viewModel.remainingSeconds.collectAsState()
+    val isGroupSessionActive by viewModel.isGroupSessionActive.collectAsState()
 
     var showStartDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(activeTest) {
-        if (activeTest == null && lastResult == null) {
+    LaunchedEffect(activeTest, isGroupSessionActive) {
+        if (activeTest == null && lastResult == null && !isGroupSessionActive) {
             showStartDialog = true
         }
     }
 
     if (showStartDialog) {
-        ExamStartDialog(
-            tests = testRepository.tests(),
+        ExamStartSelectionDialog(
+            testThemes = appViewModel.testThemeStore?.readThemes() ?: emptyList(),
             onDismiss = { showStartDialog = false },
-            onStart = { name, group, test ->
-                viewModel.start(test, ExamStudentInfo(name, group))
+            onStartIndividual = { name, group, count, theme ->
+                viewModel.generateAndStartIndividual(count, theme, ExamStudentInfo(name, group))
+                showStartDialog = false
+            },
+            onStartGroup = { count, theme ->
+                viewModel.startGroupSession(count, theme)
                 showStartDialog = false
             }
         )
     }
 
-    if (lastResult != null) {
+    if (isGroupSessionActive) {
+        GroupSessionView(viewModel)
+    } else if (lastResult != null) {
         ExamResultSummary(lastResult!!, onNewAttempt = { viewModel.reset() }, testRepository)
     } else if (activeTest != null) {
         val currentQuestion = viewModel.currentQuestion
+        val context = LocalContext.current
 
         LaunchedEffect(currentQuestion?.id) {
             val q = currentQuestion ?: return@LaunchedEffect
@@ -124,24 +143,35 @@ fun ExamWorkView(
 
         Row(modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.weight(3f).middleSectionLeft()) {
-                Monitor(
-                    modifier = Modifier.fillMaxSize(),
-                    monitorViewModel = monitorViewModel,
-                ) { rows, columns, xOffset, scheme ->
-                    LeadsGrid(
-                        rows = rows,
-                        columns = columns,
-                        itemCount = mode.count,
-                        leadOrder = mode.leadOrder ?: com.example.cardiosimulator.ui.display.LEAD_ORDER
-                    ) { _, lead ->
-                        val points = lead?.let { waveforms[it] } ?: Points(emptyList<Float>())
-                        LeadView(
-                            points = points,
-                            title = lead?.name ?: "",
-                            isRunning = mode.isRunning,
-                            xOffsetPx = xOffset,
-                            gridScheme = scheme,
-                        )
+                if (currentQuestion?.stimulus == QuestionStimulus.Image) {
+                    AsyncImage(
+                        model = currentQuestion.imagePath?.let { path ->
+                            if (path.startsWith("/")) File(path)
+                            else File(context.filesDir, "${AppViewModel.TEST_IMAGES_DIR}/$path")
+                        },
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize().padding(16.dp)
+                    )
+                } else {
+                    Monitor(
+                        modifier = Modifier.fillMaxSize(),
+                        monitorViewModel = monitorViewModel,
+                    ) { rows, columns, xOffset, scheme ->
+                        LeadsGrid(
+                            rows = rows,
+                            columns = columns,
+                            itemCount = mode.count,
+                            leadOrder = mode.leadOrder ?: com.example.cardiosimulator.ui.display.LEAD_ORDER
+                        ) { _, lead ->
+                            val points = lead?.let { waveforms[it] } ?: Points(emptyList<Float>())
+                            LeadView(
+                                points = points,
+                                title = lead?.name ?: "",
+                                isRunning = mode.isRunning,
+                                xOffsetPx = xOffset,
+                                gridScheme = scheme,
+                            )
+                        }
                     }
                 }
             }
@@ -166,59 +196,96 @@ fun ExamWorkView(
 }
 
 @Composable
-fun ExamStartDialog(
-    tests: List<Test>,
+fun ExamStartSelectionDialog(
+    testThemes: List<String>,
     onDismiss: () -> Unit,
-    onStart: (String, String, Test) -> Unit
+    onStartIndividual: (String, String, Int, String?) -> Unit,
+    onStartGroup: (Int, String?) -> Unit
 ) {
+    var mode by remember { mutableStateOf("Individual") }
     var name by remember { mutableStateOf("") }
     var group by remember { mutableStateOf("") }
-    var selectedTest by remember { mutableStateOf<Test?>(null) }
+    var count by remember { mutableIntStateOf(10) }
+    var selectedTheme by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.exam_start_title)) },
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text(stringResource(R.string.exam_field_full_name)) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = group,
-                    onValueChange = { group = it },
-                    label = { Text(stringResource(R.string.exam_field_group)) },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    FilterChip(
+                        selected = mode == "Individual",
+                        onClick = { mode = "Individual" },
+                        label = { Text("Индивидуально") }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    FilterChip(
+                        selected = mode == "Group",
+                        onClick = { mode = "Group" },
+                        label = { Text("Групповое") }
+                    )
+                }
+                
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text(stringResource(R.string.exam_field_test), style = MaterialTheme.typography.titleSmall)
-                if (tests.isEmpty()) {
-                    Text(stringResource(R.string.exam_no_tests), color = MaterialTheme.colorScheme.error)
-                } else {
-                    tests.forEach { test ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .selectable(selected = selectedTest == test, onClick = { selectedTest = test })
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(selected = selectedTest == test, onClick = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(test.title)
-                        }
+                if (mode == "Individual") {
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text(stringResource(R.string.exam_field_full_name)) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = group,
+                        onValueChange = { group = it },
+                        label = { Text(stringResource(R.string.exam_field_group)) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                Text("Количество вопросов:", style = MaterialTheme.typography.titleSmall)
+                Row {
+                    listOf(10, 20, 30).forEach { c ->
+                        FilterChip(
+                            selected = count == c,
+                            onClick = { count = c },
+                            label = { Text(c.toString()) },
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text("Тема:", style = MaterialTheme.typography.titleSmall)
+                Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+                    FilterChip(
+                        selected = selectedTheme == null,
+                        onClick = { selectedTheme = null },
+                        label = { Text("Все") },
+                        modifier = Modifier.padding(end = 4.dp)
+                    )
+                    testThemes.forEach { theme ->
+                        FilterChip(
+                            selected = selectedTheme == theme,
+                            onClick = { selectedTheme = theme },
+                            label = { Text(theme) },
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
                     }
                 }
             }
         },
         confirmButton = {
             Button(
-                onClick = { onStart(name, group, selectedTest!!) },
-                enabled = name.isNotBlank() && group.isNotBlank() && selectedTest != null
+                onClick = { 
+                    if (mode == "Individual") onStartIndividual(name, group, count, selectedTheme)
+                    else onStartGroup(count, selectedTheme)
+                },
+                enabled = (mode == "Group") || (name.isNotBlank() && group.isNotBlank())
             ) {
                 Text(stringResource(R.string.exam_start))
             }
@@ -229,6 +296,76 @@ fun ExamStartDialog(
             }
         }
     )
+}
+
+@Composable
+fun GroupSessionView(viewModel: ExaminationViewModel) {
+    val groupIp by viewModel.groupIp.collectAsState()
+    val participants by viewModel.participants.collectAsState()
+    
+    val url = "http://${groupIp ?: "0.0.0.0"}:8080/"
+    
+    val qrBitmap = remember(url) {
+        runCatching {
+            val barcodeEncoder = BarcodeEncoder()
+            barcodeEncoder.encodeBitmap(url, BarcodeFormat.QR_CODE, 400, 400)
+        }.getOrNull()
+    }
+
+    Row(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("Групповое тестирование", style = MaterialTheme.typography.headlineMedium)
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            if (qrBitmap != null) {
+                Image(
+                    bitmap = qrBitmap.asImageBitmap(),
+                    contentDescription = "QR Code",
+                    modifier = Modifier.size(300.dp).background(Color.White).padding(8.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(url, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            
+            Spacer(modifier = Modifier.weight(1f))
+            
+            Button(
+                onClick = { viewModel.stopGroupSession() },
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text("Остановить сессию")
+            }
+        }
+        
+        VerticalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+        
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Участники (${participants.size})", style = MaterialTheme.typography.titleLarge)
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            LazyColumn {
+                items(participants) { p ->
+                    ListItem(
+                        headlineContent = { Text(p.student.fullName) },
+                        supportingContent = { Text(p.student.group) },
+                        trailingContent = {
+                            if (p.result != null) {
+                                Text(
+                                    "${p.result!!.correctCount}/${p.result!!.totalCount}",
+                                    color = if (p.result!!.passed) Color(0xFF2E7D32) else Color(0xFFC62828),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            } else {
+                                Text("В процессе", color = Color.Gray)
+                            }
+                        }
+                    )
+                    HorizontalDivider()
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -272,9 +409,7 @@ fun ExamResultSummary(result: ExamResult, onNewAttempt: () -> Unit, testReposito
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        val test = remember(result.testId) { testRepository.test(result.testId) }
         result.questions.forEachIndexed { index, qResult ->
-            val question = test?.questions?.find { it.id == qResult.questionId }
             Card(
                 modifier = Modifier.fillMaxWidth(0.8f).padding(vertical = 4.dp),
                 colors = CardDefaults.cardColors(containerColor = if (qResult.isCorrect) Color(0xFFF1F8E9) else Color(0xFFFBE9E7))
@@ -289,20 +424,11 @@ fun ExamResultSummary(result: ExamResult, onNewAttempt: () -> Unit, testReposito
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(text = "Вопрос ${index + 1}", fontWeight = FontWeight.Bold)
                     }
-                    if (question != null) {
-                        Text(text = question.text, style = MaterialTheme.typography.bodySmall)
-                        val selectedOption = question.options.find { it.id == qResult.selected }
-                        val correctOption = question.options.find { it.id == qResult.correct }
-                        Text(
-                            text = "Ваш ответ: ${selectedOption?.text ?: "Нет ответа"}",
-                            color = if (qResult.isCorrect) Color(0xFF2E7D32) else Color(0xFFC62828)
-                        )
-                        if (!qResult.isCorrect) {
-                            Text(text = "Правильный ответ: ${correctOption?.text}", color = Color(0xFF2E7D32))
-                        }
-                    } else {
-                        Text(text = "ID: ${qResult.questionId}")
-                    }
+                    Text(
+                        text = "ID вопроса: ${qResult.questionId}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
                 }
             }
         }

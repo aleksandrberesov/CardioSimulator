@@ -10,7 +10,10 @@ package com.example.cardiosimulator.domain
  * - No anchors, no part/series indirection, no per-record calibration.
  */
 
+import kotlinx.serialization.Serializable
+
 /** 12-lead vocabulary used across the dataset, manifest, and renderer. */
+@Serializable
 enum class Lead {
     I, II, III, aVR, aVL, aVF, V1, V2, V3, V4, V5, V6;
 

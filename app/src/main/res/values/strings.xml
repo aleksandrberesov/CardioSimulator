@@ -151,6 +151,24 @@
     <string name="test_ctor_ecg">ECG on the monitor</string>
     <string name="test_ctor_ecg_none">— none —</string>
     <string name="test_ctor_tests_label">Tests</string>
+    <string name="test_ctor_tab_test">Test</string>
+    <string name="test_ctor_tab_bank">Question Bank</string>
+    <string name="test_ctor_bank_import">Import JSON</string>
+    <string name="test_ctor_bank_export">Export JSON</string>
+    <string name="test_ctor_bank_themes">Themes</string>
+    <string name="test_ctor_add_from_bank">Add from Bank</string>
+    <string name="test_ctor_to_bank">To Bank</string>
+    <string name="test_ctor_stimulus_text">Text</string>
+    <string name="test_ctor_stimulus_image">Image</string>
+    <string name="test_ctor_stimulus_ecg">ECG</string>
+    <string name="test_ctor_theme_label">Theme</string>
+    <string name="test_ctor_tags_label">Tags (comma separated)</string>
+    <string name="test_ctor_image_select">Select Photo</string>
+    <string name="test_ctor_search_hint">Search by text or tags…</string>
+    <string name="test_ctor_manage_themes">Manage Themes</string>
+    <string name="test_ctor_theme_new_hint">New theme…</string>
+    <string name="test_ctor_theme_delete_confirm">Delete theme? Questions with this theme will remain, but the category will be cleared.</string>
+    <string name="teaching_take_test">Take a Test</string>
 
     <string name="exam_tab_exam">Exam</string>
     <string name="exam_tab_results">Results</string>

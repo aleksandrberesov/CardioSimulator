@@ -20,7 +20,8 @@ object TestSeed {
                 ),
                 correctOptionId = "a",
                 comment = "На графике видно, что в сегменте AVL и V5, V7 чётко видны подъёмы сегмента ST.",
-                pathologyId = ecg(0)
+                pathologyId = ecg(0),
+                theme = "Ишемия и инфаркт"
             ),
             TestQuestion(
                 id = "q2",
@@ -34,7 +35,8 @@ object TestSeed {
                 ),
                 correctOptionId = "a",
                 comment = "Зубец P предшествует каждому комплексу QRS, интервалы R–R регулярны — это синусовый ритм.",
-                pathologyId = ecg(1)
+                pathologyId = ecg(1),
+                theme = "Норма"
             ),
             TestQuestion(
                 id = "q3",
@@ -48,7 +50,8 @@ object TestSeed {
                 ),
                 correctOptionId = "b",
                 comment = "Интервал R–R соответствует частоте около 75 ударов в минуту — нормосистолия.",
-                pathologyId = ecg(2)
+                pathologyId = ecg(2),
+                theme = "Норма"
             )
         )
 

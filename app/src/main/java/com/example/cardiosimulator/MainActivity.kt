@@ -23,6 +23,9 @@ import com.example.cardiosimulator.data.OskeResultStore
 import com.example.cardiosimulator.data.FileTestSource
 import com.example.cardiosimulator.data.TestRepository
 import com.example.cardiosimulator.data.ExamResultStore
+import com.example.cardiosimulator.data.FileQuestionBankSource
+import com.example.cardiosimulator.data.QuestionBankRepository
+import com.example.cardiosimulator.data.TestThemeStore
 import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
@@ -46,6 +49,9 @@ class MainActivity : AppCompatActivity() {
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         val oskeDir = File(this@MainActivity.filesDir, AppViewModel.OSKE_DIR)
                         val testsDir = File(this@MainActivity.filesDir, AppViewModel.TESTS_DIR)
+                        val bankDir = File(this@MainActivity.filesDir, AppViewModel.TEST_BANK_DIR)
+                        val questionBankRepository = QuestionBankRepository(FileQuestionBankSource(bankDir))
+                        val testThemeStore = TestThemeStore(File(bankDir, "themes.json"))
                         return AppViewModel(
                             appState = appBuilder.build(initialMode = OperatingMode.Teaching),
                             // Boot from assets; swapped to a FilePathologySource once
@@ -71,8 +77,10 @@ class MainActivity : AppCompatActivity() {
                             testRepository = TestRepository(
                                 FileTestSource(testsDir)
                             ),
+                            questionBankRepository = questionBankRepository,
+                            testThemeStore = testThemeStore,
                             examResultStore = ExamResultStore(
-                                File(testsDir, "results")
+                                File(this@MainActivity.filesDir, AppViewModel.TEST_RESULTS_DIR)
                             ),
                             appContext = this@MainActivity.applicationContext,
                             prefs = DataSourcePrefs(this@MainActivity.applicationContext),

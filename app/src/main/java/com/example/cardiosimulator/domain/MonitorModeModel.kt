@@ -3,6 +3,7 @@ package com.example.cardiosimulator.domain
 import androidx.annotation.StringRes
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.EcgCalibration
+import kotlinx.serialization.Serializable
 
 enum class GridScheme(@param:StringRes val labelRes: Int) {
     Pink(R.string.grid_scheme_pink),
@@ -10,6 +11,7 @@ enum class GridScheme(@param:StringRes val labelRes: Int) {
     Blank(R.string.grid_scheme_blank)
 }
 
+@Serializable
 enum class SeriesScheme {
     OneColumn,
     TwoColumn,

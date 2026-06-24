@@ -1,131 +1,26 @@
 package com.example.cardiosimulator.data
 
 import com.example.cardiosimulator.domain.*
-import org.json.JSONArray
-import org.json.JSONObject
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.io.File
 
+val testJson = Json {
+    encodeDefaults = false
+    explicitNulls = false
+    ignoreUnknownKeys = true
+    prettyPrint = true
+}
+
 object TestJson {
-    fun parse(json: String): Test {
-        val obj = JSONObject(json)
-        val questions = obj.getJSONArray("questions").let { arr ->
-            (0 until arr.length()).map { i ->
-                val q = arr.getJSONObject(i)
-                TestQuestion(
-                    id = q.getString("id"),
-                    number = q.getInt("number"),
-                    text = q.getString("text"),
-                    options = q.getJSONArray("options").let { optArr ->
-                        (0 until optArr.length()).map { j ->
-                            val o = optArr.getJSONObject(j)
-                            TestOption(o.getString("id"), o.getString("text"))
-                        }
-                    },
-                    correctOptionId = q.getString("correctOptionId"),
-                    comment = q.getString("comment"),
-                    pathologyId = q.optString("pathologyId", null),
-                    leads = q.optJSONArray("leads")?.let { leadsArr ->
-                        (0 until leadsArr.length()).mapNotNull { j ->
-                            Lead.fromToken(leadsArr.getString(j))
-                        }
-                    } ?: emptyList(),
-                    scheme = q.optString("scheme", "Grid").let { s ->
-                        SeriesScheme.entries.firstOrNull { it.name == s } ?: SeriesScheme.Grid
-                    }
-                )
-            }
-        }
-        return Test(
-            testId = obj.getString("testId"),
-            title = obj.getString("title"),
-            questions = questions,
-            questionTimeSeconds = obj.optInt("questionTimeSeconds", 0)
-        )
-    }
+    fun parse(json: String): Test = testJson.decodeFromString(json)
+    fun serialize(test: Test): String = testJson.encodeToString(test)
 
-    fun serialize(test: Test): String {
-        val obj = JSONObject()
-        obj.put("testId", test.testId)
-        obj.put("title", test.title)
-        obj.put("questionTimeSeconds", test.questionTimeSeconds)
-        val questions = JSONArray()
-        test.questions.forEach { q ->
-            val qObj = JSONObject()
-            qObj.put("id", q.id)
-            qObj.put("number", q.number)
-            qObj.put("text", q.text)
-            val options = JSONArray()
-            q.options.forEach { o ->
-                val oObj = JSONObject()
-                oObj.put("id", o.id)
-                oObj.put("text", o.text)
-                options.put(oObj)
-            }
-            qObj.put("options", options)
-            qObj.put("correctOptionId", q.correctOptionId)
-            qObj.put("comment", q.comment)
-            if (q.pathologyId != null) qObj.put("pathologyId", q.pathologyId)
-            if (q.leads.isNotEmpty()) {
-                qObj.put("leads", JSONArray(q.leads.map { it.name }))
-            }
-            if (q.scheme != SeriesScheme.Grid) {
-                qObj.put("scheme", q.scheme.name)
-            }
-            questions.put(qObj)
-        }
-        obj.put("questions", questions)
-        return obj.toString(2)
-    }
+    fun parseResult(json: String): ExamResult = testJson.decodeFromString(json)
+    fun serializeResult(result: ExamResult): String = testJson.encodeToString(result)
 
-    fun parseResult(json: String): ExamResult {
-        val obj = JSONObject(json)
-        val studentObj = obj.getJSONObject("student")
-        val questionsArr = obj.getJSONArray("questions")
-        val questions = (0 until questionsArr.length()).map { i ->
-            val q = questionsArr.getJSONObject(i)
-            ExamQuestionResult(
-                questionId = q.getString("questionId"),
-                selected = q.optString("selected", null),
-                correct = q.getString("correct"),
-                isCorrect = q.getBoolean("isCorrect")
-            )
-        }
-        return ExamResult(
-            student = ExamStudentInfo(studentObj.getString("fullName"), studentObj.getString("group")),
-            testId = obj.getString("testId"),
-            testTitle = obj.getString("testTitle"),
-            timestamp = obj.getLong("timestamp"),
-            questions = questions,
-            correctCount = obj.getInt("correctCount"),
-            totalCount = obj.getInt("totalCount"),
-            passed = obj.getBoolean("passed")
-        )
-    }
-
-    fun serializeResult(result: ExamResult): String {
-        val obj = JSONObject()
-        val student = JSONObject()
-        student.put("fullName", result.student.fullName)
-        student.put("group", result.student.group)
-        obj.put("student", student)
-        obj.put("testId", result.testId)
-        obj.put("testTitle", result.testTitle)
-        obj.put("timestamp", result.timestamp)
-        val questions = JSONArray()
-        result.questions.forEach { q ->
-            val qObj = JSONObject()
-            qObj.put("questionId", q.questionId)
-            if (q.selected != null) qObj.put("selected", q.selected)
-            qObj.put("correct", q.correct)
-            qObj.put("isCorrect", q.isCorrect)
-            questions.put(qObj)
-        }
-        obj.put("questions", questions)
-        obj.put("correctCount", result.correctCount)
-        obj.put("totalCount", result.totalCount)
-        obj.put("passed", result.passed)
-        return obj.toString(2)
-    }
+    fun parseQuestion(json: String): TestQuestion = testJson.decodeFromString(json)
+    fun serializeQuestion(question: TestQuestion): String = testJson.encodeToString(question)
 }
 
 interface ITestSource {
@@ -213,5 +108,101 @@ class ExamResultStore(val root: File) {
             ?.mapNotNull { file ->
                 runCatching { TestJson.parseResult(file.readText()) }.getOrNull()
             }?.sortedByDescending { it.timestamp } ?: emptyList()
+    }
+}
+
+interface IQuestionBankSource {
+    fun readQuestions(): List<TestQuestion>
+    fun writeQuestion(question: TestQuestion): Boolean
+    fun deleteQuestion(id: String): Boolean
+}
+
+class FileQuestionBankSource(val root: File) : IQuestionBankSource {
+    init {
+        root.mkdirs()
+    }
+
+    override fun readQuestions(): List<TestQuestion> {
+        // Skip themes.json
+        return root.listFiles { f -> f.isFile && f.name.endsWith(".json") && f.name != "themes.json" }
+            ?.mapNotNull { readQuestionFromFile(it) } ?: emptyList()
+    }
+
+    override fun writeQuestion(question: TestQuestion): Boolean {
+        val file = File(root, "${question.id}.json")
+        return atomicWriteText(file, TestJson.serializeQuestion(question))
+    }
+
+    override fun deleteQuestion(id: String): Boolean {
+        val file = File(root, "$id.json")
+        return if (file.exists()) file.delete() else false
+    }
+
+    private fun readQuestionFromFile(file: File): TestQuestion? = runCatching {
+        TestJson.parseQuestion(file.readText())
+    }.getOrNull()
+}
+
+class QuestionBankRepository(private var source: IQuestionBankSource) {
+    private var cachedQuestions: List<TestQuestion>? = null
+
+    fun questions(): List<TestQuestion> {
+        if (cachedQuestions == null) cachedQuestions = source.readQuestions()
+        return cachedQuestions!!
+    }
+
+    fun writeQuestion(question: TestQuestion): Boolean {
+        val ok = source.writeQuestion(question)
+        if (ok) reload()
+        return ok
+    }
+
+    fun deleteQuestion(id: String): Boolean {
+        val ok = source.deleteQuestion(id)
+        if (ok) reload()
+        return ok
+    }
+
+    fun import(questions: List<TestQuestion>) {
+        questions.forEach { source.writeQuestion(it) }
+        reload()
+    }
+
+    fun exportAll(): String {
+        return testJson.encodeToString(questions())
+    }
+
+    fun reload() {
+        cachedQuestions = null
+    }
+}
+
+class TestThemeStore(private val themeFile: File) {
+    companion object {
+        val DefaultThemes = listOf(
+            "Норма",
+            "Нарушения ритма",
+            "Нарушения проводимости",
+            "Гипертрофии",
+            "Ишемия и инфаркт",
+            "Прочее"
+        )
+    }
+
+    fun readThemes(): List<String> {
+        if (!themeFile.exists()) {
+            seedIfMissing()
+        }
+        return runCatching {
+            testJson.decodeFromString<List<String>>(themeFile.readText())
+        }.getOrDefault(DefaultThemes)
+    }
+
+    fun writeThemes(themes: List<String>): Boolean {
+        return atomicWriteText(themeFile, testJson.encodeToString(themes))
+    }
+
+    private fun seedIfMissing() {
+        writeThemes(DefaultThemes)
     }
 }

@@ -21,6 +21,9 @@ import com.example.cardiosimulator.data.SampleOskeSeeder
 import com.example.cardiosimulator.data.FileTestSource
 import com.example.cardiosimulator.data.TestRepository
 import com.example.cardiosimulator.data.ExamResultStore
+import com.example.cardiosimulator.data.FileQuestionBankSource
+import com.example.cardiosimulator.data.QuestionBankRepository
+import com.example.cardiosimulator.data.TestThemeStore
 import com.example.cardiosimulator.domain.AppStateModel
 import com.example.cardiosimulator.domain.CourseEntry
 import com.example.cardiosimulator.domain.Language
@@ -83,8 +86,10 @@ class AppViewModel(
     val oskeRepository: OskeRepository? = null,
     val oskeResultStore: OskeResultStore? = null,
     val testRepository: TestRepository? = null,
+    val questionBankRepository: QuestionBankRepository? = null,
+    val testThemeStore: TestThemeStore? = null,
     val examResultStore: ExamResultStore? = null,
-    private val appContext: Context? = null,
+    val appContext: Context? = null,
     val prefs: DataSourcePrefs? = null,
     private val tcpReconnectIntervalMs: Long = 5000L,
 ) : ViewModel() {
@@ -247,6 +252,12 @@ class AppViewModel(
                     val source = FileTestSource(testsDir)
                     testRepository.swapSource(source)
                     
+                    if (questionBankRepository != null) {
+                        val bankDir = File(ctx.filesDir, TEST_BANK_DIR)
+                        val bankSource = FileQuestionBankSource(bankDir)
+                        questionBankRepository.import(bankSource.readQuestions()) // Reload from source
+                    }
+
                     // Seed the demo test once pathologies are loaded if no tests exist
                     viewModelScope.launch {
                         dataState.collect { state ->
@@ -255,6 +266,11 @@ class AppViewModel(
                                 if (pathologyIds.isNotEmpty()) {
                                     val demoTest = TestSeed.sample(pathologyIds)
                                     testRepository.writeTest(demoTest)
+                                    
+                                    // Also seed the bank from the demo test questions
+                                    questionBankRepository?.import(demoTest.questions)
+                                    // Seed themes if missing
+                                    testThemeStore?.readThemes()
                                 }
                             }
                         }
@@ -662,6 +678,15 @@ class AppViewModel(
 
         /** Subdirectory under `filesDir` where the tests live. */
         const val TESTS_DIR: String = "tests"
+
+        /** Subdirectory under `filesDir` where the question bank lives. */
+        const val TEST_BANK_DIR: String = "tests/bank"
+
+        /** Subdirectory under `filesDir` where test images live. */
+        const val TEST_IMAGES_DIR: String = "tests/images"
+
+        /** Subdirectory under `filesDir` where exam results live. */
+        const val TEST_RESULTS_DIR: String = "tests/results"
 
         /** Virtual course ID representing the unfiltered list of all rhythms. */
         const val ALL_RHYTHMS_ID: String = "all_rhythms"

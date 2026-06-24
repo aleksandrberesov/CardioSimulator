@@ -153,7 +153,9 @@ fun MainScreen(appViewModel: AppViewModel) {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return ExaminationViewModel(
-                    resultStore = appViewModel.examResultStore!!
+                    resultStore = appViewModel.examResultStore!!,
+                    bankRepository = appViewModel.questionBankRepository,
+                    appContext = appViewModel.appContext
                 ) as T
             }
         }
@@ -165,7 +167,9 @@ fun MainScreen(appViewModel: AppViewModel) {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return TestConstructorViewModel(
-                    repository = appViewModel.testRepository!!
+                    repository = appViewModel.testRepository!!,
+                    bankRepository = appViewModel.questionBankRepository!!,
+                    themeStore = appViewModel.testThemeStore!!
                 ) as T
             }
         }

@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -64,6 +65,10 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.webkit)
     implementation(libs.jsoup)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.nanohttpd)
+    implementation(libs.zxing.core)
+    implementation(libs.zxing.android.embedded)
     testImplementation(libs.junit)
     testImplementation(libs.org.json)
     androidTestImplementation(libs.androidx.junit)

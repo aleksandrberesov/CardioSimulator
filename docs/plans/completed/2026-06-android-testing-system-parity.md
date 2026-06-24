@@ -1,7 +1,7 @@
-# Plan: Port the Question Bank + Individual/Group test sessions to Android
+# Plan: Port the Question Bank + Individual/Group test sessions to Android [COMPLETE]
 
 **Created:** 2026-06-24
-**Status:** NOT STARTED
+**Status:** COMPLETE
 **Direction:** **Windows → Android** (reverse of the usual). These features were built in the WinUI 3
 port first; the Android app must now catch up. The Windows port is the **reference implementation** for
 behavior, data shapes, and visuals — match it feature-for-feature, adapting idioms to Kotlin/Compose.

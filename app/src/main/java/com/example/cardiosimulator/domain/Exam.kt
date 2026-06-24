@@ -1,7 +1,11 @@
 package com.example.cardiosimulator.domain
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class ExamStudentInfo(val fullName: String, val group: String)
 
+@Serializable
 data class ExamQuestionResult(
     val questionId: String,
     val selected: String?,
@@ -9,6 +13,7 @@ data class ExamQuestionResult(
     val isCorrect: Boolean
 )
 
+@Serializable
 data class ExamResult(
     val student: ExamStudentInfo,
     val testId: String,

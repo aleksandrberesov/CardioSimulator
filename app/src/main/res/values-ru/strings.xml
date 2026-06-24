@@ -149,6 +149,24 @@
     <string name="test_ctor_ecg">ЭКГ на мониторе</string>
     <string name="test_ctor_ecg_none">— нет —</string>
     <string name="test_ctor_tests_label">Тесты</string>
+    <string name="test_ctor_tab_test">Тест</string>
+    <string name="test_ctor_tab_bank">Банк вопросов</string>
+    <string name="test_ctor_bank_import">Импорт JSON</string>
+    <string name="test_ctor_bank_export">Экспорт JSON</string>
+    <string name="test_ctor_bank_themes">Темы</string>
+    <string name="test_ctor_add_from_bank">Добавить из банка</string>
+    <string name="test_ctor_to_bank">В банк</string>
+    <string name="test_ctor_stimulus_text">Текст</string>
+    <string name="test_ctor_stimulus_image">Фото</string>
+    <string name="test_ctor_stimulus_ecg">ЭКГ</string>
+    <string name="test_ctor_theme_label">Тема</string>
+    <string name="test_ctor_tags_label">Теги (через запятую)</string>
+    <string name="test_ctor_image_select">Выбрать фото</string>
+    <string name="test_ctor_search_hint">Поиск по тексту или тегам…</string>
+    <string name="test_ctor_manage_themes">Управление темами</string>
+    <string name="test_ctor_theme_new_hint">Новая тема…</string>
+    <string name="test_ctor_theme_delete_confirm">Удалить тему? Вопросы с этой темой останутся, но категория будет очищена.</string>
+    <string name="teaching_take_test">Пройти тестирование</string>
 
     <string name="exam_tab_exam">Экзамен</string>
     <string name="exam_tab_results">Результаты</string>

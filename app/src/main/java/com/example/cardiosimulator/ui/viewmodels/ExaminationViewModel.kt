@@ -1,17 +1,31 @@
 package com.example.cardiosimulator.ui.viewmodels
 
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
+import android.os.IBinder
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cardiosimulator.data.ExamResultStore
+import com.example.cardiosimulator.data.QuestionBankRepository
 import com.example.cardiosimulator.domain.*
+import com.example.cardiosimulator.domain.generators.TestGenerator
+import com.example.cardiosimulator.network.GroupTestServer
+import com.example.cardiosimulator.network.GroupTestService
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.File
 
-class ExaminationViewModel(private val resultStore: ExamResultStore) : ViewModel() {
+class ExaminationViewModel(
+    private val resultStore: ExamResultStore,
+    private val bankRepository: QuestionBankRepository? = null,
+    private val appContext: Context? = null
+) : ViewModel() {
 
     private val _activeTest = MutableStateFlow<Test?>(null)
     val activeTest: StateFlow<Test?> = _activeTest.asStateFlow()
@@ -33,7 +47,19 @@ class ExaminationViewModel(private val resultStore: ExamResultStore) : ViewModel
 
     private var timerJob: Job? = null
 
-    fun start(test: Test, student: ExamStudentInfo) {
+    // --- Individual Mode ---
+
+    fun startIndividual(test: Test, student: ExamStudentInfo) {
+        start(test, student)
+    }
+
+    fun generateAndStartIndividual(count: Int, theme: String?, student: ExamStudentInfo) {
+        val bank = bankRepository?.questions() ?: return
+        val test = TestGenerator.generate(bank, count, theme)
+        start(test, student)
+    }
+
+    private fun start(test: Test, student: ExamStudentInfo) {
         _activeTest.value = test
         _studentInfo.value = student
         _currentIndex.value = 0
@@ -84,13 +110,72 @@ class ExaminationViewModel(private val resultStore: ExamResultStore) : ViewModel
         timerJob?.cancel()
     }
 
-    fun reset() {
-        _activeTest.value = null
-        _studentInfo.value = null
-        _currentIndex.value = 0
-        _selections.value = emptyMap()
-        _lastResult.value = null
-        timerJob?.cancel()
+    // --- Group Mode ---
+
+    private var groupService: GroupTestService? = null
+    private val _isGroupSessionActive = MutableStateFlow(false)
+    val isGroupSessionActive: StateFlow<Boolean> = _isGroupSessionActive.asStateFlow()
+
+    private val _groupIp = MutableStateFlow<String?>(null)
+    val groupIp: StateFlow<String?> = _groupIp.asStateFlow()
+
+    private val _participants = MutableStateFlow<List<GroupTestServer.Participant>>(emptyList())
+    val participants: StateFlow<List<GroupTestServer.Participant>> = _participants.asStateFlow()
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as GroupTestService.LocalBinder
+            groupService = binder.getService()
+        }
+        override fun onServiceDisconnected(name: ComponentName?) {
+            groupService = null
+        }
+    }
+
+    init {
+        appContext?.let {
+            val intent = Intent(it, GroupTestService::class.java)
+            it.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+        }
+        viewModelScope.launch {
+            while (true) {
+                delay(2000)
+                groupService?.let {
+                    _participants.value = it.getParticipants()
+                }
+            }
+        }
+    }
+
+    override fun onCleared() {
+        appContext?.unbindService(serviceConnection)
+        super.onCleared()
+    }
+
+    fun startGroupSession(count: Int, theme: String?) {
+        val bank = bankRepository?.questions() ?: return
+        val ctx = appContext ?: return
+        
+        _groupIp.value = GroupTestServer.getLocalIpAddress()
+        
+        groupService?.startServer(
+            port = 8080,
+            generateTest = { name, group -> TestGenerator.generate(bank, count, theme) },
+            resolveImage = { qid -> 
+                val q = bank.find { it.id == qid } ?: return@startServer null
+                q.imagePath?.let { path -> File(ctx.filesDir, "${AppViewModel.TEST_IMAGES_DIR}/$path") }
+            },
+            onResult = { result ->
+                resultStore.save(result)
+                refreshResults()
+            }
+        )
+        _isGroupSessionActive.value = true
+    }
+
+    fun stopGroupSession() {
+        groupService?.stopServer()
+        _isGroupSessionActive.value = false
     }
 
     // --- Results ---
@@ -104,4 +189,13 @@ class ExaminationViewModel(private val resultStore: ExamResultStore) : ViewModel
 
     val currentQuestion: TestQuestion?
         get() = _activeTest.value?.questions?.getOrNull(_currentIndex.value)
+
+    fun reset() {
+        _activeTest.value = null
+        _studentInfo.value = null
+        _currentIndex.value = 0
+        _selections.value = emptyMap()
+        _lastResult.value = null
+        timerJob?.cancel()
+    }
 }

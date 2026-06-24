@@ -13,8 +13,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.Points
+import androidx.compose.ui.platform.LocalContext
+import com.example.cardiosimulator.domain.QuestionStimulus
 import com.example.cardiosimulator.domain.Test
+import coil.compose.AsyncImage
 import com.example.cardiosimulator.ui.display.Lead as LeadView
+import java.io.File
 import com.example.cardiosimulator.ui.display.LeadsGrid
 import com.example.cardiosimulator.ui.display.Monitor
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
@@ -57,6 +61,7 @@ fun TestActiveView(
     val mode by monitorViewModel.monitorMode.collectAsState()
 
     val currentQuestion = viewModel.currentQuestion
+    val context = LocalContext.current
 
     LaunchedEffect(currentQuestion?.id) {
         val q = currentQuestion ?: return@LaunchedEffect
@@ -72,24 +77,35 @@ fun TestActiveView(
 
     Row(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.weight(3f).middleSectionLeft()) {
-            Monitor(
-                modifier = Modifier.fillMaxSize(),
-                monitorViewModel = monitorViewModel,
-            ) { rows, columns, xOffset, scheme ->
-                LeadsGrid(
-                    rows = rows,
-                    columns = columns,
-                    itemCount = mode.count,
-                    leadOrder = mode.leadOrder ?: com.example.cardiosimulator.ui.display.LEAD_ORDER
-                ) { _, lead ->
-                    val points = lead?.let { waveforms[it] } ?: Points(emptyList<Float>())
-                    LeadView(
-                        points = points,
-                        title = lead?.name ?: "",
-                        isRunning = mode.isRunning,
-                        xOffsetPx = xOffset,
-                        gridScheme = scheme,
-                    )
+            if (currentQuestion?.stimulus == QuestionStimulus.Image) {
+                AsyncImage(
+                    model = currentQuestion.imagePath?.let { path ->
+                        if (path.startsWith("/")) File(path)
+                        else File(context.filesDir, "${AppViewModel.TEST_IMAGES_DIR}/$path")
+                    },
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize().padding(16.dp)
+                )
+            } else {
+                Monitor(
+                    modifier = Modifier.fillMaxSize(),
+                    monitorViewModel = monitorViewModel,
+                ) { rows, columns, xOffset, scheme ->
+                    LeadsGrid(
+                        rows = rows,
+                        columns = columns,
+                        itemCount = mode.count,
+                        leadOrder = mode.leadOrder ?: com.example.cardiosimulator.ui.display.LEAD_ORDER
+                    ) { _, lead ->
+                        val points = lead?.let { waveforms[it] } ?: Points(emptyList<Float>())
+                        LeadView(
+                            points = points,
+                            title = lead?.name ?: "",
+                            isRunning = mode.isRunning,
+                            xOffsetPx = xOffset,
+                            gridScheme = scheme,
+                        )
+                    }
                 }
             }
         }
