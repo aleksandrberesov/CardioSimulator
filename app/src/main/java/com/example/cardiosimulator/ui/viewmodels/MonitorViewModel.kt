@@ -199,6 +199,34 @@ class MonitorViewModel(
         _monitorMode.update { it.copy(isRunning = isRunning) }
     }
 
+    fun setShowImpulseLabels(show: Boolean) {
+        _monitorMode.update { it.copy(showImpulseLabels = show) }
+    }
+
+    fun setArtifact(artifact: com.example.cardiosimulator.domain.EcgArtifact) {
+        _monitorMode.update { it.copy(artifact = artifact) }
+    }
+
+    fun setShowElectrodes(show: Boolean) {
+        _monitorMode.update { it.copy(showElectrodes = show) }
+    }
+
+    fun setShow3D(show: Boolean) {
+        _monitorMode.update { it.copy(show3D = show) }
+    }
+
+    fun setShowEos(show: Boolean) {
+        _monitorMode.update { it.copy(showEos = show) }
+    }
+
+    fun setShowTips(show: Boolean) {
+        _monitorMode.update { it.copy(showTips = show) }
+    }
+
+    fun setSelectedTipKind(kind: com.example.cardiosimulator.domain.TipOverlayKind) {
+        _monitorMode.update { it.copy(selectedTipKind = kind) }
+    }
+
     fun toggleCompareMode(defaultPathologyId: String? = null) {
         _monitorMode.update { prev ->
             val nextCompareMode = !prev.isCompareMode

@@ -230,6 +230,7 @@ private fun MonitorOverlay(
     val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
     val waveforms by rhythmViewModel.waveforms.collectAsState()
     val comparisonWaveforms by rhythmViewModel.comparisonWaveforms.collectAsState()
+    val significantPoints by rhythmViewModel.significantPoints.collectAsState()
     val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
     val mode by monitorViewModel.monitorMode.collectAsState()
     val isDrawerFixed by appViewModel.isDrawerFixed.collectAsState()
@@ -238,6 +239,23 @@ private fun MonitorOverlay(
     var editingPaneIndex by remember { mutableStateOf<Int?>(null) }
     var showPresetsDialog by remember { mutableStateOf(false) }
     var showSavePresetDialog by remember { mutableStateOf(false) }
+
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        onDispose {
+            monitorViewModel.setShowElectrodes(false)
+            monitorViewModel.setShow3D(false)
+            monitorViewModel.setShowEos(false)
+            monitorViewModel.setShowTips(false)
+        }
+    }
+
+    if (mode.showElectrodes) {
+        com.example.cardiosimulator.ui.components.ElectrodesDialog(onDismiss = { monitorViewModel.setShowElectrodes(false) })
+    }
+
+    if (mode.show3D) {
+        com.example.cardiosimulator.ui.components.Heart3DDialog(onDismiss = { monitorViewModel.setShow3D(false) })
+    }
 
     LaunchedEffect(mode.comparisonTargets) {
         mode.comparisonTargets.forEach { (index, target) ->
@@ -365,66 +383,87 @@ private fun MonitorOverlay(
                         }
                     }
 
-                    Monitor(
-                        modifier = Modifier.weight(1f).padding(
-                            top = 8.dp,
-                            start = 0.dp
-                        ),
-                        monitorViewModel = monitorViewModel,
-                    ) { rows, columns, xOffset, scheme ->
-                        LeadsGrid(
-                            rows = rows,
-                            columns = columns,
-                            itemCount = mode.count,
-                        ) { index, lead ->
-                            if (mode.isCompareMode && !mode.comparisonTargets.containsKey(index)) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(8.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(Color.LightGray.copy(alpha = 0.5f))
-                                        .clickable { editingPaneIndex = index },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.monitor_compare_placeholder),
-                                        textAlign = TextAlign.Center,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = Color.DarkGray
+                    Box(modifier = Modifier.weight(1f)) {
+                        Monitor(
+                            modifier = Modifier.fillMaxSize().padding(
+                                top = 8.dp,
+                                start = 0.dp
+                            ),
+                            monitorViewModel = monitorViewModel,
+                        ) { rows, columns, xOffset, scheme ->
+                            LeadsGrid(
+                                rows = rows,
+                                columns = columns,
+                                itemCount = mode.count,
+                            ) { index, lead ->
+                                // ... (already updated LeadView call)
+                                if (mode.isCompareMode && !mode.comparisonTargets.containsKey(index)) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(8.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(Color.LightGray.copy(alpha = 0.5f))
+                                            .clickable { editingPaneIndex = index },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.monitor_compare_placeholder),
+                                            textAlign = TextAlign.Center,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = Color.DarkGray
+                                        )
+                                    }
+                                } else {
+                                    val (displayPoints, displayTitle) = if (mode.isCompareMode) {
+                                        val target = mode.comparisonTargets[index]
+                                        val points = comparisonWaveforms[index] ?: Points(emptyList())
+                                        val title = if (target != null) {
+                                            val pathology = rhythms.find { it.id == target.pathologyId }
+                                            val pathTitle = if (selectedLanguage == Language.RU) pathology?.nameRu ?: pathology?.titleEn else pathology?.titleEn
+                                            "${pathTitle ?: "???"} (${target.lead.name})"
+                                        } else {
+                                            ""
+                                        }
+                                        points to title
+                                    } else {
+                                        val points = lead?.let { waveforms[it] }
+                                            ?.takeIf { it.values.size >= 2 }
+                                            ?: Points(emptyList<Float>())
+                                        points to (lead?.name ?: "")
+                                    }
+
+                                    LeadView(
+                                        points = displayPoints,
+                                        title = displayTitle,
+                                        isRunning = mode.isRunning,
+                                        xOffsetPx = xOffset,
+                                        gridScheme = scheme,
+                                        isCompareMode = mode.isCompareMode,
+                                        significantPoints = if (mode.isCompareMode) emptyList() else significantPoints,
+                                        showImpulseLabels = mode.showImpulseLabels,
+                                        modifier = if (mode.isCompareMode) {
+                                            Modifier.clickable { editingPaneIndex = index }
+                                        } else Modifier
                                     )
                                 }
-                            } else {
-                                val (displayPoints, displayTitle) = if (mode.isCompareMode) {
-                                    val target = mode.comparisonTargets[index]
-                                    val points = comparisonWaveforms[index] ?: Points(emptyList())
-                                    val title = if (target != null) {
-                                        val pathology = rhythms.find { it.id == target.pathologyId }
-                                        val pathTitle = if (selectedLanguage == Language.RU) pathology?.nameRu ?: pathology?.titleEn else pathology?.titleEn
-                                        "${pathTitle ?: "???"} (${target.lead.name})"
-                                    } else {
-                                        ""
-                                    }
-                                    points to title
-                                } else {
-                                    val points = lead?.let { waveforms[it] }
-                                        ?.takeIf { it.values.size >= 2 }
-                                        ?: Points(emptyList<Float>())
-                                    points to (lead?.name ?: "")
-                                }
-
-                                LeadView(
-                                    points = displayPoints,
-                                    title = displayTitle,
-                                    isRunning = mode.isRunning,
-                                    xOffsetPx = xOffset,
-                                    gridScheme = scheme,
-                                    isCompareMode = mode.isCompareMode,
-                                    modifier = if (mode.isCompareMode) {
-                                        Modifier.clickable { editingPaneIndex = index }
-                                    } else Modifier
-                                )
                             }
+                        }
+
+                        if (mode.showEos) {
+                            com.example.cardiosimulator.ui.components.EosOverlay(
+                                onClose = { monitorViewModel.setShowEos(false) },
+                                modifier = Modifier.align(Alignment.TopEnd)
+                            )
+                        }
+
+                        if (mode.showTips) {
+                            com.example.cardiosimulator.ui.components.TipsOverlay(
+                                selectedKind = mode.selectedTipKind,
+                                onKindSelected = { monitorViewModel.setSelectedTipKind(it) },
+                                onClose = { monitorViewModel.setShowTips(false) },
+                                modifier = Modifier.align(Alignment.TopEnd)
+                            )
                         }
                     }
                 }

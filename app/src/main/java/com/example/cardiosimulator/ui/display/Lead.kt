@@ -38,13 +38,15 @@ fun Lead(
     isRunning: Boolean = false,
     xOffsetPx: Float = 0f,
     gridScheme: GridScheme = GridScheme.Pink,
-    isCompareMode: Boolean = false
+    isCompareMode: Boolean = false,
+    significantPoints: List<com.example.cardiosimulator.domain.SignificantPoint> = emptyList(),
+    showImpulseLabels: Boolean = false
 ){
     Row(
         modifier = modifier.leadArea(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Calibration Symbol and Lead Name
+        // ... (existing code for Calibration Pulse and Title)
         Box(
             modifier = Modifier
                 .width(48.dp)
@@ -79,6 +81,14 @@ fun Lead(
                 externalXOffsetPx = xOffsetPx,
                 gridScheme = gridScheme
             )
+
+            if (showImpulseLabels && significantPoints.isNotEmpty()) {
+                com.example.cardiosimulator.ui.components.SignificantPointOverlay(
+                    points = points,
+                    significantPoints = significantPoints,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
 
             if (isCompareMode && title.isNotEmpty()) {
                 Text(

@@ -19,6 +19,25 @@ enum class SeriesScheme {
     Grid
 }
 
+enum class EcgArtifact {
+    None,
+    Muscle,
+    Mains,
+    Baseline,
+    Contact,
+    Motion
+}
+
+enum class TipOverlayKind {
+    Arrow,
+    LeadArea,
+    GraphArea,
+    EcgPart,
+    VerticalLines,
+    HorizontalLines,
+    Label
+}
+
 data class ComparisonTarget(
     val pathologyId: String,
     val lead: Lead
@@ -39,6 +58,13 @@ data class MonitorModeModel(
     val calibration: EcgCalibration = EcgCalibration(),
     val isRunning: Boolean = false,
     val isCompareMode: Boolean = false,
+    val showImpulseLabels: Boolean = false,
+    val artifact: EcgArtifact = EcgArtifact.None,
+    val showElectrodes: Boolean = false,
+    val show3D: Boolean = false,
+    val showEos: Boolean = false,
+    val showTips: Boolean = false,
+    val selectedTipKind: TipOverlayKind = TipOverlayKind.Arrow,
     val comparisonTargets: Map<Int, ComparisonTarget> = emptyMap(),
     val comparisonPresets: List<ComparisonPreset> = emptyList(),
     val leadOrder: List<Lead>? = null

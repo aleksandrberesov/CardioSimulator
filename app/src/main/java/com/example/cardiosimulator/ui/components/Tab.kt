@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -41,6 +42,7 @@ fun Tab(
     text: String? = null,
     subText: String? = null,
     icon: ImageVector? = null,
+    painter: Painter? = null,
     iconModifier: Modifier = Modifier,
     iconContentDescription: String? = null,
     borderWidth: Dp = 1.dp,
@@ -78,6 +80,12 @@ fun Tab(
                 imageVector = icon,
                 contentDescription = iconContentDescription ?: text,
                 tint = displayContentColor,
+                modifier = iconModifier.padding(4.dp)
+            )
+        } else if (painter != null) {
+            androidx.compose.foundation.Image(
+                painter = painter,
+                contentDescription = iconContentDescription ?: text,
                 modifier = iconModifier.padding(4.dp)
             )
         }

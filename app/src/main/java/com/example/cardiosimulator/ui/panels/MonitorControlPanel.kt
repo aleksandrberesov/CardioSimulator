@@ -53,6 +53,7 @@ fun MonitorControlPanel(
     onStartStopClick: (Boolean) -> Unit = {},
 ) {
     val monitorMode by viewModel.monitorMode.collectAsState()
+    // ... (rest of the code using viewModel.setShowElectrodes, etc.)
 
     Row(
         modifier = modifier
@@ -62,165 +63,210 @@ fun MonitorControlPanel(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(modifier = Modifier.weight(1f)) {
-            var countMenuExpanded by remember { mutableStateOf(false) }
-            Tab(
-                text = stringResource(R.string.monitor_count_format, monitorMode.count),
-                onClick = { countMenuExpanded = true },
-                modifier = Modifier.fillMaxWidth()
-            )
-            DropdownMenu(
-                expanded = countMenuExpanded,
-                onDismissRequest = { countMenuExpanded = false }
-            ) {
-                viewModel.availableSeriesCounts.forEach { count ->
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.monitor_count_format, count)) },
-                        onClick = {
-                            viewModel.setSeriesCount(count)
-                            countMenuExpanded = false
-                        }
-                    )
+        // Left section: Count, Scheme, Speed, Scale
+        Row(
+            modifier = Modifier.weight(4f),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Box(modifier = Modifier.weight(1f)) {
+                var countMenuExpanded by remember { mutableStateOf(false) }
+                Tab(
+                    text = stringResource(R.string.monitor_count_format, monitorMode.count),
+                    onClick = { countMenuExpanded = true },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                DropdownMenu(
+                    expanded = countMenuExpanded,
+                    onDismissRequest = { countMenuExpanded = false }
+                ) {
+                    viewModel.availableSeriesCounts.forEach { count ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.monitor_count_format, count)) },
+                            onClick = {
+                                viewModel.setSeriesCount(count)
+                                countMenuExpanded = false
+                            }
+                        )
+                    }
                 }
             }
-        }
 
-        Box(modifier = Modifier.weight(1f)) {
-            var schemeMenuExpanded by remember { mutableStateOf(false) }
-            Tab(
-                text = when (monitorMode.seriesScheme) {
-                    SeriesScheme.OneColumn -> stringResource(R.string.monitor_columns_one_short)
-                    SeriesScheme.TwoColumn -> stringResource(R.string.monitor_columns_two_short)
-                    SeriesScheme.ThreeByFour -> stringResource(R.string.monitor_columns_three_by_four_short)
-                    SeriesScheme.Grid -> stringResource(R.string.monitor_columns_grid_short)
-                },
-                onClick = { schemeMenuExpanded = true },
-                modifier = Modifier.fillMaxWidth()
-            )
-            DropdownMenu(
-                expanded = schemeMenuExpanded,
-                onDismissRequest = { schemeMenuExpanded = false }
-            ) {
-                viewModel.availableSeriesSchemes.forEach { scheme ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                when (scheme) {
-                                    SeriesScheme.OneColumn -> stringResource(R.string.monitor_columns_one)
-                                    SeriesScheme.TwoColumn -> stringResource(R.string.monitor_columns_two)
-                                    SeriesScheme.ThreeByFour -> stringResource(R.string.monitor_columns_three_by_four)
-                                    SeriesScheme.Grid -> stringResource(R.string.monitor_columns_grid)
-                                }
-                            )
-                        },
-                        onClick = {
-                            viewModel.setSeriesScheme(scheme)
-                            schemeMenuExpanded = false
-                        }
-                    )
+            Box(modifier = Modifier.weight(1f)) {
+                var schemeMenuExpanded by remember { mutableStateOf(false) }
+                Tab(
+                    text = when (monitorMode.seriesScheme) {
+                        com.example.cardiosimulator.domain.SeriesScheme.OneColumn -> stringResource(R.string.monitor_columns_one_short)
+                        com.example.cardiosimulator.domain.SeriesScheme.TwoColumn -> stringResource(R.string.monitor_columns_two_short)
+                        com.example.cardiosimulator.domain.SeriesScheme.ThreeByFour -> stringResource(R.string.monitor_columns_three_by_four_short)
+                        com.example.cardiosimulator.domain.SeriesScheme.Grid -> stringResource(R.string.monitor_columns_grid_short)
+                    },
+                    onClick = { schemeMenuExpanded = true },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                DropdownMenu(
+                    expanded = schemeMenuExpanded,
+                    onDismissRequest = { schemeMenuExpanded = false }
+                ) {
+                    viewModel.availableSeriesSchemes.forEach { scheme ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    when (scheme) {
+                                        com.example.cardiosimulator.domain.SeriesScheme.OneColumn -> stringResource(R.string.monitor_columns_one)
+                                        com.example.cardiosimulator.domain.SeriesScheme.TwoColumn -> stringResource(R.string.monitor_columns_two)
+                                        com.example.cardiosimulator.domain.SeriesScheme.ThreeByFour -> stringResource(R.string.monitor_columns_three_by_four)
+                                        com.example.cardiosimulator.domain.SeriesScheme.Grid -> stringResource(R.string.monitor_columns_grid)
+                                    }
+                                )
+                            },
+                            onClick = {
+                                viewModel.setSeriesScheme(scheme)
+                                schemeMenuExpanded = false
+                            }
+                        )
+                    }
                 }
             }
-        }
 
-        Box(modifier = Modifier.weight(1f)) {
-            var speedMenuExpanded by remember { mutableStateOf(false) }
-            val formattedSpeed = if (monitorMode.speed % 1 == 0f) monitorMode.speed.toInt().toString() else monitorMode.speed.toString()
-            Tab(
-                text = formattedSpeed,
-                subText = stringResource(R.string.monitor_speed_unit),
-                onClick = { speedMenuExpanded = true },
-                modifier = Modifier.fillMaxWidth()
-            )
-            DropdownMenu(
-                expanded = speedMenuExpanded,
-                onDismissRequest = { speedMenuExpanded = false }
-            ) {
-                viewModel.availableSpeeds.forEach { speed ->
-                    val displaySpeed = if (speed % 1 == 0f) speed.toInt().toString() else speed.toString()
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.monitor_speed_format, displaySpeed)) },
-                        onClick = {
-                            viewModel.setSpeed(speed)
-                            speedMenuExpanded = false
-                        }
-                    )
+            Box(modifier = Modifier.weight(1f)) {
+                var speedMenuExpanded by remember { mutableStateOf(false) }
+                val formattedSpeed = if (monitorMode.speed % 1 == 0f) monitorMode.speed.toInt().toString() else monitorMode.speed.toString()
+                Tab(
+                    text = formattedSpeed,
+                    subText = stringResource(R.string.monitor_speed_unit),
+                    onClick = { speedMenuExpanded = true },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                DropdownMenu(
+                    expanded = speedMenuExpanded,
+                    onDismissRequest = { speedMenuExpanded = false }
+                ) {
+                    viewModel.availableSpeeds.forEach { speed ->
+                        val displaySpeed = if (speed % 1 == 0f) speed.toInt().toString() else speed.toString()
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.monitor_speed_format, displaySpeed)) },
+                            onClick = {
+                                viewModel.setSpeed(speed)
+                                speedMenuExpanded = false
+                            }
+                        )
+                    }
                 }
             }
-        }
 
-        Box(modifier = Modifier.weight(1f)) {
-            var scaleMenuExpanded by remember { mutableStateOf(false) }
-            Tab(
-                text = "${(monitorMode.scale * 100).toInt()}%",
-                onClick = { scaleMenuExpanded = true },
-                modifier = Modifier.fillMaxWidth()
-            )
-            DropdownMenu(
-                expanded = scaleMenuExpanded,
-                onDismissRequest = { scaleMenuExpanded = false }
-            ) {
-                viewModel.availableScales.forEach { scaleOption ->
-                    DropdownMenuItem(
-                        text = { Text("${(scaleOption * 100).toInt()}%") },
-                        onClick = {
-                            viewModel.setScale(scaleOption)
-                            scaleMenuExpanded = false
-                        }
-                    )
+            Box(modifier = Modifier.weight(1f)) {
+                var scaleMenuExpanded by remember { mutableStateOf(false) }
+                Tab(
+                    text = "${(monitorMode.scale * 100).toInt()}%",
+                    onClick = { scaleMenuExpanded = true },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                DropdownMenu(
+                    expanded = scaleMenuExpanded,
+                    onDismissRequest = { scaleMenuExpanded = false }
+                ) {
+                    viewModel.availableScales.forEach { scaleOption ->
+                        DropdownMenuItem(
+                            text = { Text("${(scaleOption * 100).toInt()}%") },
+                            onClick = {
+                                viewModel.setScale(scaleOption)
+                                scaleMenuExpanded = false
+                            }
+                        )
+                    }
                 }
             }
         }
 
         ControlPanelDivider()
 
-        Tab(
-            text = stringResource(R.string.monitor_electrodes),
-            onClick = { },
-            enabled = false,
-            modifier = Modifier.weight(1.5f)
-        )
-        Tab(
-            text = stringResource(R.string.monitor_emd_ebpa),
-            onClick = { },
-            enabled = false,
-            modifier = Modifier.weight(1.5f)
-        )
-        Tab(
-            text = stringResource(R.string.monitor_muscle),
-            onClick = { },
-            enabled = false,
-            modifier = Modifier.weight(1.5f)
-        )
+        // Middle-left section: Electrodes, Artifacts, 3D
+        Row(
+            modifier = Modifier.weight(3.5f),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Tab(
+                text = stringResource(R.string.monitor_electrodes),
+                onClick = { viewModel.setShowElectrodes(!monitorMode.showElectrodes) },
+                backgroundColor = if (monitorMode.showElectrodes) Color.Blue else Color.Transparent,
+                contentColor = if (monitorMode.showElectrodes) Color.White else Color.Black,
+                modifier = Modifier.weight(1f)
+            )
+
+            Box(modifier = Modifier.weight(1.5f)) {
+                // ... (artifacts dropdown)
+                var artifactsMenuExpanded by remember { mutableStateOf(false) }
+                Tab(
+                    text = stringResource(R.string.monitor_artifacts),
+                    subText = "▾",
+                    onClick = { artifactsMenuExpanded = true },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                DropdownMenu(
+                    expanded = artifactsMenuExpanded,
+                    onDismissRequest = { artifactsMenuExpanded = false }
+                ) {
+                    com.example.cardiosimulator.domain.EcgArtifact.entries.forEach { artifact ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    when (artifact) {
+                                        com.example.cardiosimulator.domain.EcgArtifact.None -> stringResource(R.string.monitor_artifact_none)
+                                        com.example.cardiosimulator.domain.EcgArtifact.Muscle -> stringResource(R.string.monitor_artifact_muscle)
+                                        com.example.cardiosimulator.domain.EcgArtifact.Mains -> stringResource(R.string.monitor_artifact_mains)
+                                        com.example.cardiosimulator.domain.EcgArtifact.Baseline -> stringResource(R.string.monitor_artifact_baseline)
+                                        com.example.cardiosimulator.domain.EcgArtifact.Contact -> stringResource(R.string.monitor_artifact_contact)
+                                        com.example.cardiosimulator.domain.EcgArtifact.Motion -> stringResource(R.string.monitor_artifact_motion)
+                                    }
+                                )
+                            },
+                            onClick = {
+                                viewModel.setArtifact(artifact)
+                                artifactsMenuExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            Tab(
+                text = "3D",
+                painter = androidx.compose.ui.res.painterResource(R.drawable.heart_3d),
+                onClick = { viewModel.setShow3D(!monitorMode.show3D) },
+                backgroundColor = if (monitorMode.show3D) Color.Blue else Color.Transparent,
+                contentColor = if (monitorMode.show3D) Color.White else Color.Black,
+                modifier = Modifier.weight(1f)
+            )
+        }
 
         ControlPanelDivider()
 
-        Label(
-            text = stringResource(R.string.monitor_eos),
-            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-            color = androidx.compose.ui.graphics.Color.Red,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            fontSize = 20.sp,
-            borderWidth = 1.dp,
-            borderColor = androidx.compose.ui.graphics.Color.Black,
-            cornerRadius = 4.dp,
-            modifier = Modifier.weight(1f)
-        )
-        Label(
-            text = stringResource(R.string.monitor_hr_format, 160),
-            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-            color = androidx.compose.ui.graphics.Color.White,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            backgroundColor = androidx.compose.ui.graphics.Color.Black,
-            fontSize = 20.sp,
-            cornerRadius = 4.dp,
-            modifier = Modifier.weight(1f)
-        )
-        Tab(
-            text = stringResource(R.string.monitor_tips),
-            onClick = onTipsClick,
-            enabled = false,
-            modifier = Modifier.weight(1f)
-        )
+        // Middle-right section: pQRSt, EOS, Tips
+        Row(
+            modifier = Modifier.weight(3f),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Tab(
+                text = "pQRSt",
+                onClick = { viewModel.setShowImpulseLabels(!monitorMode.showImpulseLabels) },
+                backgroundColor = if (monitorMode.showImpulseLabels) Color.Blue else Color.Transparent,
+                contentColor = if (monitorMode.showImpulseLabels) Color.White else Color.Black,
+                modifier = Modifier.weight(1f)
+            )
+            Tab(
+                text = stringResource(R.string.monitor_eos),
+                contentColor = Color.Red,
+                onClick = { viewModel.setShowEos(!monitorMode.showEos) },
+                backgroundColor = if (monitorMode.showEos) Color.Blue.copy(alpha = 0.1f) else Color.Transparent,
+                modifier = Modifier.weight(1f)
+            )
+            Tab(
+                text = stringResource(R.string.monitor_tips),
+                onClick = { viewModel.setShowTips(!monitorMode.showTips) },
+                backgroundColor = if (monitorMode.showTips) Color.Blue.copy(alpha = 0.1f) else Color.Transparent,
+                modifier = Modifier.weight(1f)
+            )
+        }
 
         if (viewModel.mode == OperatingMode.Teaching) {
             Tab(
@@ -234,24 +280,29 @@ fun MonitorControlPanel(
 
         ControlPanelDivider()
 
-        Tab(
-            icon = Icons.Default.Straighten,
-            iconModifier = Modifier.rotate(-45f),
-            iconContentDescription = stringResource(R.string.cd_ruler),
-            onClick = onRulerClick,
-            enabled = false,
-            modifier = Modifier.weight(0.8f)
-        )
-        Tab(
-            icon = if (monitorMode.isRunning) Icons.Default.Stop else Icons.Default.PlayArrow,
-            iconContentDescription = if (monitorMode.isRunning) stringResource(R.string.cd_stop) else stringResource(R.string.cd_start),
-            onClick = {
-                val newState = !monitorMode.isRunning
-                viewModel.setIsRunning(newState)
-                onStartStopClick(newState)
-            },
-            modifier = Modifier.weight(0.8f)
-        )
+        // Right section: Ruler, Start/Stop
+        Row(
+            modifier = Modifier.weight(1.6f),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Tab(
+                icon = Icons.Default.Straighten,
+                iconModifier = Modifier.rotate(-45f),
+                iconContentDescription = stringResource(R.string.cd_ruler),
+                onClick = onRulerClick,
+                modifier = Modifier.weight(1f)
+            )
+            Tab(
+                icon = if (monitorMode.isRunning) Icons.Default.Stop else Icons.Default.PlayArrow,
+                iconContentDescription = if (monitorMode.isRunning) stringResource(R.string.cd_stop) else stringResource(R.string.cd_start),
+                onClick = {
+                    val newState = !monitorMode.isRunning
+                    viewModel.setIsRunning(newState)
+                    onStartStopClick(newState)
+                },
+                modifier = Modifier.weight(1f)
+            )
+        }
     }
 }
 
