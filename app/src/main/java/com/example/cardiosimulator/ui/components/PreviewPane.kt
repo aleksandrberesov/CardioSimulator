@@ -19,6 +19,7 @@ import com.example.cardiosimulator.data.PixelScale
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.GridScheme
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
+import com.example.cardiosimulator.ui.theme.EcgTraceTeal
 import kotlinx.coroutines.isActive
 import kotlin.math.max
 
@@ -31,7 +32,7 @@ import kotlin.math.max
 fun PreviewPane(
     points: Points,
     modifier: Modifier = Modifier,
-    color: Color = Color.Black,
+    color: Color = EcgTraceTeal,
     isRunning: Boolean = true,
     externalXOffsetPx: Float? = null,
     gridScheme: GridScheme = GridScheme.Pink,

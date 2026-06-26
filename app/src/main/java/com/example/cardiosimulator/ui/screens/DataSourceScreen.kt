@@ -3,31 +3,12 @@ package com.example.cardiosimulator.ui.screens
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -45,17 +26,11 @@ import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.ui.panels.CourseSelector
 import com.example.cardiosimulator.ui.panels.RhythmSelector
-import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
+import com.example.cardiosimulator.ui.theme.*
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.DataState
 import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
-/**
- * First-run screen shown when no Pathologies.zip has been picked yet, or
- * when the previously picked file is no longer usable. Launches the
- * system OPEN_DOCUMENT chooser, takes a persistable read permission for
- * the resulting URI, and hands it to the view model to extract and load.
- */
 @Composable
 fun DataSourceScreen(
     appViewModel: AppViewModel,
@@ -102,6 +77,7 @@ fun DataSourceScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(PageBackground)
             .systemBarsPadding()
     ) {
         Column(
@@ -115,11 +91,11 @@ fun DataSourceScreen(
             Text(
                 text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary
             )
             Spacer(Modifier.height(32.dp))
 
-            // --- ECG DATA SECTION ---
             DataSourceSection(
                 title = stringResource(R.string.data_source_title),
                 description = stringResource(R.string.data_source_description),
@@ -130,10 +106,9 @@ fun DataSourceScreen(
             )
 
             Spacer(Modifier.height(24.dp))
-            HorizontalDivider(modifier = Modifier.fillMaxWidth(0.8f))
+            HorizontalDivider(modifier = Modifier.fillMaxWidth(0.8f), color = Hairline)
             Spacer(Modifier.height(24.dp))
 
-            // --- COURSE DATA SECTION ---
             DataSourceSection(
                 title = stringResource(R.string.course_data_source_title),
                 description = stringResource(R.string.course_data_source_description),
@@ -214,6 +189,7 @@ private fun DataSourceSection(
         Text(
             text = title,
             style = MaterialTheme.typography.headlineSmall,
+            color = TextPrimary
         )
         Spacer(Modifier.height(12.dp))
         Text(
@@ -221,6 +197,7 @@ private fun DataSourceSection(
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(0.8f),
+            color = TextSecondary
         )
         Spacer(Modifier.height(24.dp))
 
@@ -228,7 +205,7 @@ private fun DataSourceSection(
             is DataState.Loading -> {
                 CircularProgressIndicator()
                 Spacer(Modifier.height(8.dp))
-                Text(stringResource(R.string.data_source_loading))
+                Text(stringResource(R.string.data_source_loading), color = TextPrimary)
             }
             is DataState.Error -> {
                 val msg = when (state.reason) {
@@ -246,7 +223,7 @@ private fun DataSourceSection(
                 }
             }
             is DataState.Ready -> {
-                Text(text = readyText(state.pathologyCount))
+                Text(text = readyText(state.pathologyCount), color = TextPrimary)
                 Spacer(Modifier.height(16.dp))
                 if (onShowDetails != null) {
                     Button(

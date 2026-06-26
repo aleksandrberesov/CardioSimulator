@@ -12,13 +12,15 @@ import com.example.cardiosimulator.data.LocalPixelScale
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.ui.draw.drawWithCache
 
+import com.example.cardiosimulator.ui.theme.EcgTraceTeal
+
 /**
  * A standard ECG calibration pulse: 1 mV tall, 200 ms wide.
  */
 @Composable
 fun CalibrationPulse(
     modifier: Modifier = Modifier,
-    color: Color = Color.Black,
+    color: Color = EcgTraceTeal,
     strokeWidthDp: Float = 1.5f,
 ) {
     val scale = LocalPixelScale.current

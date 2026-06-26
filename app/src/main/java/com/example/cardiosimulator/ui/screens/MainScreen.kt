@@ -1,21 +1,15 @@
 package com.example.cardiosimulator.ui.screens
+
 import android.annotation.SuppressLint
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -24,25 +18,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
-import com.example.cardiosimulator.ui.panels.BottomControlPanel
-import com.example.cardiosimulator.ui.panels.ConstructorControlPanel
-import com.example.cardiosimulator.ui.panels.CourseConstructorControlPanel
-import com.example.cardiosimulator.ui.panels.MonitorControlPanel
-import com.example.cardiosimulator.ui.panels.OskeConstructorControlPanel
-import com.example.cardiosimulator.ui.panels.TopControlPanel
-import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
-import com.example.cardiosimulator.ui.viewmodels.AppViewModel
-import com.example.cardiosimulator.ui.viewmodels.DataState
-import com.example.cardiosimulator.ui.viewmodels.ConstructorViewModel
-import com.example.cardiosimulator.ui.viewmodels.CourseConstructorViewModel
-import com.example.cardiosimulator.ui.viewmodels.CourseViewerViewModel
-import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
-import com.example.cardiosimulator.ui.viewmodels.OskeViewModel
-import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
-import com.example.cardiosimulator.ui.viewmodels.TestViewModel
-import com.example.cardiosimulator.ui.viewmodels.ExaminationViewModel
-import com.example.cardiosimulator.ui.viewmodels.TestConstructorViewModel
-import com.example.cardiosimulator.ui.screens.TestConstructorScreen
+import com.example.cardiosimulator.ui.panels.*
+import com.example.cardiosimulator.ui.theme.*
+import com.example.cardiosimulator.ui.viewmodels.*
 
 @Composable
 fun MainScreen(appViewModel: AppViewModel) {
@@ -199,7 +177,7 @@ fun MainScreen(appViewModel: AppViewModel) {
         )
     }
 
-    Column(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
+    Column(modifier = Modifier.fillMaxSize().background(PageBackground).systemBarsPadding()) {
         Box(
             modifier = Modifier.weight(2f).topSection(),
             contentAlignment = Alignment.Center
@@ -220,7 +198,15 @@ fun MainScreen(appViewModel: AppViewModel) {
                 }
             )
         }
-        Box(modifier = Modifier.weight(15f).fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .weight(15f)
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 4.dp)
+                .background(PanelBackground, RoundedCornerShape(16.dp))
+                .border(1.dp, ControlBorder, RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(16.dp))
+        ) {
             when (selectedMode.id) {
                 OperatingMode.Teaching -> TeachingScreen(
                     appViewModel = appViewModel,
@@ -284,7 +270,7 @@ fun MainScreen(appViewModel: AppViewModel) {
                     OperatingMode.Teaching -> {
                         val appSelectedCourseId by appViewModel.selectedCourseId.collectAsState()
                         val showMonitorOverlay by appViewModel.showMonitorOverlay.collectAsState()
-                        val isAllRhythms = appSelectedCourseId == com.example.cardiosimulator.ui.viewmodels.AppViewModel.ALL_RHYTHMS_ID || appSelectedCourseId == null
+                        val isAllRhythms = appSelectedCourseId == AppViewModel.ALL_RHYTHMS_ID || appSelectedCourseId == null
                         if (isAllRhythms || showMonitorOverlay) {
                             MonitorControlPanel(
                                 viewModel = monitorViewModel,

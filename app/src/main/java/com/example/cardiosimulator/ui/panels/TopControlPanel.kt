@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Surface
@@ -60,31 +61,32 @@ fun TopControlPanel(
 
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = Color.White,
+        color = Color.Transparent,
         tonalElevation = 0.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()
-                .padding(horizontal = 0.dp),
+                .padding(horizontal = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight()
-                    .padding(0.dp),
+                    .fillMaxHeight(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
-                    modifier = Modifier.width(300.dp).fillMaxHeight()
+                    modifier = Modifier.wrapContentWidth().fillMaxHeight()
                 ) {
                     Tab(
                         text = stringResource(selectedOperatingMode.id.titleRes),
-                        onClick = { expanded = true }
+                        showChevron = true,
+                        onClick = { expanded = true },
+                        modifier = Modifier.padding(vertical = 4.dp)
                     )
                     DropdownMenu(
                         expanded = expanded,

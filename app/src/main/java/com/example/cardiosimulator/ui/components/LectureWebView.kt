@@ -136,11 +136,13 @@ fun LectureWebView(
             }
         },
         update = { web ->
+            // Defensive guard: if the view is being torn down, bail.
+            if (web.handler == null) return@AndroidView
+            
             web.setBackgroundColor(bgArgb)
             val current = html
             // Avoid redundant reloads (and flicker) when recomposition leaves the HTML unchanged.
             if (current != null && web.tag != current) {
-                web.tag = current
                 web.loadDataWithBaseURL(
                     "$ASSET_DOMAIN/course/${lecture.courseId}/",
                     current,
@@ -148,6 +150,8 @@ fun LectureWebView(
                     "utf-8",
                     null,
                 )
+                // Commit the cache ONLY after a successful call (mirroring Windows fix)
+                web.tag = current
             } else if (current != null && scrollToBlockId != null) {
                 // If the content didn't change but the scroll ID did, scroll now.
                 web.evaluateJavascript("document.getElementById('$scrollToBlockId')?.scrollIntoView({behavior: 'auto'})", null)

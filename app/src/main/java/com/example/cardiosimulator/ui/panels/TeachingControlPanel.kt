@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
@@ -69,8 +70,9 @@ fun TeachingControlPanel(
         Box {
             Tab(
                 text = selectedLabel,
+                showChevron = true,
                 onClick = { if (courses.isNotEmpty()) courseExpanded = true },
-                modifier = Modifier.padding(horizontal = 4.dp).width(200.dp)
+                modifier = Modifier.padding(horizontal = 4.dp).wrapContentWidth()
             )
             if (courses.isNotEmpty()) {
                 DropdownMenu(
@@ -101,8 +103,9 @@ fun TeachingControlPanel(
             Box {
                 Tab(
                     text = rhythmLabel,
+                    showChevron = true,
                     onClick = { if (rhythms.isNotEmpty()) rhythmExpanded = true },
-                    modifier = Modifier.padding(horizontal = 4.dp).width(200.dp)
+                    modifier = Modifier.padding(horizontal = 4.dp).wrapContentWidth()
                 )
                 if (rhythms.isNotEmpty()) {
                     DropdownMenu(
@@ -130,8 +133,9 @@ fun TeachingControlPanel(
             Box {
                 Tab(
                     text = lectureLabel,
+                    showChevron = true,
                     onClick = { if (lectures.isNotEmpty()) lectureExpanded = true },
-                    modifier = Modifier.padding(horizontal = 4.dp).width(200.dp)
+                    modifier = Modifier.padding(horizontal = 4.dp).wrapContentWidth()
                 )
                 if (lectures.isNotEmpty()) {
                     DropdownMenu(

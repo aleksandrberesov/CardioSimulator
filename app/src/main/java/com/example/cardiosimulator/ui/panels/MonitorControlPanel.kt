@@ -72,6 +72,7 @@ fun MonitorControlPanel(
                 var countMenuExpanded by remember { mutableStateOf(false) }
                 Tab(
                     text = stringResource(R.string.monitor_count_format, monitorMode.count),
+                    showChevron = true,
                     onClick = { countMenuExpanded = true },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -100,6 +101,7 @@ fun MonitorControlPanel(
                         com.example.cardiosimulator.domain.SeriesScheme.ThreeByFour -> stringResource(R.string.monitor_columns_three_by_four_short)
                         com.example.cardiosimulator.domain.SeriesScheme.Grid -> stringResource(R.string.monitor_columns_grid_short)
                     },
+                    showChevron = true,
                     onClick = { schemeMenuExpanded = true },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -134,6 +136,7 @@ fun MonitorControlPanel(
                 Tab(
                     text = formattedSpeed,
                     subText = stringResource(R.string.monitor_speed_unit),
+                    showChevron = true,
                     onClick = { speedMenuExpanded = true },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -158,6 +161,7 @@ fun MonitorControlPanel(
                 var scaleMenuExpanded by remember { mutableStateOf(false) }
                 Tab(
                     text = "${(monitorMode.scale * 100).toInt()}%",
+                    showChevron = true,
                     onClick = { scaleMenuExpanded = true },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -188,8 +192,7 @@ fun MonitorControlPanel(
             Tab(
                 text = stringResource(R.string.monitor_electrodes),
                 onClick = { viewModel.setShowElectrodes(!monitorMode.showElectrodes) },
-                backgroundColor = if (monitorMode.showElectrodes) Color.Blue else Color.Transparent,
-                contentColor = if (monitorMode.showElectrodes) Color.White else Color.Black,
+                isActive = monitorMode.showElectrodes,
                 modifier = Modifier.weight(1f)
             )
 
@@ -198,7 +201,7 @@ fun MonitorControlPanel(
                 var artifactsMenuExpanded by remember { mutableStateOf(false) }
                 Tab(
                     text = stringResource(R.string.monitor_artifacts),
-                    subText = "▾",
+                    showChevron = true,
                     onClick = { artifactsMenuExpanded = true },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -233,8 +236,7 @@ fun MonitorControlPanel(
                 text = "3D",
                 painter = androidx.compose.ui.res.painterResource(R.drawable.heart_3d),
                 onClick = { viewModel.setShow3D(!monitorMode.show3D) },
-                backgroundColor = if (monitorMode.show3D) Color.Blue else Color.Transparent,
-                contentColor = if (monitorMode.show3D) Color.White else Color.Black,
+                isActive = monitorMode.show3D,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -249,21 +251,20 @@ fun MonitorControlPanel(
             Tab(
                 text = "pQRSt",
                 onClick = { viewModel.setShowImpulseLabels(!monitorMode.showImpulseLabels) },
-                backgroundColor = if (monitorMode.showImpulseLabels) Color.Blue else Color.Transparent,
-                contentColor = if (monitorMode.showImpulseLabels) Color.White else Color.Black,
+                isActive = monitorMode.showImpulseLabels,
                 modifier = Modifier.weight(1f)
             )
             Tab(
                 text = stringResource(R.string.monitor_eos),
                 contentColor = Color.Red,
                 onClick = { viewModel.setShowEos(!monitorMode.showEos) },
-                backgroundColor = if (monitorMode.showEos) Color.Blue.copy(alpha = 0.1f) else Color.Transparent,
+                isActive = monitorMode.showEos,
                 modifier = Modifier.weight(1f)
             )
             Tab(
                 text = stringResource(R.string.monitor_tips),
                 onClick = { viewModel.setShowTips(!monitorMode.showTips) },
-                backgroundColor = if (monitorMode.showTips) Color.Blue.copy(alpha = 0.1f) else Color.Transparent,
+                isActive = monitorMode.showTips,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -273,8 +274,7 @@ fun MonitorControlPanel(
                 text = stringResource(R.string.monitor_compare),
                 onClick = onCompareClick,
                 modifier = Modifier.weight(1f),
-                backgroundColor = if (monitorMode.isCompareMode) Color.Blue else Color.Transparent,
-                contentColor = if (monitorMode.isCompareMode) Color.White else Color.Black
+                isActive = monitorMode.isCompareMode
             )
         }
 

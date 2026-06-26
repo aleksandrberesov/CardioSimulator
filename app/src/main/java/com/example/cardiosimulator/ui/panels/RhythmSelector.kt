@@ -54,7 +54,7 @@ import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.domain.PathologyEntry
 import com.example.cardiosimulator.domain.PathologyGroups
-import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
+import com.example.cardiosimulator.ui.theme.*
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -241,7 +241,7 @@ fun RhythmGroupHeader(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        color = Color(0xFFD3DEEF) // Reference: Windows band #D3DEEF
+        color = AccentGreenTint
     ) {
         Row(
             modifier = Modifier
@@ -253,20 +253,20 @@ fun RhythmGroupHeader(
                 imageVector = if (isCollapsed) Icons.Default.ChevronRight else Icons.Default.ExpandMore,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
-                tint = Color(0xFF1C3D6B) // Reference: Windows chevron #1C3D6B
+                tint = AccentGreen
             )
             Text(
                 text = name,
                 style = MaterialTheme.typography.labelLarge.copy(
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF12294B) // Reference: Windows text #12294B
+                    color = TextPrimary
                 ),
                 modifier = Modifier.weight(1f)
             )
             Text(
                 text = count.toString(),
                 style = MaterialTheme.typography.labelMedium.copy(
-                    color = Color(0xFF5A6B82) // Reference: Windows count #5A6B82
+                    color = TextSecondary
                 )
             )
         }
@@ -293,14 +293,14 @@ fun RhythmItem(
     ) {
         Text(
             text = title,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            color = if (isSelected) Color.Red else TextPrimary,
             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp), // Smaller font
         )
     }
     HorizontalDivider(
         modifier = Modifier.padding(horizontal = 8.dp),
         thickness = 0.5.dp,
-        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+        color = Hairline,
     )
 }
 

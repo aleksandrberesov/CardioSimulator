@@ -12,10 +12,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.data.LocalPixelScale
 import com.example.cardiosimulator.domain.GridScheme
-
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import com.example.cardiosimulator.ui.theme.*
 
 fun Modifier.leadArea(): Modifier {
     return this
@@ -29,7 +29,7 @@ fun Modifier.ekgGrid(
     showBackground: Boolean = true
 ): Modifier = composed {
     val backgroundColor = when (scheme) {
-        GridScheme.Pink -> Color(0xFFFFF5F5)
+        GridScheme.Pink -> PaperBackground
         GridScheme.BlueGray -> Color(0xFFF0F4F7)
         GridScheme.Blank -> Color.White
     }
@@ -43,11 +43,11 @@ fun Modifier.ekgGrid(
     }
 
     val smallGridColor = when (scheme) {
-        GridScheme.Pink -> Color(0xFFFDE4E4)
+        GridScheme.Pink -> GridMinor
         GridScheme.BlueGray -> Color(0xFFDDE4E9)
     }
     val largeGridColor = when (scheme) {
-        GridScheme.Pink -> Color(0xFFF9BDBD)
+        GridScheme.Pink -> GridMajor
         GridScheme.BlueGray -> Color(0xFFBCC6CF)
     }
 

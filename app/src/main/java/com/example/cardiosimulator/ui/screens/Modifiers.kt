@@ -17,16 +17,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
+import com.example.cardiosimulator.ui.theme.PageBackground
+
 fun Modifier.topSection(): Modifier {
     return this
-        .background(Color.LightGray)
+        .background(Color.Transparent)
         .padding(8.dp)
         .fillMaxWidth()
 }
 
 fun Modifier.bottomSection(): Modifier {
     return this
-        .background(Color.LightGray)
+        .background(Color.Transparent)
         .padding(8.dp)
         .fillMaxWidth()
 }

@@ -29,6 +29,7 @@ import com.example.cardiosimulator.ui.components.CalibrationPulse
 import com.example.cardiosimulator.ui.components.ChartCanvas
 import com.example.cardiosimulator.ui.components.PreviewPane
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
+import com.example.cardiosimulator.ui.theme.TextPrimary
 
 @Composable
 fun Lead(
@@ -60,7 +61,7 @@ fun Lead(
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Serif,
                     fontSize = 16.sp,
-                    color = Color.Black,
+                    color = TextPrimary,
                     modifier = Modifier
                         .align(Alignment.Center)
                         .padding(top = 45.dp, start = 8.dp)
@@ -96,7 +97,7 @@ fun Lead(
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Serif,
                     fontSize = 12.sp,
-                    color = Color.Black,
+                    color = TextPrimary,
                     textAlign = TextAlign.End,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
