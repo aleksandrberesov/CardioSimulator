@@ -47,26 +47,32 @@ fun Lead(
         modifier = modifier.leadArea(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // ... (existing code for Calibration Pulse and Title)
+        // Label Strip
+        Box(
+            modifier = Modifier
+                .width(32.dp)
+                .fillMaxHeight(),
+            contentAlignment = Alignment.Center
+        ) {
+            if (!isCompareMode && title.isNotEmpty()) {
+                Text(
+                    text = title,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Serif,
+                    fontSize = 14.sp,
+                    color = com.example.cardiosimulator.ui.theme.EcgTraceTeal,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+
+        // Calibration Pulse
         Box(
             modifier = Modifier
                 .width(48.dp)
                 .fillMaxHeight()
         ) {
             CalibrationPulse(modifier = Modifier.fillMaxSize())
-
-            if (!isCompareMode) {
-                Text(
-                    text = title,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Serif,
-                    fontSize = 16.sp,
-                    color = TextPrimary,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(top = 45.dp, start = 8.dp)
-                )
-            }
         }
 
         // Trace
@@ -97,7 +103,7 @@ fun Lead(
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Serif,
                     fontSize = 12.sp,
-                    color = TextPrimary,
+                    color = com.example.cardiosimulator.ui.theme.EcgTraceTeal,
                     textAlign = TextAlign.End,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)

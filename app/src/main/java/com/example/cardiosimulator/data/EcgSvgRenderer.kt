@@ -45,6 +45,8 @@ object EcgSvgRenderer {
         "Blank" to GridColors("#FFFFFF", "#FFFFFF", "#FFFFFF")
     )
     private const val TRACE_COLOR = "#111111"
+    private const val LABEL_AREA_WIDTH = 32f
+    private const val CAL_AREA_WIDTH = 80f
 
     private val ecgTag = Regex("<ecg\\b((?:[^>\"]|\"[^\"]*\")*?)\\s*/?>(?:\\s*</ecg>)?", RegexOption.IGNORE_CASE)
     private val attr = Regex("([\\w-]+)\\s*=\\s*\"([^\"]*)\"")
@@ -117,7 +119,8 @@ object EcgSvgRenderer {
 
         val leadHeight = 20f * PX_PER_MM // 20mm height per lead
         val maxTraceSamples = visibleTraces.maxOfOrNull { it.points.values.size } ?: 0
-        val leadWidth = max(1f, (maxTraceSamples - 1) * pxPerSample)
+        val traceWidth = max(1f, (maxTraceSamples - 1) * pxPerSample)
+        val leadWidth = traceWidth + CAL_AREA_WIDTH
         
         val totalWidth = leadWidth * cols
         val totalHeight = leadHeight * rows
@@ -138,10 +141,23 @@ object EcgSvgRenderer {
                 val row = i % rows
                 val x = col * leadWidth
                 val y = row * leadHeight
+                val baselineY = leadHeight / 2f
                 append("<g transform=\"translate(${fmt(x)}, ${fmt(y)})\">")
-                append(tracePath(trace, leadHeight / 2f))
-                append("<text x=\"6\" y=\"18\" font-family=\"serif\" font-weight=\"bold\" ")
-                append("font-size=\"14\" fill=\"#000\">${trace.lead.name}</text>")
+                
+                // Calibration pulse
+                append(calibrationPulsePath(baselineY))
+
+                // Trace
+                append("<g transform=\"translate($CAL_AREA_WIDTH, 0)\">")
+                append(tracePath(trace, baselineY))
+                append("</g>")
+
+                // Lead Label
+                append("<text x=\"${fmt(LABEL_AREA_WIDTH / 2f)}\" y=\"${fmt(baselineY)}\" ")
+                append("font-family=\"serif\" font-weight=\"bold\" font-size=\"14\" ")
+                append("fill=\"$TRACE_COLOR\" text-anchor=\"middle\" dominant-baseline=\"central\">")
+                append("${trace.lead.name}</text>")
+
                 append("</g>")
             }
             append("</svg>")
@@ -158,6 +174,22 @@ object EcgSvgRenderer {
         val values = trace.points.values
         if (values.size < 2) return ""
         val d = pathData(values, baselineY)
+        return "<path d=\"$d\" fill=\"none\" stroke=\"$TRACE_COLOR\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>"
+    }
+
+    private fun calibrationPulsePath(baselineY: Float): String {
+        val pulseHeight = 1f * pxPerMv
+        val pulseWidth = 0.2f * pxPerSec
+        val startX = LABEL_AREA_WIDTH + 8f
+        val wingWidth = 4f
+
+        val d = "M${fmt(startX)} ${fmt(baselineY)} " +
+                "h${fmt(wingWidth)} " +
+                "v${fmt(-pulseHeight)} " +
+                "h${fmt(pulseWidth)} " +
+                "v${fmt(pulseHeight)} " +
+                "h${fmt(wingWidth)}"
+
         return "<path d=\"$d\" fill=\"none\" stroke=\"$TRACE_COLOR\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>"
     }
 

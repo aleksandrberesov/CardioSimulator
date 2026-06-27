@@ -14,7 +14,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.cardiosimulator.data.LocalPixelScale
 import com.example.cardiosimulator.data.Points
@@ -70,6 +74,23 @@ fun EditableLead(
             modifier = Modifier.fillMaxHeight(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Label Strip
+            Box(
+                modifier = Modifier
+                    .width(32.dp)
+                    .fillMaxHeight(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = stream.lead.name,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Serif,
+                    fontSize = 14.sp,
+                    color = com.example.cardiosimulator.ui.theme.EcgTraceTeal,
+                    textAlign = TextAlign.Center
+                )
+            }
+
             // Calibration Symbol
             Box(
                 modifier = Modifier
