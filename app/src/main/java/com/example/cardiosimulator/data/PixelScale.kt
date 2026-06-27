@@ -7,7 +7,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
  * `pxPerMm` is the single anchor: every other value is derived from it,
  * which keeps the paper grid and the waveform in the same coordinate system.
  *
- * Internally reads [EcgCalibration] for fixed conversion factors (500Hz, 256 counts/mV).
+ * Internally reads [EcgCalibration] for fixed conversion factors (500Hz, 1024 counts/mV).
  */
 data class PixelScale(
     val pxPerMm: Float,

@@ -22,9 +22,9 @@ class WfdbConverterTest {
         
         assertEquals("id1", pathology.id)
         val leadI = pathology.leads[Lead.I]!!
-        // 1mV -> 1024 + 1*256 = 1280
-        // 2mV -> 1024 + 2*256 = 1536
-        assertEquals(1280, leadI.samples[0])
-        assertEquals(1536, leadI.samples[1])
+        // 1mV -> 1024 + 1*1024 = 2048
+        // 2mV -> 1024 + 2*1024 = 3072
+        assertEquals(2048, leadI.samples[0])
+        assertEquals(3072, leadI.samples[1])
     }
 }

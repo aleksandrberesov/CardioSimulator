@@ -24,13 +24,13 @@ class WfdbImportTest {
         repository.loadManifest()
         
         // 1. Create a synthetic WFDB record
-        val samples = arrayOf(intArrayOf(256, 0, -256)) // 1mV, 0mV, -1mV if gain=256, baseline=0
+        val samples = arrayOf(intArrayOf(1024, 0, -1024)) // 1mV, 0mV, -1mV if gain=1024, baseline=0
         val header = WfdbHeader(
             recordName = "JS00001",
             numberOfSignals = 1,
             numberOfSamplesPerSignal = 3,
             signals = listOf(
-                WfdbSignalSpec(fileName = "JS00001.dat", format = 16, gain = 256f, baseline = 0, description = "I")
+                WfdbSignalSpec(fileName = "JS00001.dat", format = 16, gain = 1024f, baseline = 0, description = "I")
             )
         )
         val record = WfdbRecord(header, samples)
@@ -52,11 +52,11 @@ class WfdbImportTest {
         assertNotNull(readBack)
         val leadI = readBack?.leads?.get(Lead.I)
         assertNotNull(leadI)
-        // 1mV -> 1024 + 1*256 = 1280
-        // 0mV -> 1024 + 0*256 = 1024
-        // -1mV -> 1024 - 1*256 = 768
-        assertEquals(1280, leadI?.samples?.get(0))
+        // 1mV -> 1024 + 1*1024 = 2048
+        // 0mV -> 1024 + 0*1024 = 1024
+        // -1mV -> 1024 - 1*1024 = 0
+        assertEquals(2048, leadI?.samples?.get(0))
         assertEquals(1024, leadI?.samples?.get(1))
-        assertEquals(768, leadI?.samples?.get(2))
+        assertEquals(0, leadI?.samples?.get(2))
     }
 }
