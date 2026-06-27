@@ -38,8 +38,15 @@ fun DataSourceScreen(
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                val repo = appViewModel.repository ?: com.example.cardiosimulator.data.PathologyRepository(
+                    source = object : com.example.cardiosimulator.data.PathologySource {
+                        override fun readManifest(): com.example.cardiosimulator.domain.PathologyManifest? = null
+                        override fun readPathology(id: String): com.example.cardiosimulator.domain.PathologyFile? = null
+                        override fun listPathologies(): List<String> = emptyList()
+                    }
+                )
                 return RhythmViewModel(
-                    repository = appViewModel.repository!!,
+                    repository = repo,
                     mode = appViewModel.selectedOperatingMode.value.id,
                     prefs = appViewModel.prefs
                 ) as T
@@ -250,12 +257,20 @@ private val ZIP_MIME = arrayOf("application/zip", "application/x-zip-compressed"
 
 @Composable
 private fun previewAppViewModel(): AppViewModel {
+    val mockRepo = com.example.cardiosimulator.data.PathologyRepository(
+        source = object : com.example.cardiosimulator.data.PathologySource {
+            override fun readManifest(): com.example.cardiosimulator.domain.PathologyManifest? = null
+            override fun readPathology(id: String): com.example.cardiosimulator.domain.PathologyFile? = null
+            override fun listPathologies(): List<String> = emptyList()
+        }
+    )
     return viewModel(
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return AppViewModel(
                     AppBuilder().addMode(OperatingModeModel(OperatingMode.Teaching)).build(),
+                    repository = mockRepo
                 ) as T
             }
         },

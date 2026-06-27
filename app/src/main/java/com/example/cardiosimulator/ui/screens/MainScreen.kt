@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -18,12 +19,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
+import com.example.cardiosimulator.domain.OskeAnswerKey
+import com.example.cardiosimulator.domain.Test
+import com.example.cardiosimulator.domain.TestQuestion
 import com.example.cardiosimulator.ui.panels.*
 import com.example.cardiosimulator.ui.theme.*
 import com.example.cardiosimulator.ui.viewmodels.*
 
 @Composable
 fun MainScreen(appViewModel: AppViewModel) {
+    val context = LocalContext.current
     val selectedMode by appViewModel.selectedOperatingMode.collectAsState()
     val dataState by appViewModel.dataState.collectAsState()
     val courseDataState by appViewModel.courseDataState.collectAsState()
@@ -48,8 +53,15 @@ fun MainScreen(appViewModel: AppViewModel) {
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                val repo = appViewModel.repository ?: com.example.cardiosimulator.data.PathologyRepository(
+                    source = object : com.example.cardiosimulator.data.PathologySource {
+                        override fun readManifest() = null
+                        override fun readPathology(id: String) = null
+                        override fun listPathologies() = emptyList<String>()
+                    }
+                )
                 return RhythmViewModel(
-                    repository = appViewModel.repository!!,
+                    repository = repo,
                     mode = selectedMode.id,
                     prefs = appViewModel.prefs,
                     appViewModel = appViewModel
@@ -64,8 +76,15 @@ fun MainScreen(appViewModel: AppViewModel) {
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                val repo = appViewModel.repository ?: com.example.cardiosimulator.data.PathologyRepository(
+                    source = object : com.example.cardiosimulator.data.PathologySource {
+                        override fun readManifest() = null
+                        override fun readPathology(id: String) = null
+                        override fun listPathologies() = emptyList<String>()
+                    }
+                )
                 return ConstructorViewModel(
-                    repository = appViewModel.repository!!,
+                    repository = repo,
                     mode = selectedMode.id,
                     prefs = appViewModel.prefs
                 ) as T
@@ -78,8 +97,17 @@ fun MainScreen(appViewModel: AppViewModel) {
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                val repo = appViewModel.courseRepository ?: com.example.cardiosimulator.data.CourseRepository(
+                    source = object : com.example.cardiosimulator.data.CourseSource {
+                        override fun readManifest() = null
+                        override fun readCourse(id: String) = null
+                        override fun readLecture(courseId: String, lectureId: String, language: String) = null
+                        override fun listCourses() = emptyList<String>()
+                        override fun listLectures(courseId: String) = emptyList<String>()
+                    }
+                )
                 return CourseConstructorViewModel(
-                    repository = appViewModel.courseRepository!!,
+                    repository = repo,
                     mode = selectedMode.id,
                     prefs = appViewModel.prefs
                 ) as T
@@ -92,8 +120,17 @@ fun MainScreen(appViewModel: AppViewModel) {
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                val repo = appViewModel.courseRepository ?: com.example.cardiosimulator.data.CourseRepository(
+                    source = object : com.example.cardiosimulator.data.CourseSource {
+                        override fun readManifest() = null
+                        override fun readCourse(id: String) = null
+                        override fun readLecture(courseId: String, lectureId: String, language: String) = null
+                        override fun listCourses() = emptyList<String>()
+                        override fun listLectures(courseId: String) = emptyList<String>()
+                    }
+                )
                 return CourseViewerViewModel(
-                    repository = appViewModel.courseRepository!!,
+                    repository = repo,
                     mode = selectedMode.id,
                     prefs = appViewModel.prefs
                 ) as T
@@ -106,10 +143,26 @@ fun MainScreen(appViewModel: AppViewModel) {
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                val oskeRepo = appViewModel.oskeRepository ?: com.example.cardiosimulator.data.OskeRepository(
+                    source = object : com.example.cardiosimulator.data.IOskeSource {
+                        override fun readManifest() = null
+                        override fun readForm(formId: String) = null
+                        override fun readAnswerKey(ecgId: String, formId: String) = null
+                        override fun writeAnswerKey(key: OskeAnswerKey) = false
+                        override fun listAnswerKeyEcgIds(formId: String) = emptyList<String>()
+                    }
+                )
+                val pathRepo = appViewModel.repository ?: com.example.cardiosimulator.data.PathologyRepository(
+                    source = object : com.example.cardiosimulator.data.PathologySource {
+                        override fun readManifest() = null
+                        override fun readPathology(id: String) = null
+                        override fun listPathologies() = emptyList<String>()
+                    }
+                )
                 return OskeViewModel(
-                    repository = appViewModel.oskeRepository!!,
-                    resultStore = appViewModel.oskeResultStore!!,
-                    pathologyRepository = appViewModel.repository!!
+                    repository = oskeRepo,
+                    resultStore = appViewModel.oskeResultStore ?: com.example.cardiosimulator.data.OskeResultStore(java.io.File(context.filesDir, "oske_results")),
+                    pathologyRepository = pathRepo
                 ) as T
             }
         }
@@ -130,8 +183,9 @@ fun MainScreen(appViewModel: AppViewModel) {
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                val resultStore = appViewModel.examResultStore ?: com.example.cardiosimulator.data.ExamResultStore(java.io.File(context.filesDir, "exam_results"))
                 return ExaminationViewModel(
-                    resultStore = appViewModel.examResultStore!!,
+                    resultStore = resultStore,
                     bankRepository = appViewModel.questionBankRepository,
                     appContext = appViewModel.appContext
                 ) as T
@@ -144,10 +198,27 @@ fun MainScreen(appViewModel: AppViewModel) {
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                val testRepo = appViewModel.testRepository ?: com.example.cardiosimulator.data.TestRepository(
+                    source = object : com.example.cardiosimulator.data.ITestSource {
+                        override fun readTests() = emptyList<com.example.cardiosimulator.domain.Test>()
+                        override fun readTest(id: String) = null
+                        override fun writeTest(test: com.example.cardiosimulator.domain.Test) = false
+                        override fun deleteTest(id: String) = false
+                    }
+                )
+                val bankRepo = appViewModel.questionBankRepository ?: com.example.cardiosimulator.data.QuestionBankRepository(
+                    source = object : com.example.cardiosimulator.data.IQuestionBankSource {
+                        override fun readQuestions() = emptyList<com.example.cardiosimulator.domain.TestQuestion>()
+                        override fun writeQuestion(question: com.example.cardiosimulator.domain.TestQuestion) = false
+                        override fun deleteQuestion(id: String) = false
+                    }
+                )
+                val themeStore = appViewModel.testThemeStore ?: com.example.cardiosimulator.data.TestThemeStore(java.io.File(context.filesDir, "test_themes"))
+                
                 return TestConstructorViewModel(
-                    repository = appViewModel.testRepository!!,
-                    bankRepository = appViewModel.questionBankRepository!!,
-                    themeStore = appViewModel.testThemeStore!!
+                    repository = testRepo,
+                    bankRepository = bankRepo,
+                    themeStore = themeStore
                 ) as T
             }
         }
@@ -225,7 +296,14 @@ fun MainScreen(appViewModel: AppViewModel) {
                     monitorViewModel = monitorViewModel,
                     rhythmViewModel = rhythmViewModel,
                     examinationViewModel = examinationViewModel,
-                    testRepository = appViewModel.testRepository!!
+                    testRepository = appViewModel.testRepository ?: com.example.cardiosimulator.data.TestRepository(
+                        source = object : com.example.cardiosimulator.data.ITestSource {
+                            override fun readTests() = emptyList<com.example.cardiosimulator.domain.Test>()
+                            override fun readTest(id: String) = null
+                            override fun writeTest(test: com.example.cardiosimulator.domain.Test) = false
+                            override fun deleteTest(id: String) = false
+                        }
+                    )
                 )
                 OperatingMode.TestConstructor -> TestConstructorScreen(
                     appViewModel = appViewModel,

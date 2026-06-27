@@ -262,7 +262,7 @@ class AppViewModel(
                     viewModelScope.launch {
                         dataState.collect { state ->
                             if (state is DataState.Ready && testRepository.tests().isEmpty()) {
-                                val pathologyIds = repository.pathologies().map { it.id }
+                                val pathologyIds = repo.pathologies().map { it.id }
                                 if (pathologyIds.isNotEmpty()) {
                                     val demoTest = TestSeed.sample(pathologyIds)
                                     testRepository.writeTest(demoTest)
