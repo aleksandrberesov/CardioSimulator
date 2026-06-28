@@ -46,7 +46,7 @@ fun CalibrationPulse(
             drawPath(
                 path = path,
                 color = color,
-                style = Stroke(width = strokeWidthDp.dp.toPx())
+                style = Stroke(width = strokeWidthDp.dp.toPx() / scale.zoom)
             )
         }
     })

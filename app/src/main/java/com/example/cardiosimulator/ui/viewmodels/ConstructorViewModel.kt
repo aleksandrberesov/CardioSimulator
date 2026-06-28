@@ -34,7 +34,8 @@ enum class ToolMode {
     Trace,
     Position,
     Points,
-    Photo
+    Photo,
+    Pan
 }
 
 /**

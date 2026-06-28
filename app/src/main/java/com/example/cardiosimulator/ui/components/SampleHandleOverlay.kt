@@ -30,7 +30,7 @@ fun SampleHandleOverlay(
     val density = LocalDensity.current
     
     val selectedRadiusPx = with(density) { 5.dp.toPx() }
-    val strokeWidthPx = with(density) { 1.dp.toPx() }
+    val strokeWidthPx = with(density) { 1.dp.toPx() } / scale.zoom
 
     val stepX = scale.pxPerSample
     val handleColor = if (isEditable) Color.Red else Color.Gray

@@ -143,7 +143,8 @@ fun EditableLead(
                     ChartCanvas(
                         points = ghostPoints,
                         color = Color.Magenta.copy(alpha = 0.6f),
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
+                        strokeWidthDp = 2.5f
                     )
                 }
 

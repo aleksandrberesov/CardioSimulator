@@ -43,6 +43,7 @@ import com.example.cardiosimulator.ui.display.EditableLead
 import com.example.cardiosimulator.ui.display.Monitor
 import com.example.cardiosimulator.ui.display.ekgGrid
 import com.example.cardiosimulator.ui.panels.DrawPanel
+import com.example.cardiosimulator.ui.panels.PanPanel
 import com.example.cardiosimulator.ui.panels.PositionPanel
 import com.example.cardiosimulator.ui.panels.ReferenceImagePanel
 import com.example.cardiosimulator.ui.panels.RhythmSelector
@@ -608,7 +609,7 @@ fun ConstructorScreen(
                                     staticGrid = true,
                                     showGridBackground = referenceImageUri == null,
                                     showGridLines = false,
-                                    gesturesEnabled = toolMode == ToolMode.Select
+                                    gesturesEnabled = toolMode == ToolMode.Select || toolMode == ToolMode.Pan
                                 ) { _, _, xOffset, scheme ->
                                     if (stream != null) {
                                         val isEditable = constructorViewModel.isLeadEditable(focusedLead)
@@ -769,6 +770,9 @@ fun ConstructorScreen(
                                     imageLocked = imageLocked,
                                     onLockToggle = { constructorViewModel.setImageLocked(it) },
                                     onResetImage = { constructorViewModel.resetImageTransform() }
+                                )
+                                ToolMode.Pan -> PanPanel(
+                                    onResetView = { monitorViewModel.resetView() }
                                 )
                             }
 

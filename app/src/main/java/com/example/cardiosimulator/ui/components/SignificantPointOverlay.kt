@@ -72,7 +72,7 @@ fun SignificantPointOverlay(
                             color = primaryColor.copy(alpha = 0.6f),
                             start = Offset(x, 0f),
                             end = Offset(x, size.height),
-                            strokeWidth = 1.5.dp.toPx() // Thicker boundary line
+                            strokeWidth = 1.5.dp.toPx() / scale.zoom // Thicker boundary line
                         )
                     }
 
@@ -136,9 +136,9 @@ fun SignificantPointOverlay(
                 
                 // Draw horizontal bar with more prominent brackets
                 val bracketSize = 8f
-                drawLine(color, Offset(x1, y), Offset(x2, y), strokeWidth = 3.dp.toPx())
-                drawLine(color, Offset(x1, y - bracketSize), Offset(x1, y + bracketSize), strokeWidth = 3.dp.toPx())
-                drawLine(color, Offset(x2, y - bracketSize), Offset(x2, y + bracketSize), strokeWidth = 3.dp.toPx())
+                drawLine(color, Offset(x1, y), Offset(x2, y), strokeWidth = 3.dp.toPx() / scale.zoom)
+                drawLine(color, Offset(x1, y - bracketSize), Offset(x1, y + bracketSize), strokeWidth = 3.dp.toPx() / scale.zoom)
+                drawLine(color, Offset(x2, y - bracketSize), Offset(x2, y + bracketSize), strokeWidth = 3.dp.toPx() / scale.zoom)
                 
                 drawContext.canvas.nativeCanvas.apply {
                     val paint = Paint().apply {
@@ -193,10 +193,10 @@ fun SignificantPointOverlay(
                 val y = 30f
                 val color = Color(0xFF2E7D32) // Dark Green for R-R
                 
-                drawLine(color, Offset(x1, y), Offset(x2, y), strokeWidth = 3.dp.toPx())
+                drawLine(color, Offset(x1, y), Offset(x2, y), strokeWidth = 3.dp.toPx() / scale.zoom)
                 val bracketSize = 8f
-                drawLine(color, Offset(x1, y - bracketSize), Offset(x1, y + bracketSize), strokeWidth = 3.dp.toPx())
-                drawLine(color, Offset(x2, y - bracketSize), Offset(x2, y + bracketSize), strokeWidth = 3.dp.toPx())
+                drawLine(color, Offset(x1, y - bracketSize), Offset(x1, y + bracketSize), strokeWidth = 3.dp.toPx() / scale.zoom)
+                drawLine(color, Offset(x2, y - bracketSize), Offset(x2, y + bracketSize), strokeWidth = 3.dp.toPx() / scale.zoom)
 
                 drawContext.canvas.nativeCanvas.apply {
                     val paint = Paint().apply {

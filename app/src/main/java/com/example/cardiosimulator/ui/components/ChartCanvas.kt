@@ -63,6 +63,7 @@ fun ChartCanvas(
     points: Points,
     modifier: Modifier = Modifier,
     color: Color = Color.Black,
+    strokeWidthDp: Float = 1.5f,
 ) {
     val dataPoints = points.values
     if (dataPoints.size < 2) return
@@ -80,7 +81,7 @@ fun ChartCanvas(
                 val path = projectPath(dataPoints, stepX, stepY, baselineY)
                 
                 onDrawBehind {
-                    val strokeWidth = 1.5.dp.toPx() / scale.zoom
+                    val strokeWidth = strokeWidthDp.dp.toPx() / scale.zoom
                     drawWaveform(path, color, strokeWidth)
                 }
             }

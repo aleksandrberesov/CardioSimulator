@@ -403,6 +403,8 @@
     <string name="tool_mode_select">Select</string>
     <string name="tool_mode_trace">Trace</string>
     <string name="tool_mode_position">Position</string>
+    <string name="tool_mode_pan">Pan</string>
+    <string name="tool_mode_pan_hint">Pan view (drag to move, pinch to zoom)</string>
     <string name="image_panel_title">Reference Photo</string>
     <string name="image_panel_opacity">Opacity</string>
     <string name="image_panel_rotation">Rotation</string>

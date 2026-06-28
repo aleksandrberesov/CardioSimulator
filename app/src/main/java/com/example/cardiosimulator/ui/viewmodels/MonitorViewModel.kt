@@ -177,6 +177,10 @@ class MonitorViewModel(
         }
     }
 
+    fun resetView() {
+        setScale(1.0f)
+    }
+
     fun setCalibration(calibration: EcgCalibration) {
         _monitorMode.update { it.copy(calibration = calibration) }
     }

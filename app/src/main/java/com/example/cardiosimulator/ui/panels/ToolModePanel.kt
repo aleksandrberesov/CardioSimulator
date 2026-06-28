@@ -46,6 +46,7 @@ fun ToolModePanel(
                             ToolMode.Position -> Icons.Default.OpenWith
                             ToolMode.Points -> Icons.Default.Place
                             ToolMode.Photo -> Icons.Default.Image
+                            ToolMode.Pan -> Icons.Default.PanTool
                         },
                         contentDescription = when (mode) {
                             ToolMode.Select -> stringResource(R.string.tool_mode_select)
@@ -53,6 +54,7 @@ fun ToolModePanel(
                             ToolMode.Position -> stringResource(R.string.tool_mode_position)
                             ToolMode.Points -> stringResource(R.string.constructor_significant_points)
                             ToolMode.Photo -> stringResource(R.string.image_panel_title)
+                            ToolMode.Pan -> stringResource(R.string.tool_mode_pan)
                         }
                     )
                 }

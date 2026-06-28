@@ -26,7 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -133,9 +134,12 @@ fun Monitor(
         val containerHeight = constraints.maxHeight.toFloat()
 
         val state = rememberTransformableState { _, zoomChange, offsetChange, _ ->
-            if (gesturesEnabled) {
-                scale = (scale * zoomChange).coerceIn(1f, 5f)
+            // Zoom is always available (if gestures are not explicitly disabled for the whole monitor)
+            val oldScale = scale
+            scale = (scale * zoomChange).coerceIn(1f, 5f)
 
+            // Pan is enabled if gesturesEnabled is true (e.g. Select mode or Pan mode)
+            if (gesturesEnabled) {
                 val maxX = (containerWidth * (scale - 1)) / 2
                 val maxY = (containerHeight * (scale - 1)) / 2
 
@@ -143,6 +147,15 @@ fun Monitor(
                 offset = Offset(
                     x = newOffset.x.coerceIn(-maxX, maxX),
                     y = newOffset.y.coerceIn(-maxY, maxY)
+                )
+            } else if (scale != oldScale) {
+                // If pan is disabled but we zoomed, we still need to keep the offset clamped
+                // to the new scale to avoid jumping when pan is re-enabled.
+                val maxX = (containerWidth * (scale - 1)) / 2
+                val maxY = (containerHeight * (scale - 1)) / 2
+                offset = Offset(
+                    x = offset.x.coerceIn(-maxX, maxX),
+                    y = offset.y.coerceIn(-maxY, maxY)
                 )
             }
         }
@@ -156,13 +169,17 @@ fun Monitor(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .then(if (gesturesEnabled) Modifier.transformable(state = state) else Modifier)
-                    .graphicsLayer(
-                        scaleX = scale,
-                        scaleY = scale,
-                        translationX = offset.x,
-                        translationY = offset.y
-                    )
+                    .transformable(state = state)
+                    .drawWithContent {
+                        val cx = size.width / 2f
+                        val cy = size.height / 2f
+                        withTransform({
+                            scale(scale, scale, pivot = Offset(cx, cy))
+                            translate(offset.x, offset.y)
+                        }) {
+                            this@drawWithContent.drawContent()
+                        }
+                    }
             ) {
                 backgroundContent()
                 Column(
