@@ -108,7 +108,7 @@ class AppViewModel(
     private val _tcpPort = MutableStateFlow(appState.tcpPort)
     val tcpPort: StateFlow<Int> = _tcpPort.asStateFlow()
 
-    private val _isDarkTheme = MutableStateFlow(true)
+    private val _isDarkTheme = MutableStateFlow(false)
     val isDarkTheme: StateFlow<Boolean> = _isDarkTheme.asStateFlow()
 
     private val _isDrawerFixed = MutableStateFlow(false)

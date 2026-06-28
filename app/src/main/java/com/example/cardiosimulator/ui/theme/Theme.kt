@@ -19,7 +19,16 @@ private val DarkColorScheme = darkColorScheme(
     background = PageBackground,
     surface = PanelBackground,
     onBackground = TextPrimary,
-    onSurface = TextPrimary
+    onSurface = TextPrimary,
+    surfaceVariant = ControlFill,
+    onSurfaceVariant = TextSecondary,
+    outline = ControlBorder,
+    outlineVariant = Hairline,
+    surfaceContainer = PanelBackground,
+    surfaceContainerLow = PanelBackground,
+    surfaceContainerLowest = PanelBackground,
+    surfaceContainerHigh = PanelBackground,
+    surfaceContainerHighest = PanelBackground,
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -30,7 +39,16 @@ private val LightColorScheme = lightColorScheme(
     background = PageBackground,
     surface = PanelBackground,
     onBackground = TextPrimary,
-    onSurface = TextPrimary
+    onSurface = TextPrimary,
+    surfaceVariant = ControlFill,
+    onSurfaceVariant = TextSecondary,
+    outline = ControlBorder,
+    outlineVariant = Hairline,
+    surfaceContainer = PanelBackground,
+    surfaceContainerLow = PanelBackground,
+    surfaceContainerLowest = PanelBackground,
+    surfaceContainerHigh = PanelBackground,
+    surfaceContainerHighest = PanelBackground,
 )
 
 val CardioShapes = Shapes(
