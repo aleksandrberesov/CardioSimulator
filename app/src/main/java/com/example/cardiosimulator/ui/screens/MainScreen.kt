@@ -22,6 +22,7 @@ import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.domain.OskeAnswerKey
 import com.example.cardiosimulator.domain.Test
 import com.example.cardiosimulator.domain.TestQuestion
+import com.example.cardiosimulator.ui.dialogs.SettingsDialog
 import com.example.cardiosimulator.ui.panels.*
 import com.example.cardiosimulator.ui.theme.*
 import com.example.cardiosimulator.ui.viewmodels.*

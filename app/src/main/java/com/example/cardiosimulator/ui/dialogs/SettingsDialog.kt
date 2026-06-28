@@ -1,4 +1,4 @@
-package com.example.cardiosimulator.ui.screens
+package com.example.cardiosimulator.ui.dialogs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

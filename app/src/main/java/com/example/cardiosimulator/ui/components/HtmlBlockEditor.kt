@@ -34,7 +34,7 @@ import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.PathologyEntry
 import com.example.cardiosimulator.domain.GridScheme
 import com.example.cardiosimulator.domain.SeriesScheme
-import com.example.cardiosimulator.ui.screens.ComparisonTargetDialog
+import com.example.cardiosimulator.ui.dialogs.ComparisonTargetDialog
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import android.net.Uri
 import android.provider.OpenableColumns

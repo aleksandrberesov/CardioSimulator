@@ -61,6 +61,13 @@ import com.example.cardiosimulator.ui.components.LectureWebView
 import com.example.cardiosimulator.ui.components.SideDrawer
 import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.ui.components.WelcomeOverlay
+import com.example.cardiosimulator.ui.components.EosOverlay
+import com.example.cardiosimulator.ui.components.TipsOverlay
+import com.example.cardiosimulator.ui.dialogs.ComparisonPresetsDialog
+import com.example.cardiosimulator.ui.dialogs.ComparisonTargetDialog
+import com.example.cardiosimulator.ui.dialogs.SaveComparisonPresetDialog
+import com.example.cardiosimulator.ui.dialogs.ElectrodesDialog
+import com.example.cardiosimulator.ui.dialogs.Heart3DDialog
 import com.example.cardiosimulator.ui.display.LEAD_ORDER
 import com.example.cardiosimulator.ui.display.Lead as LeadView
 import com.example.cardiosimulator.ui.display.LeadsGrid
@@ -251,11 +258,11 @@ private fun MonitorOverlay(
     }
 
     if (mode.showElectrodes) {
-        com.example.cardiosimulator.ui.components.ElectrodesDialog(onDismiss = { monitorViewModel.setShowElectrodes(false) })
+        ElectrodesDialog(onDismiss = { monitorViewModel.setShowElectrodes(false) })
     }
 
     if (mode.show3D) {
-        com.example.cardiosimulator.ui.components.Heart3DDialog(onDismiss = { monitorViewModel.setShow3D(false) })
+        Heart3DDialog(onDismiss = { monitorViewModel.setShow3D(false) })
     }
 
     LaunchedEffect(mode.comparisonTargets) {
@@ -467,14 +474,14 @@ private fun MonitorOverlay(
                         }
 
                         if (mode.showEos) {
-                            com.example.cardiosimulator.ui.components.EosOverlay(
+                            EosOverlay(
                                 onClose = { monitorViewModel.setShowEos(false) },
                                 modifier = Modifier.align(Alignment.TopEnd)
                             )
                         }
 
                         if (mode.showTips) {
-                            com.example.cardiosimulator.ui.components.TipsOverlay(
+                            TipsOverlay(
                                 selectedKind = mode.selectedTipKind,
                                 onKindSelected = { monitorViewModel.setSelectedTipKind(it) },
                                 onClose = { monitorViewModel.setShowTips(false) },
