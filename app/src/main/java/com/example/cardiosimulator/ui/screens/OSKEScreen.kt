@@ -125,6 +125,8 @@ fun OskeExamView(
                             isRunning = mode.isRunning,
                             xOffsetPx = xOffset,
                             gridScheme = scheme,
+                            filterType = mode.filterType,
+                            calibration = mode.calibration
                         )
                     }
                 }

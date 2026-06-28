@@ -2,6 +2,7 @@ package com.example.cardiosimulator.ui.panels
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -25,6 +26,7 @@ fun SignificantPointPanel(
     selectedIndex: Int?,
     sampleRate: Float,
     onPointToggle: (Int, EcgPointType) -> Unit,
+    onAutoDetect: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -44,6 +46,18 @@ fun SignificantPointPanel(
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
+            Button(
+                onClick = onAutoDetect,
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = "Auto-Detect",
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
 
             HorizontalDivider()
 

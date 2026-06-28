@@ -135,6 +135,7 @@ fun ConstructorScreen(
     var showGroupDialog by remember { mutableStateOf(false) }
     var showCalculateDerivedDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showSynthesizerDialog by remember { mutableStateOf(false) }
 
     var showPhysioNetDialog by remember { mutableStateOf(false) }
     var physioNetProject by remember { mutableStateOf("mitdb/1.0.0") }
@@ -242,6 +243,23 @@ fun ConstructorScreen(
                 TextButton(onClick = { showCalculateDerivedDialog = false }) {
                     Text(stringResource(R.string.constructor_rename_cancel))
                 }
+            }
+        )
+    }
+
+    if (showSynthesizerDialog) {
+        com.example.cardiosimulator.ui.components.SynthesizerDialog(
+            onDismiss = { showSynthesizerDialog = false },
+            onGenerate = { bpm, ap, ar, asVal, at, variance ->
+                constructorViewModel.generateSynthesizedBeat(
+                    bpm = bpm,
+                    ap = ap,
+                    ar = ar,
+                    asVal = asVal,
+                    at = at,
+                    variance = variance,
+                    sampleRate = monitorMode.calibration.sampleRateHz.toDouble()
+                )
             }
         )
     }
@@ -467,6 +485,10 @@ fun ConstructorScreen(
 
                         IconButton(onClick = { constructorViewModel.createNewPathology() }) {
                             Icon(Icons.Default.Add, contentDescription = stringResource(R.string.constructor_new_pathology))
+                        }
+
+                        IconButton(onClick = { showSynthesizerDialog = true }) {
+                            Icon(Icons.Default.GraphicEq, contentDescription = "Synthesizer")
                         }
 
                         var showImportMenu by remember { mutableStateOf(false) }
@@ -724,6 +746,12 @@ fun ConstructorScreen(
                                     sampleRate = monitorMode.calibration.sampleRateHz,
                                     onPointToggle = { idx, type ->
                                         constructorViewModel.toggleSignificantPoint(focusedLead, idx, type)
+                                    },
+                                    onAutoDetect = {
+                                        constructorViewModel.autoDetectLandmarks(
+                                            lead = focusedLead,
+                                            samplingRate = monitorMode.calibration.sampleRateHz.toDouble()
+                                        )
                                     }
                                 )
                                 ToolMode.Photo -> ReferenceImagePanel(

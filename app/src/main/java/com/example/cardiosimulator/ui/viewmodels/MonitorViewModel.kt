@@ -207,6 +207,10 @@ class MonitorViewModel(
         _monitorMode.update { it.copy(artifact = artifact) }
     }
 
+    fun setFilterType(filterType: com.example.cardiosimulator.domain.EcgFilterType) {
+        _monitorMode.update { it.copy(filterType = filterType) }
+    }
+
     fun setShowElectrodes(show: Boolean) {
         _monitorMode.update { it.copy(showElectrodes = show) }
     }

@@ -396,7 +396,7 @@ private fun MonitorOverlay(
                                 columns = columns,
                                 itemCount = mode.count,
                             ) { index, lead ->
-                                // ... (already updated LeadView call)
+                                // ...
                                 if (mode.isCompareMode && !mode.comparisonTargets.containsKey(index)) {
                                     Box(
                                         modifier = Modifier
@@ -442,12 +442,26 @@ private fun MonitorOverlay(
                                         isCompareMode = mode.isCompareMode,
                                         significantPoints = if (mode.isCompareMode) emptyList() else significantPoints,
                                         showImpulseLabels = mode.showImpulseLabels,
+                                        filterType = mode.filterType,
+                                        calibration = mode.calibration,
                                         modifier = if (mode.isCompareMode) {
                                             Modifier.clickable { editingPaneIndex = index }
                                         } else Modifier
                                     )
                                 }
                             }
+                        }
+
+                        val firstLeadForSqi = mode.leadOrder?.firstOrNull() ?: LEAD_ORDER.first()
+                        val sqiSignal = waveforms[firstLeadForSqi]
+                        if (sqiSignal != null && sqiSignal.values.size > 100) {
+                            com.example.cardiosimulator.ui.components.SqiCard(
+                                signal = sqiSignal.values.map { it.toDouble() }.toDoubleArray(),
+                                samplingRate = mode.calibration.sampleRateHz.toDouble(),
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(top = 16.dp, end = 16.dp)
+                            )
                         }
 
                         if (mode.showEos) {

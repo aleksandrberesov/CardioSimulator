@@ -232,6 +232,39 @@ fun MonitorControlPanel(
                 }
             }
 
+            Box(modifier = Modifier.weight(1.5f)) {
+                var filtersMenuExpanded by remember { mutableStateOf(false) }
+                Tab(
+                    text = stringResource(R.string.monitor_filters),
+                    showChevron = true,
+                    onClick = { filtersMenuExpanded = true },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                DropdownMenu(
+                    expanded = filtersMenuExpanded,
+                    onDismissRequest = { filtersMenuExpanded = false }
+                ) {
+                    com.example.cardiosimulator.domain.EcgFilterType.entries.forEach { filterType ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    when (filterType) {
+                                        com.example.cardiosimulator.domain.EcgFilterType.NONE -> stringResource(R.string.monitor_filter_none)
+                                        com.example.cardiosimulator.domain.EcgFilterType.LOWPASS -> stringResource(R.string.monitor_filter_lowpass)
+                                        com.example.cardiosimulator.domain.EcgFilterType.HIGHPASS -> stringResource(R.string.monitor_filter_highpass)
+                                        com.example.cardiosimulator.domain.EcgFilterType.BANDPASS -> stringResource(R.string.monitor_filter_bandpass)
+                                    }
+                                )
+                            },
+                            onClick = {
+                                viewModel.setFilterType(filterType)
+                                filtersMenuExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
             Tab(
                 text = "3D",
                 painter = androidx.compose.ui.res.painterResource(R.drawable.heart_3d),

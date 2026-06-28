@@ -41,8 +41,33 @@ fun Lead(
     gridScheme: GridScheme = GridScheme.Pink,
     isCompareMode: Boolean = false,
     significantPoints: List<com.example.cardiosimulator.domain.SignificantPoint> = emptyList(),
-    showImpulseLabels: Boolean = false
+    showImpulseLabels: Boolean = false,
+    filterType: com.example.cardiosimulator.domain.EcgFilterType = com.example.cardiosimulator.domain.EcgFilterType.NONE,
+    calibration: com.example.cardiosimulator.data.EcgCalibration = com.example.cardiosimulator.data.EcgCalibration()
 ){
+    val processedPoints = androidx.compose.runtime.remember(points, filterType) {
+        if (filterType == com.example.cardiosimulator.domain.EcgFilterType.NONE || points.values.size < 50) {
+            points
+        } else {
+            try {
+                val signal = points.values.map { it.toDouble() }.toDoubleArray()
+                val samplingRate = calibration.sampleRateHz.toDouble()
+                val filtered = when (filterType) {
+                    com.example.cardiosimulator.domain.EcgFilterType.LOWPASS ->
+                        com.example.cardiosimulator.signals.biosppy.Filter.filterSignal(signal, "butter", "lowpass", 4, doubleArrayOf(25.0), samplingRate)
+                    com.example.cardiosimulator.domain.EcgFilterType.HIGHPASS ->
+                        com.example.cardiosimulator.signals.biosppy.Filter.filterSignal(signal, "butter", "highpass", 4, doubleArrayOf(3.0), samplingRate)
+                    com.example.cardiosimulator.domain.EcgFilterType.BANDPASS ->
+                        com.example.cardiosimulator.signals.biosppy.Filter.filterSignal(signal, "butter", "bandpass", 4, doubleArrayOf(3.0, 25.0), samplingRate)
+                    else -> signal
+                }
+                Points(filtered.map { it.toFloat() })
+            } catch (e: Exception) {
+                points
+            }
+        }
+    }
+
     Row(
         modifier = modifier.leadArea(),
         verticalAlignment = Alignment.CenterVertically
@@ -82,7 +107,7 @@ fun Lead(
                 .fillMaxHeight()
         ) {
             PreviewPane(
-                points = points,
+                points = processedPoints,
                 modifier = Modifier.fillMaxSize(),
                 isRunning = isRunning,
                 externalXOffsetPx = xOffsetPx,
@@ -91,7 +116,7 @@ fun Lead(
 
             if (showImpulseLabels && significantPoints.isNotEmpty()) {
                 com.example.cardiosimulator.ui.components.SignificantPointOverlay(
-                    points = points,
+                    points = processedPoints,
                     significantPoints = significantPoints,
                     modifier = Modifier.fillMaxSize()
                 )

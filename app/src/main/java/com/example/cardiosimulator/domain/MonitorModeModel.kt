@@ -28,6 +28,13 @@ enum class EcgArtifact {
     Motion
 }
 
+enum class EcgFilterType {
+    NONE,
+    LOWPASS,
+    HIGHPASS,
+    BANDPASS
+}
+
 enum class TipOverlayKind {
     Arrow,
     LeadArea,
@@ -60,6 +67,7 @@ data class MonitorModeModel(
     val isCompareMode: Boolean = false,
     val showImpulseLabels: Boolean = false,
     val artifact: EcgArtifact = EcgArtifact.None,
+    val filterType: EcgFilterType = EcgFilterType.NONE,
     val showElectrodes: Boolean = false,
     val show3D: Boolean = false,
     val showEos: Boolean = false,

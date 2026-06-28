@@ -181,6 +181,94 @@ class ConstructorViewModel(
         insertBaseline(50)
     }
 
+    fun generateSynthesizedBeat(
+        bpm: Int,
+        ap: Double,
+        ar: Double,
+        asVal: Double,
+        at: Double,
+        variance: Double,
+        sampleRate: Double
+    ) {
+        val lead = _focusedLead.value
+        if (!isLeadEditable(lead)) return
+        val currentFile = _targetFile.value ?: return
+        val stream = currentFile.leads[lead] ?: return
+        val baseline = repository.manifest()?.baseline ?: 1024
+
+        startStroke(lead)
+
+        val samplesPerBeat = (sampleRate * 60.0 / bpm).toInt()
+        val sumK = 130 + 100 + 40 + 25 + 5 + 40 + (30 - 5) + 100 + 220
+        val fixedSamples = (sumK * sampleRate / 1000.0).toInt()
+        val ki = ((samplesPerBeat - fixedSamples) * 1000.0 / sampleRate).toInt().coerceAtLeast(10)
+
+        val (beat, _) = com.example.cardiosimulator.signals.biosppy.Synthesizer.generate(
+            ap = ap,
+            ar = ar,
+            `as` = asVal,
+            at = at,
+            variance = variance,
+            samplingRate = sampleRate,
+            ki = ki
+        )
+
+        val totalSamples = stream.samples.size
+        val newSamples = IntArray(totalSamples)
+
+        for (i in 0 until totalSamples) {
+            val beatIndex = i % beat.size
+            val valMv = beat[beatIndex]
+            newSamples[i] = (baseline + valMv * 1024.0).toInt().coerceIn(ADC_MIN, ADC_MAX)
+        }
+
+        val newLeads = currentFile.leads.toMutableMap()
+        newLeads[lead] = stream.copy(samples = newSamples)
+        _targetFile.value = currentFile.copy(leads = newLeads)
+        _dirtyLeads.value += lead
+        floatBuffers.remove(lead)
+    }
+
+    fun autoDetectLandmarks(lead: Lead, samplingRate: Double) {
+        val currentFile = _targetFile.value ?: return
+        val stream = currentFile.leads[lead] ?: return
+        val baseline = repository.manifest()?.baseline ?: 1024
+
+        viewModelScope.launch {
+            val signal = stream.samples.map { (it - baseline).toDouble() }.toDoubleArray()
+            val rpeaks = com.example.cardiosimulator.signals.biosppy.QrsSegmenters.hamiltonSegmenter(signal, samplingRate)
+            val correctedR = com.example.cardiosimulator.signals.biosppy.QrsSegmenters.correctRPeaks(signal, rpeaks, samplingRate)
+
+            val landmarks = com.example.cardiosimulator.signals.biosppy.Landmarks.getLandmarks(signal, correctedR, samplingRate)
+
+            val newPoints = currentFile.significantPoints.toMutableList()
+
+            for (lm in landmarks) {
+                addPointIfValid(newPoints, lm.rPeak, EcgPointType.R_PEAK)
+                addPointIfValid(newPoints, lm.qPeak, EcgPointType.Q_PEAK)
+                addPointIfValid(newPoints, lm.sPeak, EcgPointType.S_PEAK)
+                addPointIfValid(newPoints, lm.pPeak, EcgPointType.P_PEAK)
+                addPointIfValid(newPoints, lm.tPeak, EcgPointType.T_PEAK)
+                addPointIfValid(newPoints, lm.qrsStart, EcgPointType.QRS_START)
+                addPointIfValid(newPoints, lm.qrsEnd, EcgPointType.QRS_END)
+                addPointIfValid(newPoints, lm.pStart, EcgPointType.P_START)
+                addPointIfValid(newPoints, lm.pEnd, EcgPointType.P_END)
+                addPointIfValid(newPoints, lm.tStart, EcgPointType.T_START)
+                addPointIfValid(newPoints, lm.tEnd, EcgPointType.T_END)
+            }
+
+            _targetFile.value = currentFile.copy(significantPoints = newPoints.distinctBy { it.index to it.type })
+            _isMetadataDirty.value = true
+        }
+    }
+
+    private fun addPointIfValid(list: MutableList<SignificantPoint>, index: Int, type: EcgPointType) {
+        if (index >= 0) {
+            list.removeAll { it.index == index && it.type == type }
+            list.add(SignificantPoint(index, type))
+        }
+    }
+
     fun applyGhostTrace() {
         val trace = _ghostTrace.value ?: return
         val lead = _focusedLead.value

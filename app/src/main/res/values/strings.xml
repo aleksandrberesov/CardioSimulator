@@ -83,6 +83,11 @@
     <string name="monitor_artifact_baseline">Baseline drift</string>
     <string name="monitor_artifact_contact">Poor contact</string>
     <string name="monitor_artifact_motion">Movement</string>
+    <string name="monitor_filters">Filters</string>
+    <string name="monitor_filter_none">No filters</string>
+    <string name="monitor_filter_lowpass">Low-pass (25Hz)</string>
+    <string name="monitor_filter_highpass">High-pass (3Hz)</string>
+    <string name="monitor_filter_bandpass">Band-pass (3-25Hz)</string>
     <string name="monitor_3d">3D</string>
     <string name="monitor_3d_title">3D heart</string>
     <string name="monitor_3d_placeholder">An interactive 3D heart you can rotate and inspect will appear here.</string>
