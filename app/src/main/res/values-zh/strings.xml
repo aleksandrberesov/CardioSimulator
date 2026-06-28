@@ -58,6 +58,7 @@
     <string name="monitor_eos">心电轴</string>
     <string name="monitor_hr_format">心率 %1$d</string>
     <string name="monitor_tips">提示</string>
+    <string name="monitor_ruler">标尺</string>
     <string name="monitor_tips_window_title">提示窗口</string>
     <string name="monitor_tips_types_header">心电图提示类型：</string>
     <string name="monitor_tips_type_arrow">带文字的箭头</string>

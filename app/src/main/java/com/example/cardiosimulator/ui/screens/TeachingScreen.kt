@@ -246,6 +246,7 @@ private fun MonitorOverlay(
             monitorViewModel.setShow3D(false)
             monitorViewModel.setShowEos(false)
             monitorViewModel.setShowTips(false)
+            monitorViewModel.setShowRuler(false)
         }
     }
 

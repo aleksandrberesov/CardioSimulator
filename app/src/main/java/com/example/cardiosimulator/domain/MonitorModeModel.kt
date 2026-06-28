@@ -72,6 +72,7 @@ data class MonitorModeModel(
     val show3D: Boolean = false,
     val showEos: Boolean = false,
     val showTips: Boolean = false,
+    val showRuler: Boolean = false,
     val selectedTipKind: TipOverlayKind = TipOverlayKind.Arrow,
     val comparisonTargets: Map<Int, ComparisonTarget> = emptyMap(),
     val comparisonPresets: List<ComparisonPreset> = emptyList(),

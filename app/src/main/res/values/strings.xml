@@ -65,6 +65,7 @@
     <string name="monitor_hr_format">HR %1$d</string>
     <string name="monitor_scale_label_format">%1$s mm/s  %2$s mm/mV</string>
     <string name="monitor_tips">Tips</string>
+    <string name="monitor_ruler">Ruler</string>
     <string name="monitor_tips_window_title">Tips window</string>
     <string name="monitor_tips_types_header">Types of ECG tips:</string>
     <string name="monitor_tips_type_arrow">Arrow with caption</string>

@@ -59,6 +59,7 @@
     <string name="monitor_hr_format">FC %1$d</string>
     <string name="monitor_scale_label_format">%1$s mm/s  %2$s mm/mV</string>
     <string name="monitor_tips">Consejos</string>
+    <string name="monitor_ruler">Regla</string>
     <string name="monitor_tips_window_title">Ventana de sugerencias</string>
     <string name="monitor_tips_types_header">Tipos de sugerencias de ECG:</string>
     <string name="monitor_tips_type_arrow">Flecha con leyenda</string>

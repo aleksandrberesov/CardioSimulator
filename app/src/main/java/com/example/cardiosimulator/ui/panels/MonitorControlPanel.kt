@@ -52,7 +52,6 @@ fun MonitorControlPanel(
     modifier: Modifier = Modifier,
     onTipsClick: () -> Unit = {},
     onCompareClick: () -> Unit = {},
-    onRulerClick: () -> Unit = {},
     onStartStopClick: (Boolean) -> Unit = {},
 ) {
     val monitorMode by viewModel.monitorMode.collectAsState()
@@ -353,13 +352,17 @@ fun MonitorControlPanel(
             modifier = Modifier.weight(1.6f),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Tab(
-                icon = Icons.Default.Straighten,
-                iconModifier = Modifier.rotate(-45f),
-                iconContentDescription = stringResource(R.string.cd_ruler),
-                onClick = onRulerClick,
-                modifier = Modifier.weight(1f)
-            )
+            if (viewModel.mode == OperatingMode.Teaching) {
+                Tab(
+                    icon = Icons.Default.Straighten,
+                    iconModifier = Modifier.rotate(-45f),
+                    iconContentDescription = stringResource(R.string.cd_ruler),
+                    onClick = { viewModel.setShowRuler(!monitorMode.showRuler) },
+                    isActive = monitorMode.showRuler,
+                    enabled = !monitorMode.isCompareMode,
+                    modifier = Modifier.weight(1f)
+                )
+            }
             Tab(
                 icon = if (monitorMode.isRunning) Icons.Default.Stop else Icons.Default.PlayArrow,
                 iconContentDescription = if (monitorMode.isRunning) stringResource(R.string.cd_stop) else stringResource(R.string.cd_start),

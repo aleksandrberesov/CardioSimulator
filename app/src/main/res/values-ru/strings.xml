@@ -64,6 +64,7 @@
     <string name="monitor_eos">ЭОС</string>
     <string name="monitor_hr_format">ЧСС %1$d</string>
     <string name="monitor_tips">Подсказки</string>
+    <string name="monitor_ruler">Линейка</string>
     <string name="monitor_tips_window_title">Окно подсказок</string>
     <string name="monitor_tips_types_header">Типы подсказок на ЭКГ:</string>
     <string name="monitor_tips_type_arrow">Стрелка с надписью</string>
