@@ -66,7 +66,7 @@ data class MonitorModeModel(
     val isRunning: Boolean = false,
     val isCompareMode: Boolean = false,
     val showImpulseLabels: Boolean = false,
-    val artifact: EcgArtifact = EcgArtifact.None,
+    val artifacts: Set<EcgArtifact> = emptySet(),
     val filterType: EcgFilterType = EcgFilterType.NONE,
     val showElectrodes: Boolean = false,
     val show3D: Boolean = false,

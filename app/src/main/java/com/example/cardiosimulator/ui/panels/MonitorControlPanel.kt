@@ -8,14 +8,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -197,11 +200,18 @@ fun MonitorControlPanel(
             )
 
             Box(modifier = Modifier.weight(1.5f)) {
-                // ... (artifacts dropdown)
                 var artifactsMenuExpanded by remember { mutableStateOf(false) }
+                val artifactsActive = monitorMode.artifacts.isNotEmpty()
+                val artifactsText = if (monitorMode.artifacts.isEmpty()) {
+                    stringResource(R.string.monitor_artifacts)
+                } else {
+                    "${stringResource(R.string.monitor_artifacts)} (${monitorMode.artifacts.size})"
+                }
+
                 Tab(
-                    text = stringResource(R.string.monitor_artifacts),
+                    text = artifactsText,
                     showChevron = true,
+                    isActive = artifactsActive,
                     onClick = { artifactsMenuExpanded = true },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -210,6 +220,12 @@ fun MonitorControlPanel(
                     onDismissRequest = { artifactsMenuExpanded = false }
                 ) {
                     com.example.cardiosimulator.domain.EcgArtifact.entries.forEach { artifact ->
+                        val isSelected = if (artifact == com.example.cardiosimulator.domain.EcgArtifact.None) {
+                            monitorMode.artifacts.isEmpty()
+                        } else {
+                            artifact in monitorMode.artifacts
+                        }
+
                         DropdownMenuItem(
                             text = {
                                 Text(
@@ -223,9 +239,28 @@ fun MonitorControlPanel(
                                     }
                                 )
                             },
+                            trailingIcon = {
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            },
                             onClick = {
-                                viewModel.setArtifact(artifact)
-                                artifactsMenuExpanded = false
+                                if (artifact == com.example.cardiosimulator.domain.EcgArtifact.None) {
+                                    viewModel.setArtifacts(emptySet())
+                                    // Optionally close here, but multi-select usually stays open. 
+                                    // Plan says "matching Windows behavior" which is stays open.
+                                } else {
+                                    val next = if (artifact in monitorMode.artifacts) {
+                                        monitorMode.artifacts - artifact
+                                    } else {
+                                        monitorMode.artifacts + artifact
+                                    }
+                                    viewModel.setArtifacts(next)
+                                }
                             }
                         )
                     }

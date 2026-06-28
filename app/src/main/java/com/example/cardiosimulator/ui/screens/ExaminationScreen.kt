@@ -170,6 +170,7 @@ fun ExamWorkView(
                                 isRunning = mode.isRunning,
                                 xOffsetPx = xOffset,
                                 gridScheme = scheme,
+                                artifacts = mode.artifacts,
                                 filterType = mode.filterType,
                                 calibration = mode.calibration
                             )

@@ -207,8 +207,8 @@ class MonitorViewModel(
         _monitorMode.update { it.copy(showImpulseLabels = show) }
     }
 
-    fun setArtifact(artifact: com.example.cardiosimulator.domain.EcgArtifact) {
-        _monitorMode.update { it.copy(artifact = artifact) }
+    fun setArtifacts(artifacts: Set<com.example.cardiosimulator.domain.EcgArtifact>) {
+        _monitorMode.update { it.copy(artifacts = artifacts) }
     }
 
     fun setFilterType(filterType: com.example.cardiosimulator.domain.EcgFilterType) {

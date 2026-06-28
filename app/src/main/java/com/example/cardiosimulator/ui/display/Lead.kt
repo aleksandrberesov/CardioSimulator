@@ -42,16 +42,28 @@ fun Lead(
     isCompareMode: Boolean = false,
     significantPoints: List<com.example.cardiosimulator.domain.SignificantPoint> = emptyList(),
     showImpulseLabels: Boolean = false,
+    artifacts: Set<com.example.cardiosimulator.domain.EcgArtifact> = emptySet(),
     filterType: com.example.cardiosimulator.domain.EcgFilterType = com.example.cardiosimulator.domain.EcgFilterType.NONE,
     calibration: com.example.cardiosimulator.data.EcgCalibration = com.example.cardiosimulator.data.EcgCalibration()
 ){
-    val processedPoints = androidx.compose.runtime.remember(points, filterType) {
-        if (filterType == com.example.cardiosimulator.domain.EcgFilterType.NONE || points.values.size < 50) {
+    val processedPoints = androidx.compose.runtime.remember(points, artifacts, filterType, calibration) {
+        val active = com.example.cardiosimulator.domain.EcgArtifact.entries.filter { it != com.example.cardiosimulator.domain.EcgArtifact.None && it in artifacts }
+        if ((active.isEmpty() && filterType == com.example.cardiosimulator.domain.EcgFilterType.NONE) || points.values.size < 50) {
             points
         } else {
             try {
                 val signal = points.values.map { it.toDouble() }.toDoubleArray()
                 val samplingRate = calibration.sampleRateHz.toDouble()
+
+                if (active.isNotEmpty()) {
+                    val refPp = com.example.cardiosimulator.signals.biosppy.EcgArtifactGenerator.peakToPeak(signal)
+                    var seed = (title.hashCode() * 31)
+                    for (kind in active) {
+                        val noise = com.example.cardiosimulator.signals.biosppy.EcgArtifactGenerator.generate(signal.size, kind, samplingRate, refPp, 1.0, seed++)
+                        for (i in signal.indices) signal[i] += noise[i]
+                    }
+                }
+
                 val filtered = when (filterType) {
                     com.example.cardiosimulator.domain.EcgFilterType.LOWPASS ->
                         com.example.cardiosimulator.signals.biosppy.Filter.filterSignal(signal, "butter", "lowpass", 4, doubleArrayOf(25.0), samplingRate)

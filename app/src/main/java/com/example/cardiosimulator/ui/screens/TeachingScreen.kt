@@ -442,6 +442,7 @@ private fun MonitorOverlay(
                                         isCompareMode = mode.isCompareMode,
                                         significantPoints = if (mode.isCompareMode) emptyList() else significantPoints,
                                         showImpulseLabels = mode.showImpulseLabels,
+                                        artifacts = mode.artifacts,
                                         filterType = mode.filterType,
                                         calibration = mode.calibration,
                                         modifier = if (mode.isCompareMode) {

@@ -254,7 +254,10 @@ fun MonitorOneColumn12Preview() {
                     points = samplePoints,
                     title = lead?.name ?: "",
                     xOffsetPx = xOffset,
-                    gridScheme = scheme
+                    gridScheme = scheme,
+                    artifacts = mode.artifacts,
+                    filterType = mode.filterType,
+                    calibration = mode.calibration
                 )
             }
         }
@@ -293,7 +296,10 @@ fun MonitorTwoColumn12Preview() {
                     points = samplePoints,
                     title = lead?.name ?: "",
                     xOffsetPx = xOffset,
-                    gridScheme = scheme
+                    gridScheme = scheme,
+                    artifacts = mode.artifacts,
+                    filterType = mode.filterType,
+                    calibration = mode.calibration
                 )
             }
         }
@@ -332,7 +338,10 @@ fun MonitorGrid12Preview() {
                     points = samplePoints,
                     title = lead?.name ?: "",
                     xOffsetPx = xOffset,
-                    gridScheme = scheme
+                    gridScheme = scheme,
+                    artifacts = mode.artifacts,
+                    filterType = mode.filterType,
+                    calibration = mode.calibration
                 )
             }
         }
