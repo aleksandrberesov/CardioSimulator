@@ -1,7 +1,6 @@
 package com.example.cardiosimulator.ui.dialogs
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.BorderStroke
@@ -13,14 +12,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.cardiosimulator.R
+import com.example.cardiosimulator.ui.components.Heart3DViewer
 
 @Composable
 fun Heart3DDialog(onDismiss: () -> Unit) {
@@ -106,11 +104,9 @@ fun Heart3DDialog(onDismiss: () -> Unit) {
                             color = Color.White,
                             border = BorderStroke(1.dp, Color.LightGray)
                         ) {
-                            Image(
-                                painter = painterResource(R.drawable.heart_3d),
-                                contentDescription = null,
-                                modifier = Modifier.padding(8.dp),
-                                contentScale = ContentScale.Fit
+                            Heart3DViewer(
+                                modifier = Modifier.fillMaxSize(),
+                                modelPath = "heart.glb"
                             )
                         }
                         DialogBlueButton(stringResource(R.string.monitor_3d_ecg_lead))
