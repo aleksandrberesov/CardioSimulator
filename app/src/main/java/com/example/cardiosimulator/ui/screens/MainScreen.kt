@@ -353,6 +353,7 @@ fun MainScreen(appViewModel: AppViewModel) {
                         if (isAllRhythms || showMonitorOverlay) {
                             MonitorControlPanel(
                                 viewModel = monitorViewModel,
+                                onCompareClick = { monitorViewModel.toggleCompareMode(selectedRhythm?.id) },
                                 onStartStopClick = { isRunning ->
                                     if (isRunning) {
                                         appViewModel.sendStartCommand(selectedRhythm?.id, selectedRhythm?.titleEn)

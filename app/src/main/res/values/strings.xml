@@ -78,6 +78,10 @@
     <string name="monitor_tips_type_label">Caption / label</string>
     <string name="monitor_tips_preview_header">We see:</string>
     <string name="monitor_tips_note">Tips are added and edited at key points of the trace</string>
+    <string name="rhythm_info_tooltip">About this rhythm</string>
+    <string name="rhythm_info_title">Rhythm information</string>
+    <string name="pathology_leads_label">Leads</string>
+    <string name="pathology_markers_label">Markers</string>
     <string name="monitor_artifacts">Artifacts</string>
     <string name="monitor_artifact_none">No artifacts</string>
     <string name="monitor_artifact_muscle">Muscle</string>

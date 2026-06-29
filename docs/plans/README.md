@@ -88,6 +88,8 @@ Keep this list current when you add or move a plan.
 *(none)*
 
 ### Completed
+- [`2026-06-android-exclude-courses-tcp-upload-parity.md`](completed/2026-06-android-exclude-courses-tcp-upload-parity.md) —
+  exclude courses from TCP uploads (structural parity with Windows).
 - [`2026-05-transit-from-legacy.md`](completed/2026-05-transit-from-legacy.md) —
   migration to flat-pathology architecture & unified rendering pipeline.
 - [`2026-05-editor-rendering-parity.md`](completed/2026-05-editor-rendering-parity.md) —

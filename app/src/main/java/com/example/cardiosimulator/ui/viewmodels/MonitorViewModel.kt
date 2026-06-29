@@ -246,14 +246,31 @@ class MonitorViewModel(
     fun toggleCompareMode(defaultPathologyId: String? = null) {
         _monitorMode.update { prev ->
             val nextCompareMode = !prev.isCompareMode
-            var nextTargets = prev.comparisonTargets
-            if (nextCompareMode && nextTargets.isEmpty() && defaultPathologyId != null && prev.comparisonPresets.isEmpty()) {
-                nextTargets = mapOf(
-                    0 to ComparisonTarget(defaultPathologyId, Lead.I),
-                    1 to ComparisonTarget(defaultPathologyId, Lead.II)
+            if (nextCompareMode) {
+                // Entering. With no saved presets, seed the default comparison: a single filled pane
+                // (selected rhythm, lead II) in a four-pane single column; the other three panes are
+                // tappable placeholders. With presets, leave it to the presets dialog (TeachingScreen).
+                val seedDefaults = prev.comparisonTargets.isEmpty() && prev.comparisonPresets.isEmpty()
+                val nextTargets = if (seedDefaults && defaultPathologyId != null) {
+                    mapOf(0 to ComparisonTarget(defaultPathologyId, Lead.II))
+                } else {
+                    prev.comparisonTargets
+                }
+                prev.copy(
+                    isCompareMode = true,
+                    comparisonTargets = nextTargets,
+                    count = if (seedDefaults) 4 else prev.count,
+                    seriesScheme = if (seedDefaults) SeriesScheme.OneColumn else prev.seriesScheme
+                )
+            } else {
+                // Exiting. Drop the per-pane targets and restore the standard 12-lead grid.
+                prev.copy(
+                    isCompareMode = false,
+                    comparisonTargets = emptyMap(),
+                    count = 12,
+                    seriesScheme = SeriesScheme.Grid
                 )
             }
-            prev.copy(isCompareMode = nextCompareMode, comparisonTargets = nextTargets)
         }
     }
 

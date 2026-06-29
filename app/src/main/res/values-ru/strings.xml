@@ -77,6 +77,10 @@
     <string name="monitor_tips_type_label">Надпись / подпись</string>
     <string name="monitor_tips_preview_header">Видим:</string>
     <string name="monitor_tips_note">Подсказки добавляются и редактируются в ключевых точках</string>
+    <string name="rhythm_info_tooltip">О ритме</string>
+    <string name="rhythm_info_title">Информация о ритме</string>
+    <string name="pathology_leads_label">Отведения</string>
+    <string name="pathology_markers_label">Маркеры</string>
     <string name="monitor_artifacts">Артефакты</string>
     <string name="monitor_artifact_none">Без артефактов</string>
     <string name="monitor_artifact_muscle">Мышечные</string>

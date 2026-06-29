@@ -627,8 +627,6 @@ Connection behavior (`AppViewModel.connectTcp`):
 `StartCommand.params` is currently populated with `{"pathology": <id>,
 "name": <titleEn>}` from the currently selected rhythm.
 
-The course bundle can also be uploaded manually via `uploadCourses()`, which
-sends the `filesDir/courses/` directory as `Courses.zip`.
 
 ---
 

@@ -549,34 +549,6 @@ class AppViewModel(
         }
     }
 
-    fun uploadCourses() {
-        val socket = tcpSocket ?: return
-        val ctx = appContext ?: return
-        val sourceDir = File(ctx.filesDir, COURSES_DIR)
-
-        viewModelScope.launch(Dispatchers.IO) {
-            val zipFile = ZipCompressor.zipToCache(ctx, sourceDir, "courses_upload.zip") ?: return@launch
-            tcpSendMutex.withLock {
-                try {
-                    val msg = TcpMessage.UploadMessage(
-                        id = java.util.UUID.randomUUID().toString(),
-                        filename = "Courses.zip",
-                        size = zipFile.length()
-                    )
-                    val header = TcpProtocol.encode(msg) + "\n"
-                    val out = socket.getOutputStream()
-                    out.write(header.toByteArray(Charsets.UTF_8))
-                    zipFile.inputStream().use { input ->
-                        input.copyTo(out)
-                    }
-                    out.flush()
-                } catch (_: Exception) {
-                } finally {
-                    zipFile.delete()
-                }
-            }
-        }
-    }
 
     private suspend fun loadFromSaf(context: Context, uri: Uri, forceUnzip: Boolean = false) {
         val repo = repository ?: return

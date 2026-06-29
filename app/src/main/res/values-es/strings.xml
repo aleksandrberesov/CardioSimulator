@@ -73,6 +73,10 @@
     <string name="monitor_tips_type_label">Leyenda / etiqueta</string>
     <string name="monitor_tips_preview_header">Vemos:</string>
     <string name="monitor_tips_note">Las sugerencias se añaden y editan en puntos clave del trazado</string>
+    <string name="rhythm_info_tooltip">Acerca de este ritmo</string>
+    <string name="rhythm_info_title">Información del ritmo</string>
+    <string name="pathology_leads_label">Derivaciones</string>
+    <string name="pathology_markers_label">Marcadores</string>
     <string name="monitor_artifacts">Artefactos</string>
     <string name="monitor_artifact_none">Sin artefactos</string>
     <string name="monitor_artifact_muscle">Muscular</string>

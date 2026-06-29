@@ -16,11 +16,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material.icons.filled.Quiz
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -58,6 +61,8 @@ import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.Lecture
 import com.example.cardiosimulator.domain.LectureEntry
 import com.example.cardiosimulator.domain.OperatingMode
+import com.example.cardiosimulator.domain.PathologyEntry
+import com.example.cardiosimulator.domain.SignificantPoint
 import com.example.cardiosimulator.ui.components.LectureWebView
 import com.example.cardiosimulator.ui.components.SideDrawer
 import com.example.cardiosimulator.ui.components.Tab
@@ -247,6 +252,7 @@ private fun MonitorOverlay(
     var editingPaneIndex by remember { mutableStateOf<Int?>(null) }
     var showPresetsDialog by remember { mutableStateOf(false) }
     var showSavePresetDialog by remember { mutableStateOf(false) }
+    var showRhythmInfo by remember { mutableStateOf(false) }
 
     androidx.compose.runtime.DisposableEffect(Unit) {
         onDispose {
@@ -479,8 +485,8 @@ private fun MonitorOverlay(
                                 signal = sqiSignal.values.map { it.toDouble() }.toDoubleArray(),
                                 samplingRate = mode.calibration.sampleRateHz.toDouble(),
                                 modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(top = 16.dp, end = 16.dp)
+                                    .align(Alignment.BottomEnd)
+                                    .padding(bottom = 16.dp, end = 16.dp)
                             )
                         }
 
@@ -497,6 +503,32 @@ private fun MonitorOverlay(
                                 onKindSelected = { monitorViewModel.setSelectedTipKind(it) },
                                 onClose = { monitorViewModel.setShowTips(false) },
                                 modifier = Modifier.align(Alignment.TopEnd)
+                            )
+                        }
+
+                        // Graduation-cap button — standalone "All rhythms" view only (no title bar there). Mirrors the Windows
+                        // top-right button; tapping it opens the full-monitor rhythm-info screen below.
+                        if (onClose == null && !mode.isCompareMode) {
+                            IconButton(
+                                onClick = { showRhythmInfo = true },
+                                modifier = Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.School, // graduation-cap (mortarboard) — matches the Windows "Education" glyph
+                                    contentDescription = stringResource(R.string.rhythm_info_tooltip)
+                                )
+                            }
+                        }
+
+                        // Full-monitor rhythm-info screen — opaque overlay filling the whole monitor Box. Header (title +
+                        // close) over the scrollable details. Mirrors the Windows _infoScreen takeover.
+                        if (showRhythmInfo && onClose == null) {
+                            RhythmInfoScreen(
+                                pathology = selectedRhythm,
+                                significantPoints = significantPoints,
+                                language = selectedLanguage,
+                                onClose = { showRhythmInfo = false },
+                                modifier = Modifier.fillMaxSize()
                             )
                         }
                     }
@@ -581,3 +613,76 @@ private fun CourseViewerOverlay(
 
 private fun courseDisplayName(course: CourseEntry, language: Language): String =
     if (language == Language.RU) course.nameRu ?: course.titleEn else course.titleEn
+
+@Composable
+private fun RhythmInfoScreen(
+    pathology: PathologyEntry?,
+    significantPoints: List<SignificantPoint>,
+    language: Language,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    // Opaque so the monitor behind it is hidden; tonalElevation lifts it above the trace.
+    Surface(modifier = modifier, color = MaterialTheme.colorScheme.background, tonalElevation = 8.dp) {
+        Column(Modifier.fillMaxSize()) {
+            // Header: title + close.
+            Surface(
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 4.dp
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize().padding(start = 16.dp, end = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.rhythm_info_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(onClick = onClose) {
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_close))
+                    }
+                }
+            }
+            // Scrollable details.
+            Column(
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(40.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (pathology == null) {
+                    Text(text = stringResource(R.string.mode_teaching), style = MaterialTheme.typography.headlineSmall)
+                    return@Column
+                }
+                val primary = if (language == Language.RU) pathology.nameRu ?: pathology.titleEn else pathology.titleEn
+                val secondary = if (language == Language.RU) pathology.titleEn else pathology.nameRu
+                Text(text = primary, style = MaterialTheme.typography.headlineMedium)
+                if (!secondary.isNullOrBlank() && secondary != primary) {
+                    Text(
+                        text = secondary,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "${stringResource(R.string.pathology_leads_label)}: ${pathology.leadsCount}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                // Distinct marker labels in complex order; the enum's declaration order IS complex order,
+                // so sortedBy { ordinal } matches the Windows OrderBy((int)type). Strip <sub> tags.
+                val markers = significantPoints
+                    .map { it.type }
+                    .distinct()
+                    .sortedBy { it.ordinal }
+                    .joinToString(", ") { it.label.replace("<sub>", "").replace("</sub>", "") }
+                if (markers.isNotEmpty()) {
+                    Text(
+                        text = "${stringResource(R.string.pathology_markers_label)}: $markers",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
+        }
+    }
+}

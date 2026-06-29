@@ -1,8 +1,9 @@
 # Comparison-mode defaults + entry wiring (Android parity)
 
-**Status:** active
+**Status:** completed
 **Owner:** AI Assistant
 **Started:** 2026-06-29
+**Finished:** 2026-06-29
 
 **Direction:** **Windows → Android.** The Windows port (`CardioSimulatorWin`) refined comparison mode on
 2026-06-29; Android must catch up. The Windows port is the reference for behaviour — match it, adapting

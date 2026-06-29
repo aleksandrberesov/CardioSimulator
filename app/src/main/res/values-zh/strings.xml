@@ -72,6 +72,10 @@
     <string name="monitor_tips_type_label">文字 / 标注</string>
     <string name="monitor_tips_preview_header">可见：</string>
     <string name="monitor_tips_note">提示在关键点处添加和编辑</string>
+    <string name="rhythm_info_tooltip">关于此心律</string>
+    <string name="rhythm_info_title">心律信息</string>
+    <string name="pathology_leads_label">导联</string>
+    <string name="pathology_markers_label">标记</string>
     <string name="monitor_artifacts">伪影</string>
     <string name="monitor_artifact_none">无伪影</string>
     <string name="monitor_artifact_muscle">肌电干扰</string>
