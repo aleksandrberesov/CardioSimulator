@@ -119,6 +119,9 @@
     <string name="electrodes_state_displacement">Displacement</string>
     <string name="electrodes_caption_chest">Chest placement</string>
     <string name="electrodes_caption_cross">Cross-section</string>
+    <string name="electrodes_state_caption_ok">Electrodes connected correctly.</string>
+    <string name="electrodes_state_caption_swapped">RA/LA electrodes swapped: lead I is inverted, II and III are interchanged (as are aVR and aVL).</string>
+    <string name="electrodes_state_caption_displacement">Chest electrodes off their landmarks: reduced amplitude in leads V1\u2013V6.</string>
     <string name="monitor_compare">Compare</string>
     <string name="monitor_compare_mode">Compare mode</string>
     <string name="monitor_compare_placeholder">Click to choose pathology</string>

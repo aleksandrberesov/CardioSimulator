@@ -109,6 +109,9 @@
     <string name="electrodes_state_displacement">Desplazamiento</string>
     <string name="electrodes_caption_chest">Colocación en el tórax</string>
     <string name="electrodes_caption_cross">Corte transversal</string>
+    <string name="electrodes_state_caption_ok">Electrodos conectados correctamente.</string>
+    <string name="electrodes_state_caption_swapped">Electrodos RA/LA intercambiados: la derivación I se invierte, II y III se intercambian (igual que aVR y aVL).</string>
+    <string name="electrodes_state_caption_displacement">Electrodos torácicos fuera de su posición: amplitud reducida en las derivaciones V1\u2013V6.</string>
     <string name="monitor_compare">Comparar</string>
     <string name="monitor_compare_placeholder">Haga clic para elegir patología</string>
     <string name="monitor_comparison_presets_title">Ajustes predefinidos de comparación</string>

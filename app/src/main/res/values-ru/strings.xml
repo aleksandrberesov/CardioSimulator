@@ -113,6 +113,9 @@
     <string name="electrodes_state_displacement">Смещение</string>
     <string name="electrodes_caption_chest">Размещение на грудной клетке</string>
     <string name="electrodes_caption_cross">Поперечный срез</string>
+    <string name="electrodes_state_caption_ok">Электроды подключены правильно.</string>
+    <string name="electrodes_state_caption_swapped">Перепутаны электроды RA/LA: отведение I инвертировано, II и III меняются местами (как и aVR с aVL).</string>
+    <string name="electrodes_state_caption_displacement">Грудные электроды смещены: снижена амплитуда отведений V1\u2013V6.</string>
     <string name="monitor_compare">Сравнить</string>
     <string name="monitor_compare_mode">Режим сравнения</string>
     <string name="monitor_compare_placeholder">Нажмите, чтобы выбрать патологию</string>

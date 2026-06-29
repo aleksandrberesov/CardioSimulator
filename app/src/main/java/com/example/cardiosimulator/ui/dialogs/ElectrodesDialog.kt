@@ -18,13 +18,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.draw.alpha
 import com.example.cardiosimulator.R
+import com.example.cardiosimulator.domain.ElectrodeState
+import com.example.cardiosimulator.ui.theme.TextSecondary
 
 @Composable
-fun ElectrodesDialog(onDismiss: () -> Unit) {
+fun ElectrodesDialog(
+    electrodeState: ElectrodeState,
+    onSelectState: (ElectrodeState) -> Unit,
+    onDismiss: () -> Unit
+) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             modifier = Modifier
@@ -83,23 +92,62 @@ fun ElectrodesDialog(onDismiss: () -> Unit) {
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            LegendRow(Color(0xFFE53935), stringResource(R.string.electrodes_ra))
-                            LegendRow(Color(0xFFFDD835), stringResource(R.string.electrodes_la))
+                            val raColor = if (electrodeState == ElectrodeState.Swapped) Color(0xFFFDD835) else Color(0xFFE53935)
+                            val laColor = if (electrodeState == ElectrodeState.Swapped) Color(0xFFE53935) else Color(0xFFFDD835)
+                            
+                            LegendRow(raColor, stringResource(R.string.electrodes_ra))
+                            LegendRow(laColor, stringResource(R.string.electrodes_la))
                             LegendRow(Color(0xFF43A047), stringResource(R.string.electrodes_rl))
                             LegendRow(Color(0xFF101010), stringResource(R.string.electrodes_ll))
+                            
                             Spacer(modifier = Modifier.height(8.dp))
-                            LegendRow(Color(0xFFE53935), stringResource(R.string.electrodes_v1))
-                            LegendRow(Color(0xFFFDD835), stringResource(R.string.electrodes_v2))
-                            LegendRow(Color(0xFF43A047), stringResource(R.string.electrodes_v3))
-                            LegendRow(Color(0xFF8D6E63), stringResource(R.string.electrodes_v4))
-                            LegendRow(Color(0xFF101010), stringResource(R.string.electrodes_v5))
-                            LegendRow(Color(0xFF8E24AA), stringResource(R.string.electrodes_v6))
+                            
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier.alpha(if (electrodeState == ElectrodeState.Displacement) 0.45f else 1f)
+                            ) {
+                                LegendRow(Color(0xFFE53935), stringResource(R.string.electrodes_v1))
+                                LegendRow(Color(0xFFFDD835), stringResource(R.string.electrodes_v2))
+                                LegendRow(Color(0xFF43A047), stringResource(R.string.electrodes_v3))
+                                LegendRow(Color(0xFF8D6E63), stringResource(R.string.electrodes_v4))
+                                LegendRow(Color(0xFF101010), stringResource(R.string.electrodes_v5))
+                                LegendRow(Color(0xFF8E24AA), stringResource(R.string.electrodes_v6))
+                            }
                         }
 
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            DialogBlueButton(stringResource(R.string.electrodes_state_ok), Modifier.weight(1f))
-                            DialogBlueButton(stringResource(R.string.electrodes_state_swapped), Modifier.weight(1f))
-                            DialogBlueButton(stringResource(R.string.electrodes_state_displacement), Modifier.weight(1f))
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                StateButton(
+                                    stringResource(R.string.electrodes_state_ok),
+                                    selected = electrodeState == ElectrodeState.Ok,
+                                    onClick = { onSelectState(ElectrodeState.Ok) },
+                                    modifier = Modifier.weight(1f)
+                                )
+                                StateButton(
+                                    stringResource(R.string.electrodes_state_swapped),
+                                    selected = electrodeState == ElectrodeState.Swapped,
+                                    onClick = { onSelectState(ElectrodeState.Swapped) },
+                                    modifier = Modifier.weight(1f)
+                                )
+                                StateButton(
+                                    stringResource(R.string.electrodes_state_displacement),
+                                    selected = electrodeState == ElectrodeState.Displacement,
+                                    onClick = { onSelectState(ElectrodeState.Displacement) },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            
+                            val captionRes = when (electrodeState) {
+                                ElectrodeState.Ok -> R.string.electrodes_state_caption_ok
+                                ElectrodeState.Swapped -> R.string.electrodes_state_caption_swapped
+                                ElectrodeState.Displacement -> R.string.electrodes_state_caption_displacement
+                            }
+                            Text(
+                                text = stringResource(captionRes),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextSecondary,
+                                minLines = 2
+                            )
                         }
                     }
 
@@ -162,5 +210,31 @@ private fun LegendRow(color: Color, text: String) {
             modifier = Modifier.padding(start = 8.dp),
             lineHeight = 14.sp
         )
+    }
+}
+
+@Composable
+private fun StateButton(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.height(36.dp),
+        shape = RoundedCornerShape(4.dp),
+        color = if (selected) WindowsBlue else Color.White,
+        border = if (selected) null else BorderStroke(1.dp, WindowsBlue)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = text,
+                color = if (selected) Color.White else WindowsBlue,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }

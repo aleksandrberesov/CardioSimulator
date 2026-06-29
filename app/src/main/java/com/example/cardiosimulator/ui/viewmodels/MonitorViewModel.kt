@@ -215,6 +215,10 @@ class MonitorViewModel(
         _monitorMode.update { it.copy(filterType = filterType) }
     }
 
+    fun setElectrodeState(state: com.example.cardiosimulator.domain.ElectrodeState) {
+        _monitorMode.update { it.copy(electrodeState = state) }
+    }
+
     fun setShowElectrodes(show: Boolean) {
         _monitorMode.update { it.copy(showElectrodes = show) }
     }

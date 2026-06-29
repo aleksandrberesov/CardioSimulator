@@ -52,6 +52,7 @@ import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.EcgTrace
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.CourseEntry
+import com.example.cardiosimulator.domain.ElectrodeFault
 import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.Lecture
@@ -258,7 +259,11 @@ private fun MonitorOverlay(
     }
 
     if (mode.showElectrodes) {
-        ElectrodesDialog(onDismiss = { monitorViewModel.setShowElectrodes(false) })
+        ElectrodesDialog(
+            electrodeState = mode.electrodeState,
+            onSelectState = { monitorViewModel.setElectrodeState(it) },
+            onDismiss = { monitorViewModel.setShowElectrodes(false) }
+        )
     }
 
     if (mode.show3D) {
@@ -399,6 +404,9 @@ private fun MonitorOverlay(
                             ),
                             monitorViewModel = monitorViewModel,
                         ) { rows, columns, xOffset, scheme ->
+                            val displayWaveforms = remember(waveforms, mode.electrodeState) {
+                                ElectrodeFault.apply(waveforms, mode.electrodeState)
+                            }
                             LeadsGrid(
                                 rows = rows,
                                 columns = columns,
@@ -435,7 +443,7 @@ private fun MonitorOverlay(
                                         }
                                         points to title
                                     } else {
-                                        val points = lead?.let { waveforms[it] }
+                                        val points = lead?.let { displayWaveforms[it] }
                                             ?.takeIf { it.values.size >= 2 }
                                             ?: Points(emptyList<Float>())
                                         points to (lead?.name ?: "")
@@ -462,7 +470,10 @@ private fun MonitorOverlay(
                         }
 
                         val firstLeadForSqi = mode.leadOrder?.firstOrNull() ?: LEAD_ORDER.first()
-                        val sqiSignal = waveforms[firstLeadForSqi]
+                        val displayWaveformsForSqi = remember(waveforms, mode.electrodeState) {
+                            ElectrodeFault.apply(waveforms, mode.electrodeState)
+                        }
+                        val sqiSignal = displayWaveformsForSqi[firstLeadForSqi]
                         if (sqiSignal != null && sqiSignal.values.size > 100) {
                             com.example.cardiosimulator.ui.components.SqiCard(
                                 signal = sqiSignal.values.map { it.toDouble() }.toDoubleArray(),

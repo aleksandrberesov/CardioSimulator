@@ -108,6 +108,9 @@
     <string name="electrodes_state_displacement">移位</string>
     <string name="electrodes_caption_chest">胸壁放置</string>
     <string name="electrodes_caption_cross">横断面</string>
+    <string name="electrodes_state_caption_ok">电极连接正确。</string>
+    <string name="electrodes_state_caption_swapped">RA/LA 电极接反：I 导联倒置，II 与 III 互换（aVR 与 aVL 也互换）。</string>
+    <string name="electrodes_state_caption_displacement">胸前电极偏离标准位置：V1\u2013V6 导联振幅降低。</string>
     <string name="monitor_compare">比较</string>
     <string name="monitor_compare_placeholder">点击选择病理</string>
     <string name="monitor_comparison_presets_title">比较预设</string>
