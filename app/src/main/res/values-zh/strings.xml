@@ -32,8 +32,10 @@
     <string name="cd_tcp_status">TCP连接状态</string>
 
     <!-- Grid scheme labels -->
-    <string name="grid_scheme_pink">粉色</string>
+    <string name="grid_scheme_yellow">黄色</string>
     <string name="grid_scheme_blue_gray">蓝灰色</string>
+    <string name="grid_scheme_pink">Пленка ЭКГ</string>
+    <string name="grid_scheme_bedside">床旁监护仪</string>
 
     <!-- Navigation -->
     <string name="nav_home">主页</string>

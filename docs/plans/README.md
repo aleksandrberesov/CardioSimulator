@@ -57,6 +57,14 @@ Good prompts when handing off:
 Keep this list current when you add or move a plan.
 
 ### Active
+- [`2026-06-android-electrode-fault-parity.md`](active/2026-06-android-electrode-fault-parity.md) —
+  wire the Электроды window's state buttons (All OK / Swapped / Displacement) to a real ECG hookup
+  fault on the live trace: RA/LA limb-lead reversal + precordial attenuation via a pure
+  `ElectrodeFault` transform. Windows→Android port of a shipped, unit-tested feature. *Spec ready —
+  not started.*
+- [`2026-06-android-grid-color-schemes-parity.md`](active/2026-06-android-grid-color-schemes-parity.md) —
+  monitor paper-grid scheme rework (Yellow / ECG-film pink / Bedside monitor) + per-scheme trace colour.
+  Windows→Android. *Spec ready.*
 - [`2026-06-wfdb-physionet-import.md`](active/2026-06-wfdb-physionet-import.md) —
   WFDB `.hea`/`.dat`/`.mat` read-write + PhysioNet download + an Import action
   in the Pathology Constructor. 1:1 port of the shipped, unit-tested Windows

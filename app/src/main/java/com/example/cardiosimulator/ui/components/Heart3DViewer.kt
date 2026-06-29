@@ -1,6 +1,9 @@
 package com.example.cardiosimulator.ui.components
 
 import android.annotation.SuppressLint
+import android.util.Log
+import android.webkit.ConsoleMessage
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
@@ -18,7 +21,7 @@ import androidx.webkit.WebViewClientCompat
 @Composable
 fun Heart3DViewer(
     modifier: Modifier = Modifier,
-    modelPath: String = "heart.glb" // Expected in app/src/main/assets/
+    modelPath: String = "heart3d/heart.glb" // Expected in app/src/main/assets/
 ) {
     AndroidView(
         modifier = modifier,
@@ -32,12 +35,29 @@ fun Heart3DViewer(
                     override fun shouldInterceptRequest(
                         view: WebView,
                         request: WebResourceRequest,
-                    ): WebResourceResponse? = assetLoader.shouldInterceptRequest(request.url)
+                    ): WebResourceResponse? {
+                        Log.d("Heart3DViewer", "Requesting: ${request.url}")
+                        return assetLoader.shouldInterceptRequest(request.url)
+                    }
                 }
 
-                settings.javaScriptEnabled = true
-                settings.domStorageEnabled = true
-                // Allow transparency if needed
+                webChromeClient = object : WebChromeClient() {
+                    override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+                        Log.d("Heart3DViewer", "${consoleMessage?.message()} -- From line ${consoleMessage?.lineNumber()} of ${consoleMessage?.sourceId()}")
+                        return true
+                    }
+                }
+
+                settings.apply {
+                    javaScriptEnabled = true
+                    domStorageEnabled = true
+                    allowFileAccess = true
+                    allowContentAccess = true
+                    loadWithOverviewMode = true
+                    useWideViewPort = true
+                }
+                
+                // Allow transparency
                 setBackgroundColor(0)
 
                 val html = """
@@ -46,8 +66,7 @@ fun Heart3DViewer(
                     <head>
                         <meta charset="utf-8">
                         <meta name="viewport" content="width=device-width, initial-scale=1">
-                        <!-- Use model-viewer from CDN. For offline use, download and place in assets/ -->
-                        <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
+                        <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
                         <style>
                             body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; }
                             model-viewer { 
@@ -55,6 +74,17 @@ fun Heart3DViewer(
                                 height: 100%; 
                                 --progress-bar-color: #5B9BD5;
                                 background-color: transparent;
+                            }
+                            #error-message {
+                                display: none;
+                                position: absolute;
+                                top: 50%;
+                                left: 50%;
+                                transform: translate(-50%, -50%);
+                                color: #d32f2f;
+                                font-family: sans-serif;
+                                text-align: center;
+                                padding: 20px;
                             }
                         </style>
                     </head>
@@ -67,9 +97,38 @@ fun Heart3DViewer(
                             auto-rotate 
                             touch-action="pan-y">
                             <div slot="poster" style="display: flex; align-items: center; justify-content: center; height: 100%;">
-                                <p style="font-family: sans-serif; color: #666; font-size: 12px;">Loading 3D Heart...</p>
+                                <div style="text-align: center;">
+                                    <p style="font-family: sans-serif; color: #666; font-size: 14px;">Loading 3D Heart...</p>
+                                    <p style="font-family: sans-serif; color: #999; font-size: 10px;">(Large models may take a moment)</p>
+                                </div>
                             </div>
                         </model-viewer>
+                        <div id="error-message">
+                            <p>Failed to load 3D model.</p>
+                            <p style="font-size: 12px;" id="error-details"></p>
+                        </div>
+                        <script>
+                            const modelViewer = document.querySelector("model-viewer");
+                            const errorMsg = document.getElementById("error-message");
+                            const errorDetails = document.getElementById("error-details");
+
+                            modelViewer.addEventListener('error', (event) => {
+                                console.error("ModelViewer Error:", event.detail);
+                                errorMsg.style.display = "block";
+                                errorDetails.textContent = "Error: " + (event.detail.type || "Unknown error");
+                            });
+
+                            modelViewer.addEventListener('load', () => {
+                                console.log("Model loaded successfully");
+                            });
+
+                            // Timeout for loading
+                            setTimeout(() => {
+                                if (!modelViewer.loaded) {
+                                    console.warn("Model loading is taking a long time. It might be too large for the device memory.");
+                                }
+                            }, 10000);
+                        </script>
                     </body>
                     </html>
                 """.trimIndent()

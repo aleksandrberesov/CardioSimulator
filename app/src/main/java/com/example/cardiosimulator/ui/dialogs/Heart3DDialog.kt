@@ -106,7 +106,7 @@ fun Heart3DDialog(onDismiss: () -> Unit) {
                         ) {
                             Heart3DViewer(
                                 modifier = Modifier.fillMaxSize(),
-                                modelPath = "heart.glb"
+                                modelPath = "heart3d/heart.glb"
                             )
                         }
                         DialogBlueButton(stringResource(R.string.monitor_3d_ecg_lead))

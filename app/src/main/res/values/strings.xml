@@ -35,9 +35,10 @@
     <string name="cd_tcp_status">TCP Connection Status</string>
 
     <!-- Grid scheme labels -->
-    <string name="grid_scheme_pink">Pink</string>
+    <string name="grid_scheme_yellow">Yellow</string>
     <string name="grid_scheme_blue_gray">Blue/Gray</string>
-    <string name="grid_scheme_blank">Blank</string>
+    <string name="grid_scheme_pink">Пленка ЭКГ</string>
+    <string name="grid_scheme_bedside">Bedside monitor</string>
 
     <!-- Navigation -->
     <string name="nav_home">Home</string>

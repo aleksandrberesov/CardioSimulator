@@ -6,10 +6,13 @@ import com.example.cardiosimulator.data.EcgCalibration
 import kotlinx.serialization.Serializable
 
 enum class GridScheme(@param:StringRes val labelRes: Int) {
-    Pink(R.string.grid_scheme_pink),
+    Yellow(R.string.grid_scheme_yellow),
     BlueGray(R.string.grid_scheme_blue_gray),
-    Blank(R.string.grid_scheme_blank)
+    Pink(R.string.grid_scheme_pink),
+    Blank(R.string.grid_scheme_bedside)
 }
+
+enum class ElectrodeState { Ok, Swapped, Displacement }
 
 @Serializable
 enum class SeriesScheme {
@@ -57,7 +60,7 @@ data class ComparisonPreset(
 
 data class MonitorModeModel(
     val count: Int = 1,
-    val gridScheme: GridScheme = GridScheme.Pink,
+    val gridScheme: GridScheme = GridScheme.Yellow,
     val seriesScheme: SeriesScheme = SeriesScheme.OneColumn,
     val speed: Float = 25f,
     val scale: Float = 1f,

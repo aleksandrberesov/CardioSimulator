@@ -35,7 +35,7 @@ fun PreviewPane(
     color: Color = EcgTraceTeal,
     isRunning: Boolean = true,
     externalXOffsetPx: Float? = null,
-    gridScheme: GridScheme = GridScheme.Pink,
+    gridScheme: GridScheme = GridScheme.Yellow,
 ) {
     if (points.values.size < 2) return
     val scale = LocalPixelScale.current

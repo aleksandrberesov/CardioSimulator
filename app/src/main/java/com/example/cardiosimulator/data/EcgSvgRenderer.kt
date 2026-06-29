@@ -40,9 +40,10 @@ object EcgSvgRenderer {
     // Grid schemes
     private data class GridColors(val bg: String, val small: String, val large: String)
     private val gridSchemes = mapOf(
+        "Yellow" to GridColors("#FCFCEC", "#E6E4CE", "#D2CEA6"),
         "Pink" to GridColors("#FFF5F5", "#FDE4E4", "#F9BDBD"),
         "BlueGray" to GridColors("#F5F7FA", "#E4E9F2", "#C0CCDA"),
-        "Blank" to GridColors("#FFFFFF", "#FFFFFF", "#FFFFFF")
+        "Blank" to GridColors("#000000", "#000000", "#000000")
     )
     private const val TRACE_COLOR = "#111111"
     private const val LABEL_AREA_WIDTH = 32f

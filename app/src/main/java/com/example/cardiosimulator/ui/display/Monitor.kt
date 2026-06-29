@@ -349,7 +349,7 @@ fun MonitorOneColumn12Preview() {
     )
     vm.setSeriesCount(12)
     vm.setSeriesScheme(SeriesScheme.OneColumn)
-    vm.setGridScheme(GridScheme.Pink)
+    vm.setGridScheme(GridScheme.Yellow)
     val mode by vm.monitorMode.collectAsState()
     CardioSimulatorTheme {
         Monitor(
@@ -433,7 +433,7 @@ fun MonitorGrid12Preview() {
     )
     vm.setSeriesCount(6)
     vm.setSeriesScheme(SeriesScheme.Grid)
-    vm.setGridScheme(GridScheme.Pink)
+    vm.setGridScheme(GridScheme.Yellow)
     val mode by vm.monitorMode.collectAsState()
     CardioSimulatorTheme {
         Monitor(

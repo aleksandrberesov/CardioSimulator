@@ -21,6 +21,16 @@ val PaperBackground = Color(0xFFFCFCEC)
 val GridMinor = Color(0xFFE6E4CE)
 val GridMajor = Color(0xFFD2CEA6)
 
+// Pink "ECG film" paper (rose grid, black graphics)
+val PinkPaperBackground = Color(0xFFFFF5F5)
+val PinkGridMinor       = Color(0xFFFDE4E4)
+val PinkGridMajor       = Color(0xFFF9BDBD)
+val EcgTraceBlack       = Color(0xFF111111)
+
+// Bedside monitor (green on black)
+val BedsideBackground   = Color(0xFF000000)
+val BedsideTraceGreen   = Color(0xFF00E04A)
+
 // Legacy colors (kept for compatibility during transition if needed)
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)

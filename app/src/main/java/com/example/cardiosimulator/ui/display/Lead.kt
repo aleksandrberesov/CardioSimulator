@@ -30,6 +30,7 @@ import com.example.cardiosimulator.ui.components.ChartCanvas
 import com.example.cardiosimulator.ui.components.PreviewPane
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.theme.TextPrimary
+import com.example.cardiosimulator.ui.theme.palette
 
 @Composable
 fun Lead(
@@ -38,7 +39,7 @@ fun Lead(
     title: String = "",
     isRunning: Boolean = false,
     xOffsetPx: Float = 0f,
-    gridScheme: GridScheme = GridScheme.Pink,
+    gridScheme: GridScheme = GridScheme.Yellow,
     isCompareMode: Boolean = false,
     significantPoints: List<com.example.cardiosimulator.domain.SignificantPoint> = emptyList(),
     showImpulseLabels: Boolean = false,
@@ -46,6 +47,7 @@ fun Lead(
     filterType: com.example.cardiosimulator.domain.EcgFilterType = com.example.cardiosimulator.domain.EcgFilterType.NONE,
     calibration: com.example.cardiosimulator.data.EcgCalibration = com.example.cardiosimulator.data.EcgCalibration()
 ){
+    val traceColor = gridScheme.palette().trace
     val processedPoints = androidx.compose.runtime.remember(points, artifacts, filterType, calibration) {
         val active = com.example.cardiosimulator.domain.EcgArtifact.entries.filter { it != com.example.cardiosimulator.domain.EcgArtifact.None && it in artifacts }
         if ((active.isEmpty() && filterType == com.example.cardiosimulator.domain.EcgFilterType.NONE) || points.values.size < 50) {
@@ -97,7 +99,7 @@ fun Lead(
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Serif,
                     fontSize = 14.sp,
-                    color = com.example.cardiosimulator.ui.theme.EcgTraceTeal,
+                    color = traceColor,
                     textAlign = TextAlign.Center
                 )
             }
@@ -109,7 +111,7 @@ fun Lead(
                 .width(48.dp)
                 .fillMaxHeight()
         ) {
-            CalibrationPulse(modifier = Modifier.fillMaxSize())
+            CalibrationPulse(modifier = Modifier.fillMaxSize(), color = traceColor)
         }
 
         // Trace
@@ -123,7 +125,8 @@ fun Lead(
                 modifier = Modifier.fillMaxSize(),
                 isRunning = isRunning,
                 externalXOffsetPx = xOffsetPx,
-                gridScheme = gridScheme
+                gridScheme = gridScheme,
+                color = traceColor
             )
 
             if (showImpulseLabels && significantPoints.isNotEmpty()) {
@@ -140,7 +143,7 @@ fun Lead(
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Serif,
                     fontSize = 12.sp,
-                    color = com.example.cardiosimulator.ui.theme.EcgTraceTeal,
+                    color = traceColor,
                     textAlign = TextAlign.End,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
