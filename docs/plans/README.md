@@ -57,6 +57,14 @@ Good prompts when handing off:
 Keep this list current when you add or move a plan.
 
 ### Active
+- [`2026-06-android-sqi-badge-in-filter-dropdown.md`](active/2026-06-android-sqi-badge-in-filter-dropdown.md) —
+  move the SQI "Quality" badge off the monitor overlay into the top of the Filters dropdown; expose
+  the readout via `MonitorViewModel.signalQuality` and compute it on the filtered trace. Windows→Android;
+  supersedes the completed `sqi-badge-bottom-right` move. *Spec ready — not started.*
+- [`2026-06-android-grid-scheme-pink-localization-parity.md`](active/2026-06-android-grid-scheme-pink-localization-parity.md) —
+  localize the `grid_scheme_pink` ("ECG film") grid-scheme label in en/zh/es (currently the
+  Cyrillic `Пленка ЭКГ` in every locale). Windows→Android; deliberately reverses the earlier
+  "untranslated in all locales" choice. *Spec ready — 3 one-line string edits.*
 - [`2026-06-android-electrode-fault-parity.md`](active/2026-06-android-electrode-fault-parity.md) —
   wire the Электроды window's state buttons (All OK / Swapped / Displacement) to a real ECG hookup
   fault on the live trace: RA/LA limb-lead reversal + precordial attenuation via a pure

@@ -4,7 +4,8 @@ enum class Language(val tag: String, val displayName: String) {
     EN("en", "English"),
     RU("ru", "Русский"),
     ZH("zh", "中文"),
-    ES("es", "Español");
+    ES("es", "Español"),
+    HI("hi", "हिन्दी");
 
     companion object {
         fun fromTag(tag: String?): Language? {
