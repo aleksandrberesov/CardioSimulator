@@ -36,10 +36,12 @@ import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.ConstructorViewModel
+import com.example.cardiosimulator.ui.viewmodels.ConstructorTab
 import com.example.cardiosimulator.ui.viewmodels.CourseConstructorViewModel
 import com.example.cardiosimulator.ui.viewmodels.CourseViewerViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
+import com.example.cardiosimulator.ui.viewmodels.TestConstructorViewModel
 
 @Composable
 fun TopControlPanel(
@@ -49,6 +51,7 @@ fun TopControlPanel(
     constructorViewModel: ConstructorViewModel? = null,
     courseConstructorViewModel: CourseConstructorViewModel? = null,
     courseViewerViewModel: CourseViewerViewModel? = null,
+    testConstructorViewModel: TestConstructorViewModel? = null,
     modifier: Modifier = Modifier,
     onStartStopClick: (Boolean) -> Unit = {},
 ) {
@@ -116,7 +119,17 @@ fun TopControlPanel(
                         }
                         OperatingMode.Testing -> {}
                         OperatingMode.Examination -> {}
-                        OperatingMode.TestConstructor -> {}
+                        OperatingMode.TestConstructor -> {
+                            if (testConstructorViewModel != null) {
+                                val activeTab by testConstructorViewModel.activeTab.collectAsState()
+                                Tab(
+                                    text = stringResource(R.string.test_ctor_tab_bank),
+                                    isActive = activeTab == ConstructorTab.BANK,
+                                    onClick = { testConstructorViewModel.setTab(ConstructorTab.BANK) },
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                            }
+                        }
                         OperatingMode.OSKE -> {}
                         OperatingMode.OSKEConstructor -> {}
                         OperatingMode.Constructor -> {

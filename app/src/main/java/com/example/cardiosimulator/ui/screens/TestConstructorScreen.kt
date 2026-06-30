@@ -31,6 +31,7 @@ import com.example.cardiosimulator.domain.TestQuestion
 import com.example.cardiosimulator.ui.display.Lead as LeadView
 import com.example.cardiosimulator.ui.display.LeadsGrid
 import com.example.cardiosimulator.ui.display.Monitor
+import com.example.cardiosimulator.ui.components.Tab as CustomTab
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.ConstructorTab
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
@@ -84,18 +85,12 @@ fun TestConstructorScreen(
         // Editor Panel (Right)
         Box(modifier = Modifier.width(500.dp).fillMaxHeight()) {
             Column(modifier = Modifier.fillMaxSize()) {
-                TabRow(selectedTabIndex = activeTab.ordinal) {
-                    Tab(
-                        selected = activeTab == ConstructorTab.TEST,
-                        onClick = { testConstructorViewModel.setTab(ConstructorTab.TEST) },
-                        text = { Text(stringResource(R.string.test_ctor_tab_test)) }
-                    )
-                    Tab(
-                        selected = activeTab == ConstructorTab.BANK,
-                        onClick = { testConstructorViewModel.setTab(ConstructorTab.BANK) },
-                        text = { Text(stringResource(R.string.test_ctor_tab_bank)) }
-                    )
-                }
+                CustomTab(
+                    text = stringResource(R.string.test_ctor_tab_test),
+                    isActive = activeTab == ConstructorTab.TEST,
+                    onClick = { testConstructorViewModel.setTab(ConstructorTab.TEST) },
+                    modifier = Modifier.padding(8.dp)
+                )
 
                 if (activeTab == ConstructorTab.TEST) {
                     TestEditor(appViewModel, monitorViewModel, rhythmViewModel, testConstructorViewModel)
@@ -224,9 +219,9 @@ fun TestEditor(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            Button(onClick = { viewModel.saveTest() }, modifier = Modifier.weight(1f)) {
-                Text(stringResource(R.string.test_ctor_save))
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { viewModel.saveTest() }) {
+                Icon(Icons.Default.Save, contentDescription = stringResource(R.string.test_ctor_save))
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
