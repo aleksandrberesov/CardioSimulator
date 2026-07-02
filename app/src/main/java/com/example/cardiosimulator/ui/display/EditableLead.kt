@@ -55,6 +55,9 @@ fun EditableLead(
     val scale = LocalPixelScale.current
     val density = LocalDensity.current
 
+    val traceLeftPx = androidx.compose.runtime.remember(scale, density) { scale.traceLeftPx(density) }
+    val traceLeftDp = with(density) { traceLeftPx.toDp() }
+
     val waveformWidthDp = with(density) {
         (stream.samples.size * scale.pxPerSample).toDp()
     }
@@ -74,30 +77,35 @@ fun EditableLead(
             modifier = Modifier.fillMaxHeight(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Label Strip
+            // Calibration + Title area
             Box(
                 modifier = Modifier
-                    .width(32.dp)
-                    .fillMaxHeight(),
-                contentAlignment = Alignment.Center
+                    .width(traceLeftDp)
+                    .fillMaxHeight()
             ) {
+                // Pulse
+                CalibrationPulse(modifier = Modifier.fillMaxSize())
+
+                // Title (floats right of pulse, above isoline)
+                val pulseRightPx = with(density) {
+                    LEAD_IN_DP.dp.toPx() + 2f * PULSE_WING_DP.dp.toPx() + PULSE_SECONDS * scale.pxPerSec
+                }
+                val titleLeftDp = with(density) { (pulseRightPx + TITLE_GAP_DP.dp.toPx()).toDp() }
+
                 Text(
                     text = stream.lead.name,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Serif,
                     fontSize = 14.sp,
                     color = com.example.cardiosimulator.ui.theme.EcgTraceTeal,
-                    textAlign = TextAlign.Center
+                    maxLines = 1,
+                    softWrap = false,
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = titleLeftDp)
+                        .offset(y = (-TITLE_LIFT_DP - 7f).dp)
+                        .width(TITLE_AREA_DP.dp)
                 )
-            }
-
-            // Calibration Symbol
-            Box(
-                modifier = Modifier
-                    .width(48.dp)
-                    .fillMaxHeight()
-            ) {
-                CalibrationPulse(modifier = Modifier.fillMaxSize())
             }
 
             Box(

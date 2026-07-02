@@ -580,6 +580,15 @@ class ConstructorViewModel(
         }
     }
 
+    fun setDescription(description: String?) {
+        val currentFile = _targetFile.value ?: return
+        val normalized = if (description.isNullOrBlank()) null else description
+        if (currentFile.description != normalized) {
+            _targetFile.value = currentFile.copy(description = normalized)
+            _isMetadataDirty.value = true
+        }
+    }
+
     fun setGroup(groupKey: String?) {
         val currentFile = _targetFile.value ?: return
         if (currentFile.group != groupKey) {

@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 
 // New Green Design Theme Tokens
 val AccentGreen = Color(0xFF33A06A)
+val ElectrodeFaultRed = Color(0xFFD33A2F)
 val AccentGreenTint = Color(0xFFDCF1E6)
 val OnAccent = Color(0xFFFFFFFF)
 val PageBackground = Color(0xFFE8EAF4)
@@ -14,6 +15,10 @@ val Hairline = Color(0xFFE2E5EE)
 val HoverFill = Color(0x14808080)
 val TextPrimary = Color(0xFF1B2430)
 val TextSecondary = Color(0xFF5A6B82)
+
+// Semantic colors for Testing/Examination
+val Positive = Color(0xFF2E9E5B)   // correct answer / pass
+val Negative = Color(0xFFCC3A3A)   // wrong answer / fail / countdown urgency
 
 // ECG Specific Colors
 val EcgTraceTeal = Color(0xFF2C6E8E)

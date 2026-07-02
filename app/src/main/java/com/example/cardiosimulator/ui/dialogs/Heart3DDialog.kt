@@ -7,7 +7,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,9 +19,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.ui.components.Heart3DViewer
+import kotlinx.coroutines.delay
 
 @Composable
 fun Heart3DDialog(onDismiss: () -> Unit) {
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        delay(15_000) // 15 second backstop
+        isLoading = false
+    }
+
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             modifier = Modifier
@@ -104,10 +112,35 @@ fun Heart3DDialog(onDismiss: () -> Unit) {
                             color = Color.White,
                             border = BorderStroke(1.dp, Color.LightGray)
                         ) {
-                            Heart3DViewer(
-                                modifier = Modifier.fillMaxSize(),
-                                modelPath = "heart3d/heart.glb"
-                            )
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                Heart3DViewer(
+                                    modifier = Modifier.fillMaxSize(),
+                                    modelPath = "heart3d/heart.glb",
+                                    onLoaded = { isLoading = false },
+                                    onError = { isLoading = false }
+                                )
+
+                                if (isLoading) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(Color.White),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        CircularProgressIndicator(
+                                            color = WindowsBlue,
+                                            modifier = Modifier.size(36.dp)
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = stringResource(R.string.monitor_3d_loading),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color.Gray
+                                        )
+                                    }
+                                }
+                            }
                         }
                         DialogBlueButton(stringResource(R.string.monitor_3d_ecg_lead))
                     }

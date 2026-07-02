@@ -20,12 +20,15 @@ import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.domain.LectureEntry
+import com.example.cardiosimulator.domain.TopicEntry
 import com.example.cardiosimulator.ui.screens.verticalScrollbar
 
 /**
  * Lecture index for the chosen course. Mirrors [CourseSelector]'s look;
  * selection drives `CourseViewerViewModel.selectLecture`. Localised title
  * follows the active [language] (RU name with English fallback).
+ *
+ * Lectures are grouped by [topics]. Ungrouped lectures appear first.
  */
 @Composable
 fun LectureSelector(
@@ -33,6 +36,7 @@ fun LectureSelector(
     language: Language,
     modifier: Modifier = Modifier,
     selectedLectureId: String? = null,
+    topics: List<TopicEntry> = emptyList(),
     onLectureSelect: (LectureEntry) -> Unit = {},
 ) {
     Column(
@@ -53,23 +57,15 @@ fun LectureSelector(
                 .weight(1f)
                 .verticalScroll(rememberScrollState()),
         ) {
-            lectures.forEachIndexed { index, lecture ->
-                val title = if (language == Language.RU) lecture.nameRu ?: lecture.titleEn else lecture.titleEn
-                val isSelected = lecture.id == selectedLectureId
-                Text(
-                    text = title,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onLectureSelect(lecture) }
-                        .background(
-                            if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-                            shape = MaterialTheme.shapes.small,
-                        )
-                        .padding(vertical = 12.dp, horizontal = 4.dp),
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else Color.Black,
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                if (index < lectures.lastIndex) {
+            // 1. Ungrouped / Orphans first
+            val topicIds = topics.map { it.id }.toSet()
+            val ungrouped = lectures.filter { it.topic == null || it.topic !in topicIds }
+
+            ungrouped.forEachIndexed { index, lecture ->
+                LectureItem(lecture, language, selectedLectureId == lecture.id, isIndented = false) {
+                    onLectureSelect(lecture)
+                }
+                if (index < ungrouped.lastIndex || topics.isNotEmpty()) {
                     HorizontalDivider(
                         modifier = Modifier.padding(horizontal = 4.dp),
                         thickness = 0.5.dp,
@@ -77,6 +73,59 @@ fun LectureSelector(
                     )
                 }
             }
+
+            // 2. Topics in order
+            topics.forEachIndexed { topicIndex, topic ->
+                val topicTitle = if (language == Language.RU) topic.nameRu ?: topic.titleEn else topic.titleEn
+                Text(
+                    text = topicTitle,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp, bottom = 4.dp, start = 4.dp),
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    ),
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                val topicLectures = lectures.filter { it.topic == topic.id }
+                topicLectures.forEachIndexed { lectureIndex, lecture ->
+                    LectureItem(lecture, language, selectedLectureId == lecture.id, isIndented = true) {
+                        onLectureSelect(lecture)
+                    }
+                    if (lectureIndex < topicLectures.lastIndex || topicIndex < topics.lastIndex) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            thickness = 0.5.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant,
+                        )
+                    }
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun LectureItem(
+    lecture: LectureEntry,
+    language: Language,
+    isSelected: Boolean,
+    isIndented: Boolean,
+    onClick: () -> Unit
+) {
+    val title = if (language == Language.RU) lecture.nameRu ?: lecture.titleEn else lecture.titleEn
+    Text(
+        text = title,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .background(
+                if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                shape = MaterialTheme.shapes.small,
+            )
+            .padding(vertical = 12.dp, horizontal = if (isIndented) 16.dp else 4.dp),
+        color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else Color.Black,
+        style = MaterialTheme.typography.bodyLarge,
+    )
 }

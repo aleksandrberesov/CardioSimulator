@@ -52,6 +52,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.LocalPixelScale
 import com.example.cardiosimulator.data.PixelScale
+import com.example.cardiosimulator.data.displayScaleFactor
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.GridScheme
 import com.example.cardiosimulator.domain.OperatingMode
@@ -115,8 +116,8 @@ fun Monitor(
     // 1 mm = 160/25.4 dp on Android's mdpi reference; convert to px via display density.
     // displayScale is a global shrink/zoom factor so the whole picture (grid + trace
     // + cal pulse) fits the monitor without breaking the mm-based relationships.
-    val pxPerMm = density.density * (160f / 25.4f) * mode.displayScale
-    val pixelScale = remember(pxPerMm, mode.speed, mode.calibration, scale) {
+    val pxPerMm = density.density * (160f / 25.4f) * mode.displayScale * displayScaleFactor(mode.count)
+    val pixelScale = remember(pxPerMm, mode.speed, mode.calibration, scale, mode.count) {
         PixelScale(
             pxPerMm = pxPerMm,
             paperSpeedMmPerSec = mode.speed,

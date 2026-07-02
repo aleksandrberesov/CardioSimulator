@@ -25,6 +25,7 @@ import androidx.compose.ui.window.Dialog
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.data.TestImageStore
+import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.domain.PathologyEntry
 import com.example.cardiosimulator.domain.QuestionStimulus
 import com.example.cardiosimulator.domain.TestQuestion
@@ -85,13 +86,6 @@ fun TestConstructorScreen(
         // Editor Panel (Right)
         Box(modifier = Modifier.width(500.dp).fillMaxHeight()) {
             Column(modifier = Modifier.fillMaxSize()) {
-                CustomTab(
-                    text = stringResource(R.string.test_ctor_tab_test),
-                    isActive = activeTab == ConstructorTab.TEST,
-                    onClick = { testConstructorViewModel.setTab(ConstructorTab.TEST) },
-                    modifier = Modifier.padding(8.dp)
-                )
-
                 if (activeTab == ConstructorTab.TEST) {
                     TestEditor(appViewModel, monitorViewModel, rhythmViewModel, testConstructorViewModel)
                 } else {
@@ -249,6 +243,14 @@ fun BankEditor(
     val themes by viewModel.themes.collectAsState()
     val rhythms by rhythmViewModel.rhythms.collectAsState()
 
+    val courseEntries by appViewModel.courses.collectAsState()
+    val lang by appViewModel.selectedLanguage.collectAsState()
+
+    val courseThemeNames = courseEntries
+        .filterNot { it.id == AppViewModel.ALL_RHYTHMS_ID }
+        .map { if (lang == Language.RU) (it.nameRu ?: it.titleEn) else it.titleEn }
+        .filter { name -> name.isNotBlank() && themes.none { it.equals(name, ignoreCase = true) } }
+
     var showThemeDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
@@ -355,6 +357,7 @@ fun BankEditor(
     if (showThemeDialog) {
         ThemeManagerDialog(
             themes = themes,
+            courses = courseThemeNames,
             onAdd = { viewModel.addTheme(it) },
             onDelete = { viewModel.deleteTheme(it) },
             onDismiss = { showThemeDialog = false }
@@ -588,18 +591,26 @@ fun QuestionEditorCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThemeManagerDialog(
     themes: List<String>,
+    courses: List<String>,
     onAdd: (String) -> Unit,
     onDelete: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
     var newTheme by remember { mutableStateOf("") }
+    var selectedCourse by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
                 Text(stringResource(R.string.test_ctor_manage_themes), style = MaterialTheme.typography.titleLarge)
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -628,6 +639,50 @@ fun ThemeManagerDialog(
                         }
                     }) {
                         Icon(Icons.Default.Add, contentDescription = null)
+                    }
+                }
+
+                if (courses.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(stringResource(R.string.test_ctor_theme_from_course), style = MaterialTheme.typography.labelLarge)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        ExposedDropdownMenuBox(
+                            expanded = expanded,
+                            onExpandedChange = { expanded = !expanded },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            OutlinedTextField(
+                                value = selectedCourse,
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text(stringResource(R.string.test_ctor_theme_from_course_hint)) },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                                modifier = Modifier.menuAnchor().fillMaxWidth()
+                            )
+                            ExposedDropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false }
+                            ) {
+                                courses.forEach { course ->
+                                    DropdownMenuItem(
+                                        text = { Text(course) },
+                                        onClick = {
+                                            selectedCourse = course
+                                            expanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                        IconButton(onClick = {
+                            if (selectedCourse.isNotBlank()) {
+                                onAdd(selectedCourse)
+                                selectedCourse = ""
+                            }
+                        }) {
+                            Icon(Icons.Default.Add, contentDescription = null)
+                        }
                     }
                 }
 

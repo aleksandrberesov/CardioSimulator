@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -126,7 +127,11 @@ fun ComparisonTargetDialog(
                     Spacer(modifier = Modifier.width(16.dp))
 
                     // Right side: Lead selection
-                    Column(modifier = Modifier.weight(0.6f)) {
+                    Column(
+                        modifier = Modifier
+                            .weight(0.6f)
+                            .widthIn(min = 140.dp)
+                    ) {
                         Text(
                             text = stringResource(R.string.constructor_lead_label, ""),
                             style = MaterialTheme.typography.titleMedium,

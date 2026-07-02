@@ -34,7 +34,7 @@
     <!-- Grid scheme labels -->
     <string name="grid_scheme_yellow">黄色</string>
     <string name="grid_scheme_blue_gray">蓝灰色</string>
-    <string name="grid_scheme_pink">Пленка ЭКГ</string>
+    <string name="grid_scheme_pink">心电图纸</string>
     <string name="grid_scheme_bedside">床旁监护仪</string>
 
     <!-- Navigation -->
@@ -74,16 +74,29 @@
     <string name="monitor_tips_note">提示在关键点处添加和编辑</string>
     <string name="rhythm_info_tooltip">关于此心律</string>
     <string name="rhythm_info_title">心律信息</string>
+    <string name="pathology_description_label">病理信息</string>
+    <string name="description_edit_tooltip">编辑病理信息</string>
+    <string name="description_edit_title">病理信息</string>
     <string name="pathology_leads_label">导联</string>
     <string name="pathology_markers_label">标记</string>
     <string name="monitor_artifacts">伪影</string>
+    <string name="monitor_artifacts_info">伪影会在波形上叠加逼真的噪声，便于练习识别信号质量不佳的情况。点击一个或多个以添加，再次点击可移除。它们不会改变基础节律，只影响显示的清晰度。“无伪影”可一次清除全部。</string>
     <string name="monitor_artifact_none">无伪影</string>
     <string name="monitor_artifact_muscle">肌电干扰</string>
     <string name="monitor_artifact_mains">工频干扰</string>
     <string name="monitor_artifact_baseline">基线漂移</string>
     <string name="monitor_artifact_contact">接触不良</string>
     <string name="monitor_artifact_motion">运动伪影</string>
+    <string name="monitor_signal_quality">质量</string>
+    <string name="monitor_signal_quality_unavailable">信号质量不可用</string>
+    <string name="monitor_filters">滤波器</string>
+    <string name="monitor_filters_info">滤波器用于净化显示的波形。低通 (25 Hz) 去除高频肌电噪声，高通 (3 Hz) 去除基线漂移，带通 (3\u201325 Hz) 两者兼有。同一时间只应用一个滤波器。</string>
+    <string name="monitor_filter_none">无滤波器</string>
+    <string name="monitor_filter_lowpass">低通 (25Hz)</string>
+    <string name="monitor_filter_highpass">高通 (3Hz)</string>
+    <string name="monitor_filter_bandpass">带通 (3-25Hz)</string>
     <string name="monitor_3d">3D</string>
+    <string name="monitor_3d_loading">正在加载 3D 心脏\u2026</string>
     <string name="monitor_3d_title">3D 心脏</string>
     <string name="monitor_3d_placeholder">此处将显示可旋转查看的交互式 3D 心脏。</string>
     <string name="monitor_3d_lead_scheme">导联示意图</string>
@@ -121,6 +134,8 @@
     <string name="monitor_comparison_presets_new">设置新方案</string>
     <string name="monitor_comparison_preset_save_title">保存预设</string>
     <string name="monitor_comparison_preset_name_hint">预设名称</string>
+    <string name="teaching_take_test">进行测试</string>
+    <string name="teaching_take_exam">参加考试</string>
 
     <!-- Rhythm panel -->
     <string name="rhythm_drawer_title">心律</string>
@@ -128,24 +143,37 @@
     <string name="rhythm_search_content_description">搜索</string>
     <string name="fix_drawer">固定面板</string>
     <string name="course_drawer_title">课程</string>
+    <string name="topic_selector_title">主题</string>
+    <string name="subtopic_selector_title">子主题</string>
     <string name="lecture_selector_title">讲座</string>
     <string name="course_viewer_select_lecture">选择一节讲座</string>
     <string name="cd_close">关闭</string>
     <string name="course_constructor_revert">还原</string>
     <string name="course_data_source_use_sample">使用示例课程</string>
     <string name="course_constructor_new_course">新建课程</string>
-    <string name="course_constructor_new_lecture">新建讲座</string>
-    <string name="course_constructor_rename">重命名</string>
-    <string name="course_constructor_delete">删除</string>
+    <string name="course_constructor_new_topic">新建主题</string>
+    <string name="course_constructor_rename_topic">重命名主题</string>
+    <string name="course_constructor_delete_topic">删除主题</string>
+    <string name="course_constructor_new_lecture">新建子主题</string>
+    <string name="course_constructor_rename">编辑子主题</string>
+    <string name="course_constructor_delete">删除子主题</string>
     <string name="course_constructor_id_hint">标识</string>
     <string name="course_constructor_title_hint">标题</string>
-    <string name="course_constructor_delete_confirm">删除这节讲座？</string>
+    <string name="course_constructor_topic_title_hint">主题标题</string>
+    <string name="course_constructor_no_topic">(无主题)</string>
+    <string name="course_constructor_delete_confirm">删除此子主题？</string>
+    <string name="course_constructor_delete_topic_title">删除主题</string>
+    <string name="course_constructor_delete_topic_body">删除主题 \"%1$s\" 及其所有子主题？</string>
     <string name="course_insert_image">图片</string>
     <string name="course_constructor_image_src">来源 (URL 或 assets 路径)</string>
     <string name="course_constructor_image_alt">标题 / 说明</string>
     <string name="course_constructor_image_upload">上传图片</string>
 
-    <!-- Testing panel -->
+    <string name="test_select_title">测试</string>
+    <string name="test_start">开始测试</string>
+    <string name="test_abort">中止测试</string>
+    <string name="test_abort_confirm">您确定要中止测试吗？您的进度将会丢失。</string>
+    <string name="test_empty">目前没有测试。请在测试构造器中创建一个。</string>
     <string name="testing_question_format">问题 %1$d</string>
 
     <!-- Data source picker -->
@@ -281,4 +309,7 @@
     <string name="cd_redo">重做</string>
     <string name="cd_apply">应用</string>
     <string name="cd_cancel">取消</string>
+    <string name="test_ctor_theme_from_course">来自课程</string>
+    <string name="test_ctor_theme_from_course_hint">选择课程</string>
+    <string name="welcome_dont_show_again">不再显示</string>
 </resources>

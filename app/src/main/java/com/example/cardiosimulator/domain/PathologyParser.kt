@@ -39,6 +39,7 @@ object PathologyParser {
                 leadsCount = fields["leads"]?.toIntOrNull() ?: 0,
                 fileName = "$id.dat",
                 group = fields["group"],
+                description = fields["description"],
             )
         }
 
@@ -69,6 +70,9 @@ object PathologyParser {
             if (!e.group.isNullOrBlank()) {
                 sb.append(";group:").append(e.group)
             }
+            if (!e.description.isNullOrBlank()) {
+                sb.append(";description:").append(e.description)
+            }
             sb.append('\n')
         }
         return sb.toString()
@@ -85,6 +89,7 @@ object PathologyParser {
         val title = header["title"].orEmpty()
         val name = header["name"]
         val group = header["group"]
+        val description = header["description"]?.replace("\\n", "\n")
         val globalMarkers = parseMarkers(header["markers"])
 
         val leadBlocks = blocks.drop(1)
@@ -106,7 +111,7 @@ object PathologyParser {
 
             leads[lead] = LeadStream(lead, samples)
         }
-        return PathologyFile(id, title, name, leads, globalMarkers, group)
+        return PathologyFile(id, title, name, leads, globalMarkers, group, description)
     }
 
     fun serializePathology(file: PathologyFile, leadOrder: List<Lead>): String {
@@ -116,6 +121,10 @@ object PathologyParser {
         sb.append("name:").append(file.nameRu.orEmpty()).append('\n')
         if (!file.group.isNullOrBlank()) {
             sb.append("group:").append(file.group).append('\n')
+        }
+        if (!file.description.isNullOrBlank()) {
+            val escaped = file.description.replace("\r\n", "\n").replace("\n", "\\n")
+            sb.append("description:").append(escaped).append('\n')
         }
         sb.append("leads:").append(file.leads.size).append('\n')
         

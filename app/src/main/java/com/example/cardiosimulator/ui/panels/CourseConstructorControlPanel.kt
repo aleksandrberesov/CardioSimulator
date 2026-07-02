@@ -2,7 +2,6 @@ package com.example.cardiosimulator.ui.panels
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -15,6 +14,8 @@ import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.VerticalSplit
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -37,10 +38,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.R
+import com.example.cardiosimulator.domain.Language
+import com.example.cardiosimulator.domain.TopicEntry
 import com.example.cardiosimulator.ui.components.ControlPanelDivider
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.ConstructorViewMode
 import com.example.cardiosimulator.ui.viewmodels.CourseConstructorViewModel
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 
 @Composable
 fun CourseConstructorControlPanel(
@@ -49,12 +55,18 @@ fun CourseConstructorControlPanel(
     modifier: Modifier = Modifier,
 ) {
     val lectures by courseConstructorViewModel.lectures.collectAsState()
+    val topics by courseConstructorViewModel.topics.collectAsState()
+    val selectedTopicId by courseConstructorViewModel.selectedTopicId.collectAsState()
     val selectedLectureId by courseConstructorViewModel.selectedLectureId.collectAsState()
     val isDirty by courseConstructorViewModel.isDirty.collectAsState()
     val isSaving by courseConstructorViewModel.isSaving.collectAsState()
     val viewMode by courseConstructorViewModel.viewMode.collectAsState()
+    val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
 
     var showNewCourse by remember { mutableStateOf(false) }
+    var showNewTopic by remember { mutableStateOf(false) }
+    var showRenameTopic by remember { mutableStateOf(false) }
+    var showDeleteTopic by remember { mutableStateOf(false) }
     var showNewLecture by remember { mutableStateOf(false) }
     var showRename by remember { mutableStateOf(false) }
     var showDelete by remember { mutableStateOf(false) }
@@ -72,24 +84,78 @@ fun CourseConstructorControlPanel(
             onDismiss = { showNewCourse = false },
         )
     }
-    if (showNewLecture) {
+    if (showNewTopic) {
         OneFieldDialog(
-            title = stringResource(R.string.course_constructor_new_lecture),
-            label = stringResource(R.string.course_constructor_title_hint),
+            title = stringResource(R.string.course_constructor_new_topic),
+            label = stringResource(R.string.course_constructor_topic_title_hint),
             initial = "",
             onConfirm = { title ->
-                courseConstructorViewModel.createLecture(generateRandomId(), title)
+                courseConstructorViewModel.createTopic(generateRandomId(), title)
+                showNewTopic = false
+            },
+            onDismiss = { showNewTopic = false },
+        )
+    }
+    if (showRenameTopic) {
+        val topic = topics.find { it.id == selectedTopicId }
+        OneFieldDialog(
+            title = stringResource(R.string.course_constructor_rename_topic),
+            label = stringResource(R.string.course_constructor_topic_title_hint),
+            initial = topic?.let { if (selectedLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn }.orEmpty(),
+            onConfirm = { title ->
+                selectedTopicId?.let { courseConstructorViewModel.renameTopic(it, title) }
+                showRenameTopic = false
+            },
+            onDismiss = { showRenameTopic = false },
+        )
+    }
+    if (showDeleteTopic) {
+        val topicName = topics.find { it.id == selectedTopicId }?.let { if (selectedLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn } ?: ""
+        AlertDialog(
+            onDismissRequest = { showDeleteTopic = false },
+            title = { Text(stringResource(R.string.course_constructor_delete_topic_title)) },
+            text = { Text(stringResource(R.string.course_constructor_delete_topic_body, topicName)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    selectedTopicId?.let { courseConstructorViewModel.deleteTopic(it) }
+                    showDeleteTopic = false
+                }) {
+                    Text(stringResource(R.string.constructor_rename_ok))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteTopic = false }) {
+                    Text(stringResource(R.string.constructor_rename_cancel))
+                }
+            },
+        )
+    }
+    if (showNewLecture) {
+        SubtopicDialog(
+            title = stringResource(R.string.course_constructor_new_lecture),
+            initialTitle = "",
+            initialTopicId = selectedTopicId,
+            topics = topics,
+            language = selectedLanguage,
+            onConfirm = { title, topicId ->
+                courseConstructorViewModel.createLecture(generateRandomId(), title, topicId)
                 showNewLecture = false
             },
             onDismiss = { showNewLecture = false },
         )
     }
     if (showRename) {
-        OneFieldDialog(
+        val lecture = lectures.find { it.id == selectedLectureId }
+        SubtopicDialog(
             title = stringResource(R.string.course_constructor_rename),
-            label = stringResource(R.string.course_constructor_title_hint),
-            initial = lectures.find { it.id == selectedLectureId }?.titleEn.orEmpty(),
-            onConfirm = { title -> courseConstructorViewModel.renameLecture(title); showRename = false },
+            initialTitle = lecture?.titleEn.orEmpty(), // Using titleEn for rename, maybe should use RU if RU is active?
+            initialTopicId = lecture?.topic,
+            topics = topics,
+            language = selectedLanguage,
+            onConfirm = { title, topicId ->
+                courseConstructorViewModel.renameLecture(title, topicId)
+                showRename = false
+            },
             onDismiss = { showRename = false },
         )
     }
@@ -145,18 +211,36 @@ fun CourseConstructorControlPanel(
     }
 
     Row(
-        modifier = modifier.fillMaxWidth().height(IntrinsicSize.Min),
+        modifier = modifier.fillMaxWidth().height(64.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         TextButton(onClick = { showNewCourse = true }) {
             Text(stringResource(R.string.course_constructor_new_course), style = MaterialTheme.typography.labelLarge)
         }
+        TextButton(onClick = { showNewTopic = true }) {
+            Text(stringResource(R.string.course_constructor_new_topic), style = MaterialTheme.typography.labelLarge)
+        }
         TextButton(onClick = { showNewLecture = true }) {
             Text(stringResource(R.string.course_constructor_new_lecture), style = MaterialTheme.typography.labelLarge)
         }
         TextButton(onClick = { showImportFullPage = true }) {
             Text("All-in-one", style = MaterialTheme.typography.labelLarge)
+        }
+
+        ControlPanelDivider()
+
+        TextButton(
+            onClick = { showRenameTopic = true },
+            enabled = selectedTopicId != null
+        ) {
+            Text(stringResource(R.string.course_constructor_rename_topic), style = MaterialTheme.typography.labelLarge)
+        }
+        TextButton(
+            onClick = { showDeleteTopic = true },
+            enabled = selectedTopicId != null
+        ) {
+            Text(stringResource(R.string.course_constructor_delete_topic), style = MaterialTheme.typography.labelLarge)
         }
 
         ControlPanelDivider()
@@ -217,6 +301,76 @@ fun CourseConstructorControlPanel(
             Text(stringResource(R.string.constructor_save), style = MaterialTheme.typography.labelLarge)
         }
     }
+}
+
+@Composable
+private fun SubtopicDialog(
+    title: String,
+    initialTitle: String,
+    initialTopicId: String?,
+    topics: List<TopicEntry>,
+    language: Language,
+    onConfirm: (String, String?) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var text by remember { mutableStateOf(initialTitle) }
+    var selectedTopicId by remember { mutableStateOf(initialTopicId) }
+    var expanded by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = { Text(stringResource(R.string.course_constructor_title_hint)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        autoCorrectEnabled = false,
+                        capitalization = KeyboardCapitalization.None
+                    )
+                )
+
+                Text(text = stringResource(R.string.topic_selector_title), style = MaterialTheme.typography.labelSmall)
+
+                Box {
+                    OutlinedButton(
+                        onClick = { expanded = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val topic = topics.find { it.id == selectedTopicId }
+                        val topicName = topic?.let { if (language == Language.RU) it.nameRu ?: it.titleEn else it.titleEn }
+                            ?: stringResource(R.string.course_constructor_no_topic)
+                        Text(topicName)
+                    }
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.course_constructor_no_topic)) },
+                            onClick = { selectedTopicId = null; expanded = false }
+                        )
+                        topics.forEach { topic ->
+                            val name = if (language == Language.RU) topic.nameRu ?: topic.titleEn else topic.titleEn
+                            DropdownMenuItem(
+                                text = { Text(name) },
+                                onClick = { selectedTopicId = topic.id; expanded = false }
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(text, selectedTopicId) }, enabled = text.isNotBlank()) {
+                Text(stringResource(R.string.constructor_rename_ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.constructor_rename_cancel)) }
+        },
+    )
 }
 
 @Composable

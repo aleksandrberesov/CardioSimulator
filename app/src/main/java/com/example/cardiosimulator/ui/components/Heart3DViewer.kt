@@ -1,8 +1,11 @@
 package com.example.cardiosimulator.ui.components
 
 import android.annotation.SuppressLint
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.webkit.ConsoleMessage
+import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -21,7 +24,9 @@ import androidx.webkit.WebViewClientCompat
 @Composable
 fun Heart3DViewer(
     modifier: Modifier = Modifier,
-    modelPath: String = "heart3d/heart.glb" // Expected in app/src/main/assets/
+    modelPath: String = "heart3d/heart.glb", // Expected in app/src/main/assets/
+    onLoaded: () -> Unit = {},
+    onError: () -> Unit = {}
 ) {
     AndroidView(
         modifier = modifier,
@@ -38,6 +43,18 @@ fun Heart3DViewer(
                     ): WebResourceResponse? {
                         Log.d("Heart3DViewer", "Requesting: ${request.url}")
                         return assetLoader.shouldInterceptRequest(request.url)
+                    }
+
+                    override fun onReceivedError(
+                        view: WebView,
+                        request: WebResourceRequest,
+                        error: androidx.webkit.WebResourceErrorCompat
+                    ) {
+                        super.onReceivedError(view, request, error)
+                        Log.e("Heart3DViewer", "WebView error: ${error.description}")
+                        if (request.isForMainFrame) {
+                            Handler(Looper.getMainLooper()).post { onError() }
+                        }
                     }
                 }
 
@@ -57,6 +74,8 @@ fun Heart3DViewer(
                     useWideViewPort = true
                 }
                 
+                addJavascriptInterface(Heart3DBridge(onLoaded, onError), "Android")
+
                 // Allow transparency
                 setBackgroundColor(0)
 
@@ -116,10 +135,12 @@ fun Heart3DViewer(
                                 console.error("ModelViewer Error:", event.detail);
                                 errorMsg.style.display = "block";
                                 errorDetails.textContent = "Error: " + (event.detail.type || "Unknown error");
+                                if (typeof Android !== 'undefined') Android.onError();
                             });
 
                             modelViewer.addEventListener('load', () => {
                                 console.log("Model loaded successfully");
+                                if (typeof Android !== 'undefined') Android.onLoaded();
                             });
 
                             // Timeout for loading
@@ -138,4 +159,21 @@ fun Heart3DViewer(
         },
         onRelease = { it.destroy() }
     )
+}
+
+private class Heart3DBridge(
+    private val onLoaded: () -> Unit,
+    private val onError: () -> Unit,
+) {
+    private val main = Handler(Looper.getMainLooper())
+
+    @JavascriptInterface
+    fun onLoaded() {
+        main.post { onLoaded() }
+    }
+
+    @JavascriptInterface
+    fun onError() {
+        main.post { onError() }
+    }
 }

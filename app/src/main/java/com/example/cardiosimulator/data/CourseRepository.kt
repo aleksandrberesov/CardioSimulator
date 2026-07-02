@@ -5,6 +5,7 @@ import com.example.cardiosimulator.domain.CourseEntry
 import com.example.cardiosimulator.domain.CourseManifest
 import com.example.cardiosimulator.domain.Lecture
 import com.example.cardiosimulator.domain.LectureEntry
+import com.example.cardiosimulator.domain.TopicEntry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -51,6 +52,10 @@ class CourseRepository(private var source: CourseSource) {
     /** Convenience wrapper around [readCourse] returning only the lecture index. */
     fun lectureEntries(courseId: String): List<LectureEntry> =
         readCourse(courseId)?.lectures ?: emptyList()
+
+    /** Convenience wrapper around [readCourse] returning only the topic index. */
+    fun topicEntries(courseId: String): List<TopicEntry> =
+        readCourse(courseId)?.topics ?: emptyList()
 
     fun readAnswers(courseId: String, lectureId: String, language: String): String? =
         (source as? FileCourseSource)?.readAnswers(courseId, lectureId, language)

@@ -34,7 +34,7 @@
     <!-- Grid scheme labels -->
     <string name="grid_scheme_yellow">Amarillo</string>
     <string name="grid_scheme_blue_gray">Azul/Gris</string>
-    <string name="grid_scheme_pink">Пленка ЭКГ</string>
+    <string name="grid_scheme_pink">Película ECG</string>
     <string name="grid_scheme_bedside">Monitor de cabecera</string>
 
     <!-- Navigation -->
@@ -75,16 +75,29 @@
     <string name="monitor_tips_note">Las sugerencias se añaden y editan en puntos clave del trazado</string>
     <string name="rhythm_info_tooltip">Acerca de este ritmo</string>
     <string name="rhythm_info_title">Información del ritmo</string>
+    <string name="pathology_description_label">Información de la patología</string>
+    <string name="description_edit_tooltip">Editar información de la patología</string>
+    <string name="description_edit_title">Información de la patología</string>
     <string name="pathology_leads_label">Derivaciones</string>
     <string name="pathology_markers_label">Marcadores</string>
     <string name="monitor_artifacts">Artefactos</string>
+    <string name="monitor_artifacts_info">Los artefactos superponen ruido realista sobre el trazado para practicar el reconocimiento de una calidad de señal deficiente. Toque uno o varios para añadirlos; toque de nuevo para quitarlos. No cambian el ritmo subyecente, solo la nitidez con que se muestra. «Sin artefactos» los borra todos.</string>
     <string name="monitor_artifact_none">Sin artefactos</string>
     <string name="monitor_artifact_muscle">Muscular</string>
     <string name="monitor_artifact_mains">Interferencia de red</string>
     <string name="monitor_artifact_baseline">Deriva de línea base</string>
     <string name="monitor_artifact_contact">Contacto deficiente</string>
     <string name="monitor_artifact_motion">Movimiento</string>
+    <string name="monitor_signal_quality">Calidad</string>
+    <string name="monitor_signal_quality_unavailable">Calidad de señal no disponible</string>
+    <string name="monitor_filters">Filtros</string>
+    <string name="monitor_filters_info">Los filtros limpian el trazado mostrado. El paso bajo (25 Hz) elimina el ruido muscular de alta frecuencia, el paso alto (3 Hz) elimina la deriva de la línea base y el paso banda (3\u201325 Hz) hace ambas cosas. Solo se aplica un filtro a la vez.</string>
+    <string name="monitor_filter_none">Sin filtros</string>
+    <string name="monitor_filter_lowpass">Paso bajo (25Hz)</string>
+    <string name="monitor_filter_highpass">Paso alto (3Hz)</string>
+    <string name="monitor_filter_bandpass">Paso de banda (3-25Hz)</string>
     <string name="monitor_3d">3D</string>
+    <string name="monitor_3d_loading">Cargando corazón 3D\u2026</string>
     <string name="monitor_3d_title">Corazón 3D</string>
     <string name="monitor_3d_placeholder">Aquí aparecerá un corazón 3D interactivo que se puede rotar e inspeccionar.</string>
     <string name="monitor_3d_lead_scheme">Esquema de derivaciones</string>
@@ -126,26 +139,41 @@
     <!-- Rhythm panel -->
     <string name="rhythm_drawer_title">Ritmo</string>
     <string name="course_drawer_title">Cursos</string>
+    <string name="topic_selector_title">Tema</string>
+    <string name="subtopic_selector_title">Subtema</string>
     <string name="lecture_selector_title">Lecciones</string>
     <string name="course_viewer_select_lecture">Selecciona una lección</string>
     <string name="cd_close">Cerrar</string>
     <string name="course_constructor_revert">Revertir</string>
     <string name="course_constructor_new_course">Nuevo curso</string>
-    <string name="course_constructor_new_lecture">Nueva lección</string>
-    <string name="course_constructor_rename">Renombrar</string>
-    <string name="course_constructor_delete">Eliminar</string>
+    <string name="course_constructor_new_topic">Nuevo tema</string>
+    <string name="course_constructor_rename_topic">Renombrar tema</string>
+    <string name="course_constructor_delete_topic">Eliminar tema</string>
+    <string name="course_constructor_new_lecture">Nuevo subtema</string>
+    <string name="course_constructor_rename">Editar subtema</string>
+    <string name="course_constructor_delete">Eliminar subtema</string>
     <string name="course_constructor_id_hint">Id</string>
     <string name="course_constructor_title_hint">Título</string>
-    <string name="course_constructor_delete_confirm">¿Eliminar esta lección?</string>
+    <string name="course_constructor_topic_title_hint">Título del tema</string>
+    <string name="course_constructor_no_topic">(sin tema)</string>
+    <string name="course_constructor_delete_confirm">¿Eliminar este subtema?</string>
+    <string name="course_constructor_delete_topic_title">Eliminar tema</string>
+    <string name="course_constructor_delete_topic_body">¿Eliminar el tema \"%1$s\" y todos sus subtemas?</string>
     <string name="course_insert_image">Imagen</string>
     <string name="course_constructor_image_src">Origen (URL o ruta de assets)</string>
     <string name="course_constructor_image_alt">Título / Leyenda</string>
     <string name="course_constructor_image_upload">Subir imagen</string>
+    <string name="teaching_take_test">Hacer la prueba</string>
+    <string name="teaching_take_exam">Hacer el examen</string>
     <string name="rhythm_search_placeholder">Ritmo…</string>
     <string name="rhythm_search_content_description">Buscar</string>
     <string name="fix_drawer">Fijar panel</string>
 
-    <!-- Testing panel -->
+    <string name="test_select_title">Prueba</string>
+    <string name="test_start">Iniciar prueba</string>
+    <string name="test_abort">Abortar prueba</string>
+    <string name="test_abort_confirm">¿Estás seguro de que quieres abortar la prueba? Se perderá tu progreso.</string>
+    <string name="test_empty">Aún no hay pruebas. Crea una en el Constructor de Pruebas.</string>
     <string name="testing_question_format">Pregunta %1$d</string>
 
     <!-- Data source picker -->
@@ -289,4 +317,7 @@
     <string name="cd_redo">Rehacer</string>
     <string name="cd_apply">Aplicar</string>
     <string name="cd_cancel">Cancelar</string>
+    <string name="test_ctor_theme_from_course">De cursos</string>
+    <string name="test_ctor_theme_from_course_hint">Seleccionar un curso</string>
+    <string name="welcome_dont_show_again">No volver a mostrar</string>
 </resources>

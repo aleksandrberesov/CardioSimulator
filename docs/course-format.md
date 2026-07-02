@@ -74,12 +74,24 @@ authors:A. Beresov
 language:ru,en
 pathologies:sin,1abblock,fib
 
-lecture:01-intro;title:Introduction;name:Введение
-lecture:02-axis;title:Electrical Axis;name:Электрическая ось
+topic:intro;title:Introduction;name:Введение
+lecture:01-intro;title:Introduction;name:Введение;topic:intro
+
+topic:axis;title:Electrical Axis;name:Электрическая ось
+lecture:02-axis;title:Electrical Axis;name:Электрическая ось;topic:axis
 ```
 
-The lecture rows define the **display order**. Each row references one
-or more `<lecture-id>.<lang>.html` files in `lectures/`.
+The `topic:` rows (optional) define the **grouping** and **display order** of
+topics ("Темы"). A topic definition is `topic:<id>;title:<en>;name:<ru>`.
+
+The lecture rows define the **display order** of lectures ("Подтемы"). Each row
+references one or more `<lecture-id>.<lang>.html` files in `lectures/`.
+
+| Row field | Required | Notes |
+|---|---|---|
+| `lecture` | yes | `<lecture-id>`. |
+| `title` / `name` | no | English / Russian display names. |
+| `topic` | no | `<topic-id>` of the parent topic (defined by a `topic:` line). If null/missing, the lecture is shown flat (ungrouped). |
 
 The optional `pathologies` header key is a comma-separated list of
 `PathologyEntry.id`s — the **authoritative** set of pathologies the

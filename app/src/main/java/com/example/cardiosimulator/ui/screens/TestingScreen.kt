@@ -125,6 +125,7 @@ fun TestActiveView(
                     selectedOptionId = selectedOptionId,
                     onOptionSelect = { viewModel.select(it) },
                     onNext = { viewModel.next() },
+                    onAbort = { viewModel.close() },
                     isTimed = (test?.questionTimeSeconds ?: 0) > 0
                 )
             }

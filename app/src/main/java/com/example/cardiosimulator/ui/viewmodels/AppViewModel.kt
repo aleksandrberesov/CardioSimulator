@@ -529,9 +529,9 @@ class AppViewModel(
 
     fun confirmData() { _isDataConfirmed.value = true }
 
-    fun setWelcomeShown(shown: Boolean) {
+    fun setWelcomeOptOut(optOut: Boolean) {
         viewModelScope.launch {
-            prefs?.setWelcomeShown(shown)
+            prefs?.setWelcomeOptOut(optOut)
         }
     }
 

@@ -37,7 +37,7 @@
     <!-- Grid scheme labels -->
     <string name="grid_scheme_yellow">Yellow</string>
     <string name="grid_scheme_blue_gray">Blue/Gray</string>
-    <string name="grid_scheme_pink">Пленка ЭКГ</string>
+    <string name="grid_scheme_pink">ECG film</string>
     <string name="grid_scheme_bedside">Bedside monitor</string>
 
     <!-- Navigation -->
@@ -80,21 +80,29 @@
     <string name="monitor_tips_note">Tips are added and edited at key points of the trace</string>
     <string name="rhythm_info_tooltip">About this rhythm</string>
     <string name="rhythm_info_title">Rhythm information</string>
+    <string name="pathology_description_label">Pathology Information</string>
+    <string name="description_edit_tooltip">Edit pathology information</string>
+    <string name="description_edit_title">Pathology Information</string>
     <string name="pathology_leads_label">Leads</string>
     <string name="pathology_markers_label">Markers</string>
     <string name="monitor_artifacts">Artifacts</string>
+    <string name="monitor_artifacts_info">Artifacts overlay realistic noise on the trace so you can practise recognising poor signal quality. Tap one or more to add them; tap again to remove. They don\'t change the underlying rhythm — only how cleanly it is displayed. \"No artifacts\" clears them all.</string>
     <string name="monitor_artifact_none">No artifacts</string>
     <string name="monitor_artifact_muscle">Muscle</string>
     <string name="monitor_artifact_mains">Mains interference</string>
     <string name="monitor_artifact_baseline">Baseline drift</string>
     <string name="monitor_artifact_contact">Poor contact</string>
     <string name="monitor_artifact_motion">Movement</string>
+    <string name="monitor_signal_quality">Quality</string>
+    <string name="monitor_signal_quality_unavailable">Signal quality unavailable</string>
     <string name="monitor_filters">Filters</string>
+    <string name="monitor_filters_info">Filters clean up the displayed trace. Low-pass (25 Hz) removes high-frequency muscle noise, high-pass (3 Hz) removes baseline wander, and band-pass (3\u201325 Hz) does both. Only one filter applies at a time.</string>
     <string name="monitor_filter_none">No filters</string>
     <string name="monitor_filter_lowpass">Low-pass (25Hz)</string>
     <string name="monitor_filter_highpass">High-pass (3Hz)</string>
     <string name="monitor_filter_bandpass">Band-pass (3-25Hz)</string>
     <string name="monitor_3d">3D</string>
+    <string name="monitor_3d_loading">Loading 3D heart\u2026</string>
     <string name="monitor_3d_title">3D heart</string>
     <string name="monitor_3d_placeholder">An interactive 3D heart you can rotate and inspect will appear here.</string>
     <string name="monitor_3d_lead_scheme">Lead diagram</string>
@@ -138,17 +146,26 @@
     <string name="rhythm_drawer_title">Rhythm</string>
     <string name="monitor_overlay_title">Monitor</string>
     <string name="course_drawer_title">Courses</string>
+    <string name="topic_selector_title">Topic</string>
+    <string name="subtopic_selector_title">Subtopic</string>
     <string name="lecture_selector_title">Lectures</string>
     <string name="course_viewer_select_lecture">Select a lecture to begin</string>
     <string name="cd_close">Close</string>
     <string name="course_constructor_revert">Revert</string>
     <string name="course_constructor_new_course">New course</string>
-    <string name="course_constructor_new_lecture">New lecture</string>
-    <string name="course_constructor_rename">Rename</string>
-    <string name="course_constructor_delete">Delete</string>
+    <string name="course_constructor_new_topic">New Topic</string>
+    <string name="course_constructor_rename_topic">Rename Topic</string>
+    <string name="course_constructor_delete_topic">Delete Topic</string>
+    <string name="course_constructor_new_lecture">New Subtopic</string>
+    <string name="course_constructor_rename">Edit Subtopic</string>
+    <string name="course_constructor_delete">Delete Subtopic</string>
     <string name="course_constructor_id_hint">Id</string>
     <string name="course_constructor_title_hint">Title</string>
-    <string name="course_constructor_delete_confirm">Delete this lecture?</string>
+    <string name="course_constructor_topic_title_hint">Topic title</string>
+    <string name="course_constructor_no_topic">(no topic)</string>
+    <string name="course_constructor_delete_confirm">Delete this subtopic?</string>
+    <string name="course_constructor_delete_topic_title">Delete Topic</string>
+    <string name="course_constructor_delete_topic_body">Delete topic \"%1$s\" and all its subtopics?</string>
     <string name="course_insert_image">Image</string>
     <string name="course_constructor_image_src">Source (URL or assets/path)</string>
     <string name="course_constructor_image_alt">Caption / Title</string>
@@ -181,6 +198,8 @@
 
     <string name="test_select_title">Test</string>
     <string name="test_start">Start test</string>
+    <string name="test_abort">Abort test</string>
+    <string name="test_abort_confirm">Are you sure you want to abort the test? Your progress will be lost.</string>
     <string name="test_empty">No tests yet. Create one in the Test Constructor.</string>
     <string name="test_counter_format">%1$d of %2$d</string>
     <string name="test_question_title_format">Question %1$d</string>
@@ -228,8 +247,11 @@
     <string name="test_ctor_search_hint">Search by text or tags…</string>
     <string name="test_ctor_manage_themes">Manage Themes</string>
     <string name="test_ctor_theme_new_hint">New theme…</string>
+    <string name="test_ctor_theme_from_course">From courses</string>
+    <string name="test_ctor_theme_from_course_hint">Select a course</string>
     <string name="test_ctor_theme_delete_confirm">Delete theme? Questions with this theme will remain, but the category will be cleared.</string>
     <string name="teaching_take_test">Take a Test</string>
+    <string name="teaching_take_exam">Take the exam</string>
 
     <string name="exam_tab_exam">Exam</string>
     <string name="exam_tab_results">Results</string>
@@ -387,6 +409,7 @@
     <string name="welcome_feature_3">Testing and examination modes</string>
     <string name="welcome_tagline">Let\'s get started!</string>
     <string name="welcome_start">Start</string>
+    <string name="welcome_dont_show_again">Don\'t show this again</string>
 
     <string name="ecg_point_p_start">P Start</string>
     <string name="ecg_point_p_peak">P Peak</string>

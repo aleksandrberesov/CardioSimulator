@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,6 +32,28 @@ import com.example.cardiosimulator.ui.components.PreviewPane
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.theme.TextPrimary
 import com.example.cardiosimulator.ui.theme.palette
+
+const val LEAD_IN_DP = 8f
+const val PULSE_WING_DP = 4f
+const val PULSE_SECONDS = 0.2f
+const val TITLE_GAP_DP = 4f
+const val TITLE_AREA_DP = 32f
+const val TITLE_CLEARANCE_DP = 18f
+const val TITLE_LIFT_DP = 10f
+const val TRACE_GAP_BASE_DP = 3f
+const val TRACE_GAP_SECONDS = 0.05f
+
+fun PixelScale.traceLeftPx(density: androidx.compose.ui.unit.Density): Float {
+    val leadIn = with(density) { LEAD_IN_DP.dp.toPx() }
+    val pulseWing = with(density) { PULSE_WING_DP.dp.toPx() }
+    val pulseWidth = PULSE_SECONDS * pxPerSec
+    val titleGap = with(density) { TITLE_GAP_DP.dp.toPx() }
+    val titleClearance = with(density) { TITLE_CLEARANCE_DP.dp.toPx() }
+    val traceGapBase = with(density) { TRACE_GAP_BASE_DP.dp.toPx() }
+    val traceGapSpeed = TRACE_GAP_SECONDS * pxPerSec
+
+    return leadIn + 2 * pulseWing + pulseWidth + titleGap + titleClearance + traceGapBase + traceGapSpeed
+}
 
 @Composable
 fun Lead(
@@ -66,15 +89,7 @@ fun Lead(
                     }
                 }
 
-                val filtered = when (filterType) {
-                    com.example.cardiosimulator.domain.EcgFilterType.LOWPASS ->
-                        com.example.cardiosimulator.signals.biosppy.Filter.filterSignal(signal, "butter", "lowpass", 4, doubleArrayOf(25.0), samplingRate)
-                    com.example.cardiosimulator.domain.EcgFilterType.HIGHPASS ->
-                        com.example.cardiosimulator.signals.biosppy.Filter.filterSignal(signal, "butter", "highpass", 4, doubleArrayOf(3.0), samplingRate)
-                    com.example.cardiosimulator.domain.EcgFilterType.BANDPASS ->
-                        com.example.cardiosimulator.signals.biosppy.Filter.filterSignal(signal, "butter", "bandpass", 4, doubleArrayOf(3.0, 25.0), samplingRate)
-                    else -> signal
-                }
+                val filtered = com.example.cardiosimulator.signals.biosppy.EcgFilters.apply(signal, filterType, samplingRate)
                 Points(filtered.map { it.toFloat() })
             } catch (e: Exception) {
                 points
@@ -82,36 +97,47 @@ fun Lead(
         }
     }
 
+    val scale = LocalPixelScale.current
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val traceLeftPx = androidx.compose.runtime.remember(scale, density) { scale.traceLeftPx(density) }
+    val traceLeftDp = with(density) { traceLeftPx.toDp() }
+
     Row(
         modifier = modifier.leadArea(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Label Strip
+        // Calibration + Title area
         Box(
             modifier = Modifier
-                .width(32.dp)
-                .fillMaxHeight(),
-            contentAlignment = Alignment.Center
+                .width(traceLeftDp)
+                .fillMaxHeight()
         ) {
+            // Pulse
+            CalibrationPulse(modifier = Modifier.fillMaxSize(), color = traceColor)
+
+            // Title (floats right of pulse, above isoline)
             if (!isCompareMode && title.isNotEmpty()) {
+                val pulseRightPx = with(density) {
+                    LEAD_IN_DP.dp.toPx() + 2f * PULSE_WING_DP.dp.toPx() + PULSE_SECONDS * scale.pxPerSec
+                }
+                val titleLeftDp = with(density) { (pulseRightPx + TITLE_GAP_DP.dp.toPx()).toDp() }
+
                 Text(
                     text = title,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Serif,
                     fontSize = 14.sp,
                     color = traceColor,
-                    textAlign = TextAlign.Center
+                    maxLines = 1,
+                    softWrap = false,
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = titleLeftDp)
+                        // Lifted: center shifted up by (lift + half font size) so bottom is roughly at lift.
+                        .offset(y = (-TITLE_LIFT_DP - 7f).dp)
+                        .width(TITLE_AREA_DP.dp)
                 )
             }
-        }
-
-        // Calibration Pulse
-        Box(
-            modifier = Modifier
-                .width(48.dp)
-                .fillMaxHeight()
-        ) {
-            CalibrationPulse(modifier = Modifier.fillMaxSize(), color = traceColor)
         }
 
         // Trace

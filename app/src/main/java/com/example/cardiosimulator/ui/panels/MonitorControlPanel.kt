@@ -1,9 +1,9 @@
 package com.example.cardiosimulator.ui.panels
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,21 +16,31 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Straighten
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
@@ -38,13 +48,30 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.R
+import com.example.cardiosimulator.domain.ElectrodeState
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
+import com.example.cardiosimulator.ui.theme.AccentGreen
+import com.example.cardiosimulator.ui.theme.ElectrodeFaultRed
 import com.example.cardiosimulator.ui.components.ControlPanelDivider
 import com.example.cardiosimulator.ui.components.Label
 import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.domain.SeriesScheme
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
+import kotlinx.coroutines.launch
+import com.example.cardiosimulator.ui.components.SqiBadge
+
+@Composable
+private fun MenuInfoHeader(title: String, explanation: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 6.dp)
+    ) {
+        Text(title, fontWeight = FontWeight.SemiBold)
+        // Removed TooltipBox as it causes a crash inside DropdownMenu due to intrinsic measurement limitations.
+    }
+}
 
 @Composable
 fun MonitorControlPanel(
@@ -61,7 +88,7 @@ fun MonitorControlPanel(
         modifier = modifier
             .fillMaxWidth()
             .padding(0.dp)
-            .height(IntrinsicSize.Min),
+            .height(64.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -191,10 +218,12 @@ fun MonitorControlPanel(
             modifier = Modifier.weight(3.5f),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
+            val electrodeFault = monitorMode.electrodeState != ElectrodeState.Ok
             Tab(
                 text = stringResource(R.string.monitor_electrodes),
                 onClick = { viewModel.setShowElectrodes(!monitorMode.showElectrodes) },
-                isActive = monitorMode.showElectrodes,
+                isActive = monitorMode.electrodeStateUserSet,
+                activeColor = if (electrodeFault) ElectrodeFaultRed else AccentGreen,
                 modifier = Modifier.weight(1f)
             )
 
@@ -218,6 +247,12 @@ fun MonitorControlPanel(
                     expanded = artifactsMenuExpanded,
                     onDismissRequest = { artifactsMenuExpanded = false }
                 ) {
+                    MenuInfoHeader(
+                        title = stringResource(R.string.monitor_artifacts),
+                        explanation = stringResource(R.string.monitor_artifacts_info),
+                    )
+                    HorizontalDivider()
+
                     com.example.cardiosimulator.domain.EcgArtifact.entries.forEach { artifact ->
                         val isSelected = if (artifact == com.example.cardiosimulator.domain.EcgArtifact.None) {
                             monitorMode.artifacts.isEmpty()
@@ -278,6 +313,14 @@ fun MonitorControlPanel(
                     expanded = filtersMenuExpanded,
                     onDismissRequest = { filtersMenuExpanded = false }
                 ) {
+                    MenuInfoHeader(
+                        title = stringResource(R.string.monitor_filters),
+                        explanation = stringResource(R.string.monitor_filters_info),
+                    )
+                    val sqi by viewModel.signalQuality.collectAsState()
+                    SqiBadge(sqi, Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+                    HorizontalDivider()
+
                     com.example.cardiosimulator.domain.EcgFilterType.entries.forEach { filterType ->
                         DropdownMenuItem(
                             text = {
@@ -289,6 +332,11 @@ fun MonitorControlPanel(
                                         com.example.cardiosimulator.domain.EcgFilterType.BANDPASS -> stringResource(R.string.monitor_filter_bandpass)
                                     }
                                 )
+                            },
+                            leadingIcon = {
+                                if (filterType == monitorMode.filterType) {
+                                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                                }
                             },
                             onClick = {
                                 viewModel.setFilterType(filterType)

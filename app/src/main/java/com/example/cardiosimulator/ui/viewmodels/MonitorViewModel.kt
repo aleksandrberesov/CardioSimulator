@@ -11,6 +11,7 @@ import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.MonitorModeModel
 import com.example.cardiosimulator.domain.SeriesScheme
 import com.example.cardiosimulator.domain.OperatingMode
+import com.example.cardiosimulator.signals.biosppy.SqiInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,6 +27,11 @@ class MonitorViewModel(
 ) : ViewModel() {
     private val _monitorMode = MutableStateFlow(MonitorModeModel())
     val monitorMode: StateFlow<MonitorModeModel> = _monitorMode.asStateFlow()
+
+    private val _signalQuality = MutableStateFlow<SqiInfo?>(null)
+    val signalQuality: StateFlow<SqiInfo?> = _signalQuality.asStateFlow()
+
+    fun setSignalQuality(info: SqiInfo?) { _signalQuality.value = info }
 
     val availableSeriesCounts: List<Int>
         get() = if (_monitorMode.value.isCompareMode) listOf(1, 2, 3, 4, 5, 6, 12) else listOf(1, 6, 12)
@@ -216,7 +222,7 @@ class MonitorViewModel(
     }
 
     fun setElectrodeState(state: com.example.cardiosimulator.domain.ElectrodeState) {
-        _monitorMode.update { it.copy(electrodeState = state) }
+        _monitorMode.update { it.copy(electrodeState = state, electrodeStateUserSet = true) }
     }
 
     fun setShowElectrodes(show: Boolean) {

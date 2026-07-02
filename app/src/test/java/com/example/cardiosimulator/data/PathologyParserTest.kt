@@ -52,115 +52,19 @@ class PathologyParserTest {
         assertEquals("Atrial tachycardia", m.entries[0].titleEn)
         assertEquals(12, m.entries[0].leadsCount)
         assertEquals("tachpm.dat", m.entries[0].fileName)
-        @Test
-    fun `group field round-trips in manifest and pathology`() {
-        val manifestWithGroup = """
-            version:1.0
-            baseline:1024
-            lead_order:I
-            pathologies:1
-
-            pathology:test;leads:1;title:Test;group:sinus
-        """.trimIndent()
-        val m = PathologyParser.parseManifest(manifestWithGroup)
-        assertEquals("sinus", m.entries[0].group)
-
-        val serializedM = PathologyParser.serializeManifest(m)
-        assertTrue(serializedM.contains(";group:sinus"))
-
-        val pathologyWithGroup = """
-            pathology:test
-            title:Test
-            group:sinus
-            leads:1
-
-            lead:I
-            count:1
-            points:1024
-        """.trimIndent()
-        val p = PathologyParser.parsePathology(pathologyWithGroup)
-        assertEquals("sinus", p.group)
-
-        val serializedP = PathologyParser.serializePathology(p, listOf(Lead.I))
-        assertTrue(serializedP.contains("group:sinus\n"))
     }
-}
 
     @Test(expected = PathologyParser.FormatException::class)
     fun `manifest with unsupported version rejected`() {
         val bad = sampleManifest.replace("version:1.0", "version:2.0")
         PathologyParser.parseManifest(bad)
-        @Test
-    fun `group field round-trips in manifest and pathology`() {
-        val manifestWithGroup = """
-            version:1.0
-            baseline:1024
-            lead_order:I
-            pathologies:1
-
-            pathology:test;leads:1;title:Test;group:sinus
-        """.trimIndent()
-        val m = PathologyParser.parseManifest(manifestWithGroup)
-        assertEquals("sinus", m.entries[0].group)
-
-        val serializedM = PathologyParser.serializeManifest(m)
-        assertTrue(serializedM.contains(";group:sinus"))
-
-        val pathologyWithGroup = """
-            pathology:test
-            title:Test
-            group:sinus
-            leads:1
-
-            lead:I
-            count:1
-            points:1024
-        """.trimIndent()
-        val p = PathologyParser.parsePathology(pathologyWithGroup)
-        assertEquals("sinus", p.group)
-
-        val serializedP = PathologyParser.serializePathology(p, listOf(Lead.I))
-        assertTrue(serializedP.contains("group:sinus\n"))
     }
-}
 
     @Test(expected = PathologyParser.FormatException::class)
     fun `manifest missing baseline rejected`() {
         val bad = sampleManifest.lines().filterNot { it.startsWith("baseline:") }.joinToString("\n")
         PathologyParser.parseManifest(bad)
-        @Test
-    fun `group field round-trips in manifest and pathology`() {
-        val manifestWithGroup = """
-            version:1.0
-            baseline:1024
-            lead_order:I
-            pathologies:1
-
-            pathology:test;leads:1;title:Test;group:sinus
-        """.trimIndent()
-        val m = PathologyParser.parseManifest(manifestWithGroup)
-        assertEquals("sinus", m.entries[0].group)
-
-        val serializedM = PathologyParser.serializeManifest(m)
-        assertTrue(serializedM.contains(";group:sinus"))
-
-        val pathologyWithGroup = """
-            pathology:test
-            title:Test
-            group:sinus
-            leads:1
-
-            lead:I
-            count:1
-            points:1024
-        """.trimIndent()
-        val p = PathologyParser.parsePathology(pathologyWithGroup)
-        assertEquals("sinus", p.group)
-
-        val serializedP = PathologyParser.serializePathology(p, listOf(Lead.I))
-        assertTrue(serializedP.contains("group:sinus\n"))
     }
-}
 
     @Test
     fun `pathology parses id title name and lead blocks`() {
@@ -178,39 +82,7 @@ class PathologyParserTest {
         val leadII = file.leads[Lead.II]!!
         assertEquals(3, leadII.samples.size)
         assertEquals(1100, leadII.samples[1])
-        @Test
-    fun `group field round-trips in manifest and pathology`() {
-        val manifestWithGroup = """
-            version:1.0
-            baseline:1024
-            lead_order:I
-            pathologies:1
-
-            pathology:test;leads:1;title:Test;group:sinus
-        """.trimIndent()
-        val m = PathologyParser.parseManifest(manifestWithGroup)
-        assertEquals("sinus", m.entries[0].group)
-
-        val serializedM = PathologyParser.serializeManifest(m)
-        assertTrue(serializedM.contains(";group:sinus"))
-
-        val pathologyWithGroup = """
-            pathology:test
-            title:Test
-            group:sinus
-            leads:1
-
-            lead:I
-            count:1
-            points:1024
-        """.trimIndent()
-        val p = PathologyParser.parsePathology(pathologyWithGroup)
-        assertEquals("sinus", p.group)
-
-        val serializedP = PathologyParser.serializePathology(p, listOf(Lead.I))
-        assertTrue(serializedP.contains("group:sinus\n"))
     }
-}
 
     @Test
     fun `pathology with mismatched count rejected`() {
@@ -220,72 +92,8 @@ class PathologyParserTest {
             fail("expected FormatException")
         } catch (e: PathologyParser.FormatException) {
             assertTrue(e.message!!.contains("count"))
-            @Test
-    fun `group field round-trips in manifest and pathology`() {
-        val manifestWithGroup = """
-            version:1.0
-            baseline:1024
-            lead_order:I
-            pathologies:1
-
-            pathology:test;leads:1;title:Test;group:sinus
-        """.trimIndent()
-        val m = PathologyParser.parseManifest(manifestWithGroup)
-        assertEquals("sinus", m.entries[0].group)
-
-        val serializedM = PathologyParser.serializeManifest(m)
-        assertTrue(serializedM.contains(";group:sinus"))
-
-        val pathologyWithGroup = """
-            pathology:test
-            title:Test
-            group:sinus
-            leads:1
-
-            lead:I
-            count:1
-            points:1024
-        """.trimIndent()
-        val p = PathologyParser.parsePathology(pathologyWithGroup)
-        assertEquals("sinus", p.group)
-
-        val serializedP = PathologyParser.serializePathology(p, listOf(Lead.I))
-        assertTrue(serializedP.contains("group:sinus\n"))
+        }
     }
-}
-        @Test
-    fun `group field round-trips in manifest and pathology`() {
-        val manifestWithGroup = """
-            version:1.0
-            baseline:1024
-            lead_order:I
-            pathologies:1
-
-            pathology:test;leads:1;title:Test;group:sinus
-        """.trimIndent()
-        val m = PathologyParser.parseManifest(manifestWithGroup)
-        assertEquals("sinus", m.entries[0].group)
-
-        val serializedM = PathologyParser.serializeManifest(m)
-        assertTrue(serializedM.contains(";group:sinus"))
-
-        val pathologyWithGroup = """
-            pathology:test
-            title:Test
-            group:sinus
-            leads:1
-
-            lead:I
-            count:1
-            points:1024
-        """.trimIndent()
-        val p = PathologyParser.parsePathology(pathologyWithGroup)
-        assertEquals("sinus", p.group)
-
-        val serializedP = PathologyParser.serializePathology(p, listOf(Lead.I))
-        assertTrue(serializedP.contains("group:sinus\n"))
-    }
-}
 
     @Test
     fun `pathology missing leads still parses present ones`() {
@@ -308,39 +116,7 @@ class PathologyParserTest {
         assertEquals(2, file.leads.size)
         assertNull(file.leads[Lead.V1])
         assertNotNull(file.leads[Lead.I])
-        @Test
-    fun `group field round-trips in manifest and pathology`() {
-        val manifestWithGroup = """
-            version:1.0
-            baseline:1024
-            lead_order:I
-            pathologies:1
-
-            pathology:test;leads:1;title:Test;group:sinus
-        """.trimIndent()
-        val m = PathologyParser.parseManifest(manifestWithGroup)
-        assertEquals("sinus", m.entries[0].group)
-
-        val serializedM = PathologyParser.serializeManifest(m)
-        assertTrue(serializedM.contains(";group:sinus"))
-
-        val pathologyWithGroup = """
-            pathology:test
-            title:Test
-            group:sinus
-            leads:1
-
-            lead:I
-            count:1
-            points:1024
-        """.trimIndent()
-        val p = PathologyParser.parsePathology(pathologyWithGroup)
-        assertEquals("sinus", p.group)
-
-        val serializedP = PathologyParser.serializePathology(p, listOf(Lead.I))
-        assertTrue(serializedP.contains("group:sinus\n"))
     }
-}
 
     @Test
     fun `pathology serialization round-trips`() {
@@ -348,39 +124,7 @@ class PathologyParserTest {
         val text = PathologyParser.serializePathology(original, Lead.entries)
         val parsed = PathologyParser.parsePathology(text)
         assertEquals(original, parsed)
-        @Test
-    fun `group field round-trips in manifest and pathology`() {
-        val manifestWithGroup = """
-            version:1.0
-            baseline:1024
-            lead_order:I
-            pathologies:1
-
-            pathology:test;leads:1;title:Test;group:sinus
-        """.trimIndent()
-        val m = PathologyParser.parseManifest(manifestWithGroup)
-        assertEquals("sinus", m.entries[0].group)
-
-        val serializedM = PathologyParser.serializeManifest(m)
-        assertTrue(serializedM.contains(";group:sinus"))
-
-        val pathologyWithGroup = """
-            pathology:test
-            title:Test
-            group:sinus
-            leads:1
-
-            lead:I
-            count:1
-            points:1024
-        """.trimIndent()
-        val p = PathologyParser.parsePathology(pathologyWithGroup)
-        assertEquals("sinus", p.group)
-
-        val serializedP = PathologyParser.serializePathology(p, listOf(Lead.I))
-        assertTrue(serializedP.contains("group:sinus\n"))
     }
-}
 
     @Test
     fun `manifest serialization round-trips`() {
@@ -391,39 +135,7 @@ class PathologyParserTest {
         assertEquals(original.baseline, parsed.baseline)
         assertEquals(original.leadOrder, parsed.leadOrder)
         assertEquals(original.entries.map { it.id }, parsed.entries.map { it.id })
-        @Test
-    fun `group field round-trips in manifest and pathology`() {
-        val manifestWithGroup = """
-            version:1.0
-            baseline:1024
-            lead_order:I
-            pathologies:1
-
-            pathology:test;leads:1;title:Test;group:sinus
-        """.trimIndent()
-        val m = PathologyParser.parseManifest(manifestWithGroup)
-        assertEquals("sinus", m.entries[0].group)
-
-        val serializedM = PathologyParser.serializeManifest(m)
-        assertTrue(serializedM.contains(";group:sinus"))
-
-        val pathologyWithGroup = """
-            pathology:test
-            title:Test
-            group:sinus
-            leads:1
-
-            lead:I
-            count:1
-            points:1024
-        """.trimIndent()
-        val p = PathologyParser.parsePathology(pathologyWithGroup)
-        assertEquals("sinus", p.group)
-
-        val serializedP = PathologyParser.serializePathology(p, listOf(Lead.I))
-        assertTrue(serializedP.contains("group:sinus\n"))
     }
-}
 
     @Test
     fun `lead order is preserved in serialized output`() {
@@ -441,39 +153,8 @@ class PathologyParserTest {
         val iIdx = text.indexOf("lead:I\n")
         val iiIdx = text.indexOf("lead:II\n")
         assertTrue("Lead.I block should appear before Lead.II", iIdx in 0 until iiIdx)
-        @Test
-    fun `group field round-trips in manifest and pathology`() {
-        val manifestWithGroup = """
-            version:1.0
-            baseline:1024
-            lead_order:I
-            pathologies:1
-
-            pathology:test;leads:1;title:Test;group:sinus
-        """.trimIndent()
-        val m = PathologyParser.parseManifest(manifestWithGroup)
-        assertEquals("sinus", m.entries[0].group)
-
-        val serializedM = PathologyParser.serializeManifest(m)
-        assertTrue(serializedM.contains(";group:sinus"))
-
-        val pathologyWithGroup = """
-            pathology:test
-            title:Test
-            group:sinus
-            leads:1
-
-            lead:I
-            count:1
-            points:1024
-        """.trimIndent()
-        val p = PathologyParser.parsePathology(pathologyWithGroup)
-        assertEquals("sinus", p.group)
-
-        val serializedP = PathologyParser.serializePathology(p, listOf(Lead.I))
-        assertTrue(serializedP.contains("group:sinus\n"))
     }
-}
+
     @Test
     fun `group field round-trips in manifest and pathology`() {
         val manifestWithGroup = """
@@ -505,5 +186,25 @@ class PathologyParserTest {
 
         val serializedP = PathologyParser.serializePathology(p, listOf(Lead.I))
         assertTrue(serializedP.contains("group:sinus\n"))
+    }
+
+    @Test
+    fun `pathology parser handles multiline descriptions correctly`() {
+        val datWithDescription = """
+            pathology:desc_test
+            title:Test Description
+            description:This is a test\ndescription spread\nover multiple lines.
+            leads:1
+
+            lead:I
+            count:2
+            points:1024,1024
+        """.trimIndent()
+
+        val file = PathologyParser.parsePathology(datWithDescription)
+        assertEquals("This is a test\ndescription spread\nover multiple lines.", file.description)
+
+        val serialized = PathologyParser.serializePathology(file, listOf(Lead.I))
+        assertTrue(serialized.contains("description:This is a test\\ndescription spread\\nover multiple lines."))
     }
 }

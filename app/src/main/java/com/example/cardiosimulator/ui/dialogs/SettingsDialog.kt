@@ -219,8 +219,9 @@ fun SettingsContent(
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Language.entries.forEach { language ->

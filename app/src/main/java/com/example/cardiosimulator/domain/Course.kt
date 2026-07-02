@@ -55,13 +55,23 @@ data class Course(
      * lectures (see `docs/course-format.md` §3).
      */
     val pathologies: List<String> = emptyList(),
+    /**
+     * "Тема" (topic) entries. Order matches the display order.
+     */
+    val topics: List<TopicEntry> = emptyList(),
 )
+
+/** A "Тема" (topic): a named grouping of lectures. Its [id] is referenced by member
+ *  lectures' [LectureEntry.topic]; can exist with no lectures yet. */
+data class TopicEntry(val id: String, val titleEn: String, val nameRu: String?)
 
 /** One row of [Course.lectures] — the lecture index inside a course. */
 data class LectureEntry(
     val id: String,
     val titleEn: String,
     val nameRu: String?,
+    /** Owning topic id (null = ungrouped). */
+    val topic: String? = null,
 )
 
 /** Parsed `<lecture-id>.<lang>.html`. */

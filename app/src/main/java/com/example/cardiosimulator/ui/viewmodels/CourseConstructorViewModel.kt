@@ -10,6 +10,7 @@ import com.example.cardiosimulator.domain.HtmlBlock
 import com.example.cardiosimulator.domain.HtmlCompiler
 import com.example.cardiosimulator.domain.Lecture
 import com.example.cardiosimulator.domain.LectureEntry
+import com.example.cardiosimulator.domain.TopicEntry
 import com.example.cardiosimulator.domain.LectureFrontMatter
 import com.example.cardiosimulator.domain.OperatingMode
 import kotlinx.coroutines.Dispatchers
@@ -51,6 +52,12 @@ class CourseConstructorViewModel(
 
     private val _lectures = MutableStateFlow<List<LectureEntry>>(emptyList())
     val lectures: StateFlow<List<LectureEntry>> = _lectures.asStateFlow()
+
+    private val _topics = MutableStateFlow<List<TopicEntry>>(emptyList())
+    val topics: StateFlow<List<TopicEntry>> = _topics.asStateFlow()
+
+    private val _selectedTopicId = MutableStateFlow<String?>(null)
+    val selectedTopicId: StateFlow<String?> = _selectedTopicId.asStateFlow()
 
     private val _selectedLectureId = MutableStateFlow<String?>(null)
     val selectedLectureId: StateFlow<String?> = _selectedLectureId.asStateFlow()
@@ -105,6 +112,7 @@ class CourseConstructorViewModel(
                 viewModelScope.launch {
                     val entries = withContext(Dispatchers.IO) { repository.lectureEntries(courseId) }
                     _lectures.value = entries
+                    _topics.value = withContext(Dispatchers.IO) { repository.topicEntries(courseId) }
                     entries.firstOrNull()?.let { selectLecture(it.id) }
                 }
             }
@@ -116,6 +124,7 @@ class CourseConstructorViewModel(
             prefs?.setLastCourseId(courseId)
             val entries = withContext(Dispatchers.IO) { repository.lectureEntries(courseId) }
             _lectures.value = entries
+            _topics.value = withContext(Dispatchers.IO) { repository.topicEntries(courseId) }
             entries.firstOrNull()?.let { selectLecture(it.id) }
         }
     }
@@ -129,6 +138,7 @@ class CourseConstructorViewModel(
             val lecture = withContext(Dispatchers.IO) {
                 repository.readLecture(courseId, lectureId, languageTag)
             }
+            _selectedTopicId.value = _lectures.value.find { it.id == lectureId }?.topic
             loadedLang = lecture?.language ?: languageTag
             val text = lecture?.let { CourseParser.serializeLecture(it) } ?: ""
             val decoded = decodeAnswers(
@@ -295,7 +305,7 @@ class CourseConstructorViewModel(
         }
     }
 
-    fun createLecture(lectureId: String, title: String) {
+    fun createLecture(lectureId: String, title: String, topicId: String? = null) {
         val courseId = _selectedCourseId.value ?: return
         val id = lectureId.trim()
         if (id.isEmpty()) return
@@ -316,7 +326,7 @@ class CourseConstructorViewModel(
                     val course = repository.readCourse(courseId)
                     if (course != null && course.lectures.none { it.id == id }) {
                         repository.writeCourse(
-                            course.copy(lectures = course.lectures + LectureEntry(id, displayTitle, null))
+                            course.copy(lectures = course.lectures + LectureEntry(id, displayTitle, null, topic = topicId))
                         )
                     }
                 }
@@ -324,12 +334,13 @@ class CourseConstructorViewModel(
             }
             if (ok) {
                 _lectures.value = withContext(Dispatchers.IO) { repository.lectureEntries(courseId) }
+                _selectedTopicId.value = topicId
                 selectLecture(id)
             }
         }
     }
 
-    fun renameLecture(newTitle: String) {
+    fun renameLecture(newTitle: String, topicId: String? = null) {
         val courseId = _selectedCourseId.value ?: return
         val lectureId = _selectedLectureId.value ?: return
         val title = newTitle.trim()
@@ -340,7 +351,7 @@ class CourseConstructorViewModel(
                     repository.writeCourse(
                         course.copy(
                             lectures = course.lectures.map {
-                                if (it.id == lectureId) it.copy(titleEn = title) else it
+                                if (it.id == lectureId) it.copy(titleEn = title, topic = topicId) else it
                             }
                         )
                     )
@@ -350,6 +361,7 @@ class CourseConstructorViewModel(
                 }
             }
             _lectures.value = withContext(Dispatchers.IO) { repository.lectureEntries(courseId) }
+            _selectedTopicId.value = topicId
             selectLecture(lectureId)
         }
     }
@@ -373,6 +385,72 @@ class CourseConstructorViewModel(
         }
     }
 
+    fun createTopic(topicId: String, title: String) {
+        val courseId = _selectedCourseId.value ?: return
+        val id = topicId.trim()
+        if (id.isEmpty()) return
+        viewModelScope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                repository.readCourse(courseId)?.let { course ->
+                    repository.writeCourse(
+                        course.copy(topics = course.topics + TopicEntry(id, title.trim().ifEmpty { id }, null))
+                    )
+                } ?: false
+            }
+            if (ok) {
+                _topics.value = withContext(Dispatchers.IO) { repository.topicEntries(courseId) }
+                _selectedTopicId.value = id
+            }
+        }
+    }
+
+    fun renameTopic(topicId: String, newTitle: String) {
+        val courseId = _selectedCourseId.value ?: return
+        val title = newTitle.trim()
+        if (title.isEmpty()) return
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                repository.readCourse(courseId)?.let { course ->
+                    repository.writeCourse(
+                        course.copy(
+                            topics = course.topics.map {
+                                if (it.id == topicId) it.copy(titleEn = title) else it
+                            }
+                        )
+                    )
+                }
+            }
+            _topics.value = withContext(Dispatchers.IO) { repository.topicEntries(courseId) }
+        }
+    }
+
+    fun deleteTopic(topicId: String) {
+        val courseId = _selectedCourseId.value ?: return
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val course = repository.readCourse(courseId) ?: return@withContext
+                // Delete member lectures' files
+                course.lectures.filter { it.topic == topicId }.forEach {
+                    repository.deleteLecture(courseId, it.id, loadedLang)
+                }
+                // Update course.txt
+                repository.writeCourse(
+                    course.copy(
+                        topics = course.topics.filterNot { it.id == topicId },
+                        lectures = course.lectures.filterNot { it.topic == topicId }
+                    )
+                )
+            }
+            if (_selectedTopicId.value == topicId) {
+                _selectedTopicId.value = null
+                clearLecture()
+            }
+            _lectures.value = withContext(Dispatchers.IO) { repository.lectureEntries(courseId) }
+            _topics.value = withContext(Dispatchers.IO) { repository.topicEntries(courseId) }
+            _lectures.value.firstOrNull()?.let { selectLecture(it.id) }
+        }
+    }
+
     /** One-shot restore of the last edited course (lecture index only). */
     fun restore() {
         if (restored) return
@@ -383,6 +461,7 @@ class CourseConstructorViewModel(
             _selectedCourseId.value = courseId
             val entries = withContext(Dispatchers.IO) { repository.lectureEntries(courseId) }
             _lectures.value = entries
+            _topics.value = withContext(Dispatchers.IO) { repository.topicEntries(courseId) }
 
             val lastLectureId = p.lastLectureId(mode.name).first()
             if (lastLectureId != null && entries.any { it.id == lastLectureId }) {

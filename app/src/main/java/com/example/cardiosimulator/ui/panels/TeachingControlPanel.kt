@@ -1,7 +1,6 @@
 package com.example.cardiosimulator.ui.panels
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -56,11 +56,11 @@ fun TeachingControlPanel(
     val currentLanguage by appViewModel.selectedLanguage.collectAsState()
 
     val lectures by courseViewerViewModel.lectures.collectAsState()
+    val topics by courseViewerViewModel.topics.collectAsState()
     val selectedLectureId by courseViewerViewModel.selectedLectureId.collectAsState()
     val selectedLecture = lectures.find { it.id == selectedLectureId }
 
     Row(
-        //modifier = modifier.height(IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically
     ) {
         var courseExpanded by remember { mutableStateOf(false) }
@@ -107,21 +107,28 @@ fun TeachingControlPanel(
                     onClick = { if (rhythms.isNotEmpty()) rhythmExpanded = true },
                     modifier = Modifier.padding(horizontal = 4.dp).wrapContentWidth()
                 )
-                if (rhythms.isNotEmpty()) {
-                    DropdownMenu(
-                        expanded = rhythmExpanded,
-                        onDismissRequest = { rhythmExpanded = false },
-                        modifier = Modifier.width(300.dp).height(400.dp)
+                if (rhythmExpanded) {
+                    androidx.compose.ui.window.Dialog(
+                        onDismissRequest = { rhythmExpanded = false }
                     ) {
-                        RhythmSelector(
-                            appViewModel = appViewModel,
-                            rhythms = rhythms,
-                            selectedId = selectedRhythm?.id,
-                            onRhythmSelect = {
-                                rhythmViewModel.selectRhythm(it.id)
-                                rhythmExpanded = false
-                            }
-                        )
+                        androidx.compose.material3.Surface(
+                            modifier = Modifier
+                                .width(400.dp)
+                                .fillMaxHeight(0.8f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 6.dp
+                        ) {
+                            RhythmSelector(
+                                appViewModel = appViewModel,
+                                rhythms = rhythms,
+                                selectedId = selectedRhythm?.id,
+                                onRhythmSelect = {
+                                    rhythmViewModel.selectRhythm(it.id)
+                                    rhythmExpanded = false
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -137,22 +144,29 @@ fun TeachingControlPanel(
                     onClick = { if (lectures.isNotEmpty()) lectureExpanded = true },
                     modifier = Modifier.padding(horizontal = 4.dp).wrapContentWidth()
                 )
-                if (lectures.isNotEmpty()) {
-                    DropdownMenu(
-                        expanded = lectureExpanded,
-                        onDismissRequest = { lectureExpanded = false },
-                        modifier = Modifier.width(300.dp).height(400.dp)
+                if (lectureExpanded) {
+                    androidx.compose.ui.window.Dialog(
+                        onDismissRequest = { lectureExpanded = false }
                     ) {
-                        LectureSelector(
-                            lectures = lectures,
-                            language = currentLanguage,
-                            selectedLectureId = selectedLectureId,
-                            modifier = Modifier.requiredSize(width = 300.dp, height = 400.dp),
-                            onLectureSelect = {
-                                courseViewerViewModel.selectLecture(it.id)
-                                lectureExpanded = false
-                            }
-                        )
+                        androidx.compose.material3.Surface(
+                            modifier = Modifier
+                                .width(400.dp)
+                                .fillMaxHeight(0.8f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 6.dp
+                        ) {
+                            LectureSelector(
+                                lectures = lectures,
+                                language = currentLanguage,
+                                selectedLectureId = selectedLectureId,
+                                topics = topics,
+                                onLectureSelect = {
+                                    courseViewerViewModel.selectLecture(it.id)
+                                    lectureExpanded = false
+                                }
+                            )
+                        }
                     }
                 }
             }

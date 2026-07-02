@@ -74,6 +74,9 @@ import com.example.cardiosimulator.ui.dialogs.ComparisonTargetDialog
 import com.example.cardiosimulator.ui.dialogs.SaveComparisonPresetDialog
 import com.example.cardiosimulator.ui.dialogs.ElectrodesDialog
 import com.example.cardiosimulator.ui.dialogs.Heart3DDialog
+import com.example.cardiosimulator.signals.biosppy.EcgFilters
+import com.example.cardiosimulator.signals.biosppy.computeSqi
+import com.example.cardiosimulator.ui.components.SqiBadge
 import com.example.cardiosimulator.ui.display.LEAD_ORDER
 import com.example.cardiosimulator.ui.display.Lead as LeadView
 import com.example.cardiosimulator.ui.display.LeadsGrid
@@ -102,14 +105,10 @@ fun TeachingScreen(
     val viewerLecture by courseViewerViewModel.lecture.collectAsState()
     val showMonitorOverlay by appViewModel.showMonitorOverlay.collectAsState()
 
-    val welcomeShown by appViewModel.prefs?.welcomeShown?.collectAsState(initial = true) ?: remember { mutableStateOf(true) }
-    var showWelcome by remember { mutableStateOf(false) }
+    val welcomeOptOut by appViewModel.prefs?.welcomeOptOut?.collectAsState(initial = true) ?: remember { mutableStateOf(true) }
+    var hasDismissedWelcome by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(welcomeShown) {
-        if (!welcomeShown) {
-            showWelcome = true
-        }
-    }
+    val showWelcome = !welcomeOptOut && !hasDismissedWelcome
 
     var lastBuiltMode by rememberSaveable { mutableStateOf<OperatingMode?>(null) }
     LaunchedEffect(Unit) {
@@ -181,9 +180,9 @@ fun TeachingScreen(
 
         if (showWelcome) {
             WelcomeOverlay(
-                onDismiss = {
-                    showWelcome = false
-                    appViewModel.setWelcomeShown(true)
+                onDismiss = { dontShowAgain ->
+                    hasDismissedWelcome = true
+                    appViewModel.setWelcomeOptOut(dontShowAgain)
                 }
             )
         }
@@ -244,6 +243,7 @@ private fun MonitorOverlay(
     val waveforms by rhythmViewModel.waveforms.collectAsState()
     val comparisonWaveforms by rhythmViewModel.comparisonWaveforms.collectAsState()
     val significantPoints by rhythmViewModel.significantPoints.collectAsState()
+    val description by rhythmViewModel.description.collectAsState()
     val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
     val mode by monitorViewModel.monitorMode.collectAsState()
     val isDrawerFixed by appViewModel.isDrawerFixed.collectAsState()
@@ -480,14 +480,20 @@ private fun MonitorOverlay(
                             ElectrodeFault.apply(waveforms, mode.electrodeState)
                         }
                         val sqiSignal = displayWaveformsForSqi[firstLeadForSqi]
-                        if (sqiSignal != null && sqiSignal.values.size > 100) {
-                            com.example.cardiosimulator.ui.components.SqiCard(
-                                signal = sqiSignal.values.map { it.toDouble() }.toDoubleArray(),
-                                samplingRate = mode.calibration.sampleRateHz.toDouble(),
-                                modifier = Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .padding(bottom = 16.dp, end = 16.dp)
-                            )
+
+                        LaunchedEffect(sqiSignal, mode.calibration.sampleRateHz, mode.filterType, mode.isCompareMode) {
+                            val src = sqiSignal
+                            if (mode.isCompareMode || src == null || src.values.size <= 100) {
+                                monitorViewModel.setSignalQuality(null)
+                            } else {
+                                val samplingRate = mode.calibration.sampleRateHz.toDouble()
+                                val rawSignal = src.values.map { it.toDouble() }.toDoubleArray()
+                                val filteredSignal = EcgFilters.apply(rawSignal, mode.filterType, samplingRate)
+                                
+                                monitorViewModel.setSignalQuality(
+                                    computeSqi(filteredSignal, samplingRate)?.copy(lead = firstLeadForSqi)
+                                )
+                            }
                         }
 
                         if (mode.showEos) {
@@ -527,6 +533,7 @@ private fun MonitorOverlay(
                                 pathology = selectedRhythm,
                                 significantPoints = significantPoints,
                                 language = selectedLanguage,
+                                description = description,
                                 onClose = { showRhythmInfo = false },
                                 modifier = Modifier.fillMaxSize()
                             )
@@ -576,12 +583,22 @@ private fun CourseViewerOverlay(
             ) {
                 TextButton(onClick = {
                     appViewModel.updateOperatingMode(
-                        appViewModel.operatingModes.find { it.id == OperatingMode.Examination }!!
+                        appViewModel.operatingModes.find { it.id == OperatingMode.Testing }!!
                     )
                 }) {
                     Icon(Icons.Default.Quiz, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(stringResource(R.string.teaching_take_test))
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                TextButton(onClick = {
+                    appViewModel.updateOperatingMode(
+                        appViewModel.operatingModes.find { it.id == OperatingMode.Examination }!!
+                    )
+                }) {
+                    Icon(Icons.Default.School, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.teaching_take_exam))
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 IconButton(onClick = onMonitorClick) {
@@ -619,6 +636,7 @@ private fun RhythmInfoScreen(
     pathology: PathologyEntry?,
     significantPoints: List<SignificantPoint>,
     language: Language,
+    description: String?,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -680,6 +698,19 @@ private fun RhythmInfoScreen(
                     Text(
                         text = "${stringResource(R.string.pathology_markers_label)}: $markers",
                         style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+                if (!description.isNullOrBlank()) {
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        text = "${stringResource(R.string.pathology_description_label)}:",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                    )
+                    Text(
+                        text = description,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(top = 4.dp)
                     )
                 }
             }

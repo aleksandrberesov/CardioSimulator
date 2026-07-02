@@ -74,13 +74,22 @@ object CourseParser {
             ?.filter { it.isNotEmpty() }
             ?: emptyList()
         val pathologies = parseCsv(header["pathologies"])
-        val lectures = body.mapNotNull { line ->
+        val topics = mutableListOf<TopicEntry>()
+        val lectures = mutableListOf<LectureEntry>()
+        for (line in body) {
             val fields = parseSemicolonFields(line)
-            val lectureId = fields["lecture"] ?: return@mapNotNull null
-            LectureEntry(
+            val topicId = fields["topic"]
+            val lectureId = fields["lecture"]
+            if (lectureId == null && topicId != null) {          // a "topic:" definition line
+                topics += TopicEntry(topicId, fields["title"].orEmpty(), fields["name"])
+                continue
+            }
+            if (lectureId == null) continue
+            lectures += LectureEntry(
                 id = lectureId,
                 titleEn = fields["title"].orEmpty(),
                 nameRu = fields["name"],
+                topic = topicId,
             )
         }
         return Course(
@@ -91,6 +100,7 @@ object CourseParser {
             languages = languages,
             lectures = lectures,
             pathologies = pathologies,
+            topics = topics,
         )
     }
 
@@ -106,10 +116,16 @@ object CourseParser {
             append("pathologies:").append(course.pathologies.joinToString(",")).append('\n')
         }
         append('\n')
+        for (t in course.topics) {
+            append("topic:").append(t.id).append(";title:").append(t.titleEn)
+            if (!t.nameRu.isNullOrBlank()) append(";name:").append(t.nameRu)
+            append('\n')
+        }
         for (l in course.lectures) {
             append("lecture:").append(l.id)
                 .append(";title:").append(l.titleEn)
             if (!l.nameRu.isNullOrBlank()) append(";name:").append(l.nameRu)
+            if (!l.topic.isNullOrBlank()) append(";topic:").append(l.topic)
             append('\n')
         }
     }

@@ -133,6 +133,7 @@ fun ConstructorScreen(
     }
 
     var showRenameDialog by remember { mutableStateOf(false) }
+    var showDescriptionDialog by remember { mutableStateOf(false) }
     var showGroupDialog by remember { mutableStateOf(false) }
     var showCalculateDerivedDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
@@ -267,6 +268,37 @@ fun ConstructorScreen(
 
     if (showRenameDialog && targetFile != null) {
         // ... Existing rename dialog ...
+    }
+
+    if (showDescriptionDialog && targetFile != null) {
+        var descriptionText by remember { mutableStateOf(targetFile?.description ?: "") }
+        AlertDialog(
+            onDismissRequest = { showDescriptionDialog = false },
+            title = { Text(stringResource(R.string.description_edit_title)) },
+            text = {
+                OutlinedTextField(
+                    value = descriptionText,
+                    onValueChange = { descriptionText = it },
+                    label = { Text(stringResource(R.string.pathology_description_label)) },
+                    modifier = Modifier.fillMaxWidth().height(160.dp),
+                    minLines = 4,
+                    maxLines = 6
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    constructorViewModel.setDescription(descriptionText)
+                    showDescriptionDialog = false
+                }) {
+                    Text(stringResource(R.string.constructor_rename_ok))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDescriptionDialog = false }) {
+                    Text(stringResource(R.string.constructor_rename_cancel))
+                }
+            }
+        )
     }
 
     if (showGroupDialog && targetFile != null) {
@@ -532,6 +564,13 @@ fun ConstructorScreen(
                         if (targetFile != null) {
                             IconButton(onClick = { showRenameDialog = true }) {
                                 Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.cd_rename))
+                            }
+
+                            IconButton(onClick = { showDescriptionDialog = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.Info,
+                                    contentDescription = stringResource(R.string.description_edit_tooltip)
+                                )
                             }
 
                             IconButton(onClick = { showGroupDialog = true }) {

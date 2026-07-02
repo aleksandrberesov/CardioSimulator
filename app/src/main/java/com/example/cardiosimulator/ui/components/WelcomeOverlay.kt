@@ -1,5 +1,6 @@
 package com.example.cardiosimulator.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
@@ -17,11 +18,16 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,80 +40,88 @@ import com.example.cardiosimulator.R
 
 @Composable
 fun WelcomeOverlay(
-    onDismiss: () -> Unit,
+    onDismiss: (dontShowAgain: Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var dontShowAgain by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.7f))
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.surface
     ) {
-        Surface(
-            shape = MaterialTheme.shapes.extraLarge,
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 8.dp,
-            modifier = Modifier.fillMaxWidth(0.85f).wrapContentHeight()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(vertical = 64.dp, horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
+            Text(
+                text = stringResource(R.string.welcome_title),
+                style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.primary
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Text(
+                text = stringResource(R.string.welcome_intro),
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(scrollState)
-                    .padding(vertical = 32.dp, horizontal = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
+                modifier = Modifier.padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                FeatureRow(stringResource(R.string.welcome_feature_1))
+                FeatureRow(stringResource(R.string.welcome_feature_2))
+                FeatureRow(stringResource(R.string.welcome_feature_3))
+            }
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            Text(
+                text = stringResource(R.string.welcome_tagline),
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                ),
+                color = MaterialTheme.colorScheme.secondary
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.clickable { dontShowAgain = !dontShowAgain }
+            ) {
+                Checkbox(
+                    checked = dontShowAgain,
+                    onCheckedChange = { dontShowAgain = it }
+                )
+                Text(
+                    text = stringResource(R.string.welcome_dont_show_again),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Button(
+                onClick = { onDismiss(dontShowAgain) },
+                modifier = Modifier.height(56.dp).padding(horizontal = 32.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.welcome_title),
-                    style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.primary
+                    text = stringResource(R.string.welcome_start),
+                    style = MaterialTheme.typography.labelLarge.copy(fontSize = 18.sp)
                 )
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                Text(
-                    text = stringResource(R.string.welcome_intro),
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                Column(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    FeatureRow(stringResource(R.string.welcome_feature_1))
-                    FeatureRow(stringResource(R.string.welcome_feature_2))
-                    FeatureRow(stringResource(R.string.welcome_feature_3))
-                }
-                
-                Spacer(modifier = Modifier.height(32.dp))
-                
-                Text(
-                    text = stringResource(R.string.welcome_tagline),
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                    ),
-                    color = MaterialTheme.colorScheme.secondary
-                )
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier.height(56.dp).padding(horizontal = 32.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.welcome_start),
-                        style = MaterialTheme.typography.labelLarge.copy(fontSize = 18.sp)
-                    )
-                }
             }
         }
     }

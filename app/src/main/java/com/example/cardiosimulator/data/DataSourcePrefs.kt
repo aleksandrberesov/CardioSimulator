@@ -112,8 +112,8 @@ class DataSourcePrefs(private val context: Context) {
         prefs[stringPreferencesKey("${mode}_comparison_presets")]
     }
 
-    val welcomeShown: Flow<Boolean> = context.dataSourceDataStore.data.map { prefs ->
-        prefs[KEY_WELCOME_SHOWN] ?: false
+    val welcomeOptOut: Flow<Boolean> = context.dataSourceDataStore.data.map { prefs ->
+        prefs[KEY_WELCOME_OPT_OUT] ?: false
     }
 
     val lastOperatingMode: Flow<String?> = context.dataSourceDataStore.data.map { prefs ->
@@ -226,9 +226,9 @@ class DataSourcePrefs(private val context: Context) {
     }
 
 
-    suspend fun setWelcomeShown(shown: Boolean) {
+    suspend fun setWelcomeOptOut(optOut: Boolean) {
         context.dataSourceDataStore.edit { prefs ->
-            prefs[KEY_WELCOME_SHOWN] = shown
+            prefs[KEY_WELCOME_OPT_OUT] = optOut
         }
     }
 
@@ -255,6 +255,6 @@ class DataSourcePrefs(private val context: Context) {
         private val KEY_LAST_OPERATING_MODE = stringPreferencesKey("last_operating_mode")
         private val KEY_COURSES_TREE_URI = stringPreferencesKey("courses_tree_uri")
         private val KEY_LAST_COURSE_ID = stringPreferencesKey("last_course_id")
-        private val KEY_WELCOME_SHOWN = booleanPreferencesKey("welcome_shown")
+        private val KEY_WELCOME_OPT_OUT = booleanPreferencesKey("welcome_opt_out")
     }
 }

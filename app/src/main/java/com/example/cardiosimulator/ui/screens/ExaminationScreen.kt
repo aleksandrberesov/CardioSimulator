@@ -32,6 +32,7 @@ import com.example.cardiosimulator.domain.*
 import com.example.cardiosimulator.ui.display.Lead as LeadView
 import com.example.cardiosimulator.ui.display.LeadsGrid
 import com.example.cardiosimulator.ui.display.Monitor
+import com.example.cardiosimulator.ui.theme.*
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.ExaminationViewModel
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
@@ -356,11 +357,11 @@ fun GroupSessionView(viewModel: ExaminationViewModel) {
                             if (p.result != null) {
                                 Text(
                                     "${p.result!!.correctCount}/${p.result!!.totalCount}",
-                                    color = if (p.result!!.passed) Color(0xFF2E7D32) else Color(0xFFC62828),
+                                    color = if (p.result!!.passed) Positive else Negative,
                                     fontWeight = FontWeight.Bold
                                 )
                             } else {
-                                Text("В процессе", color = Color.Gray)
+                                Text("В процессе", color = TextSecondary)
                             }
                         }
                     )
@@ -390,14 +391,14 @@ fun ExamResultSummary(result: ExamResult, onNewAttempt: () -> Unit, testReposito
         Card(
             modifier = Modifier.fillMaxWidth(0.8f),
             colors = CardDefaults.cardColors(
-                containerColor = if (result.passed) Color(0xFFE8F5E9) else Color(0xFFFFEBEE)
+                containerColor = if (result.passed) Positive.copy(alpha = 0.12f) else Negative.copy(alpha = 0.12f)
             )
         ) {
             Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = if (result.passed) stringResource(R.string.exam_passed) else stringResource(R.string.exam_failed),
                     style = MaterialTheme.typography.headlineSmall,
-                    color = if (result.passed) Color(0xFF2E7D32) else Color(0xFFC62828),
+                    color = if (result.passed) Positive else Negative,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
@@ -415,14 +416,14 @@ fun ExamResultSummary(result: ExamResult, onNewAttempt: () -> Unit, testReposito
         result.questions.forEachIndexed { index, qResult ->
             Card(
                 modifier = Modifier.fillMaxWidth(0.8f).padding(vertical = 4.dp),
-                colors = CardDefaults.cardColors(containerColor = if (qResult.isCorrect) Color(0xFFF1F8E9) else Color(0xFFFBE9E7))
+                colors = CardDefaults.cardColors(containerColor = if (qResult.isCorrect) Positive.copy(alpha = 0.08f) else Negative.copy(alpha = 0.08f))
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             if (qResult.isCorrect) Icons.Default.Check else Icons.Default.Close,
                             contentDescription = null,
-                            tint = if (qResult.isCorrect) Color(0xFF4CAF50) else Color(0xFFF44336)
+                            tint = if (qResult.isCorrect) Positive else Negative
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(text = "Вопрос ${index + 1}", fontWeight = FontWeight.Bold)
@@ -430,7 +431,7 @@ fun ExamResultSummary(result: ExamResult, onNewAttempt: () -> Unit, testReposito
                     Text(
                         text = "ID вопроса: ${qResult.questionId}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
+                        color = TextSecondary
                     )
                 }
             }
@@ -481,7 +482,7 @@ fun ExamResultsView(viewModel: ExaminationViewModel, testRepository: TestReposit
                             Text(
                                 text = "${result.correctCount}/${result.totalCount}",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = if (result.passed) Color(0xFF2E7D32) else Color(0xFFC62828)
+                                color = if (result.passed) Positive else Negative
                             )
                         },
                         modifier = Modifier.clickable { selectedResult = result }

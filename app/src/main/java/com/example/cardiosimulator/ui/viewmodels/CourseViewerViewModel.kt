@@ -6,6 +6,7 @@ import com.example.cardiosimulator.data.CourseRepository
 import com.example.cardiosimulator.data.DataSourcePrefs
 import com.example.cardiosimulator.domain.Lecture
 import com.example.cardiosimulator.domain.LectureEntry
+import com.example.cardiosimulator.domain.TopicEntry
 import com.example.cardiosimulator.domain.OperatingMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +37,9 @@ class CourseViewerViewModel(
     private val _lectures = MutableStateFlow<List<LectureEntry>>(emptyList())
     val lectures: StateFlow<List<LectureEntry>> = _lectures.asStateFlow()
 
+    private val _topics = MutableStateFlow<List<TopicEntry>>(emptyList())
+    val topics: StateFlow<List<TopicEntry>> = _topics.asStateFlow()
+
     private val _selectedLectureId = MutableStateFlow<String?>(null)
     val selectedLectureId: StateFlow<String?> = _selectedLectureId.asStateFlow()
 
@@ -60,6 +64,7 @@ class CourseViewerViewModel(
                 viewModelScope.launch {
                     val entries = withContext(Dispatchers.IO) { repository.lectureEntries(courseId) }
                     _lectures.value = entries
+                    _topics.value = withContext(Dispatchers.IO) { repository.topicEntries(courseId) }
                     entries.firstOrNull()?.let { selectLecture(it.id) }
                 }
             }
@@ -72,6 +77,7 @@ class CourseViewerViewModel(
             prefs?.setLastCourseId(courseId)
             val entries = withContext(Dispatchers.IO) { repository.lectureEntries(courseId) }
             _lectures.value = entries
+            _topics.value = withContext(Dispatchers.IO) { repository.topicEntries(courseId) }
             entries.firstOrNull()?.let { selectLecture(it.id) }
         }
     }
@@ -111,7 +117,8 @@ class CourseViewerViewModel(
             _selectedCourseId.value = courseId
             val entries = withContext(Dispatchers.IO) { repository.lectureEntries(courseId) }
             _lectures.value = entries
-            
+            _topics.value = withContext(Dispatchers.IO) { repository.topicEntries(courseId) }
+
             val lastLectureId = p.lastLectureId(mode.name).first()
             if (lastLectureId != null && entries.any { it.id == lastLectureId }) {
                 selectLecture(lastLectureId)

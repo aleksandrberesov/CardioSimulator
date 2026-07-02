@@ -27,6 +27,7 @@ fun CourseConstructorTopPanel(
     }
     val selectedCourseId by courseConstructorViewModel.selectedCourseId.collectAsState()
     val lectures by courseConstructorViewModel.lectures.collectAsState()
+    val topics by courseConstructorViewModel.topics.collectAsState()
     val selectedLectureId by courseConstructorViewModel.selectedLectureId.collectAsState()
     val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
 
@@ -89,6 +90,7 @@ fun CourseConstructorTopPanel(
                         lectures = lectures,
                         language = selectedLanguage,
                         selectedLectureId = selectedLectureId,
+                        topics = topics,
                         modifier = Modifier.requiredSize(width = 300.dp, height = 400.dp),
                         onLectureSelect = {
                             courseConstructorViewModel.selectLecture(it.id)

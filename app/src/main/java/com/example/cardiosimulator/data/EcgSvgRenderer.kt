@@ -46,8 +46,7 @@ object EcgSvgRenderer {
         "Blank" to GridColors("#000000", "#000000", "#000000")
     )
     private const val TRACE_COLOR = "#111111"
-    private const val LABEL_AREA_WIDTH = 32f
-    private const val CAL_AREA_WIDTH = 80f
+    private const val CAL_AREA_WIDTH = 72f
 
     private val ecgTag = Regex("<ecg\\b((?:[^>\"]|\"[^\"]*\")*?)\\s*/?>(?:\\s*</ecg>)?", RegexOption.IGNORE_CASE)
     private val attr = Regex("([\\w-]+)\\s*=\\s*\"([^\"]*)\"")
@@ -153,10 +152,11 @@ object EcgSvgRenderer {
                 append(tracePath(trace, baselineY))
                 append("</g>")
 
-                // Lead Label
-                append("<text x=\"${fmt(LABEL_AREA_WIDTH / 2f)}\" y=\"${fmt(baselineY)}\" ")
+                // Lead Label (right of pulse, just above baseline)
+                val pulseRight = 8f + 8f + 0.2f * pxPerSec
+                append("<text x=\"${fmt(pulseRight + 4f)}\" y=\"${fmt(baselineY - 4f)}\" ")
                 append("font-family=\"serif\" font-weight=\"bold\" font-size=\"14\" ")
-                append("fill=\"$TRACE_COLOR\" text-anchor=\"middle\" dominant-baseline=\"central\">")
+                append("fill=\"$TRACE_COLOR\" text-anchor=\"start\">")
                 append("${trace.lead.name}</text>")
 
                 append("</g>")
@@ -181,7 +181,7 @@ object EcgSvgRenderer {
     private fun calibrationPulsePath(baselineY: Float): String {
         val pulseHeight = 1f * pxPerMv
         val pulseWidth = 0.2f * pxPerSec
-        val startX = LABEL_AREA_WIDTH + 8f
+        val startX = 8f
         val wingWidth = 4f
 
         val d = "M${fmt(startX)} ${fmt(baselineY)} " +

@@ -44,6 +44,7 @@ fun Tab(
     iconContentDescription: String? = null,
     cornerRadius: Dp = 8.dp,
     backgroundColor: Color = Color.Transparent,
+    activeColor: Color = AccentGreen,
     contentColor: Color = TextPrimary
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -51,7 +52,7 @@ fun Tab(
     val resolvedBgColor = when {
         !enabled -> Color.LightGray.copy(alpha = 0.3f)
         showChevron -> PanelBackground
-        isActive -> AccentGreen
+        isActive -> activeColor
         else -> backgroundColor
     }
 

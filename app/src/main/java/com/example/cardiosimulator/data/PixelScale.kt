@@ -28,6 +28,22 @@ data class PixelScale(
     }
 }
 
+/**
+ * Per-lead-count multiplier applied to MonitorModeModel.displayScale on the live monitor.
+ * With fewer leads each cell is much taller (cellH = height / rows), leaving the fixed-scale
+ * trace as a small graphic in a sea of grid squares; scaling the whole cell (grid + trace) up
+ * for sparse layouts makes them read as densely as the full 12-lead view. Hand-tuned by number
+ * of leads (not a formula); 6+ leads use the base ×2. Only ever scales up.
+ */
+fun displayScaleFactor(leadCount: Int): Float = when {
+    leadCount <= 1 -> 6.0f
+    leadCount == 2 -> 4.4f
+    leadCount == 3 -> 3.2f
+    leadCount == 4 -> 3.2f
+    leadCount == 5 -> 2.4f
+    else -> 2.0f
+}
+
 val LocalPixelScale = staticCompositionLocalOf<PixelScale> {
     error("PixelScale not provided")
 }

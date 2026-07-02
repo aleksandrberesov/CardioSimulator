@@ -122,12 +122,23 @@ fun TopControlPanel(
                         OperatingMode.TestConstructor -> {
                             if (testConstructorViewModel != null) {
                                 val activeTab by testConstructorViewModel.activeTab.collectAsState()
-                                Tab(
-                                    text = stringResource(R.string.test_ctor_tab_bank),
-                                    isActive = activeTab == ConstructorTab.BANK,
-                                    onClick = { testConstructorViewModel.setTab(ConstructorTab.BANK) },
-                                    modifier = Modifier.padding(vertical = 4.dp)
-                                )
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Tab(
+                                        text = stringResource(R.string.test_ctor_tab_test),
+                                        isActive = activeTab == ConstructorTab.TEST,
+                                        onClick = { testConstructorViewModel.setTab(ConstructorTab.TEST) },
+                                        modifier = Modifier.padding(vertical = 4.dp)
+                                    )
+                                    Tab(
+                                        text = stringResource(R.string.test_ctor_tab_bank),
+                                        isActive = activeTab == ConstructorTab.BANK,
+                                        onClick = { testConstructorViewModel.setTab(ConstructorTab.BANK) },
+                                        modifier = Modifier.padding(vertical = 4.dp)
+                                    )
+                                }
                             }
                         }
                         OperatingMode.OSKE -> {}
