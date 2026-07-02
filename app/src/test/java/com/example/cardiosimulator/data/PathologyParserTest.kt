@@ -207,4 +207,38 @@ class PathologyParserTest {
         val serialized = PathologyParser.serializePathology(file, listOf(Lead.I))
         assertTrue(serialized.contains("description:This is a test\\ndescription spread\\nover multiple lines."))
     }
+
+    @Test
+    fun `clinical_case field round-trips in manifest and pathology`() {
+        val clinicalStr = "title=Severe Infarct,name=John Doe,age=45,gender=Male,hr=72,bp=120/80"
+        val manifestWithClinical = """
+            version:1.0
+            baseline:1024
+            lead_order:I
+            pathologies:1
+
+            pathology:test;leads:1;title:Test;clinical_case:$clinicalStr
+        """.trimIndent()
+        val m = PathologyParser.parseManifest(manifestWithClinical)
+        assertEquals(clinicalStr, m.entries[0].clinicalCase)
+
+        val serializedM = PathologyParser.serializeManifest(m)
+        assertTrue(serializedM.contains(";clinical_case:$clinicalStr"))
+
+        val pathologyWithClinical = """
+            pathology:test
+            title:Test
+            clinical_case:$clinicalStr
+            leads:1
+
+            lead:I
+            count:1
+            points:1024
+        """.trimIndent()
+        val p = PathologyParser.parsePathology(pathologyWithClinical)
+        assertEquals(clinicalStr, p.clinicalCase)
+
+        val serializedP = PathologyParser.serializePathology(p, listOf(Lead.I))
+        assertTrue(serializedP.contains("clinical_case:$clinicalStr\n"))
+    }
 }

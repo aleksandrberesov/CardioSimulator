@@ -320,4 +320,19 @@
     <string name="test_ctor_theme_from_course">De cursos</string>
     <string name="test_ctor_theme_from_course_hint">Seleccionar un curso</string>
     <string name="welcome_dont_show_again">No volver a mostrar</string>
+
+    <!-- Clinical cases -->
+    <string name="clinical_mode_tooltip">Modo de casos clínicos</string>
+    <string name="clinical_dashboard_title">Caso Clínico</string>
+    <string name="clinical_label_title">Título del caso</string>
+    <string name="clinical_label_patient_name">Nombre del paciente</string>
+    <string name="clinical_label_age">Edad</string>
+    <string name="clinical_label_gender">Género</string>
+    <string name="clinical_label_hr">Frecuencia Cardíaca</string>
+    <string name="clinical_label_bp">Presión Arterial</string>
+    <string name="clinical_edit_tooltip">Editar parámetros del caso clínico</string>
+    <string name="clinical_edit_title">Parámetros del caso clínico</string>
+    <string name="clinical_label_others">Otros parámetros (p. ej. temp=36.6, weight=70)</string>
+    <string name="gender_male">Masculino</string>
+    <string name="gender_female">Femenino</string>
 </resources>

@@ -463,4 +463,19 @@
     <string name="oske_score_format">Баллы: %1$d/%2$d</string>
     <string name="oske_new_attempt">Новая попытка</string>
     <string name="oske_no_key_warning">Для данной ЭКГ и специальности не заданы правильные ответы.</string>
+
+    <!-- Clinical cases -->
+    <string name="clinical_mode_tooltip">Режим клинических случаев</string>
+    <string name="clinical_dashboard_title">Клинический случай</string>
+    <string name="clinical_label_title">Название случая</string>
+    <string name="clinical_label_patient_name">Имя пациента</string>
+    <string name="clinical_label_age">Возраст</string>
+    <string name="clinical_label_gender">Пол</string>
+    <string name="clinical_label_hr">ЧСС</string>
+    <string name="clinical_label_bp">АД</string>
+    <string name="clinical_edit_tooltip">Редактировать параметры клинического случая</string>
+    <string name="clinical_edit_title">Параметры клинического случая</string>
+    <string name="clinical_label_others">Другие параметры (напр. temp=36.6, weight=70)</string>
+    <string name="gender_male">Мужской</string>
+    <string name="gender_female">Женский</string>
 </resources>

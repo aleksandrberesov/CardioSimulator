@@ -40,11 +40,20 @@ class RhythmViewModel(
         combine(
             _allRhythms,
             appViewModel.selectedCourseId,
-            appViewModel.courses
-        ) { all, courseId, courses ->
-            if (courseId == null || courseId == AppViewModel.ALL_RHYTHMS_ID) return@combine all
-            val pathologyIds = courses.find { it.id == courseId }?.pathologies?.toSet() ?: emptySet()
-            all.filter { it.id in pathologyIds }
+            appViewModel.courses,
+            appViewModel.isClinicalMode
+        ) { all, courseId, courses, isClinical ->
+            var list = if (courseId == null || courseId == AppViewModel.ALL_RHYTHMS_ID) {
+                all
+            } else {
+                val pathologyIds = courses.find { it.id == courseId }?.pathologies?.toSet() ?: emptySet()
+                all.filter { it.id in pathologyIds }
+            }
+
+            if (isClinical) {
+                list = list.filter { !it.clinicalCase.isNullOrBlank() }
+            }
+            list
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     } else {
         _allRhythms.asStateFlow()
@@ -109,8 +118,11 @@ class RhythmViewModel(
 
         if (appViewModel != null && mode == OperatingMode.Teaching) {
             viewModelScope.launch {
-                appViewModel.selectedCourseId.collect { courseId ->
-                    if (courseId == AppViewModel.ALL_RHYTHMS_ID) {
+                rhythms.collectLatest { list ->
+                    val current = _selectedRhythm.value
+                    if (current != null && list.none { it.id == current.id }) {
+                        list.firstOrNull()?.let { selectRhythm(it.id, persist = false) }
+                    } else if (current == null && list.isNotEmpty()) {
                         ensureRhythmSelected()
                     }
                 }
@@ -119,13 +131,16 @@ class RhythmViewModel(
     }
 
     private fun ensureRhythmSelected() {
-        if (_selectedRhythm.value != null) return
+        if (_selectedRhythm.value != null) {
+            val currentList = rhythms.value
+            if (currentList.any { it.id == _selectedRhythm.value?.id }) return
+        }
         viewModelScope.launch {
-            val rhythmsList = _allRhythms.value
+            val rhythmsList = rhythms.value
             if (rhythmsList.isEmpty()) return@launch
 
             val lastId = prefs?.lastRhythmId(mode.name)?.first()
-            val targetId = lastId ?: rhythmsList.first().id
+            val targetId = if (lastId != null && rhythmsList.any { it.id == lastId }) lastId else rhythmsList.first().id
             selectRhythm(targetId, persist = false)
         }
     }

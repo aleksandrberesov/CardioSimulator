@@ -105,11 +105,6 @@ fun TeachingScreen(
     val viewerLecture by courseViewerViewModel.lecture.collectAsState()
     val showMonitorOverlay by appViewModel.showMonitorOverlay.collectAsState()
 
-    val welcomeOptOut by appViewModel.prefs?.welcomeOptOut?.collectAsState(initial = true) ?: remember { mutableStateOf(true) }
-    var hasDismissedWelcome by rememberSaveable { mutableStateOf(false) }
-
-    val showWelcome = !welcomeOptOut && !hasDismissedWelcome
-
     var lastBuiltMode by rememberSaveable { mutableStateOf<OperatingMode?>(null) }
     LaunchedEffect(Unit) {
         if (lastBuiltMode != OperatingMode.Teaching) {
@@ -176,15 +171,6 @@ fun TeachingScreen(
                     onClose = { appViewModel.setShowMonitorOverlay(false) }
                 )
             }
-        }
-
-        if (showWelcome) {
-            WelcomeOverlay(
-                onDismiss = { dontShowAgain ->
-                    hasDismissedWelcome = true
-                    appViewModel.setWelcomeOptOut(dontShowAgain)
-                }
-            )
         }
     }
 }

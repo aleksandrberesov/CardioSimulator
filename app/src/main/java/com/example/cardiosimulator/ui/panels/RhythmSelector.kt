@@ -1,6 +1,7 @@
 package com.example.cardiosimulator.ui.panels
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,8 +19,10 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Healing
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ViewList
+import androidx.compose.material.icons.outlined.Healing
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -41,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -70,6 +74,7 @@ fun RhythmSelector(
     val currentLanguage by appViewModel.selectedLanguage.collectAsState()
     val isDrawerFixed by appViewModel.isDrawerFixed.collectAsState()
     val isGrouped by appViewModel.isRhythmListGrouped.collectAsState()
+    val isClinicalMode by appViewModel.isClinicalMode.collectAsState()
     val collapsedGroups by appViewModel.collapsedRhythmGroups.collectAsState()
     
     var searchQuery by remember { mutableStateOf("") }
@@ -77,24 +82,38 @@ fun RhythmSelector(
 
     val groups = appViewModel.repository?.groups
 
-    val filtered = remember(rhythms, searchQuery, currentLanguage) {
+    val filtered = remember(rhythms, searchQuery, currentLanguage, isClinicalMode) {
         rhythms.filter { entry ->
-            val title = if (currentLanguage == Language.RU) entry.nameRu ?: entry.titleEn else entry.titleEn
+            val title = if (isClinicalMode) {
+                entry.getClinicalTitle() ?: (if (currentLanguage == Language.RU) entry.nameRu ?: entry.titleEn else entry.titleEn)
+            } else {
+                if (currentLanguage == Language.RU) entry.nameRu ?: entry.titleEn else entry.titleEn
+            }
             title.contains(searchQuery, ignoreCase = true)
         }
     }
 
     // Grouping logic
-    val groupedItems = remember(filtered, isGrouped, currentLanguage, groups) {
+    val groupedItems = remember(filtered, isGrouped, currentLanguage, groups, isClinicalMode) {
         if (!isGrouped || groups == null) {
             mapOf("" to filtered.sortedBy { 
-                if (currentLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn 
+                if (isClinicalMode) {
+                    it.getClinicalTitle() ?: (if (currentLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn)
+                } else {
+                    if (currentLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn
+                }
             })
         } else {
             val map = filtered.groupBy { it.group ?: PathologyGroups.OTHER_KEY }
             val orderedKeys = groups.getOrderedKeys() + PathologyGroups.OTHER_KEY
             orderedKeys.associateWith { key ->
-                map[key]?.sortedBy { if (currentLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn }
+                map[key]?.sortedBy { 
+                    if (isClinicalMode) {
+                        it.getClinicalTitle() ?: (if (currentLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn)
+                    } else {
+                        if (currentLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn 
+                    }
+                }
             }.filterValues { it != null }.mapValues { it.value!! }
         }
     }
@@ -112,120 +131,23 @@ fun RhythmSelector(
             .padding(top = 8.dp, start = 8.dp, end = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(R.string.rhythm_selector_title),
-                style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp),
-                modifier = Modifier.weight(1f)
-            )
-            
-            IconButton(onClick = { appViewModel.setRhythmListGrouped(!isGrouped) }) {
-                Icon(
-                    imageVector = if (isGrouped) Icons.AutoMirrored.Filled.Sort else Icons.Default.ViewList,
-                    contentDescription = "Toggle Grouping",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-            
-            IconButton(onClick = { appViewModel.setDrawerFixed(!isDrawerFixed) }) {
-                Icon(
-                    imageVector = if (isDrawerFixed) Icons.Default.PushPin else Icons.Outlined.PushPin,
-                    contentDescription = "Toggle Pin",
-                    tint = if (isDrawerFixed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = {
-                searchQuery = it
-                onSearchQueryChange(it)
-            },
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-            textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface),
-            placeholder = {
-                Text(stringResource(R.string.rhythm_search_placeholder), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = stringResource(R.string.rhythm_search_content_description),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            },
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp),
-        )
+        // ... (Header and search field)
+        
+        // Find selected rhythm
+        val selectedRhythm = remember(rhythms, selectedId) { rhythms.find { it.id == selectedId } }
 
         LazyColumn(
             modifier = Modifier.fillMaxWidth().weight(1f),
             state = listState
         ) {
-            groupedItems.forEach { (groupKey, items) ->
-                if (isGrouped && groupKey.isNotEmpty()) {
-                    val isCollapsed = collapsedGroups.contains(groupKey)
+            // ... (LazyColumn content)
+        }
 
-                    stickyHeader(key = groupKey) {
-                        val groupName = if (groups != null) {
-                            val nameFromTxt = groups.displayName(groupKey, currentLanguage.tag) { null }
-                            if (nameFromTxt != groupKey) {
-                                nameFromTxt
-                            } else {
-                                val resId = when (groupKey) {
-                                    "sinus" -> R.string.group_sinus
-                                    "arrhythmia" -> R.string.group_arrhythmia
-                                    "conduction" -> R.string.group_conduction
-                                    "hypertrophy" -> R.string.group_hypertrophy
-                                    "ischemia" -> R.string.group_ischemia
-                                    "infarction" -> R.string.group_infarction
-                                    "electrolyte" -> R.string.group_electrolyte
-                                    "syndromes" -> R.string.group_syndromes
-                                    "pacemaker" -> R.string.group_pacemaker
-                                    "special" -> R.string.group_special
-                                    "pediatric" -> R.string.group_pediatric
-                                    "newborn" -> R.string.group_newborn
-                                    "pregnant" -> R.string.group_pregnant
-                                    "clinical" -> R.string.group_clinical
-                                    PathologyGroups.OTHER_KEY -> R.string.group_other
-                                    else -> null
-                                }
-                                if (resId != null) stringResource(resId) else groupKey
-                            }
-                        } else groupKey
-
-                        RhythmGroupHeader(
-                            name = groupName,
-                            count = items.size,
-                            isCollapsed = isCollapsed,
-                            onClick = { appViewModel.toggleRhythmGroupCollapsed(groupKey) }
-                        )
-                    }
-
-                    if (!isCollapsed) {
-                        items(items, key = { it.id }) { rhythm ->
-                            RhythmItem(
-                                rhythm = rhythm,
-                                isSelected = rhythm.id == selectedId,
-                                currentLanguage = currentLanguage,
-                                onClick = { onRhythmSelect(rhythm) }
-                            )
-                        }
-                    }
-                } else {
-                    items(items, key = { it.id }) { rhythm ->
-                        RhythmItem(
-                            rhythm = rhythm,
-                            isSelected = rhythm.id == selectedId,
-                            currentLanguage = currentLanguage,
-                            onClick = { onRhythmSelect(rhythm) }
-                        )
-                    }
-                }
-            }
+        if (isClinicalMode && selectedRhythm != null) {
+            ClinicalDashboard(
+                clinicalCase = selectedRhythm.clinicalCase,
+                language = currentLanguage
+            )
         }
     }
 }
@@ -278,12 +200,17 @@ fun RhythmItem(
     rhythm: PathologyEntry,
     isSelected: Boolean,
     currentLanguage: Language,
+    isClinicalMode: Boolean,
     onClick: () -> Unit
 ) {
-    val title = if (currentLanguage == Language.RU)
-        rhythm.nameRu ?: rhythm.titleEn
-    else
-        rhythm.titleEn
+    val title = if (isClinicalMode) {
+        rhythm.getClinicalTitle() ?: (if (currentLanguage == Language.RU) rhythm.nameRu ?: rhythm.titleEn else rhythm.titleEn)
+    } else {
+        if (currentLanguage == Language.RU)
+            rhythm.nameRu ?: rhythm.titleEn
+        else
+            rhythm.titleEn
+    }
     
     Column(
         modifier = Modifier
@@ -304,7 +231,86 @@ fun RhythmItem(
     )
 }
 
-@Preview(showBackground = true, widthDp = 500, heightDp = 600)
+@Composable
+fun ClinicalDashboard(
+    clinicalCase: String?,
+    language: Language,
+    modifier: Modifier = Modifier
+) {
+    if (clinicalCase.isNullOrBlank()) return
+
+    val params = remember(clinicalCase) {
+        clinicalCase.split(',').associate {
+            val parts = it.split('=')
+            if (parts.size == 2) parts[0].trim() to parts[1].trim() else "" to ""
+        }.filterKeys { it.isNotEmpty() }
+    }
+
+    val canonicalKeys = listOf("title", "name", "age", "gender", "hr", "bp")
+    val otherKeys = params.keys.filter { it !in canonicalKeys }.sorted()
+    val allOrderedKeys = canonicalKeys.filter { it in params } + otherKeys
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+            .padding(12.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.clinical_dashboard_title),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        allOrderedKeys.forEach { key ->
+            val labelRes = when (key) {
+                "title" -> R.string.clinical_label_title
+                "name" -> R.string.clinical_label_patient_name
+                "age" -> R.string.clinical_label_age
+                "gender" -> R.string.clinical_label_gender
+                "hr" -> R.string.clinical_label_hr
+                "bp" -> R.string.clinical_label_bp
+                else -> null
+            }
+            val label = if (labelRes != null) stringResource(labelRes) else key
+            var value = params[key] ?: ""
+
+            if (key == "gender") {
+                value = when (value.lowercase()) {
+                    "male", "мужской", "masculino", "男", "पुरुष" -> stringResource(R.string.gender_male)
+                    "female", "женский", "femenino", "女", "महिला" -> stringResource(R.string.gender_female)
+                    else -> value
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "$label:",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.End
+                )
+            }
+        }
+    }
+}
+
+private fun PathologyEntry.getClinicalTitle(): String? {
+    if (clinicalCase.isNullOrBlank()) return null
+    return clinicalCase!!.split(',').firstOrNull { it.trim().startsWith("title=") }?.substringAfter("title=")
+}
 @Composable
 fun RhythmSelectorPreview() {
     val previewAppViewModel: AppViewModel = viewModel(

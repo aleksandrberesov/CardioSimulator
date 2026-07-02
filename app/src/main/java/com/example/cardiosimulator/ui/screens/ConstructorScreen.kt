@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Healing
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import android.provider.OpenableColumns
@@ -135,6 +137,7 @@ fun ConstructorScreen(
     var showRenameDialog by remember { mutableStateOf(false) }
     var showDescriptionDialog by remember { mutableStateOf(false) }
     var showGroupDialog by remember { mutableStateOf(false) }
+    var showClinicalDialog by remember { mutableStateOf(false) }
     var showCalculateDerivedDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showSynthesizerDialog by remember { mutableStateOf(false) }
@@ -262,6 +265,17 @@ fun ConstructorScreen(
                     variance = variance,
                     sampleRate = monitorMode.calibration.sampleRateHz.toDouble()
                 )
+            }
+        )
+    }
+
+    if (showClinicalDialog && targetFile != null) {
+        ClinicalCaseDialog(
+            initialClinicalCase = targetFile?.clinicalCase,
+            onDismiss = { showClinicalDialog = false },
+            onSave = {
+                constructorViewModel.setClinicalCase(it)
+                showClinicalDialog = false
             }
         )
     }
@@ -427,6 +441,20 @@ fun ConstructorScreen(
     var isPointsDrawerExpanded by remember { mutableStateOf(false) }
 
     val rhythmDrawer = @Composable {
+        val editedRhythms = remember(rhythms, targetFile) {
+            if (targetFile == null) rhythms
+            else rhythms.map {
+                if (it.id == targetFile?.id) {
+                    it.copy(
+                        titleEn = targetFile!!.titleEn,
+                        nameRu = targetFile!!.nameRu,
+                        group = targetFile!!.group,
+                        clinicalCase = targetFile!!.clinicalCase
+                    )
+                } else it
+            }
+        }
+
         SideDrawer(
             isExpanded = isRhythmDrawerExpanded,
             onExpandedChange = { isRhythmDrawerExpanded = it },
@@ -434,7 +462,7 @@ fun ConstructorScreen(
             drawerContent = {
                 RhythmSelector(
                     appViewModel = appViewModel,
-                    rhythms = rhythms,
+                    rhythms = editedRhythms,
                     selectedId = targetFile?.id,
                     onRhythmSelect = { constructorViewModel.selectPathology(it.id) },
                 )
@@ -575,6 +603,13 @@ fun ConstructorScreen(
 
                             IconButton(onClick = { showGroupDialog = true }) {
                                 Icon(Icons.Default.Label, contentDescription = stringResource(R.string.constructor_group_title))
+                            }
+
+                            IconButton(onClick = { showClinicalDialog = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.Healing,
+                                    contentDescription = stringResource(R.string.clinical_edit_tooltip)
+                                )
                             }
 
                             IconButton(onClick = { constructorViewModel.duplicateCurrentPathology() }) {
@@ -865,4 +900,150 @@ private fun getFileName(context: android.content.Context, uri: Uri): String? {
         }
     }
     return result
+}
+
+/**
+ * Dialog for editing clinical case metadata.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ClinicalCaseDialog(
+    initialClinicalCase: String?,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit
+) {
+    val params = remember(initialClinicalCase) {
+        initialClinicalCase?.split(',')?.associate {
+            val parts = it.split('=')
+            if (parts.size == 2) parts[0].trim() to parts[1].trim() else "" to ""
+        }?.filterKeys { it.isNotEmpty() } ?: emptyMap()
+    }
+
+    var title by remember { mutableStateOf(params["title"] ?: "") }
+    var name by remember { mutableStateOf(params["name"] ?: "") }
+    var age by remember { mutableStateOf(params["age"] ?: "") }
+    var gender by remember { mutableStateOf(params["gender"] ?: "") }
+    var hr by remember { mutableStateOf(params["hr"] ?: "") }
+    var bp by remember { mutableStateOf(params["bp"] ?: "") }
+    var others by remember {
+        mutableStateOf(params.filterKeys { it !in listOf("title", "name", "age", "gender", "hr", "bp") }
+            .map { "${it.key}=${it.value}" }
+            .joinToString(", "))
+    }
+
+    var genderExpanded by remember { mutableStateOf(false) }
+    val genderOptions = listOf(stringResource(R.string.gender_male), stringResource(R.string.gender_female))
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.clinical_edit_title)) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text(stringResource(R.string.clinical_label_title)) },
+                    singleLine = true
+                )
+                TextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.clinical_label_patient_name)) },
+                    singleLine = true
+                )
+
+                TextField(
+                    value = age,
+                    onValueChange = { if (it.all { char -> char.isDigit() }) age = it },
+                    label = { Text(stringResource(R.string.clinical_label_age)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+
+                Box {
+                    OutlinedTextField(
+                        value = gender,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.clinical_label_gender)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = genderExpanded) },
+                        modifier = Modifier.fillMaxWidth().clickable { genderExpanded = true }
+                    )
+                    DropdownMenu(
+                        expanded = genderExpanded,
+                        onDismissRequest = { genderExpanded = false },
+                        modifier = Modifier.fillMaxWidth(0.7f)
+                    ) {
+                        genderOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    gender = option
+                                    genderExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                TextField(
+                    value = hr,
+                    onValueChange = { if (it.all { char -> char.isDigit() }) hr = it },
+                    label = { Text(stringResource(R.string.clinical_label_hr)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+
+                TextField(
+                    value = bp,
+                    onValueChange = { bp = it },
+                    label = { Text(stringResource(R.string.clinical_label_bp)) },
+                    singleLine = true
+                )
+                TextField(
+                    value = others,
+                    onValueChange = { others = it },
+                    label = { Text(stringResource(R.string.clinical_label_others)) }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val newParams = mutableMapOf<String, String>()
+                if (title.isNotBlank()) newParams["title"] = title
+                if (name.isNotBlank()) newParams["name"] = name
+                if (age.isNotBlank()) newParams["age"] = age
+                if (gender.isNotBlank()) {
+                    // Normalize gender for storage
+                    val maleStr = "Male" // stringResource(R.string.gender_male) -- can't use here if we want canonical
+                    val femaleStr = "Female"
+
+                    val normalizedGender = if (gender == genderOptions[0]) "Male" else "Female"
+                    newParams["gender"] = normalizedGender
+                }
+                if (hr.isNotBlank()) newParams["hr"] = hr
+                if (bp.isNotBlank()) newParams["bp"] = bp
+
+                val othersList = others.split(',').map { it.trim() }.filter { it.contains('=') }
+                othersList.forEach {
+                    val parts = it.split('=')
+                    newParams[parts[0].trim()] = parts[1].trim()
+                }
+
+                onSave(newParams.map { "${it.key}=${it.value}" }.joinToString(","))
+            }) {
+                Text(stringResource(R.string.constructor_rename_ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.constructor_rename_cancel))
+            }
+        }
+    )
 }

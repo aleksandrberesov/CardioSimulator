@@ -13,6 +13,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -23,6 +24,7 @@ import com.example.cardiosimulator.domain.OskeAnswerKey
 import com.example.cardiosimulator.domain.Test
 import com.example.cardiosimulator.domain.TestQuestion
 import com.example.cardiosimulator.ui.dialogs.SettingsDialog
+import com.example.cardiosimulator.ui.components.WelcomeOverlay
 import com.example.cardiosimulator.ui.panels.*
 import com.example.cardiosimulator.ui.theme.*
 import com.example.cardiosimulator.ui.viewmodels.*
@@ -71,6 +73,11 @@ fun MainScreen(appViewModel: AppViewModel) {
         }
     )
     val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
+
+    val welcomeOptOut by appViewModel.prefs?.welcomeOptOut?.collectAsState(initial = true) ?: remember { mutableStateOf(true) }
+    var hasDismissedWelcome by rememberSaveable { mutableStateOf(false) }
+
+    val showWelcome = !welcomeOptOut && !hasDismissedWelcome
 
     val constructorViewModel: ConstructorViewModel = viewModel(
         key = selectedMode.id.name + "_editor",
@@ -249,143 +256,154 @@ fun MainScreen(appViewModel: AppViewModel) {
         )
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(PageBackground).systemBarsPadding()) {
-        Box(
-            modifier = Modifier.weight(2f).topSection(),
-            contentAlignment = Alignment.Center
-        ) {
-            TopControlPanel(
-                viewModel = appViewModel,
-                monitorViewModel = monitorViewModel,
-                rhythmViewModel = rhythmViewModel,
-                constructorViewModel = constructorViewModel,
-                courseConstructorViewModel = courseConstructorViewModel,
-                courseViewerViewModel = courseViewerViewModel,
-                testConstructorViewModel = testConstructorViewModel,
-                onStartStopClick = { isRunning ->
-                    if (isRunning) {
-                        appViewModel.sendStartCommand(selectedRhythm?.id, selectedRhythm?.titleEn)
-                    } else {
-                        appViewModel.sendStopCommand()
-                    }
-                }
-            )
-        }
-        Box(
-            modifier = Modifier
-                .weight(15f)
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 4.dp)
-                .background(PanelBackground, RoundedCornerShape(16.dp))
-                .border(1.dp, ControlBorder, RoundedCornerShape(16.dp))
-                .clip(RoundedCornerShape(16.dp))
-        ) {
-            when (selectedMode.id) {
-                OperatingMode.Teaching -> TeachingScreen(
-                    appViewModel = appViewModel,
-                    monitorViewModel = monitorViewModel,
-                    rhythmViewModel = rhythmViewModel,
-                    courseViewerViewModel = courseViewerViewModel,
-                )
-                OperatingMode.Testing -> TestingScreen(
-                    appViewModel = appViewModel,
-                    monitorViewModel = monitorViewModel,
-                    rhythmViewModel = rhythmViewModel,
-                    testViewModel = testViewModel,
-                )
-                OperatingMode.Examination -> ExaminationScreen(
-                    appViewModel = appViewModel,
-                    monitorViewModel = monitorViewModel,
-                    rhythmViewModel = rhythmViewModel,
-                    examinationViewModel = examinationViewModel,
-                    testRepository = appViewModel.testRepository ?: com.example.cardiosimulator.data.TestRepository(
-                        source = object : com.example.cardiosimulator.data.ITestSource {
-                            override fun readTests() = emptyList<com.example.cardiosimulator.domain.Test>()
-                            override fun readTest(id: String) = null
-                            override fun writeTest(test: com.example.cardiosimulator.domain.Test) = false
-                            override fun deleteTest(id: String) = false
-                        }
-                    )
-                )
-                OperatingMode.TestConstructor -> TestConstructorScreen(
-                    appViewModel = appViewModel,
-                    monitorViewModel = monitorViewModel,
-                    rhythmViewModel = rhythmViewModel,
-                    testConstructorViewModel = testConstructorViewModel
-                )
-                OperatingMode.OSKE -> OSKEScreen(
-                    appViewModel = appViewModel,
-                    monitorViewModel = monitorViewModel,
-                    rhythmViewModel = rhythmViewModel,
-                    oskeViewModel = oskeViewModel,
-                )
-                OperatingMode.OSKEConstructor -> OskeConstructorScreen(
-                    appViewModel = appViewModel,
-                    monitorViewModel = monitorViewModel,
-                    rhythmViewModel = rhythmViewModel,
-                    oskeViewModel = oskeViewModel,
-                )
-                OperatingMode.Constructor -> ConstructorScreen(
-                    appViewModel = appViewModel,
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize().background(PageBackground).systemBarsPadding()) {
+            Box(
+                modifier = Modifier.weight(2f).topSection(),
+                contentAlignment = Alignment.Center
+            ) {
+                TopControlPanel(
+                    viewModel = appViewModel,
                     monitorViewModel = monitorViewModel,
                     rhythmViewModel = rhythmViewModel,
                     constructorViewModel = constructorViewModel,
-                )
-                OperatingMode.CourseConstructor -> CourseConstructorScreen(
-                    appViewModel = appViewModel,
-                    monitorViewModel = monitorViewModel,
-                    rhythmViewModel = rhythmViewModel,
                     courseConstructorViewModel = courseConstructorViewModel,
-                )
-            }
-        }
-        Box(
-            modifier = Modifier.weight(2f).bottomSection(),
-            contentAlignment = Alignment.Center
-        ) {
-            BottomControlPanel(
-                onSettingsClick = { showSettings = true }
-            ) {
-                when (selectedMode.id) {
-                    OperatingMode.Teaching -> {
-                        val appSelectedCourseId by appViewModel.selectedCourseId.collectAsState()
-                        val showMonitorOverlay by appViewModel.showMonitorOverlay.collectAsState()
-                        val isAllRhythms = appSelectedCourseId == AppViewModel.ALL_RHYTHMS_ID || appSelectedCourseId == null
-                        if (isAllRhythms || showMonitorOverlay) {
-                            MonitorControlPanel(
-                                viewModel = monitorViewModel,
-                                onCompareClick = { monitorViewModel.toggleCompareMode(selectedRhythm?.id) },
-                                onStartStopClick = { isRunning ->
-                                    if (isRunning) {
-                                        appViewModel.sendStartCommand(selectedRhythm?.id, selectedRhythm?.titleEn)
-                                    } else {
-                                        appViewModel.sendStopCommand()
-                                    }
-                                }
-                            )
+                    courseViewerViewModel = courseViewerViewModel,
+                    testConstructorViewModel = testConstructorViewModel,
+                    onStartStopClick = { isRunning ->
+                        if (isRunning) {
+                            appViewModel.sendStartCommand(selectedRhythm?.id, selectedRhythm?.titleEn)
+                        } else {
+                            appViewModel.sendStopCommand()
                         }
                     }
-                    OperatingMode.Constructor -> {
-                        ConstructorControlPanel(
-                            constructorViewModel = constructorViewModel,
-                            monitorViewModel = monitorViewModel
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .weight(15f)
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
+                    .background(PanelBackground, RoundedCornerShape(16.dp))
+                    .border(1.dp, ControlBorder, RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(16.dp))
+            ) {
+                when (selectedMode.id) {
+                    OperatingMode.Teaching -> TeachingScreen(
+                        appViewModel = appViewModel,
+                        monitorViewModel = monitorViewModel,
+                        rhythmViewModel = rhythmViewModel,
+                        courseViewerViewModel = courseViewerViewModel,
+                    )
+                    OperatingMode.Testing -> TestingScreen(
+                        appViewModel = appViewModel,
+                        monitorViewModel = monitorViewModel,
+                        rhythmViewModel = rhythmViewModel,
+                        testViewModel = testViewModel,
+                    )
+                    OperatingMode.Examination -> ExaminationScreen(
+                        appViewModel = appViewModel,
+                        monitorViewModel = monitorViewModel,
+                        rhythmViewModel = rhythmViewModel,
+                        examinationViewModel = examinationViewModel,
+                        testRepository = appViewModel.testRepository ?: com.example.cardiosimulator.data.TestRepository(
+                            source = object : com.example.cardiosimulator.data.ITestSource {
+                                override fun readTests() = emptyList<com.example.cardiosimulator.domain.Test>()
+                                override fun readTest(id: String) = null
+                                override fun writeTest(test: com.example.cardiosimulator.domain.Test) = false
+                                override fun deleteTest(id: String) = false
+                            }
                         )
-                    }
-                    OperatingMode.CourseConstructor -> {
-                        CourseConstructorControlPanel(
-                            appViewModel = appViewModel,
-                            courseConstructorViewModel = courseConstructorViewModel
-                        )
-                    }
-                    OperatingMode.OSKEConstructor -> {
-                        OskeConstructorControlPanel(
-                            oskeViewModel = oskeViewModel,
-                            rhythmViewModel = rhythmViewModel
-                        )
-                    }
-                    else -> {}
+                    )
+                    OperatingMode.TestConstructor -> TestConstructorScreen(
+                        appViewModel = appViewModel,
+                        monitorViewModel = monitorViewModel,
+                        rhythmViewModel = rhythmViewModel,
+                        testConstructorViewModel = testConstructorViewModel
+                    )
+                    OperatingMode.OSKE -> OSKEScreen(
+                        appViewModel = appViewModel,
+                        monitorViewModel = monitorViewModel,
+                        rhythmViewModel = rhythmViewModel,
+                        oskeViewModel = oskeViewModel,
+                    )
+                    OperatingMode.OSKEConstructor -> OskeConstructorScreen(
+                        appViewModel = appViewModel,
+                        monitorViewModel = monitorViewModel,
+                        rhythmViewModel = rhythmViewModel,
+                        oskeViewModel = oskeViewModel,
+                    )
+                    OperatingMode.Constructor -> ConstructorScreen(
+                        appViewModel = appViewModel,
+                        monitorViewModel = monitorViewModel,
+                        rhythmViewModel = rhythmViewModel,
+                        constructorViewModel = constructorViewModel,
+                    )
+                    OperatingMode.CourseConstructor -> CourseConstructorScreen(
+                        appViewModel = appViewModel,
+                        monitorViewModel = monitorViewModel,
+                        rhythmViewModel = rhythmViewModel,
+                        courseConstructorViewModel = courseConstructorViewModel,
+                    )
                 }
             }
+            Box(
+                modifier = Modifier.weight(2f).bottomSection(),
+                contentAlignment = Alignment.Center
+            ) {
+                BottomControlPanel(
+                    onSettingsClick = { showSettings = true }
+                ) {
+                    when (selectedMode.id) {
+                        OperatingMode.Teaching -> {
+                            val appSelectedCourseId by appViewModel.selectedCourseId.collectAsState()
+                            val showMonitorOverlay by appViewModel.showMonitorOverlay.collectAsState()
+                            val isAllRhythms = appSelectedCourseId == AppViewModel.ALL_RHYTHMS_ID || appSelectedCourseId == null
+                            if (isAllRhythms || showMonitorOverlay) {
+                                MonitorControlPanel(
+                                    viewModel = monitorViewModel,
+                                    onCompareClick = { monitorViewModel.toggleCompareMode(selectedRhythm?.id) },
+                                    onStartStopClick = { isRunning ->
+                                        if (isRunning) {
+                                            appViewModel.sendStartCommand(selectedRhythm?.id, selectedRhythm?.titleEn)
+                                        } else {
+                                            appViewModel.sendStopCommand()
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                        OperatingMode.Constructor -> {
+                            ConstructorControlPanel(
+                                constructorViewModel = constructorViewModel,
+                                monitorViewModel = monitorViewModel
+                            )
+                        }
+                        OperatingMode.CourseConstructor -> {
+                            CourseConstructorControlPanel(
+                                appViewModel = appViewModel,
+                                courseConstructorViewModel = courseConstructorViewModel
+                            )
+                        }
+                        OperatingMode.OSKEConstructor -> {
+                            OskeConstructorControlPanel(
+                                oskeViewModel = oskeViewModel,
+                                rhythmViewModel = rhythmViewModel
+                            )
+                        }
+                        else -> {}
+                    }
+                }
+            }
+        }
+
+        if (showWelcome) {
+            WelcomeOverlay(
+                onDismiss = { dontShowAgain ->
+                    hasDismissedWelcome = true
+                    appViewModel.setWelcomeOptOut(dontShowAgain)
+                }
+            )
         }
     }
 }

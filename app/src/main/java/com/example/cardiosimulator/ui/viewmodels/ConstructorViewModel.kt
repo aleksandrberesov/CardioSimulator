@@ -597,6 +597,15 @@ class ConstructorViewModel(
         }
     }
 
+    fun setClinicalCase(clinicalCase: String?) {
+        val currentFile = _targetFile.value ?: return
+        val normalized = if (clinicalCase.isNullOrBlank()) null else clinicalCase
+        if (currentFile.clinicalCase != normalized) {
+            _targetFile.value = currentFile.copy(clinicalCase = normalized)
+            _isMetadataDirty.value = true
+        }
+    }
+
     fun createAndSetGroup(name: String) {
         val currentFile = _targetFile.value ?: return
         viewModelScope.launch {

@@ -467,4 +467,19 @@
     <string name="oske_score_format">Score: %1$d/%2$d</string>
     <string name="oske_new_attempt">New Attempt</string>
     <string name="oske_no_key_warning">No answer key exists for this ECG and specialty.</string>
+
+    <!-- Clinical cases -->
+    <string name="clinical_mode_tooltip">Clinical cases mode</string>
+    <string name="clinical_dashboard_title">Clinical Case</string>
+    <string name="clinical_label_title">Case Title</string>
+    <string name="clinical_label_patient_name">Patient Name</string>
+    <string name="clinical_label_age">Age</string>
+    <string name="clinical_label_gender">Gender</string>
+    <string name="clinical_label_hr">Heart Rate</string>
+    <string name="clinical_label_bp">Blood Pressure</string>
+    <string name="clinical_edit_tooltip">Edit clinical case parameters</string>
+    <string name="clinical_edit_title">Clinical Case Parameters</string>
+    <string name="clinical_label_others">Other parameters (e.g. temp=36.6, weight=70)</string>
+    <string name="gender_male">Male</string>
+    <string name="gender_female">Female</string>
 </resources>

@@ -117,6 +117,9 @@ class AppViewModel(
     private val _isRhythmListGrouped = MutableStateFlow(true)
     val isRhythmListGrouped: StateFlow<Boolean> = _isRhythmListGrouped.asStateFlow()
 
+    private val _isClinicalMode = MutableStateFlow(false)
+    val isClinicalMode: StateFlow<Boolean> = _isClinicalMode.asStateFlow()
+
     private val _collapsedRhythmGroups = MutableStateFlow<Set<String>>(emptySet())
     val collapsedRhythmGroups: StateFlow<Set<String>> = _collapsedRhythmGroups.asStateFlow()
 
@@ -335,6 +338,13 @@ class AppViewModel(
 
     fun setRhythmListGrouped(grouped: Boolean) {
         _isRhythmListGrouped.value = grouped
+    }
+
+    fun setClinicalMode(enabled: Boolean) {
+        _isClinicalMode.value = enabled
+        if (enabled) {
+            _isRhythmListGrouped.value = true
+        }
     }
 
     fun toggleRhythmGroupCollapsed(groupKey: String) {
