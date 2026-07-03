@@ -920,13 +920,14 @@ fun ClinicalCaseDialog(
     }
 
     var title by remember { mutableStateOf(params["title"] ?: "") }
+    var description by remember { mutableStateOf(params["description"] ?: "") }
     var name by remember { mutableStateOf(params["name"] ?: "") }
     var age by remember { mutableStateOf(params["age"] ?: "") }
     var gender by remember { mutableStateOf(params["gender"] ?: "") }
     var hr by remember { mutableStateOf(params["hr"] ?: "") }
     var bp by remember { mutableStateOf(params["bp"] ?: "") }
     var others by remember {
-        mutableStateOf(params.filterKeys { it !in listOf("title", "name", "age", "gender", "hr", "bp") }
+        mutableStateOf(params.filterKeys { it !in listOf("title", "description", "name", "age", "gender", "hr", "bp") }
             .map { "${it.key}=${it.value}" }
             .joinToString(", "))
     }
@@ -948,6 +949,12 @@ fun ClinicalCaseDialog(
                     value = title,
                     onValueChange = { title = it },
                     label = { Text(stringResource(R.string.clinical_label_title)) },
+                    singleLine = true
+                )
+                TextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text(stringResource(R.string.clinical_label_description)) },
                     singleLine = true
                 )
                 TextField(
@@ -1016,6 +1023,10 @@ fun ClinicalCaseDialog(
             TextButton(onClick = {
                 val newParams = mutableMapOf<String, String>()
                 if (title.isNotBlank()) newParams["title"] = title
+                if (description.isNotBlank()) {
+                    // clinical_case is stored raw & comma-delimited — strip separators so it stays parseable.
+                    newParams["description"] = description.replace(Regex("[,;\r\n]"), " ").trim()
+                }
                 if (name.isNotBlank()) newParams["name"] = name
                 if (age.isNotBlank()) newParams["age"] = age
                 if (gender.isNotBlank()) {

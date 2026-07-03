@@ -52,6 +52,8 @@
     <string name="monitor_speed_unit">mm/s</string>
     <string name="monitor_speed_format">%1$s mm/s</string>
     <string name="monitor_speed_title">Velocidad</string>
+    <string name="monitor_gain_unit">mm/mV</string>
+    <string name="monitor_gain_title">Ganancia</string>
     <string name="monitor_count_format">%1$d\u00D7</string>
     <string name="monitor_scale_format">%1$d%%</string>
     <string name="monitor_electrodes">Electrodos</string>
@@ -324,7 +326,8 @@
     <!-- Clinical cases -->
     <string name="clinical_mode_tooltip">Modo de casos clínicos</string>
     <string name="clinical_dashboard_title">Caso Clínico</string>
-    <string name="clinical_label_title">Título del caso</string>
+    <string name="clinical_label_title">Título</string>
+    <string name="clinical_label_description">Descripción</string>
     <string name="clinical_label_patient_name">Nombre del paciente</string>
     <string name="clinical_label_age">Edad</string>
     <string name="clinical_label_gender">Género</string>

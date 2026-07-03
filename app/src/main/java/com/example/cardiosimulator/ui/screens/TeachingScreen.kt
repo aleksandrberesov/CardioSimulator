@@ -253,7 +253,9 @@ private fun MonitorOverlay(
     if (mode.showElectrodes) {
         ElectrodesDialog(
             electrodeState = mode.electrodeState,
+            userSet = mode.electrodeStateUserSet,
             onSelectState = { monitorViewModel.setElectrodeState(it) },
+            onClearState = { monitorViewModel.clearElectrodeState() },
             onDismiss = { monitorViewModel.setShowElectrodes(false) }
         )
     }

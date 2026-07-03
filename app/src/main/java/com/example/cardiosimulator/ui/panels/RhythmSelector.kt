@@ -83,14 +83,22 @@ fun RhythmSelector(
     val groups = appViewModel.repository?.groups
 
     val filtered = remember(rhythms, searchQuery, currentLanguage, isClinicalMode) {
-        rhythms.filter { entry ->
-            val title = if (isClinicalMode) {
-                entry.getClinicalTitle() ?: (if (currentLanguage == Language.RU) entry.nameRu ?: entry.titleEn else entry.titleEn)
-            } else {
-                if (currentLanguage == Language.RU) entry.nameRu ?: entry.titleEn else entry.titleEn
+        rhythms
+            .filter { entry ->
+                if (isClinicalMode) {
+                    !entry.clinicalCase.isNullOrBlank()
+                } else {
+                    entry.clinicalCase.isNullOrBlank()
+                }
             }
-            title.contains(searchQuery, ignoreCase = true)
-        }
+            .filter { entry ->
+                val title = if (isClinicalMode) {
+                    entry.getClinicalTitle() ?: (if (currentLanguage == Language.RU) entry.nameRu ?: entry.titleEn else entry.titleEn)
+                } else {
+                    if (currentLanguage == Language.RU) entry.nameRu ?: entry.titleEn else entry.titleEn
+                }
+                title.contains(searchQuery, ignoreCase = true)
+            }
     }
 
     // Grouping logic
@@ -246,7 +254,7 @@ fun ClinicalDashboard(
         }.filterKeys { it.isNotEmpty() }
     }
 
-    val canonicalKeys = listOf("title", "name", "age", "gender", "hr", "bp")
+    val canonicalKeys = listOf("title", "description", "name", "age", "gender", "hr", "bp")
     val otherKeys = params.keys.filter { it !in canonicalKeys }.sorted()
     val allOrderedKeys = canonicalKeys.filter { it in params } + otherKeys
 
@@ -267,6 +275,7 @@ fun ClinicalDashboard(
         allOrderedKeys.forEach { key ->
             val labelRes = when (key) {
                 "title" -> R.string.clinical_label_title
+                "description" -> R.string.clinical_label_description
                 "name" -> R.string.clinical_label_patient_name
                 "age" -> R.string.clinical_label_age
                 "gender" -> R.string.clinical_label_gender

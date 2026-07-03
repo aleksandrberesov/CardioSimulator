@@ -52,6 +52,8 @@ class RhythmViewModel(
 
             if (isClinical) {
                 list = list.filter { !it.clinicalCase.isNullOrBlank() }
+            } else {
+                list = list.filter { it.clinicalCase.isNullOrBlank() }
             }
             list
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

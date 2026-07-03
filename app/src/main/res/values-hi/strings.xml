@@ -57,6 +57,8 @@
     <string name="monitor_speed_unit">mm/s</string>
     <string name="monitor_speed_format">%1$s mm/s</string>
     <string name="monitor_speed_title">गति</string>
+    <string name="monitor_gain_unit">mm/mV</string>
+    <string name="monitor_gain_title">गेन</string>
     <string name="monitor_count_format">%1$d×</string>
     <string name="monitor_scale_format">%1$d%%</string>
     <string name="monitor_electrodes">इलेक्ट्रोड</string>
@@ -471,7 +473,8 @@
     <!-- Clinical cases -->
     <string name="clinical_mode_tooltip">क्लिनिकल केस मोड</string>
     <string name="clinical_dashboard_title">क्लिनिकल केस</string>
-    <string name="clinical_label_title">मामले का शीर्षक</string>
+    <string name="clinical_label_title">शीर्षक</string>
+    <string name="clinical_label_description">विवरण</string>
     <string name="clinical_label_patient_name">रोगी का नाम</string>
     <string name="clinical_label_age">आयु</string>
     <string name="clinical_label_gender">लिंग</string>

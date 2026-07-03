@@ -52,6 +52,8 @@
     <string name="monitor_speed_unit">毫米/秒</string>
     <string name="monitor_speed_format">%1$s 毫米/秒</string>
     <string name="monitor_speed_title">速度</string>
+    <string name="monitor_gain_unit">毫米/毫伏</string>
+    <string name="monitor_gain_title">增益</string>
     <string name="monitor_count_format">%1$d\u00D7</string>
     <string name="monitor_scale_format">%1$d%%</string>
     <string name="monitor_electrodes">电极</string>
@@ -316,7 +318,8 @@
     <!-- Clinical cases -->
     <string name="clinical_mode_tooltip">临床案例模式</string>
     <string name="clinical_dashboard_title">临床案例</string>
-    <string name="clinical_label_title">病例标题</string>
+    <string name="clinical_label_title">标题</string>
+    <string name="clinical_label_description">描述</string>
     <string name="clinical_label_patient_name">患者姓名</string>
     <string name="clinical_label_age">年龄</string>
     <string name="clinical_label_gender">性别</string>

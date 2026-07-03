@@ -38,6 +38,7 @@ class MonitorViewModel(
     val availableSeriesSchemes = SeriesScheme.entries
     val availableSpeeds = if (mode == OperatingMode.Teaching) listOf(12.5f, 25f, 50f) else listOf(25f, 50f)
     val availableScales = listOf(1.0f, 2.0f, 3.0f, 4.0f, 5.0f)
+    val availableGains = listOf(2.5f, 5f, 10f, 20f, 40f)
 
     init {
         viewModelScope.launch {
@@ -53,6 +54,9 @@ class MonitorViewModel(
             }
             prefs?.monitorScale(modeName)?.first()?.let { scale ->
                 setScale(scale, persist = false)
+            }
+            prefs?.monitorGain(modeName)?.first()?.let { gain ->
+                setGain(gain, persist = false)
             }
             prefs?.monitorDisplayScale(modeName)?.first()?.let { displayScale ->
                 setDisplayScale(displayScale, persist = false)
@@ -183,6 +187,15 @@ class MonitorViewModel(
         }
     }
 
+    fun setGain(gainMmPerMv: Float, persist: Boolean = true) {
+        _monitorMode.update { it.copy(calibration = it.calibration.copy(gainMmPerMv = gainMmPerMv)) }
+        if (persist) {
+            viewModelScope.launch {
+                prefs?.setMonitorGain(mode.name, gainMmPerMv)
+            }
+        }
+    }
+
     fun resetView() {
         setScale(1.0f)
     }
@@ -223,6 +236,13 @@ class MonitorViewModel(
 
     fun setElectrodeState(state: com.example.cardiosimulator.domain.ElectrodeState) {
         _monitorMode.update { it.copy(electrodeState = state, electrodeStateUserSet = true) }
+    }
+
+    /** Clears the electrode hookup back to the neutral/unset state (default OK wiring, no fault), as if
+     *  the Электроды window had never been used. Backs the "Все ок" toggle: a second tap turns the blue
+     *  highlight off and returns the Electrodes tab to neutral. */
+    fun clearElectrodeState() {
+        _monitorMode.update { it.copy(electrodeState = com.example.cardiosimulator.domain.ElectrodeState.Ok, electrodeStateUserSet = false) }
     }
 
     fun setShowElectrodes(show: Boolean) {

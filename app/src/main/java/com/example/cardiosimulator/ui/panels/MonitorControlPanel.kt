@@ -92,9 +92,9 @@ fun MonitorControlPanel(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Left section: Count, Scheme, Speed, Scale
+        // Left section: Count, Scheme, Speed, Gain, Scale
         Row(
-            modifier = Modifier.weight(4f),
+            modifier = Modifier.weight(5f),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Box(modifier = Modifier.weight(1f)) {
@@ -187,6 +187,34 @@ fun MonitorControlPanel(
             }
 
             Box(modifier = Modifier.weight(1f)) {
+                var gainMenuExpanded by remember { mutableStateOf(false) }
+                val gain = monitorMode.calibration.gainMmPerMv
+                val formattedGain = if (gain % 1 == 0f) gain.toInt().toString() else gain.toString()
+                Tab(
+                    text = formattedGain,
+                    subText = stringResource(R.string.monitor_gain_unit),
+                    showChevron = true,
+                    onClick = { gainMenuExpanded = true },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                DropdownMenu(
+                    expanded = gainMenuExpanded,
+                    onDismissRequest = { gainMenuExpanded = false }
+                ) {
+                    viewModel.availableGains.forEach { gainOption ->
+                        val display = if (gainOption % 1 == 0f) gainOption.toInt().toString() else gainOption.toString()
+                        DropdownMenuItem(
+                            text = { Text("$display ${stringResource(R.string.monitor_gain_unit)}") },
+                            onClick = {
+                                viewModel.setGain(gainOption)
+                                gainMenuExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            Box(modifier = Modifier.weight(1f)) {
                 var scaleMenuExpanded by remember { mutableStateOf(false) }
                 Tab(
                     text = "${(monitorMode.scale * 100).toInt()}%",
@@ -213,20 +241,11 @@ fun MonitorControlPanel(
 
         ControlPanelDivider()
 
-        // Middle-left section: Electrodes, Artifacts, 3D
+        // Middle-left group: Artifacts, Filters | Electrodes, 3D
         Row(
             modifier = Modifier.weight(3.5f),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            val electrodeFault = monitorMode.electrodeState != ElectrodeState.Ok
-            Tab(
-                text = stringResource(R.string.monitor_electrodes),
-                onClick = { viewModel.setShowElectrodes(!monitorMode.showElectrodes) },
-                isActive = monitorMode.electrodeStateUserSet,
-                activeColor = if (electrodeFault) ElectrodeFaultRed else AccentGreen,
-                modifier = Modifier.weight(1f)
-            )
-
             Box(modifier = Modifier.weight(1.5f)) {
                 var artifactsMenuExpanded by remember { mutableStateOf(false) }
                 val artifactsActive = monitorMode.artifacts.isNotEmpty()
@@ -346,6 +365,17 @@ fun MonitorControlPanel(
                     }
                 }
             }
+
+            ControlPanelDivider()
+
+            val electrodeFault = monitorMode.electrodeState != ElectrodeState.Ok
+            Tab(
+                text = stringResource(R.string.monitor_electrodes),
+                onClick = { viewModel.setShowElectrodes(!monitorMode.showElectrodes) },
+                isActive = monitorMode.electrodeStateUserSet,
+                activeColor = if (electrodeFault) ElectrodeFaultRed else AccentGreen,
+                modifier = Modifier.weight(1f)
+            )
 
             Tab(
                 text = "3D",

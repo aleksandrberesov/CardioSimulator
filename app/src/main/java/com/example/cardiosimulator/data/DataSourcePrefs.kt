@@ -84,6 +84,16 @@ class DataSourcePrefs(private val context: Context) {
         getFloat("${mode}_monitor_scale") ?: getFloat("monitor_scale")
     }
 
+    fun monitorGain(mode: String): Flow<Float?> = context.dataSourceDataStore.data.map { prefs ->
+        fun getFloat(name: String): Float? = when (val v = prefs.asMap().entries.find { it.key.name == name }?.value) {
+            is Float -> v
+            is Int -> v.toFloat()
+            is Double -> v.toFloat()
+            else -> null
+        }
+        getFloat("${mode}_monitor_gain") ?: getFloat("monitor_gain")
+    }
+
     fun monitorDisplayScale(mode: String): Flow<Float?> = context.dataSourceDataStore.data.map { prefs ->
         fun getFloat(name: String): Float? = when (val v = prefs.asMap().entries.find { it.key.name == name }?.value) {
             is Float -> v
@@ -201,6 +211,12 @@ class DataSourcePrefs(private val context: Context) {
         }
     }
 
+    suspend fun setMonitorGain(mode: String, gain: Float) {
+        context.dataSourceDataStore.edit { prefs ->
+            prefs[floatPreferencesKey("${mode}_monitor_gain")] = gain
+        }
+    }
+
     suspend fun setMonitorDisplayScale(mode: String, displayScale: Float) {
         context.dataSourceDataStore.edit { prefs ->
             prefs[floatPreferencesKey("${mode}_monitor_display_scale")] = displayScale
@@ -249,6 +265,7 @@ class DataSourcePrefs(private val context: Context) {
         private val KEY_LAST_EDITOR_RHYTHM_ID = stringPreferencesKey("last_editor_rhythm_id")
         private val KEY_MONITOR_SPEED = floatPreferencesKey("monitor_speed")
         private val KEY_MONITOR_SCALE = floatPreferencesKey("monitor_scale")
+        private val KEY_MONITOR_GAIN = floatPreferencesKey("monitor_gain")
         private val KEY_MONITOR_DISPLAY_SCALE = floatPreferencesKey("monitor_display_scale")
         private val KEY_MONITOR_SERIES_COUNT = intPreferencesKey("monitor_series_count")
         private val KEY_MONITOR_SERIES_SCHEME = stringPreferencesKey("monitor_series_scheme")

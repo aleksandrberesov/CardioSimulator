@@ -31,9 +31,13 @@ import com.example.cardiosimulator.ui.theme.TextSecondary
 @Composable
 fun ElectrodesDialog(
     electrodeState: ElectrodeState,
+    userSet: Boolean,
     onSelectState: (ElectrodeState) -> Unit,
+    onClearState: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    fun isActive(state: ElectrodeState) = userSet && electrodeState == state
+
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             modifier = Modifier
@@ -92,8 +96,8 @@ fun ElectrodesDialog(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            val raColor = if (electrodeState == ElectrodeState.Swapped) Color(0xFFFDD835) else Color(0xFFE53935)
-                            val laColor = if (electrodeState == ElectrodeState.Swapped) Color(0xFFE53935) else Color(0xFFFDD835)
+                            val raColor = if (isActive(ElectrodeState.Swapped)) Color(0xFFFDD835) else Color(0xFFE53935)
+                            val laColor = if (isActive(ElectrodeState.Swapped)) Color(0xFFE53935) else Color(0xFFFDD835)
                             
                             LegendRow(raColor, stringResource(R.string.electrodes_ra))
                             LegendRow(laColor, stringResource(R.string.electrodes_la))
@@ -104,7 +108,7 @@ fun ElectrodesDialog(
                             
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(4.dp),
-                                modifier = Modifier.alpha(if (electrodeState == ElectrodeState.Displacement) 0.45f else 1f)
+                                modifier = Modifier.alpha(if (isActive(ElectrodeState.Displacement)) 0.45f else 1f)
                             ) {
                                 LegendRow(Color(0xFFE53935), stringResource(R.string.electrodes_v1))
                                 LegendRow(Color(0xFFFDD835), stringResource(R.string.electrodes_v2))
@@ -119,31 +123,31 @@ fun ElectrodesDialog(
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 StateButton(
                                     stringResource(R.string.electrodes_state_ok),
-                                    selected = electrodeState == ElectrodeState.Ok,
-                                    onClick = { onSelectState(ElectrodeState.Ok) },
+                                    selected = isActive(ElectrodeState.Ok),
+                                    onClick = { if (isActive(ElectrodeState.Ok)) onClearState() else onSelectState(ElectrodeState.Ok) },
                                     modifier = Modifier.weight(1f)
                                 )
                                 StateButton(
                                     stringResource(R.string.electrodes_state_swapped),
-                                    selected = electrodeState == ElectrodeState.Swapped,
+                                    selected = isActive(ElectrodeState.Swapped),
                                     onClick = { onSelectState(ElectrodeState.Swapped) },
                                     modifier = Modifier.weight(1f)
                                 )
                                 StateButton(
                                     stringResource(R.string.electrodes_state_displacement),
-                                    selected = electrodeState == ElectrodeState.Displacement,
+                                    selected = isActive(ElectrodeState.Displacement),
                                     onClick = { onSelectState(ElectrodeState.Displacement) },
                                     modifier = Modifier.weight(1f)
                                 )
                             }
                             
-                            val captionRes = when (electrodeState) {
-                                ElectrodeState.Ok -> R.string.electrodes_state_caption_ok
-                                ElectrodeState.Swapped -> R.string.electrodes_state_caption_swapped
-                                ElectrodeState.Displacement -> R.string.electrodes_state_caption_displacement
+                            val captionText = if (!userSet) "" else when (electrodeState) {
+                                ElectrodeState.Ok -> stringResource(R.string.electrodes_state_caption_ok)
+                                ElectrodeState.Swapped -> stringResource(R.string.electrodes_state_caption_swapped)
+                                ElectrodeState.Displacement -> stringResource(R.string.electrodes_state_caption_displacement)
                             }
                             Text(
-                                text = stringResource(captionRes),
+                                text = captionText,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = TextSecondary,
                                 minLines = 2
