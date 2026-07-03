@@ -33,15 +33,21 @@ import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.LocalPixelScale
 import com.example.cardiosimulator.data.PixelScale
 import com.example.cardiosimulator.data.Points
+import com.example.cardiosimulator.data.displayScaleFactor
 import com.example.cardiosimulator.data.wfdb.WfdbConverter
 import com.example.cardiosimulator.data.wfdb.WfdbHeaderParser
 import com.example.cardiosimulator.data.wfdb.WfdbReader
 import com.example.cardiosimulator.data.wfdb.WfdbRecord
+import com.example.cardiosimulator.domain.DerivedLeads
 import com.example.cardiosimulator.domain.Lead
+import com.example.cardiosimulator.domain.PathologyFile
+import com.example.cardiosimulator.domain.MonitorModeModel
 import com.example.cardiosimulator.domain.SignificantPoint
 import com.example.cardiosimulator.ui.components.PreviewPane
 import com.example.cardiosimulator.ui.components.SideDrawer
 import com.example.cardiosimulator.ui.display.EditableLead
+import com.example.cardiosimulator.ui.display.Lead as LeadView
+import com.example.cardiosimulator.ui.display.LeadsGrid
 import com.example.cardiosimulator.ui.display.Monitor
 import com.example.cardiosimulator.ui.display.ekgGrid
 import com.example.cardiosimulator.ui.panels.DrawPanel
@@ -139,6 +145,7 @@ fun ConstructorScreen(
     var showGroupDialog by remember { mutableStateOf(false) }
     var showClinicalDialog by remember { mutableStateOf(false) }
     var showCalculateDerivedDialog by remember { mutableStateOf(false) }
+    var showAllLeads by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showSynthesizerDialog by remember { mutableStateOf(false) }
 
@@ -520,6 +527,13 @@ fun ConstructorScreen(
         }
         Box(modifier = Modifier.weight(1f)) {
             Column(modifier = Modifier.fillMaxSize()) {
+                val displayTitle = targetFile?.let {
+                    if (selectedLanguage == com.example.cardiosimulator.domain.Language.RU)
+                        it.nameRu ?: it.titleEn
+                    else
+                        it.titleEn
+                } ?: stringResource(R.string.constructor_no_pathology_selected)
+
                 // Toolbar
                 Surface(
                     modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -531,13 +545,6 @@ fun ConstructorScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        val displayTitle = targetFile?.let {
-                            if (selectedLanguage == com.example.cardiosimulator.domain.Language.RU)
-                                it.nameRu ?: it.titleEn
-                            else
-                                it.titleEn
-                        } ?: stringResource(R.string.constructor_no_pathology_selected)
-
                         Text(
                             text = displayTitle,
                             style = MaterialTheme.typography.titleMedium,
@@ -628,6 +635,13 @@ fun ConstructorScreen(
                                 Icon(
                                     Icons.Default.Calculate,
                                     contentDescription = stringResource(R.string.constructor_generate_derived)
+                                )
+                            }
+
+                            IconButton(onClick = { showAllLeads = true }) {
+                                Icon(
+                                    Icons.Default.GridView,
+                                    contentDescription = stringResource(R.string.constructor_view_all_leads)
                                 )
                             }
                         }
@@ -855,6 +869,16 @@ fun ConstructorScreen(
                                 onModeChange = { constructorViewModel.setToolMode(it) }
                             )
                         }
+
+                        if (showAllLeads) {
+                            AllLeadsPreviewOverlay(
+                                targetFile = targetFile!!,
+                                monitorMode = monitorMode,
+                                baseline = rhythmViewModel.repository.manifest()?.baseline ?: 1024,
+                                titleName = displayTitle,
+                                onClose = { showAllLeads = false }
+                            )
+                        }
                     } else {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Text(stringResource(R.string.constructor_select_from_panel_hint))
@@ -869,7 +893,9 @@ fun ConstructorScreen(
                         if (!isDrawerFixed) {
                             rhythmDrawer()
                         }
-                        pointsDrawer()
+                        if (!showAllLeads) {
+                            pointsDrawer()
+                        }
                     }
                 }
             }
@@ -1057,4 +1083,96 @@ fun ClinicalCaseDialog(
             }
         }
     )
+}
+
+@Composable
+private fun BoxScope.AllLeadsPreviewOverlay(
+    targetFile: PathologyFile,
+    monitorMode: MonitorModeModel,
+    baseline: Int,
+    titleName: String,
+    onClose: () -> Unit,
+) {
+    // Build the 12-lead map from the *edited* file (reflects unsaved edits). remember(targetFile,…)
+    // is what makes it refresh when a different rhythm is picked in the still-visible list.
+    val map = remember(targetFile, baseline) {
+        buildMap<Lead, Points> {
+            fun zeroed(l: Lead): List<Float>? =
+                targetFile.leads[l]?.samples?.map { (it - baseline).toFloat() }
+            for (lead in Lead.entries) {
+                val direct = zeroed(lead)
+                if (direct != null) {
+                    put(lead, Points(direct))
+                    continue
+                }
+                val synth = when (lead) {
+                    Lead.III, Lead.aVR, Lead.aVL, Lead.aVF -> {
+                        val i = zeroed(Lead.I)
+                        val ii = zeroed(Lead.II)
+                        if (i != null && ii != null)
+                            DerivedLeads.combineIII_aVR_aVL_aVF(i, ii, lead) else null
+                    }
+                    Lead.V1, Lead.V3, Lead.V4, Lead.V5 -> {
+                        val v2 = zeroed(Lead.V2)
+                        val v6 = zeroed(Lead.V6)
+                        if (v2 != null && v6 != null)
+                            DerivedLeads.combineV1_V3_V4_V5(v2, v6, lead) else null
+                    }
+                    else -> null
+                }
+                if (!synth.isNullOrEmpty()) put(lead, Points(synth))
+            }
+        }
+    }
+
+    val scheme = monitorMode.gridScheme
+    val density = LocalDensity.current
+    // 12-lead layout ⇒ displayScaleFactor(12); mirrors Monitor.kt's pxPerMm formula.
+    val pxPerMm = density.density * (160f / 25.4f) * monitorMode.displayScale * displayScaleFactor(12)
+    val pixelScale = remember(pxPerMm, monitorMode.speed, monitorMode.calibration) {
+        PixelScale(
+            pxPerMm = pxPerMm, paperSpeedMmPerSec = monitorMode.speed,
+            gainZoomY = 1f, cal = monitorMode.calibration, zoom = 1f
+        )
+    }
+
+    Surface(modifier = Modifier.matchParentSize(), color = MaterialTheme.colorScheme.surface) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Top bar: pathology title + close.
+            Surface(tonalElevation = 4.dp, color = MaterialTheme.colorScheme.surface) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        titleName, style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(onClick = onClose) {
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_close))
+                    }
+                }
+            }
+            // 12-lead static grid (4×3). No transformable/pointerInput ⇒ read-only.
+            CompositionLocalProvider(LocalPixelScale provides pixelScale) {
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxWidth()
+                        .ekgGrid(scheme = scheme, showBackground = true)
+                ) {
+                    LeadsGrid(rows = 3, columns = 4, itemCount = 12) { _, lead ->
+                        LeadView(
+                            points = lead?.let { map[it] }?.takeIf { it.values.size >= 2 }
+                                ?: Points(emptyList()),
+                            title = lead?.name ?: "",
+                            isRunning = false,
+                            xOffsetPx = 0f,
+                            gridScheme = scheme,
+                            significantPoints = targetFile.significantPoints,
+                            calibration = monitorMode.calibration
+                        )
+                    }
+                }
+            }
+        }
+    }
 }

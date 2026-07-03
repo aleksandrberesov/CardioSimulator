@@ -278,6 +278,8 @@
     <string name="cd_hide_rhythms">隐藏心律</string>
     <string name="cd_show_rhythms">显示心律</string>
 
+    <string name="constructor_view_all_leads">显示全部 12 导联（只读）</string>
+
     <string name="ecg_point_p_start">P 开始</string>
     <string name="ecg_point_p_peak">P 峰值</string>
     <string name="ecg_point_p_end">P 结束</string>

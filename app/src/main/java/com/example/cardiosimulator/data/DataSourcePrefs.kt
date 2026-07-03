@@ -126,10 +126,6 @@ class DataSourcePrefs(private val context: Context) {
         prefs[KEY_WELCOME_OPT_OUT] ?: false
     }
 
-    val lastOperatingMode: Flow<String?> = context.dataSourceDataStore.data.map { prefs ->
-        prefs[KEY_LAST_OPERATING_MODE]
-    }
-
     suspend fun setTreeUri(uri: Uri?) {
         context.dataSourceDataStore.edit { prefs ->
             if (uri == null) prefs.remove(KEY_TREE_URI)
@@ -248,12 +244,6 @@ class DataSourcePrefs(private val context: Context) {
         }
     }
 
-    suspend fun setLastOperatingMode(mode: String) {
-        context.dataSourceDataStore.edit { prefs ->
-            prefs[KEY_LAST_OPERATING_MODE] = mode
-        }
-    }
-
     companion object {
         private val KEY_TREE_URI = stringPreferencesKey("tree_uri")
         private val KEY_LANGUAGE_TAG = stringPreferencesKey("language_tag")
@@ -269,7 +259,6 @@ class DataSourcePrefs(private val context: Context) {
         private val KEY_MONITOR_DISPLAY_SCALE = floatPreferencesKey("monitor_display_scale")
         private val KEY_MONITOR_SERIES_COUNT = intPreferencesKey("monitor_series_count")
         private val KEY_MONITOR_SERIES_SCHEME = stringPreferencesKey("monitor_series_scheme")
-        private val KEY_LAST_OPERATING_MODE = stringPreferencesKey("last_operating_mode")
         private val KEY_COURSES_TREE_URI = stringPreferencesKey("courses_tree_uri")
         private val KEY_LAST_COURSE_ID = stringPreferencesKey("last_course_id")
         private val KEY_WELCOME_OPT_OUT = booleanPreferencesKey("welcome_opt_out")

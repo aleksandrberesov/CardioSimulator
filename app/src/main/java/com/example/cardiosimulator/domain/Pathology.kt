@@ -44,7 +44,8 @@ data class PathologyEntry(
     val fileName: String,
     val group: String? = null,
     val description: String? = null,
-    val clinicalCase: String? = null
+    val clinicalCase: String? = null,
+    val number: Int? = null,
 )
 
 /** One lead block inside a `<pathology>.dat` file. */
@@ -75,5 +76,6 @@ data class PathologyFile(
     val significantPoints: List<SignificantPoint> = emptyList(),
     val group: String? = null,
     val description: String? = null,
-    val clinicalCase: String? = null
+    val clinicalCase: String? = null,
+    val number: Int? = null,
 )

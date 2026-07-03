@@ -80,6 +80,7 @@ NL              ::= "\n"
 | `pathology` | string | Stable pathology slug; also the file's basename. ASCII alphanumeric + `_`. |
 | `title`     | string | English display name, without lead suffix.                                 |
 | `name`      | string | Russian display name (UTF-8), without lead suffix.                         |
+| `number`    | int    | Optional. 1-based display number.                                          |
 | `leads`     | int    | Number of lead blocks present in this file (always 12, except `emd` = 6).  |
 | `markers`   | string | Optional. Comma-separated list of key-point markers (see §2.6).             |
 
@@ -188,14 +189,14 @@ scanning every `.dat`.
 Below the header, one line per pathology (sorted alphabetically):
 
 ```
-pathology:<id>;leads:<n>;samples:<total_samples>;title:<en>
+pathology:<id>;leads:<n>;title:<en>[;name:<ru>][;group:<key>][;description:<text>][;clinical_case:<csv>][;number:<int>]
 ```
 
 Example:
 
 ```
-pathology:tachpm;leads:12;samples:31568;title:Atrial tachycardia, and pacemaker migration
-pathology:emd;leads:6;samples:2412;title:Electromechanical dissociation (EMD)
+pathology:tachpm;leads:12;title:Atrial tachycardia, and pacemaker migration;number:1
+pathology:emd;leads:6;title:Electromechanical dissociation (EMD);number:2
 ```
 
 ---

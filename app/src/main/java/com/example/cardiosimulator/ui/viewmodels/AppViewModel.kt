@@ -209,14 +209,9 @@ class AppViewModel(
 
                 p.isDarkTheme.first()?.let { isDark -> _isDarkTheme.value = isDark }
 
-                p.lastOperatingMode.first()?.let { modeName ->
-                    try {
-                        val modeId = OperatingMode.valueOf(modeName)
-                        operatingModes.find { it.id == modeId }?.let { modeModel ->
-                            updateOperatingMode(modeModel, persist = false)
-                        }
-                    } catch (_: Exception) {}
-                }
+                // The app intentionally always launches on Teaching mode (the default
+                // selectedOperatingMode). Restore of lastOperatingMode was removed to match
+                // the Windows port behavior.
 
                 // Courses pipeline — restore the user's last picked bundle
                 // if one exists, else pick up a previously seeded / extracted
@@ -310,14 +305,10 @@ class AppViewModel(
         return Language.fromTag(tag) ?: default
     }
 
-    fun updateOperatingMode(mode: OperatingModeModel, persist: Boolean = true) {
+    fun updateOperatingMode(mode: OperatingModeModel) {
         appState.updateMode(mode)
         _selectedOperatingMode.value = mode
-        if (persist) {
-            viewModelScope.launch {
-                prefs?.setLastOperatingMode(mode.id.name)
-            }
-        }
+        // The mode is not persisted: the app always launches on Teaching (see MainActivity).
     }
 
     fun updateTcpConnection(ip: String, port: Int) {

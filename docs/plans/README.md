@@ -57,6 +57,26 @@ Good prompts when handing off:
 Keep this list current when you add or move a plan.
 
 ### Active
+- [`2026-07-android-pathology-number-clinical-case-parity.md`](active/2026-07-android-pathology-number-clinical-case-parity.md) —
+  add an optional 1-based `number` field to the pathology `.dat`/manifest (parsed like
+  `group`/`clinical_case`) and surface it as numbered rows `{N} <title>` in **both** the
+  rhythm and clinical lists, plus a `Clinical case №N` dashboard header in clinical mode.
+  Windows→Android. Data-layer
+  parity for the shared dataset now being enumerated + renamed to zero-padded
+  `ecg00001.dat` by the Windows `tools/pathology-enumerate/` scripts (those offline tools
+  are **not** ported). No new strings. *Already implemented in the working tree
+  (2026-07-03) — plan is now verify + test + commit.*
+- [`2026-07-android-launch-teaching-all-rhythms-parity.md`](active/2026-07-android-launch-teaching-all-rhythms-parity.md) —
+  every launch opens on the **Teaching** screen with **"All rhythms"** selected, instead of
+  restoring the last-used mode. Windows→Android. Delete the last-mode restore block in
+  `AppViewModel.init` (default is already Teaching via `MainActivity.kt:56`; course already defaults
+  to `ALL_RHYTHMS_ID`), then remove the now-dead `lastOperatingMode` persistence + DataStore key.
+  *Spec ready — one PR, two commits.*
+- [`2026-07-android-constructor-view-all-leads-parity.md`](active/2026-07-android-constructor-view-all-leads-parity.md) —
+  Constructor gains a read-only **"Show all 12 leads"** static grid preview button.
+  Windows→Android. Render the leads directly (not via `Monitor()`); Compose
+  `remember(targetFile)` auto-refreshes, so skip the manual-observer machinery.
+  *Spec ready — not started.*
 - [`2026-07-android-test-ctor-themes-from-courses-parity.md`](active/2026-07-android-test-ctor-themes-from-courses-parity.md) —
   Test Constructor **Manage Themes** dialog gains a **"From courses"** picker so course titles
   authored in the Course Constructor can be pulled into the question-bank theme catalog with one

@@ -241,4 +241,37 @@ class PathologyParserTest {
         val serializedP = PathologyParser.serializePathology(p, listOf(Lead.I))
         assertTrue(serializedP.contains("clinical_case:$clinicalStr\n"))
     }
+
+    @Test
+    fun `number field round-trips in manifest and pathology`() {
+        val manifestWithNumber = """
+            version:1.0
+            baseline:1024
+            lead_order:I
+            pathologies:1
+
+            pathology:test;leads:1;title:Test;number:7
+        """.trimIndent()
+        val m = PathologyParser.parseManifest(manifestWithNumber)
+        assertEquals(7, m.entries[0].number)
+
+        val serializedM = PathologyParser.serializeManifest(m)
+        assertTrue(serializedM.contains(";number:7"))
+
+        val pathologyWithNumber = """
+            pathology:test
+            title:Test
+            number:42
+            leads:1
+
+            lead:I
+            count:1
+            points:1024
+        """.trimIndent()
+        val p = PathologyParser.parsePathology(pathologyWithNumber)
+        assertEquals(42, p.number)
+
+        val serializedP = PathologyParser.serializePathology(p, listOf(Lead.I))
+        assertTrue(serializedP.contains("number:42\n"))
+    }
 }

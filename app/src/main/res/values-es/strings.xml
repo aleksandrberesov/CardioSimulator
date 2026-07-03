@@ -286,6 +286,8 @@
     <string name="cd_hide_rhythms">Ocultar ritmos</string>
     <string name="cd_show_rhythms">Mostrar ritmos</string>
 
+    <string name="constructor_view_all_leads">Mostrar las 12 derivaciones (solo lectura)</string>
+
     <string name="ecg_point_p_start">Inicio P</string>
     <string name="ecg_point_p_peak">Pico P</string>
     <string name="ecg_point_p_end">Fin P</string>

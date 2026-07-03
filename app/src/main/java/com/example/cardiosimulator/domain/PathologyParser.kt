@@ -41,6 +41,7 @@ object PathologyParser {
                 group = fields["group"],
                 description = fields["description"],
                 clinicalCase = fields["clinical_case"],
+                number = fields["number"]?.toIntOrNull(),
             )
         }
 
@@ -77,6 +78,9 @@ object PathologyParser {
             if (!e.clinicalCase.isNullOrBlank()) {
                 sb.append(";clinical_case:").append(e.clinicalCase)
             }
+            if (e.number != null) {
+                sb.append(";number:").append(e.number)
+            }
             sb.append('\n')
         }
         return sb.toString()
@@ -95,6 +99,7 @@ object PathologyParser {
         val group = header["group"]
         val description = header["description"]?.replace("\\n", "\n")
         val clinicalCase = header["clinical_case"]
+        val number = header["number"]?.trim()?.toIntOrNull()
         val globalMarkers = parseMarkers(header["markers"])
 
         val leadBlocks = blocks.drop(1)
@@ -116,7 +121,7 @@ object PathologyParser {
 
             leads[lead] = LeadStream(lead, samples)
         }
-        return PathologyFile(id, title, name, leads, globalMarkers, group, description, clinicalCase)
+        return PathologyFile(id, title, name, leads, globalMarkers, group, description, clinicalCase, number)
     }
 
     fun serializePathology(file: PathologyFile, leadOrder: List<Lead>): String {
@@ -133,6 +138,9 @@ object PathologyParser {
         }
         if (!file.clinicalCase.isNullOrBlank()) {
             sb.append("clinical_case:").append(file.clinicalCase).append('\n')
+        }
+        if (file.number != null) {
+            sb.append("number:").append(file.number).append('\n')
         }
         sb.append("leads:").append(file.leads.size).append('\n')
         

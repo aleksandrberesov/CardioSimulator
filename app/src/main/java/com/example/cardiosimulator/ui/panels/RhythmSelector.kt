@@ -154,6 +154,7 @@ fun RhythmSelector(
         if (isClinicalMode && selectedRhythm != null) {
             ClinicalDashboard(
                 clinicalCase = selectedRhythm.clinicalCase,
+                number = selectedRhythm.number,
                 language = currentLanguage
             )
         }
@@ -219,6 +220,8 @@ fun RhythmItem(
         else
             rhythm.titleEn
     }
+
+    val display = if (rhythm.number != null) "${rhythm.number} $title" else title
     
     Column(
         modifier = Modifier
@@ -227,7 +230,7 @@ fun RhythmItem(
             .padding(vertical = 10.dp, horizontal = 12.dp) // Tighter rows
     ) {
         Text(
-            text = title,
+            text = display,
             color = if (isSelected) Color.Red else TextPrimary,
             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp), // Smaller font
         )
@@ -242,6 +245,7 @@ fun RhythmItem(
 @Composable
 fun ClinicalDashboard(
     clinicalCase: String?,
+    number: Int?,
     language: Language,
     modifier: Modifier = Modifier
 ) {
@@ -266,7 +270,7 @@ fun ClinicalDashboard(
             .padding(12.dp)
     ) {
         Text(
-            text = stringResource(R.string.clinical_dashboard_title),
+            text = stringResource(R.string.clinical_dashboard_title) + (if (number != null) " №$number" else ""),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(bottom = 8.dp)

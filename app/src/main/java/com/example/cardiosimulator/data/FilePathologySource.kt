@@ -62,14 +62,15 @@ class FilePathologySource(
             val existingIndex = manifest.entries.indexOfFirst { it.id == file.id }
             val updatedEntries = if (existingIndex != -1) {
                 val existing = manifest.entries[existingIndex]
-                if (existing.titleEn != file.titleEn || existing.nameRu != file.nameRu || existing.group != file.group || existing.clinicalCase != file.clinicalCase) {
+                if (existing.titleEn != file.titleEn || existing.nameRu != file.nameRu || existing.group != file.group || existing.clinicalCase != file.clinicalCase || existing.number != file.number) {
                     manifest.entries.map {
                         if (it.id == file.id) {
                             it.copy(
                                 titleEn = file.titleEn,
                                 nameRu = file.nameRu,
                                 group = file.group,
-                                clinicalCase = file.clinicalCase
+                                clinicalCase = file.clinicalCase,
+                                number = file.number
                             )
                         } else it
                     }
@@ -82,7 +83,8 @@ class FilePathologySource(
                     leadsCount = file.leads.size,
                     fileName = "${file.id}.dat",
                     group = file.group,
-                    clinicalCase = file.clinicalCase
+                    clinicalCase = file.clinicalCase,
+                    number = file.number
                 )
             }
             if (updatedEntries != null) {

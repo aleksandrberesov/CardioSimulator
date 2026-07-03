@@ -395,6 +395,8 @@
     <string name="constructor_load_reference">Загрузить эталон</string>
     <string name="cd_load_reference">Загрузить изображение ЭКГ для привязки</string>
 
+    <string name="constructor_view_all_leads">Показать все 12 отведений (только просмотр)</string>
+
     <string name="constructor_group_title">Редактировать группу</string>
     <string name="constructor_group_label">Выберите группу</string>
     <string name="constructor_group_no_group">— Без группы —</string>

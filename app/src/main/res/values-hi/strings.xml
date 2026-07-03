@@ -397,6 +397,8 @@
     <string name="constructor_load_reference">संदर्भ लोड करें</string>
     <string name="cd_load_reference">संदर्भ ईसीजी छवि लोड करें</string>
 
+    <string name="constructor_view_all_leads">सभी 12 लीड दिखाएँ (केवल-पठन)</string>
+
     <string name="constructor_group_title">समूह संपादित करें</string>
     <string name="constructor_group_label">समूह चुनें</string>
     <string name="constructor_group_no_group">— कोई समूह नहीं —</string>

@@ -397,6 +397,8 @@
     <string name="constructor_load_reference">Load Reference</string>
     <string name="cd_load_reference">Load Reference ECG Image</string>
 
+    <string name="constructor_view_all_leads">Show all 12 leads (read-only)</string>
+
     <string name="constructor_group_title">Edit Group</string>
     <string name="constructor_group_label">Select Group</string>
     <string name="constructor_group_no_group">— No group —</string>

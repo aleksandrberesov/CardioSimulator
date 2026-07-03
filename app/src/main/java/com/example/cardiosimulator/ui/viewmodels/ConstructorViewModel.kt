@@ -368,10 +368,20 @@ class ConstructorViewModel(
     fun selectPathology(id: String, persist: Boolean = true) {
         viewModelScope.launch {
             var file = repository.readPathology(id)
-            if (file != null && file.group == null) {
+            if (file != null) {
                 val manifestEntry = repository.manifest()?.entries?.find { it.id == id }
-                if (manifestEntry?.group != null) {
-                    file = file.copy(group = manifestEntry.group)
+                if (manifestEntry != null) {
+                    var updated = file
+                    var changed = false
+                    if (updated.group == null && manifestEntry.group != null) {
+                        updated = updated.copy(group = manifestEntry.group)
+                        changed = true
+                    }
+                    if (updated.number == null && manifestEntry.number != null) {
+                        updated = updated.copy(number = manifestEntry.number)
+                        changed = true
+                    }
+                    if (changed) file = updated
                 }
             }
             _targetFile.value = file
