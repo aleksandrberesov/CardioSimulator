@@ -34,7 +34,10 @@ import com.example.cardiosimulator.network.TcpConnectionState
 import com.example.cardiosimulator.network.TcpMessage
 import com.example.cardiosimulator.network.TcpProtocol
 import com.example.cardiosimulator.data.ZipCompressor
+import com.example.cardiosimulator.R
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -66,6 +69,18 @@ sealed class DataState {
         enum class Reason { Unreadable, Empty, BadManifest }
     }
 }
+
+/**
+ * Snapshot of the current background loading process (extraction, counting, etc).
+ */
+data class LoadingInfo(
+    val title: String = "",
+    val statusLine: String = "",     // "243 / 1057 records · 23%"
+    val detail: String = "",         // current record file
+    val percent: Int = 0,
+    val indeterminate: Boolean = true,
+    val canCancel: Boolean = false,
+)
 
 /**
  * Central application view-model. Owns:
@@ -128,6 +143,13 @@ class AppViewModel(
 
     private val _dataState = MutableStateFlow<DataState>(DataState.NotConfigured)
     val dataState: StateFlow<DataState> = _dataState.asStateFlow()
+
+    private val _loadingInfo = MutableStateFlow(LoadingInfo())
+    val loadingInfo: StateFlow<LoadingInfo> = _loadingInfo.asStateFlow()
+
+    private var extractionJob: Job? = null
+
+    fun cancelLoading() { extractionJob?.cancel() }
 
     // Course bundle lifecycle. `DataState.Ready.pathologyCount` is reused
     // here as a generic "loaded count" — when the courses UI lands the
@@ -481,9 +503,15 @@ class AppViewModel(
     fun setDataFolder(context: Context, uri: Uri) {
         val p = prefs ?: return
         _isDataConfirmed.value = false
-        viewModelScope.launch {
+        extractionJob = viewModelScope.launch {
             p.setTreeUri(uri)
-            loadFromSaf(context, uri, forceUnzip = true)
+            try {
+                loadFromSaf(context, uri, forceUnzip = true)
+            } catch (ce: CancellationException) {
+                _loadingInfo.value = LoadingInfo()
+                _dataState.value = DataState.NotConfigured
+                throw ce
+            }
         }
     }
 
@@ -554,6 +582,10 @@ class AppViewModel(
     private suspend fun loadFromSaf(context: Context, uri: Uri, forceUnzip: Boolean = false) {
         val repo = repository ?: return
         _dataState.value = DataState.Loading
+        _loadingInfo.value = LoadingInfo(
+            title = context.getString(R.string.data_source_preparing),
+            indeterminate = true, canCancel = true,
+        )
 
         val targetDir = File(context.filesDir, PATHOLOGIES_DIR)
         val fileSource = FilePathologySource(targetDir)
@@ -564,9 +596,22 @@ class AppViewModel(
         }
 
         val ok = withContext(Dispatchers.IO) {
-            PathologyZipExtractor.extract(context, uri, targetDir)
+            PathologyZipExtractor.extract(context, uri, targetDir) { p ->
+                val pct = if (p.total > 0) p.done * 100 / p.total else 0
+                _loadingInfo.value = LoadingInfo(
+                    title = context.getString(R.string.data_source_extracting_title),
+                    statusLine = context.getString(R.string.data_source_records_format, p.done, p.total, pct),
+                    detail = p.currentEntry ?: "",
+                    percent = pct, indeterminate = false, canCancel = true,
+                )
+            }
         }
+
         if (ok) {
+            _loadingInfo.value = _loadingInfo.value.copy(
+                title = context.getString(R.string.data_source_loading_manifest),
+                indeterminate = true, canCancel = false, detail = "", statusLine = ""
+            )
             val newSource = FilePathologySource(targetDir)
             if (newSource.isValid()) {
                 repo.setSource(newSource)

@@ -223,6 +223,11 @@
     <string name="data_source_close">关闭</string>
     <string name="data_source_uploading">正在上传到远程服务器\u2026</string>
     <string name="data_source_upload_success">成功上传到服务器</string>
+    <string name="data_source_preparing">正在准备…</string>
+    <string name="data_source_extracting_title">正在解压心电图记录</string>
+    <string name="data_source_loading_manifest">正在加载病理列表…</string>
+    <string name="data_source_records_format">%1$d / %2$d 条记录 · %3$d%%</string>
+    <string name="data_source_cancel">取消</string>
 
     <!-- Content descriptions -->
     <string name="cd_settings">设置</string>

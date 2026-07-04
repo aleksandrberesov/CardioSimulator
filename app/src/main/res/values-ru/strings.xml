@@ -341,6 +341,11 @@
     <string name="data_source_close">Закрыть</string>
     <string name="data_source_uploading">Загрузка на удаленный сервер\u2026</string>
     <string name="data_source_upload_success">Успешно загружено на сервер</string>
+    <string name="data_source_preparing">Подготовка…</string>
+    <string name="data_source_extracting_title">Извлечение записей ЭКГ</string>
+    <string name="data_source_loading_manifest">Загрузка списка патологий…</string>
+    <string name="data_source_records_format">%1$d / %2$d записей · %3$d%%</string>
+    <string name="data_source_cancel">Отмена</string>
 
     <!-- Content descriptions -->
     <string name="cd_settings">Настройки</string>

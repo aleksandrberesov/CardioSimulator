@@ -92,11 +92,6 @@ Keep this list current when you add or move a plan.
   the isoline, and make the **trace start a function of paper speed** (so the title→trace gap scales
   with speed). Windows→Android; supersedes the *placement* half of the completed
   `lead-title-color-placement-parity` (title color stays as shipped). *Spec ready — not started.*
-- [`2026-06-android-3d-heart-loading-indicator-parity.md`](active/2026-06-android-3d-heart-loading-indicator-parity.md) —
-  overlay a `CircularProgressIndicator` + "Loading 3D heart…" caption on the 3D-heart viewport while the
-  WebView/`<model-viewer>`/`.glb` spin up (blank white box today); dismiss it on the model's `load` event
-  via a JS bridge. Windows→Android *intent* port — the Windows spinner masks a UI-thread freeze, the
-  Android one masks async WebView loading. *Spec ready — not started.*
 - [`2026-06-android-artifacts-filters-info-sign-parity.md`](active/2026-06-android-artifacts-filters-info-sign-parity.md) —
   add a circled-info "(!)" sign to the top of the Artifacts and Filters monitor dropdowns, with a
   tap/hover tooltip explaining how each menu works. Windows→Android; additive UX. Note: the filter
@@ -140,6 +135,17 @@ Keep this list current when you add or move a plan.
 *(none)*
 
 ### Completed
+- [`2026-07-android-3d-heart-open-immediately-refinement-parity.md`](completed/2026-07-android-3d-heart-open-immediately-refinement-parity.md) —
+  Windows refined the 3D-heart dialog (2026-07-04) to open the **whole card chrome immediately** with an
+  opaque, **viewport-scoped** spinner, deferring the heavy DirectX build behind it (supersedes the
+  full-screen-spinner mechanism of the completed `2026-06-…-loading-indicator-parity`). The refined
+  Windows layout **converges to what Android already ships** (instant Compose `Dialog`; spinner inside the
+  viewport `Box`, dismissed on model `load`, 15 s backstop). Windows→Android. *Already satisfied — no code change.*
+- [`2026-06-android-3d-heart-loading-indicator-parity.md`](completed/2026-06-android-3d-heart-loading-indicator-parity.md) —
+  overlay a `CircularProgressIndicator` + "Loading 3D heart…" caption on the 3D-heart viewport while it
+  loads (blank white box before); dismiss it on the model's `load` event via a JS bridge, with a 15 s
+  backstop. Windows→Android *intent* port. Refined 2026-07-04 — see the active
+  `2026-07-android-3d-heart-open-immediately-refinement-parity.md`.
 - [`2026-07-android-adaptive-displayscale-lead-count-parity.md`](completed/2026-07-android-adaptive-displayscale-lead-count-parity.md) —
   scale the live monitor's `displayScale` **up as the lead count drops** (per-count table:
   1→×6, 2→×4.4, 3–4→×3.2, 5→×2.4, 6+→×2.0) so sparse layouts stop looking like a small trace in a

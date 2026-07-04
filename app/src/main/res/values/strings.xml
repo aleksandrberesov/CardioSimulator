@@ -343,6 +343,11 @@
     <string name="data_source_close">Close</string>
     <string name="data_source_uploading">Uploading to remote server\u2026</string>
     <string name="data_source_upload_success">Successfully uploaded to server</string>
+    <string name="data_source_preparing">Preparing…</string>
+    <string name="data_source_extracting_title">Extracting ECG records</string>
+    <string name="data_source_loading_manifest">Loading pathology list…</string>
+    <string name="data_source_records_format">%1$d / %2$d records · %3$d%%</string>
+    <string name="data_source_cancel">Cancel</string>
 
     <!-- Content descriptions -->
     <string name="cd_settings">Settings</string>

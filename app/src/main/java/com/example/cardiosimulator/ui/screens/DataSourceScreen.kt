@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,6 +30,7 @@ import com.example.cardiosimulator.ui.panels.RhythmSelector
 import com.example.cardiosimulator.ui.theme.*
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.DataState
+import com.example.cardiosimulator.ui.viewmodels.LoadingInfo
 import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
 
 @Composable
@@ -59,6 +61,7 @@ fun DataSourceScreen(
     val context = LocalContext.current
     var showDetails by remember { mutableStateOf(false) }
     var showCourseDetails by remember { mutableStateOf(false) }
+    val info by appViewModel.loadingInfo.collectAsState()
 
     val pickZipFile = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
@@ -109,7 +112,9 @@ fun DataSourceScreen(
                 state = state,
                 onPickFile = { pickZipFile.launch(ZIP_MIME) },
                 readyText = { count -> stringResource(R.string.data_source_loaded_format, count) },
-                onShowDetails = { showDetails = true }
+                onShowDetails = { showDetails = true },
+                info = info,
+                onCancel = { appViewModel.cancelLoading() }
             )
 
             Spacer(Modifier.height(24.dp))
@@ -190,7 +195,9 @@ private fun DataSourceSection(
     state: DataState,
     onPickFile: () -> Unit,
     readyText: @Composable (Int) -> String,
-    onShowDetails: (() -> Unit)? = null
+    onShowDetails: (() -> Unit)? = null,
+    info: LoadingInfo = LoadingInfo(),
+    onCancel: (() -> Unit)? = null,
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
@@ -210,9 +217,45 @@ private fun DataSourceSection(
 
         when (state) {
             is DataState.Loading -> {
-                CircularProgressIndicator()
-                Spacer(Modifier.height(8.dp))
-                Text(stringResource(R.string.data_source_loading), color = TextPrimary)
+                if (info.title.isEmpty() && !info.canCancel) {
+                    CircularProgressIndicator()
+                    Spacer(Modifier.height(8.dp))
+                    Text(stringResource(R.string.data_source_loading), color = TextPrimary)
+                } else {
+                    Text(
+                        text = info.title.ifEmpty { stringResource(R.string.data_source_loading) },
+                        style = MaterialTheme.typography.titleMedium,
+                        color = TextPrimary
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    if (info.indeterminate) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth(0.8f))
+                    } else {
+                        LinearProgressIndicator(
+                            progress = { info.percent / 100f },
+                            modifier = Modifier.fillMaxWidth(0.8f)
+                        )
+                    }
+                    if (info.statusLine.isNotEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(info.statusLine, color = TextPrimary)
+                    }
+                    if (info.detail.isNotEmpty()) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = info.detail,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = FontFamily.Monospace,
+                            color = TextSecondary
+                        )
+                    }
+                    if (info.canCancel && onCancel != null) {
+                        Spacer(Modifier.height(12.dp))
+                        OutlinedButton(onClick = onCancel) {
+                            Text(stringResource(R.string.data_source_cancel))
+                        }
+                    }
+                }
             }
             is DataState.Error -> {
                 val msg = when (state.reason) {

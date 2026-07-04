@@ -329,6 +329,11 @@
     <string name="data_source_close">बंद करें</string>
     <string name="data_source_uploading">रिमोट सर्वर पर अपलोड हो रहा है…</string>
     <string name="data_source_upload_success">सर्वर पर सफलतापूर्वक अपलोड किया गया</string>
+    <string name="data_source_preparing">तैयारी हो रही है…</string>
+    <string name="data_source_extracting_title">ईसीजी रिकॉर्ड निकाले जा रहे हैं</string>
+    <string name="data_source_loading_manifest">विकृति सूची लोड हो रही है…</string>
+    <string name="data_source_records_format">%1$d / %2$d रिकॉर्ड · %3$d%%</string>
+    <string name="data_source_cancel">रद्द करें</string>
 
     <!-- Content descriptions -->
     <string name="cd_settings">सेटिंग्स</string>
