@@ -16,22 +16,73 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewClientCompat
 
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import com.example.cardiosimulator.domain.ConductionNode
+import com.example.cardiosimulator.domain.ConductionStore
+import com.example.cardiosimulator.domain.ConductionSystem
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.util.Locale
+
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+
+@Stable
+class Heart3DController {
+    private var webView: WebView? = null
+
+    fun setWebView(view: WebView?) {
+        webView = view
+    }
+
+    fun setConductionPlaying(playing: Boolean) {
+        webView?.evaluateJavascript("window.setConductionPlaying($playing)", null)
+    }
+
+    fun setBpm(bpm: Int) {
+        webView?.evaluateJavascript("window.setBpm($bpm)", null)
+    }
+
+    fun setXray(enabled: Boolean) {
+        webView?.evaluateJavascript("window.setXray($enabled)", null)
+    }
+
+    fun setCutaway(enabled: Boolean) {
+        webView?.evaluateJavascript("window.setCutaway($enabled)", null)
+    }
+
+    fun setCutPosition(pos: Float) {
+        webView?.evaluateJavascript("window.setCutPosition($pos)", null)
+    }
+
+    fun setEditing(enabled: Boolean) {
+        webView?.evaluateJavascript("window.setEditing($enabled)", null)
+    }
+}
+
 /**
- * A 3D model viewer for the heart, using Google's <model-viewer> web component.
- * It provides orbit, zoom, and pan controls by default.
+ * A 3D model viewer for the heart, using Three.js in a WebView.
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun Heart3DViewer(
     modifier: Modifier = Modifier,
-    modelPath: String = "heart3d/heart.glb", // Expected in app/src/main/assets/
+    controller: Heart3DController? = null,
+    modelPath: String = "heart3d/heart.glb",
     onLoaded: () -> Unit = {},
     onError: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val conductionStore = remember { ConductionStore(context) }
+    
     AndroidView(
         modifier = modifier,
         factory = { ctx ->
             WebView(ctx).apply {
+                controller?.setWebView(this)
                 val assetLoader = WebViewAssetLoader.Builder()
                     .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(ctx))
                     .build()
@@ -41,7 +92,6 @@ fun Heart3DViewer(
                         view: WebView,
                         request: WebResourceRequest,
                     ): WebResourceResponse? {
-                        Log.d("Heart3DViewer", "Requesting: ${request.url}")
                         return assetLoader.shouldInterceptRequest(request.url)
                     }
 
@@ -51,7 +101,6 @@ fun Heart3DViewer(
                         error: androidx.webkit.WebResourceErrorCompat
                     ) {
                         super.onReceivedError(view, request, error)
-                        Log.e("Heart3DViewer", "WebView error: ${error.description}")
                         if (request.isForMainFrame) {
                             Handler(Looper.getMainLooper()).post { onError() }
                         }
@@ -60,7 +109,7 @@ fun Heart3DViewer(
 
                 webChromeClient = object : WebChromeClient() {
                     override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
-                        Log.d("Heart3DViewer", "${consoleMessage?.message()} -- From line ${consoleMessage?.lineNumber()} of ${consoleMessage?.sourceId()}")
+                        Log.d("Heart3DViewer", "${consoleMessage?.message()}")
                         return true
                     }
                 }
@@ -69,15 +118,26 @@ fun Heart3DViewer(
                     javaScriptEnabled = true
                     domStorageEnabled = true
                     allowFileAccess = true
-                    allowContentAccess = true
-                    loadWithOverviewMode = true
-                    useWideViewPort = true
                 }
                 
-                addJavascriptInterface(Heart3DBridge(onLoaded, onError), "Android")
+                val bridge = Heart3DBridge(
+                    onLoaded = onLoaded,
+                    onError = onError,
+                    onSaveConduction = { json ->
+                        try {
+                            val nodes = Json.decodeFromString<List<ConductionNode>>(json)
+                            conductionStore.save(nodes)
+                        } catch (e: Exception) {
+                            Log.e("Heart3DViewer", "Failed to save conduction", e)
+                        }
+                    }
+                )
+                addJavascriptInterface(bridge, "Android")
 
-                // Allow transparency
                 setBackgroundColor(0)
+
+                val locale = Locale.getDefault().language
+                val initialPathway = Json.encodeToString(conductionStore.load() ?: emptyList())
 
                 val html = """
                     <!DOCTYPE html>
@@ -85,70 +145,137 @@ fun Heart3DViewer(
                     <head>
                         <meta charset="utf-8">
                         <meta name="viewport" content="width=device-width, initial-scale=1">
-                        <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
                         <style>
                             body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; }
-                            model-viewer { 
-                                width: 100%; 
-                                height: 100%; 
-                                --progress-bar-color: #5B9BD5;
-                                background-color: transparent;
-                            }
-                            #error-message {
-                                display: none;
-                                position: absolute;
-                                top: 50%;
-                                left: 50%;
-                                transform: translate(-50%, -50%);
-                                color: #d32f2f;
-                                font-family: sans-serif;
-                                text-align: center;
-                                padding: 20px;
-                            }
+                            #container { width: 100%; height: 100%; }
                         </style>
+                        <script type="importmap">
+                        {
+                            "imports": {
+                                "three": "https://appassets.androidplatform.net/assets/heart3d/vendor/three.module.js",
+                                "three/addons/": "https://appassets.androidplatform.net/assets/heart3d/vendor/"
+                            }
+                        }
+                        </script>
                     </head>
                     <body>
-                        <model-viewer 
-                            src="https://appassets.androidplatform.net/assets/$modelPath" 
-                            alt="3D Heart Model"
-                            shadow-intensity="1" 
-                            camera-controls 
-                            auto-rotate 
-                            touch-action="pan-y">
-                            <div slot="poster" style="display: flex; align-items: center; justify-content: center; height: 100%;">
-                                <div style="text-align: center;">
-                                    <p style="font-family: sans-serif; color: #666; font-size: 14px;">Loading 3D Heart...</p>
-                                    <p style="font-family: sans-serif; color: #999; font-size: 10px;">(Large models may take a moment)</p>
-                                </div>
-                            </div>
-                        </model-viewer>
-                        <div id="error-message">
-                            <p>Failed to load 3D model.</p>
-                            <p style="font-size: 12px;" id="error-details"></p>
-                        </div>
-                        <script>
-                            const modelViewer = document.querySelector("model-viewer");
-                            const errorMsg = document.getElementById("error-message");
-                            const errorDetails = document.getElementById("error-details");
+                        <div id="container"></div>
+                        <script type="module">
+                            import * as THREE from 'three';
+                            import { GLTFLoader } from 'three/addons/GLTFLoader.js';
+                            import { OrbitControls } from 'three/addons/OrbitControls.js';
+                            import { ConductionSystemRenderer } from 'https://appassets.androidplatform.net/assets/heart3d/conduction.js';
 
-                            modelViewer.addEventListener('error', (event) => {
-                                console.error("ModelViewer Error:", event.detail);
-                                errorMsg.style.display = "block";
-                                errorDetails.textContent = "Error: " + (event.detail.type || "Unknown error");
-                                if (typeof Android !== 'undefined') Android.onError();
-                            });
+                            let scene, camera, renderer, controls, conductionRenderer;
+                            window.currentLocale = '$locale';
 
-                            modelViewer.addEventListener('load', () => {
-                                console.log("Model loaded successfully");
-                                if (typeof Android !== 'undefined') Android.onLoaded();
-                            });
+                            function init() {
+                                scene = new THREE.Scene();
 
-                            // Timeout for loading
-                            setTimeout(() => {
-                                if (!modelViewer.loaded) {
-                                    console.warn("Model loading is taking a long time. It might be too large for the device memory.");
+                                camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 1000);
+                                camera.position.set(0, 0, 5);
+
+                                renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                                renderer.setPixelRatio(window.devicePixelRatio);
+                                renderer.setSize(window.innerWidth, window.innerHeight);
+                                renderer.localClippingEnabled = true;
+                                document.getElementById('container').appendChild(renderer.domElement);
+
+                                controls = new OrbitControls(camera, renderer.domElement);
+                                controls.enableDamping = true;
+
+                                const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+                                scene.add(ambientLight);
+
+                                const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+                                directionalLight.position.set(1, 1, 1);
+                                scene.add(directionalLight);
+
+                                conductionRenderer = new ConductionSystemRenderer(scene, camera, document.getElementById('container'));
+                                window.conductionTemplate = ${Json.encodeToString(ConductionSystem.Template)};
+                                
+                                const initialNodes = $initialPathway;
+                                if (initialNodes && initialNodes.length > 0) {
+                                    conductionRenderer.setPathway(initialNodes);
                                 }
-                            }, 10000);
+
+                                const loader = new GLTFLoader();
+                                loader.load('https://appassets.androidplatform.net/assets/$modelPath', 
+                                    (gltf) => {
+                                        const model = gltf.scene;
+                                        scene.add(model);
+                                        conductionRenderer.setModel(model);
+
+                                        const box = new THREE.Box3().setFromObject(model);
+                                        const center = box.getCenter(new THREE.Vector3());
+                                        const size = box.getSize(new THREE.Vector3());
+                                        const maxDim = Math.max(size.x, size.y, size.z);
+                                        const fov = camera.fov * (Math.PI / 180);
+                                        let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 2.0;
+
+                                        camera.position.copy(center);
+                                        camera.position.z += cameraZ;
+                                        camera.lookAt(center);
+                                        controls.target.copy(center);
+                                        controls.update();
+
+                                        if (initialNodes.length === 0) {
+                                            createDefaultPathway(box);
+                                        }
+
+                                        if (typeof Android !== 'undefined') Android.onLoaded();
+                                    },
+                                    undefined,
+                                    (error) => {
+                                        if (typeof Android !== 'undefined') Android.onError();
+                                    }
+                                );
+
+                                animate();
+                            }
+
+                            function createDefaultPathway(box) {
+                                const min = box.min;
+                                const max = box.max;
+                                const center = box.getCenter(new THREE.Vector3());
+                                
+                                // Simple vertical layout: base to apex
+                                const template = ${Json.encodeToString(ConductionSystem.Template)};
+                                const nodes = template.map((node, i) => {
+                                    const t = i / (template.length - 1);
+                                    // SA node at top right, Apex at bottom
+                                    const x = center.x + (i === 0 ? (max.x - center.x) * 0.5 : 0);
+                                    const y = max.y - (max.y - min.y) * t;
+                                    const z = center.z;
+                                    return { ...node, anchor: [x, y, z] };
+                                });
+                                conductionRenderer.setPathway(nodes);
+                                if (typeof Android !== 'undefined') Android.saveConduction(JSON.stringify(nodes));
+                            }
+
+                            window.setConductionPlaying = (playing) => conductionRenderer.setPlaying(playing);
+                            window.setBpm = (bpm) => conductionRenderer.setBpm(bpm);
+                            window.setPathway = (json) => conductionRenderer.setPathway(JSON.parse(json));
+                            window.setXray = (enabled) => conductionRenderer.setXray(enabled);
+                            window.setCutaway = (enabled) => conductionRenderer.setCutaway(enabled);
+                            window.setCutPosition = (pos) => conductionRenderer.setCutPosition(pos);
+                            window.setEditing = (enabled) => conductionRenderer.setEditing(enabled);
+
+                            function animate() {
+                                requestAnimationFrame(animate);
+                                const time = performance.now();
+                                controls.update();
+                                if (conductionRenderer) conductionRenderer.update(time);
+                                renderer.render(scene, camera);
+                            }
+
+                            window.addEventListener('resize', () => {
+                                camera.aspect = window.innerWidth / window.innerHeight;
+                                camera.updateProjectionMatrix();
+                                renderer.setSize(window.innerWidth, window.innerHeight);
+                            });
+
+                            init();
                         </script>
                     </body>
                     </html>
@@ -164,6 +291,7 @@ fun Heart3DViewer(
 private class Heart3DBridge(
     private val onLoaded: () -> Unit,
     private val onError: () -> Unit,
+    private val onSaveConduction: (String) -> Unit
 ) {
     private val main = Handler(Looper.getMainLooper())
 
@@ -175,5 +303,10 @@ private class Heart3DBridge(
     @JavascriptInterface
     fun onError() {
         main.post { onError() }
+    }
+
+    @JavascriptInterface
+    fun saveConduction(json: String) {
+        main.post { onSaveConduction(json) }
     }
 }

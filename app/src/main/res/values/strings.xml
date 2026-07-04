@@ -113,6 +113,20 @@
     <string name="monitor_3d_description">Text description of what is happening and what can be done</string>
     <string name="monitor_3d_or_ecg">Or a 12-lead ECG window</string>
     <string name="monitor_3d_ecg_lead">ECG lead</string>
+
+    <!-- 3D Heart Sync -->
+    <string name="monitor_3d_conduction">Conduction system</string>
+    <string name="monitor_3d_play">Play</string>
+    <string name="monitor_3d_pause">Pause</string>
+    <string name="monitor_3d_rate">Heart rate</string>
+    <string name="monitor_3d_xray">X-ray</string>
+    <string name="monitor_3d_solid">Solid</string>
+    <string name="monitor_3d_edit_pathway">Edit pathway</string>
+    <string name="monitor_3d_done_editing">Done</string>
+    <string name="monitor_3d_cutaway">Cutaway</string>
+    <string name="monitor_3d_cut_in_half">Cut in half</string>
+    <string name="monitor_3d_whole_heart">Whole heart</string>
+    <string name="monitor_3d_cut_position">Cut position</string>
     <string name="monitor_eos_window_title">EOS window</string>
     <string name="monitor_eos_vector_format">Vector %1$d</string>
     <string name="monitor_eos_note">The ECG highlights the segments of these vectors</string>

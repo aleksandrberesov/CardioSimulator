@@ -15,6 +15,14 @@ export class ConductionSystemRenderer {
         this.bpm = 75;
         this.startTime = 0;
 
+        this.isXray = false;
+        this.isCutaway = false;
+        this.cutPosition = 0.5;
+        this.clippingPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+
+        this.isEditing = false;
+        this.model = null;
+
         this.captionDiv = document.createElement('div');
         this.captionDiv.style.position = 'absolute';
         this.captionDiv.style.bottom = '20px';
@@ -29,6 +37,7 @@ export class ConductionSystemRenderer {
         this.container.appendChild(this.captionDiv);
 
         this.initPulse();
+        this.setupTouch();
     }
 
     initPulse() {
@@ -43,13 +52,17 @@ export class ConductionSystemRenderer {
         this.scene.add(this.pulseMesh);
     }
 
+    setModel(model) {
+        this.model = model;
+        this.applyClippingAndXray();
+    }
+
     setPathway(nodes) {
         this.nodes = nodes;
         this.rebuildPath();
     }
 
     rebuildPath() {
-        // Remove old meshes
         if (this.pathMesh) this.scene.remove(this.pathMesh);
         this.nodeMeshes.forEach(m => this.scene.remove(m));
         this.nodeMeshes = [];
@@ -57,15 +70,12 @@ export class ConductionSystemRenderer {
         if (this.nodes.length < 2) return;
 
         const points = this.nodes.map(n => new THREE.Vector3(n.anchor[0], n.anchor[1], n.anchor[2]));
-
-        // Create tube
         const curve = new THREE.CatmullRomCurve3(points);
         const tubeGeometry = new THREE.TubeGeometry(curve, 64, 0.005, 8, false);
         const tubeMaterial = new THREE.MeshStandardMaterial({ color: 0xffd700 });
         this.pathMesh = new THREE.Mesh(tubeGeometry, tubeMaterial);
         this.scene.add(this.pathMesh);
 
-        // Create node spheres
         const nodeGeo = new THREE.SphereGeometry(0.01, 8, 8);
         const nodeMat = new THREE.MeshStandardMaterial({ color: 0xffd700 });
         this.nodes.forEach(n => {
@@ -87,13 +97,123 @@ export class ConductionSystemRenderer {
         this.bpm = bpm;
     }
 
+    setXray(enabled) {
+        this.isXray = enabled;
+        this.applyClippingAndXray();
+    }
+
+    setCutaway(enabled) {
+        this.isCutaway = enabled;
+        this.applyClippingAndXray();
+    }
+
+    setCutPosition(pos) {
+        this.cutPosition = pos;
+        this.updateClippingPlane();
+    }
+
+    updateClippingPlane() {
+        if (!this.model) return;
+        const box = new THREE.Box3().setFromObject(this.model);
+        const z = box.min.z + (box.max.z - box.min.z) * this.cutPosition;
+        this.clippingPlane.constant = -z;
+    }
+
+    applyClippingAndXray() {
+        if (!this.model) return;
+        this.updateClippingPlane();
+
+        const planes = this.isCutaway ? [this.clippingPlane] : [];
+
+        this.model.traverse(child => {
+            if (child.isMesh) {
+                child.material.clippingPlanes = planes;
+                child.material.transparent = this.isXray;
+                child.material.opacity = this.isXray ? 0.28 : 1.0;
+                child.material.side = THREE.DoubleSide; // To see interior when cut
+            }
+        });
+    }
+
+    setEditing(enabled) {
+        this.isEditing = enabled;
+        if (enabled) {
+            this.nodes = [];
+            this.rebuildPath();
+            this.showHint("Tap to place SA node (1/7)");
+        } else {
+            this.hideHint();
+        }
+    }
+
+    showHint(text) {
+        if (!this.hintDiv) {
+            this.hintDiv = document.createElement('div');
+            this.hintDiv.style.position = 'absolute';
+            this.hintDiv.style.top = '20px';
+            this.hintDiv.style.left = '50%';
+            this.hintDiv.style.transform = 'translateX(-50%)';
+            this.hintDiv.style.backgroundColor = 'rgba(0,0,0,0.6)';
+            this.hintDiv.style.color = 'white';
+            this.hintDiv.style.padding = '5px 15px';
+            this.hintDiv.style.borderRadius = '15px';
+            this.hintDiv.style.fontFamily = 'sans-serif';
+            this.container.appendChild(this.hintDiv);
+        }
+        this.hintDiv.textContent = text;
+        this.hintDiv.style.display = 'block';
+    }
+
+    hideHint() {
+        if (this.hintDiv) this.hintDiv.style.display = 'none';
+    }
+
+    setupTouch() {
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        this.container.addEventListener('touchstart', (event) => {
+            if (!this.isEditing || !this.model) return;
+
+            const touch = event.touches[0];
+            mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, this.camera);
+            const intersects = raycaster.intersectObject(this.model, true);
+
+            if (intersects.length > 0) {
+                this.addNodeAt(intersects[0].point);
+            }
+        });
+    }
+
+    addNodeAt(point) {
+        const template = window.conductionTemplate;
+        if (this.nodes.length >= template.length) return;
+
+        const nextTemplate = template[this.nodes.length];
+        const newNode = {
+            ...nextTemplate,
+            anchor: [point.x, point.y, point.z]
+        };
+        this.nodes.push(newNode);
+        this.rebuildPath();
+
+        if (this.nodes.length < template.length) {
+            this.showHint(`Tap to place ${template[this.nodes.length].labelEn} (${this.nodes.length + 1}/${template.length})`);
+        } else {
+            this.showHint("Pathway complete!");
+            if (typeof Android !== 'undefined') Android.saveConduction(JSON.stringify(this.nodes));
+        }
+    }
+
     update(time) {
         if (!this.isPlaying || this.nodes.length < 2) return;
 
         const cycleMs = 60000 / this.bpm;
         const elapsed = (time - this.startTime) % cycleMs;
 
-        // Find current segment
         let currentIdx = -1;
         for (let i = 0; i < this.nodes.length - 1; i++) {
             if (elapsed >= this.nodes[i].arrivalMs && elapsed < this.nodes[i+1].arrivalMs) {
@@ -116,12 +236,10 @@ export class ConductionSystemRenderer {
             );
             this.pulseMesh.visible = true;
 
-            // Update caption - we'll need to pass locale or have labels in nodes
             const locale = window.currentLocale || 'en';
             const label = locale === 'ru' ? nodeB.labelRu : nodeB.labelEn;
             this.captionDiv.textContent = label;
         } else {
-            // Diastole phase
             this.pulseMesh.visible = false;
             const locale = window.currentLocale || 'en';
             this.captionDiv.textContent = locale === 'ru' ? 'Диастола' : 'Diastole';

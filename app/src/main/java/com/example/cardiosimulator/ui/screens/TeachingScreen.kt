@@ -56,6 +56,7 @@ import com.example.cardiosimulator.data.EcgTrace
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.CourseEntry
 import com.example.cardiosimulator.domain.ElectrodeFault
+import com.example.cardiosimulator.domain.EcgPointType
 import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.Lecture
@@ -63,6 +64,7 @@ import com.example.cardiosimulator.domain.LectureEntry
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.PathologyEntry
 import com.example.cardiosimulator.domain.SignificantPoint
+import kotlin.math.roundToInt
 import com.example.cardiosimulator.ui.components.LectureWebView
 import com.example.cardiosimulator.ui.components.SideDrawer
 import com.example.cardiosimulator.ui.components.Tab
@@ -175,47 +177,7 @@ fun TeachingScreen(
     }
 }
 
-@Composable
-private fun PathologyDescription(
-    pathology: com.example.cardiosimulator.domain.PathologyEntry?,
-    language: Language,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        if (pathology != null) {
-            Text(
-                text = if (language == Language.RU) pathology.nameRu ?: pathology.titleEn else pathology.titleEn,
-                style = MaterialTheme.typography.headlineMedium,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = stringResource(R.string.constructor_id_label, pathology.id),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-            HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp).width(200.dp))
-            Text(
-                text = "Описание патологии будет доступно в следующих обновлениях.", // Placeholder
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        } else {
-            Text(
-                text = stringResource(R.string.constructor_no_pathology_selected),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
+
 
 @Composable
 private fun MonitorOverlay(
@@ -261,7 +223,20 @@ private fun MonitorOverlay(
     }
 
     if (mode.show3D) {
-        Heart3DDialog(onDismiss = { monitorViewModel.setShow3D(false) })
+        val initialBpm = remember(significantPoints, mode.calibration.sampleRateHz) {
+            val rPeaks = significantPoints.filter { it.type == EcgPointType.R_PEAK }.sortedBy { it.index }
+            if (rPeaks.size >= 2) {
+                val rrIntervalSamples = rPeaks[1].index - rPeaks[0].index
+                val rrIntervalSec = rrIntervalSamples / mode.calibration.sampleRateHz
+                if (rrIntervalSec > 0) (60f / rrIntervalSec).roundToInt() else 75
+            } else {
+                75
+            }
+        }
+        Heart3DDialog(
+            initialBpm = initialBpm,
+            onDismiss = { monitorViewModel.setShow3D(false) }
+        )
     }
 
     LaunchedEffect(mode.comparisonTargets) {

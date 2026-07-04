@@ -1,10 +1,12 @@
 package com.example.cardiosimulator.domain
 
 import android.content.Context
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
 import java.io.File
 
+@Serializable
 data class ConductionNode(
     val key: String,
     val labelEn: String,
@@ -36,16 +38,15 @@ object ConductionSystem {
 }
 
 class ConductionStore(private val context: Context) {
-    private val gson = Gson()
+    private val json = Json { ignoreUnknownKeys = true }
     private val fileName = "heart.conduction.json"
 
     fun load(): List<ConductionNode>? {
         return try {
             val file = File(context.filesDir, fileName)
             if (!file.exists()) return null
-            val json = file.readText()
-            val type = object : TypeToken<List<ConductionNode>>() {}.type
-            gson.fromJson(json, type)
+            val text = file.readText()
+            json.decodeFromString<List<ConductionNode>>(text)
         } catch (e: Exception) {
             null
         }
@@ -54,8 +55,8 @@ class ConductionStore(private val context: Context) {
     fun save(nodes: List<ConductionNode>) {
         try {
             val file = File(context.filesDir, fileName)
-            val json = gson.toJson(nodes)
-            file.writeText(json)
+            val text = json.encodeToString(nodes)
+            file.writeText(text)
         } catch (e: Exception) {
             e.printStackTrace()
         }

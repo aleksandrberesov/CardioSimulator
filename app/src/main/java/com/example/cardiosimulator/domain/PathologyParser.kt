@@ -72,9 +72,7 @@ object PathologyParser {
             if (!e.group.isNullOrBlank()) {
                 sb.append(";group:").append(e.group)
             }
-            if (!e.description.isNullOrBlank()) {
-                sb.append(";description:").append(e.description)
-            }
+
             if (!e.clinicalCase.isNullOrBlank()) {
                 sb.append(";clinical_case:").append(e.clinicalCase)
             }

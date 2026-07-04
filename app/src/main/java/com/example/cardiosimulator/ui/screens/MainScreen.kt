@@ -74,7 +74,7 @@ fun MainScreen(appViewModel: AppViewModel) {
     )
     val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
 
-    val welcomeOptOut by appViewModel.prefs?.welcomeOptOut?.collectAsState(initial = true) ?: remember { mutableStateOf(true) }
+    val welcomeOptOut by appViewModel.prefs?.welcomeOptOut?.collectAsState(initial = false) ?: remember { mutableStateOf(false) }
     var hasDismissedWelcome by rememberSaveable { mutableStateOf(false) }
 
     val showWelcome = !welcomeOptOut && !hasDismissedWelcome

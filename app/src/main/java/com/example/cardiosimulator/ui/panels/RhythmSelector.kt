@@ -132,6 +132,20 @@ fun RhythmSelector(
         }
     }
 
+    LaunchedEffect(isClinicalMode, filtered) {
+        if (isClinicalMode && filtered.isNotEmpty() && (selectedId == null || filtered.none { it.id == selectedId })) {
+            onRhythmSelect(filtered.first())
+        }
+    }
+
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val resourceResolver: (String) -> String? = remember(context) {
+        { name ->
+            val id = context.resources.getIdentifier(name, "string", context.packageName)
+            if (id != 0) context.getString(id) else null
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -139,7 +153,65 @@ fun RhythmSelector(
             .padding(top = 8.dp, start = 8.dp, end = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // ... (Header and search field)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.rhythm_selector_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = TextPrimary,
+                modifier = Modifier.weight(1f)
+            )
+
+            // Grouping / Sorting toggle
+            IconButton(
+                onClick = { appViewModel.setRhythmListGrouped(!isGrouped) },
+                enabled = !isClinicalMode
+            ) {
+                Icon(
+                    imageVector = if (isGrouped) Icons.Default.ViewList else Icons.AutoMirrored.Filled.Sort,
+                    contentDescription = null,
+                    tint = if (isClinicalMode) TextSecondary else AccentGreen
+                )
+            }
+
+            // Clinical mode toggle
+            IconButton(
+                onClick = { appViewModel.setClinicalMode(!isClinicalMode) }
+            ) {
+                Icon(
+                    imageVector = if (isClinicalMode) Icons.Default.Healing else Icons.Outlined.Healing,
+                    contentDescription = stringResource(R.string.clinical_mode_tooltip),
+                    tint = if (isClinicalMode) Color.Red else TextSecondary
+                )
+            }
+
+            // Fix drawer toggle
+            IconButton(
+                onClick = { appViewModel.setDrawerFixed(!isDrawerFixed) }
+            ) {
+                Icon(
+                    imageVector = if (isDrawerFixed) Icons.Default.PushPin else Icons.Outlined.PushPin,
+                    contentDescription = stringResource(R.string.fix_drawer),
+                    tint = if (isDrawerFixed) AccentGreen else TextSecondary
+                )
+            }
+        }
+
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = {
+                searchQuery = it
+                onSearchQueryChange(it)
+            },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text(stringResource(R.string.rhythm_search_placeholder)) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            singleLine = true,
+            textStyle = TextStyle(fontSize = 14.sp)
+        )
         
         // Find selected rhythm
         val selectedRhythm = remember(rhythms, selectedId) { rhythms.find { it.id == selectedId } }
@@ -148,7 +220,49 @@ fun RhythmSelector(
             modifier = Modifier.fillMaxWidth().weight(1f),
             state = listState
         ) {
-            // ... (LazyColumn content)
+            groupedItems.forEach { (groupKey, items) ->
+                if (groupKey.isNotEmpty() && isGrouped) {
+                    val isCollapsed = collapsedGroups.contains(groupKey)
+
+                    stickyHeader {
+                        val groupName = if (groupKey == PathologyGroups.OTHER_KEY) {
+                            stringResource(R.string.group_other)
+                        } else if (isClinicalMode && groupKey == "clinical") {
+                            stringResource(R.string.group_clinical)
+                        } else {
+                            groups?.displayName(groupKey, currentLanguage.tag, resourceResolver) ?: groupKey
+                        }
+                        RhythmGroupHeader(
+                            name = groupName,
+                            count = items.size,
+                            isCollapsed = isCollapsed,
+                            onClick = { appViewModel.toggleRhythmGroupCollapsed(groupKey) }
+                        )
+                    }
+
+                    if (!isCollapsed) {
+                        items(items, key = { it.id }) { rhythm ->
+                            RhythmItem(
+                                rhythm = rhythm,
+                                isSelected = rhythm.id == selectedId,
+                                currentLanguage = currentLanguage,
+                                isClinicalMode = isClinicalMode,
+                                onClick = { onRhythmSelect(rhythm) }
+                            )
+                        }
+                    }
+                } else {
+                    items(items, key = { it.id }) { rhythm ->
+                        RhythmItem(
+                            rhythm = rhythm,
+                            isSelected = rhythm.id == selectedId,
+                            currentLanguage = currentLanguage,
+                            isClinicalMode = isClinicalMode,
+                            onClick = { onRhythmSelect(rhythm) }
+                        )
+                    }
+                }
+            }
         }
 
         if (isClinicalMode && selectedRhythm != null) {

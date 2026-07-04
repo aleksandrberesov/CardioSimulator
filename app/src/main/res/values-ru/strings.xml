@@ -112,6 +112,20 @@
     <string name="monitor_3d_description">Текстовое описание, что происходит и что можно сделать</string>
     <string name="monitor_3d_or_ecg">Либо окно 12-канального ЭКГ</string>
     <string name="monitor_3d_ecg_lead">ЭКГ отведение</string>
+
+    <!-- 3D Heart Sync -->
+    <string name="monitor_3d_conduction">Проводящая система</string>
+    <string name="monitor_3d_play">Пуск</string>
+    <string name="monitor_3d_pause">Пауза</string>
+    <string name="monitor_3d_rate">ЧСС</string>
+    <string name="monitor_3d_xray">Рентген</string>
+    <string name="monitor_3d_solid">Сплошной</string>
+    <string name="monitor_3d_edit_pathway">Изменить путь</string>
+    <string name="monitor_3d_done_editing">Готово</string>
+    <string name="monitor_3d_cutaway">Срез</string>
+    <string name="monitor_3d_cut_in_half">Разрезать пополам</string>
+    <string name="monitor_3d_whole_heart">Целое сердце</string>
+    <string name="monitor_3d_cut_position">Позиция среза</string>
     <string name="monitor_eos_window_title">Окно ЭОС</string>
     <string name="monitor_eos_vector_format">Вектор %1$d</string>
     <string name="monitor_eos_note">На ЭКГ выделены участки этих векторов</string>
