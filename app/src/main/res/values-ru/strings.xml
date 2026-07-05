@@ -143,9 +143,25 @@
     <string name="monitor_3d_whole_heart">Целое сердце</string>
     <string name="monitor_3d_cut_position">Позиция среза</string>
     <string name="monitor_eos_window_title">Окно ЭОС</string>
-    <string name="monitor_eos_vector_format">Вектор %1$d</string>
-    <string name="monitor_eos_note">На ЭКГ выделены участки этих векторов</string>
-    <string name="monitor_eos_result">Результат:</string>
+    <string name="monitor_eos_intro">Способ определения ЭОС:</string>
+    <string name="monitor_eos_step_1">Измерьте величину зубцов q, R и S в отведении I. Вычислите: R - (q + S) = длина вектора a в мм.</string>
+    <string name="monitor_eos_step_2">Измерьте величину зубцов q, R и S в отведении aVF. Вычислите: R - (q + S) = длина вектора b в мм.</string>
+    <string name="monitor_eos_step_3">Найдите на осях координат ось «I» и отложите на ней величину первого вектора a (красный цвет).</string>
+    <string name="monitor_eos_step_4">Найдите на осях координат ось «aVF» и отложите на ней величину второго вектора b (зелёный цвет).</string>
+    <string name="monitor_eos_step_5">Опустите перпендикуляры с осей так, чтобы получился прямоугольник (в данном случае) или параллелограмм.</string>
+    <string name="monitor_eos_step_6">Проведите результирующий вектор (зелёный цвет) от точки пересечения всех осей до пересечения перпендикуляров.</string>
+    <string name="monitor_eos_step_7">Измерьте угол между нулевой осью и результирующим (синим) вектором — это угол альфа, или электрическая ось сердца.</string>
+    <string name="monitor_eos_variants_header">Варианты электрической оси:</string>
+    <string name="monitor_eos_variant_normal">Нормальная: от 30° до +69°</string>
+    <string name="monitor_eos_variant_horizontal">Горизонтальная: от +0° до +29°</string>
+    <string name="monitor_eos_variant_vertical">Вертикальная: от +70° до +90°</string>
+    <string name="monitor_eos_variant_left">Отклонена влево: от 0° до -90°</string>
+    <string name="monitor_eos_variant_right">Отклонена вправо: от +91° до 180°</string>
+    <string name="monitor_eos_variant_extreme">Экстремальное отклонение: от 180° до -90°</string>
+    <string name="monitor_eos_measured_header">Для текущей ЭКГ:</string>
+    <string name="monitor_eos_lead_format">%1$s: q %2$s · R %3$s · S %4$s → %5$s = %6$s мм</string>
+    <string name="monitor_eos_angle_format">α = %1$s° — %2$s</string>
+    <string name="monitor_eos_no_data">Загрузите ритм с чёткими комплексами QRS в отведениях I и aVF, чтобы вычислить ось.</string>
     <string name="electrodes_system_standard">Система отведения : Стандартная</string>
     <string name="electrodes_ra">RA — правая рука</string>
     <string name="electrodes_la">LA — левая рука</string>

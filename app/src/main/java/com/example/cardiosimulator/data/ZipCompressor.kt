@@ -47,10 +47,12 @@ object ZipCompressor {
      */
     internal fun writeArchive(sourceDir: File, out: OutputStream) {
         ZipOutputStream(out).use { zos ->
-            val rootPath = sourceDir.absolutePath
+            val rootPath = sourceDir.absolutePath.let {
+                if (it.endsWith(File.separator)) it else it + File.separator
+            }
             sourceDir.walkTopDown().forEach { f ->
-                if (f.absolutePath == rootPath) return@forEach
-                val rel = f.absolutePath.removePrefix(rootPath).trimStart(File.separatorChar)
+                if (f.absolutePath == sourceDir.absolutePath) return@forEach
+                val rel = f.absolutePath.removePrefix(rootPath).replace(File.separatorChar, '/')
                 if (f.isDirectory) {
                     zos.putNextEntry(ZipEntry("$rel/"))
                     zos.closeEntry()

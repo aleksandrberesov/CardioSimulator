@@ -57,6 +57,17 @@ Good prompts when handing off:
 Keep this list current when you add or move a plan.
 
 ### Active
+- [`2026-07-android-tips-authoring-and-display-parity.md`](active/2026-07-android-tips-authoring-and-display-parity.md) —
+  bring the **tips (подсказки)** feature up to the Windows port (4 rounds): a Constructor **element
+  palette** (9 kinds + line end-caps + lead picker), a **data-space overlay model** placed by drawing
+  on the trace and **persisted** in the `.dat` (`tips:` / `tip_notes:` header fields), **rendered** on
+  the monitor grid (Teaching + all-leads preview) per lead cell, a **"Видим:" comments window** shown
+  as a card, and the **Tips button as a visibility toggle** (already toggles+highlights on Android).
+  **Supersedes** `2026-06-android-tips-window-parity` — Windows *retired* the palette window; the plan
+  **reconciles** Android's existing `TipsOverlay`/`showTips`/`selectedTipKind` scaffold (move authoring
+  to the Constructor, retire the overlay, repurpose `showTips` to gate authored overlays+card). Baseline-
+  relative amplitude + per-overlay home lead are the correctness notes; floats must parse `Locale.US`.
+  *Spec ready — 4 phases / 4 PRs.*
 - [`2026-07-android-constructor-title-own-row-parity.md`](active/2026-07-android-constructor-title-own-row-parity.md) —
   Constructor toolbar: put the **pathology title on its own row** with the action buttons
   ("settings panel") on the row below, so a long title can't crowd/hide the buttons. Windows→Android;

@@ -56,6 +56,7 @@ import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.EcgTrace
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.CourseEntry
+import com.example.cardiosimulator.domain.EosAnalyzer
 import com.example.cardiosimulator.domain.ElectrodeFault
 import com.example.cardiosimulator.domain.EcgPointType
 import com.example.cardiosimulator.domain.Language
@@ -197,6 +198,8 @@ private fun MonitorOverlay(
     val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
     val mode by monitorViewModel.monitorMode.collectAsState()
     val isDrawerFixed by appViewModel.isDrawerFixed.collectAsState()
+
+    val eos = remember(waveforms, mode.calibration) { EosAnalyzer.analyze(waveforms, mode.calibration) }
 
     var isRhythmDrawerExpanded by remember { mutableStateOf(false) }
     var editingPaneIndex by remember { mutableStateOf<Int?>(null) }
@@ -434,6 +437,7 @@ private fun MonitorOverlay(
                                         calibration = mode.calibration,
                                         tips = if (mode.isCompareMode) emptyList() else tips,
                                         showTips = mode.showTips,
+                                        eosSpans = if (mode.showEos && !mode.isCompareMode) eos?.highlightSpans?.get(lead).orEmpty() else emptyList(),
                                         lead = lead,
                                         modifier = if (mode.isCompareMode) {
                                             Modifier.clickable { editingPaneIndex = index }
@@ -466,6 +470,7 @@ private fun MonitorOverlay(
 
                         if (mode.showEos) {
                             EosOverlay(
+                                result = eos?.result,
                                 onClose = { monitorViewModel.setShowEos(false) },
                                 modifier = Modifier.align(Alignment.TopEnd)
                             )

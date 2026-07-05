@@ -108,9 +108,25 @@
     <string name="monitor_3d_or_ecg">或 12 导联心电图窗口</string>
     <string name="monitor_3d_ecg_lead">心电导联</string>
     <string name="monitor_eos_window_title">心电轴窗口</string>
-    <string name="monitor_eos_vector_format">向量 %1$d</string>
-    <string name="monitor_eos_note">心电图上已标出这些向量对应的区段</string>
-    <string name="monitor_eos_result">结果：</string>
+    <string name="monitor_eos_intro">确定心电轴（EOS）的方法：</string>
+    <string name="monitor_eos_step_1">测量 I 导联中 q、R、S 波的幅度。计算：R -（q + S）= 向量 a 的长度（毫米）。</string>
+    <string name="monitor_eos_step_2">测量 aVF 导联中 q、R、S 波的幅度。计算：R -（q + S）= 向量 b 的长度（毫米）。</string>
+    <string name="monitor_eos_step_3">在坐标轴上找到标记为「I」的轴，并在其上标出第一个向量 a 的数值（红色）。</string>
+    <string name="monitor_eos_step_4">在坐标轴上找到标记为「aVF」的轴，并在其上标出第二个向量 b 的数值（绿色）。</string>
+    <string name="monitor_eos_step_5">从各轴作垂线，使其构成一个矩形（本例）或平行四边形。</string>
+    <string name="monitor_eos_step_6">从所有轴的交点向垂线的交点画出合向量（绿色）。</string>
+    <string name="monitor_eos_step_7">测量零轴与合向量（蓝色）之间的夹角——这就是 α 角，即心脏的电轴。</string>
+    <string name="monitor_eos_variants_header">心电轴类型：</string>
+    <string name="monitor_eos_variant_normal">正常：+30° 至 +69°</string>
+    <string name="monitor_eos_variant_horizontal">水平：+0° 至 +29°</string>
+    <string name="monitor_eos_variant_vertical">垂直：+70° 至 +90°</string>
+    <string name="monitor_eos_variant_left">左偏：0° 至 -90°</string>
+    <string name="monitor_eos_variant_right">右偏：+91° 至 180°</string>
+    <string name="monitor_eos_variant_extreme">极度偏移：180° 至 -90°</string>
+    <string name="monitor_eos_measured_header">当前心电图：</string>
+    <string name="monitor_eos_lead_format">%1$s：q %2$s · R %3$s · S %4$s → %5$s = %6$s 毫米</string>
+    <string name="monitor_eos_angle_format">α = %1$s° — %2$s</string>
+    <string name="monitor_eos_no_data">加载在 I 和 aVF 导联中具有清晰 QRS 波群的心律以计算电轴。</string>
     <string name="electrodes_system_standard">导联系统：标准</string>
     <string name="electrodes_ra">RA — 右臂</string>
     <string name="electrodes_la">LA — 左臂</string>

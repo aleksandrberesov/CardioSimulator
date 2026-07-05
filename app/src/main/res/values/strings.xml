@@ -144,9 +144,25 @@
     <string name="monitor_3d_whole_heart">Whole heart</string>
     <string name="monitor_3d_cut_position">Cut position</string>
     <string name="monitor_eos_window_title">EOS window</string>
-    <string name="monitor_eos_vector_format">Vector %1$d</string>
-    <string name="monitor_eos_note">The ECG highlights the segments of these vectors</string>
-    <string name="monitor_eos_result">Result:</string>
+    <string name="monitor_eos_intro">How to determine the electrical axis (EOS):</string>
+    <string name="monitor_eos_step_1">Measure the q, R and S waves in lead I. Calculate R - (q + S) = the length of vector a in mm.</string>
+    <string name="monitor_eos_step_2">Measure the q, R and S waves in lead aVF. Calculate R - (q + S) = the length of vector b in mm.</string>
+    <string name="monitor_eos_step_3">Find the “I” axis on the coordinate grid and mark off the value of the first vector a on it (red).</string>
+    <string name="monitor_eos_step_4">Find the “aVF” axis on the coordinate grid and mark off the value of the second vector b on it (green).</string>
+    <string name="monitor_eos_step_5">Drop perpendiculars from the axes so that a rectangle (in this case) or a parallelogram is formed.</string>
+    <string name="monitor_eos_step_6">Draw the resultant vector (green) from the point where all the axes cross to the intersection of the perpendiculars.</string>
+    <string name="monitor_eos_step_7">Measure the angle between the zero axis and the resultant (blue) vector — this is the alpha angle, i.e. the electrical axis of the heart.</string>
+    <string name="monitor_eos_variants_header">Electrical axis variants:</string>
+    <string name="monitor_eos_variant_normal">Normal: from 30° to +69°</string>
+    <string name="monitor_eos_variant_horizontal">Horizontal: from +0° to +29°</string>
+    <string name="monitor_eos_variant_vertical">Vertical: from +70° to +90°</string>
+    <string name="monitor_eos_variant_left">Left axis deviation: from 0° to -90°</string>
+    <string name="monitor_eos_variant_right">Right axis deviation: from +91° to 180°</string>
+    <string name="monitor_eos_variant_extreme">Extreme deviation: from 180° to -90°</string>
+    <string name="monitor_eos_measured_header">For the current ECG:</string>
+    <string name="monitor_eos_lead_format">%1$s: q %2$s · R %3$s · S %4$s → %5$s = %6$s mm</string>
+    <string name="monitor_eos_angle_format">α = %1$s° — %2$s</string>
+    <string name="monitor_eos_no_data">Load a rhythm with clear QRS complexes in leads I and aVF to compute the axis.</string>
     <string name="electrodes_system_standard">Lead system: Standard</string>
     <string name="electrodes_ra">RA — right arm</string>
     <string name="electrodes_la">LA — left arm</string>

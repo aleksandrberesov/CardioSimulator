@@ -72,6 +72,7 @@ fun Lead(
     lead: com.example.cardiosimulator.domain.Lead? = null,
     tips: List<com.example.cardiosimulator.domain.TipOverlay> = emptyList(),
     showTips: Boolean = false,
+    eosSpans: List<com.example.cardiosimulator.domain.EcgSpan> = emptyList(),
 ){
     val traceColor = gridScheme.palette().trace
     val processedPoints = androidx.compose.runtime.remember(points, artifacts, filterType, calibration) {
@@ -157,6 +158,14 @@ fun Lead(
                 gridScheme = gridScheme,
                 color = traceColor
             )
+
+            if (eosSpans.isNotEmpty()) {
+                com.example.cardiosimulator.ui.components.EosHighlightOverlay(
+                    points = processedPoints,
+                    spans = eosSpans,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
 
             if (showImpulseLabels && significantPoints.isNotEmpty()) {
                 com.example.cardiosimulator.ui.components.SignificantPointOverlay(

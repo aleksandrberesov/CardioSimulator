@@ -114,9 +114,25 @@
     <string name="monitor_3d_or_ecg">या 12-लीड ईसीजी विंडो</string>
     <string name="monitor_3d_ecg_lead">ईसीजी लीड</string>
     <string name="monitor_eos_window_title">EOS विंडो</string>
-    <string name="monitor_eos_vector_format">सदिश %1$d</string>
-    <string name="monitor_eos_note">ईसीजी इन सदिशों के खंडों को उजागर करता है</string>
-    <string name="monitor_eos_result">परिणाम:</string>
+    <string name="monitor_eos_intro">हृदय के विद्युत अक्ष (EOS) का निर्धारण कैसे करें:</string>
+    <string name="monitor_eos_step_1">लीड I में q, R और S तरंगों को मापें। गणना करें: R - (q + S) = सदिश a की लंबाई (मिमी में)।</string>
+    <string name="monitor_eos_step_2">लीड aVF में q, R और S तरंगों को मापें। गणना करें: R - (q + S) = सदिश b की लंबाई (मिमी में)।</string>
+    <string name="monitor_eos_step_3">निर्देशांक ग्रिड पर «I» अक्ष खोजें और उस पर पहले सदिश a का मान अंकित करें (लाल रंग)।</string>
+    <string name="monitor_eos_step_4">निर्देशांक ग्रिड पर «aVF» अक्ष खोजें और उस पर दूसरे सदिश b का मान अंकित करें (हरा रंग)।</string>
+    <string name="monitor_eos_step_5">अक्षों से लंब डालें ताकि एक आयत (इस स्थिति में) या समांतर चतुर्भुज बने।</string>
+    <string name="monitor_eos_step_6">सभी अक्षों के प्रतिच्छेदन बिंदु से लंबों के प्रतिच्छेदन तक परिणामी सदिश (हरा रंग) खींचें।</string>
+    <string name="monitor_eos_step_7">शून्य अक्ष और परिणामी (नीले) सदिश के बीच का कोण मापें — यही अल्फा कोण है, अर्थात हृदय का विद्युत अक्ष।</string>
+    <string name="monitor_eos_variants_header">विद्युत अक्ष के प्रकार:</string>
+    <string name="monitor_eos_variant_normal">सामान्य: 30° से +69° तक</string>
+    <string name="monitor_eos_variant_horizontal">क्षैतिज: +0° से +29° तक</string>
+    <string name="monitor_eos_variant_vertical">ऊर्ध्वाधर: +70° से +90° तक</string>
+    <string name="monitor_eos_variant_left">बाईं ओर विचलन: 0° से -90° तक</string>
+    <string name="monitor_eos_variant_right">दाईं ओर विचलन: +91° से 180° तक</string>
+    <string name="monitor_eos_variant_extreme">अत्यधिक विचलन: 180° से -90° तक</string>
+    <string name="monitor_eos_measured_header">वर्तमान ईसीजी के लिए:</string>
+    <string name="monitor_eos_lead_format">%1$s: q %2$s · R %3$s · S %4$s → %5$s = %6$s मिमी</string>
+    <string name="monitor_eos_angle_format">α = %1$s° — %2$s</string>
+    <string name="monitor_eos_no_data">अक्ष की गणना के लिए I और aVF लीड में स्पष्ट QRS कॉम्प्लेक्स वाली लय लोड करें।</string>
     <string name="electrodes_system_standard">लीड प्रणाली: मानक</string>
     <string name="electrodes_ra">RA — दायाँ हाथ</string>
     <string name="electrodes_la">LA — बायाँ हाथ</string>

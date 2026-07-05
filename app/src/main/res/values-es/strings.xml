@@ -109,9 +109,25 @@
     <string name="monitor_3d_or_ecg">O una ventana de ECG de 12 derivaciones</string>
     <string name="monitor_3d_ecg_lead">Derivación de ECG</string>
     <string name="monitor_eos_window_title">Ventana del EOS</string>
-    <string name="monitor_eos_vector_format">Vector %1$d</string>
-    <string name="monitor_eos_note">En el ECG se resaltan los segmentos de estos vectores</string>
-    <string name="monitor_eos_result">Resultado:</string>
+    <string name="monitor_eos_intro">Cómo determinar el eje eléctrico (EOS):</string>
+    <string name="monitor_eos_step_1">Mida las ondas q, R y S en la derivación I. Calcule R - (q + S) = la longitud del vector a en mm.</string>
+    <string name="monitor_eos_step_2">Mida las ondas q, R y S en la derivación aVF. Calcule R - (q + S) = la longitud del vector b en mm.</string>
+    <string name="monitor_eos_step_3">Localice el eje «I» en la cuadrícula de coordenadas y marque en él el valor del primer vector a (rojo).</string>
+    <string name="monitor_eos_step_4">Localice el eje «aVF» en la cuadrícula de coordenadas y marque en él el valor del segundo vector b (verde).</string>
+    <string name="monitor_eos_step_5">Trace perpendiculares desde los ejes de modo que se forme un rectángulo (en este caso) o un paralelogramo.</string>
+    <string name="monitor_eos_step_6">Trace el vector resultante (verde) desde el punto de cruce de todos los ejes hasta la intersección de las perpendiculares.</string>
+    <string name="monitor_eos_step_7">Mida el ángulo entre el eje cero y el vector resultante (azul): este es el ángulo alfa, es decir, el eje eléctrico del corazón.</string>
+    <string name="monitor_eos_variants_header">Variantes del eje eléctrico:</string>
+    <string name="monitor_eos_variant_normal">Normal: de 30° a +69°</string>
+    <string name="monitor_eos_variant_horizontal">Horizontal: de +0° a +29°</string>
+    <string name="monitor_eos_variant_vertical">Vertical: de +70° a +90°</string>
+    <string name="monitor_eos_variant_left">Desviación izquierda: de 0° a -90°</string>
+    <string name="monitor_eos_variant_right">Desviación derecha: de +91° a 180°</string>
+    <string name="monitor_eos_variant_extreme">Desviación extrema: de 180° a -90°</string>
+    <string name="monitor_eos_measured_header">Para el ECG actual:</string>
+    <string name="monitor_eos_lead_format">%1$s: q %2$s · R %3$s · S %4$s → %5$s = %6$s mm</string>
+    <string name="monitor_eos_angle_format">α = %1$s° — %2$s</string>
+    <string name="monitor_eos_no_data">Cargue un ritmo con complejos QRS claros en las derivaciones I y aVF para calcular el eje.</string>
     <string name="electrodes_system_standard">Sistema de derivaciones: estándar</string>
     <string name="electrodes_ra">RA — brazo derecho</string>
     <string name="electrodes_la">LA — brazo izquierdo</string>
