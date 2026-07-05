@@ -57,6 +57,15 @@ Good prompts when handing off:
 Keep this list current when you add or move a plan.
 
 ### Active
+- [`2026-07-android-constructor-title-own-row-parity.md`](active/2026-07-android-constructor-title-own-row-parity.md) —
+  Constructor toolbar: put the **pathology title on its own row** with the action buttons
+  ("settings panel") on the row below, so a long title can't crowd/hide the buttons. Windows→Android;
+  layout-only. Note the **divergence**: Android's title uses `Modifier.weight(1f)`, so the exact
+  Windows off-screen bug doesn't reproduce (title squeezes instead) — the two-row layout is for
+  parity **and** to fix button-strip overflow on narrow screens. Split the toolbar `Surface` `Row`
+  (`ConstructorScreen.kt:538`) into a `Column` of {title `Text` (ellipsized) / horizontally
+  scrollable button `Row`}; +2 imports (`horizontalScroll`, `TextOverflow`), no new strings.
+  *Spec ready — one PR, Phases 1–2 (+optional touch tooltip).*
 - [`2026-07-android-pathology-number-clinical-case-parity.md`](active/2026-07-android-pathology-number-clinical-case-parity.md) —
   add an optional 1-based `number` field to the pathology `.dat`/manifest (parsed like
   `group`/`clinical_case`) and surface it as numbered rows `{N} <title>` in **both** the
@@ -135,6 +144,16 @@ Keep this list current when you add or move a plan.
 *(none)*
 
 ### Completed
+- [`2026-07-android-constructor-all-leads-button-in-lead-row-parity.md`](completed/2026-07-android-constructor-all-leads-button-in-lead-row-parity.md) —
+  move the Constructor's **"All leads"** (show-all-12-leads) button out of the top toolbar and
+  into the **lead-button row**, trailing after `V6` (`[I]…[V6] [All leads]`). Windows→Android;
+  placement-only. Delete the view-all `IconButton` from the `targetFile != null` toolbar block
+  (`ConstructorScreen.kt:641`) and re-add it after the lead `TabRow` (`:663`), wrapping the
+  `TabRow` in a `Row` with `Modifier.weight(1f)` and gating the button on `targetFile != null`.
+  No new strings/imports. *Spec ready — one PR, two phases.*
+- [`2026-07-android-pathology-grouping-and-sorting-parity.md`](completed/2026-07-android-pathology-grouping-and-sorting-parity.md) —
+  Implement collapsible subgroups for duplicate titles, complexity-based sorting, and expand/collapse all
+  controls in the rhythm selector. Windows→Android parity.
 - [`2026-07-android-3d-heart-open-immediately-refinement-parity.md`](completed/2026-07-android-3d-heart-open-immediately-refinement-parity.md) —
   Windows refined the 3D-heart dialog (2026-07-04) to open the **whole card chrome immediately** with an
   opaque, **viewport-scoped** spinner, deferring the heavy DirectX build behind it (supersedes the

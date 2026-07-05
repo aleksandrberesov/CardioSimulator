@@ -49,6 +49,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.R
@@ -70,7 +71,6 @@ import com.example.cardiosimulator.ui.components.SideDrawer
 import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.ui.components.WelcomeOverlay
 import com.example.cardiosimulator.ui.components.EosOverlay
-import com.example.cardiosimulator.ui.components.TipsOverlay
 import com.example.cardiosimulator.ui.dialogs.ComparisonPresetsDialog
 import com.example.cardiosimulator.ui.dialogs.ComparisonTargetDialog
 import com.example.cardiosimulator.ui.dialogs.SaveComparisonPresetDialog
@@ -191,6 +191,8 @@ private fun MonitorOverlay(
     val waveforms by rhythmViewModel.waveforms.collectAsState()
     val comparisonWaveforms by rhythmViewModel.comparisonWaveforms.collectAsState()
     val significantPoints by rhythmViewModel.significantPoints.collectAsState()
+    val tips by rhythmViewModel.tips.collectAsState()
+    val tipComments by rhythmViewModel.tipComments.collectAsState()
     val description by rhythmViewModel.description.collectAsState()
     val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
     val mode by monitorViewModel.monitorMode.collectAsState()
@@ -430,6 +432,9 @@ private fun MonitorOverlay(
                                         artifacts = mode.artifacts,
                                         filterType = mode.filterType,
                                         calibration = mode.calibration,
+                                        tips = if (mode.isCompareMode) emptyList() else tips,
+                                        showTips = mode.showTips,
+                                        lead = lead,
                                         modifier = if (mode.isCompareMode) {
                                             Modifier.clickable { editingPaneIndex = index }
                                         } else Modifier
@@ -466,13 +471,32 @@ private fun MonitorOverlay(
                             )
                         }
 
-                        if (mode.showTips) {
-                            TipsOverlay(
-                                selectedKind = mode.selectedTipKind,
-                                onKindSelected = { monitorViewModel.setSelectedTipKind(it) },
-                                onClose = { monitorViewModel.setShowTips(false) },
-                                modifier = Modifier.align(Alignment.TopEnd)
-                            )
+                        if (mode.showTips && tipComments.isNotEmpty() && !mode.isCompareMode) {
+                            Surface(
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .width(280.dp)
+                                    .align(Alignment.TopStart),
+                                color = Color.Black.copy(alpha = 0.6f),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text(
+                                        text = stringResource(R.string.monitor_tips_preview_header),
+                                        color = Color.White,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    tipComments.forEachIndexed { index, comment ->
+                                        Text(
+                                            text = "${index + 1}. $comment",
+                                            color = Color.White,
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    }
+                                }
+                            }
                         }
 
                         // Graduation-cap button — standalone "All rhythms" view only (no title bar there). Mirrors the Windows

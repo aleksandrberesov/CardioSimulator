@@ -68,7 +68,10 @@ fun Lead(
     showImpulseLabels: Boolean = false,
     artifacts: Set<com.example.cardiosimulator.domain.EcgArtifact> = emptySet(),
     filterType: com.example.cardiosimulator.domain.EcgFilterType = com.example.cardiosimulator.domain.EcgFilterType.NONE,
-    calibration: com.example.cardiosimulator.data.EcgCalibration = com.example.cardiosimulator.data.EcgCalibration()
+    calibration: com.example.cardiosimulator.data.EcgCalibration = com.example.cardiosimulator.data.EcgCalibration(),
+    lead: com.example.cardiosimulator.domain.Lead? = null,
+    tips: List<com.example.cardiosimulator.domain.TipOverlay> = emptyList(),
+    showTips: Boolean = false,
 ){
     val traceColor = gridScheme.palette().trace
     val processedPoints = androidx.compose.runtime.remember(points, artifacts, filterType, calibration) {
@@ -161,6 +164,16 @@ fun Lead(
                     significantPoints = significantPoints,
                     modifier = Modifier.fillMaxSize()
                 )
+            }
+
+            if (showTips && tips.isNotEmpty()) {
+                val filteredTips = tips.filter { it.lead == null || it.lead == lead }
+                if (filteredTips.isNotEmpty()) {
+                    TipRenderOverlay(
+                        tips = filteredTips,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
 
             if (isCompareMode && title.isNotEmpty()) {

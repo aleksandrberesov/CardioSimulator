@@ -49,7 +49,12 @@ fun EditableLead(
     onImageTransform: (Offset, Float, Float) -> Unit = { _, _, _ -> },
     onStrokeStart: () -> Unit = {},
     onTrace: (Map<Int, Int>) -> Unit = {},
-    ghostTrace: IntArray? = null
+    ghostTrace: IntArray? = null,
+    tips: List<com.example.cardiosimulator.domain.TipOverlay> = emptyList(),
+    selectedTipKind: com.example.cardiosimulator.domain.TipOverlayKind = com.example.cardiosimulator.domain.TipOverlayKind.Arrow,
+    selectedTipEndCap: com.example.cardiosimulator.domain.TipLineEndCap = com.example.cardiosimulator.domain.TipLineEndCap.Plain,
+    selectedTipLead: com.example.cardiosimulator.domain.Lead? = null,
+    onTipPlaced: (com.example.cardiosimulator.domain.TipOverlay) -> Unit = {}
 ) {
     val points = Points(stream.samples.map { (it - baseline).toFloat() })
     val scale = LocalPixelScale.current
@@ -163,6 +168,21 @@ fun EditableLead(
                     significantPoints = significantPoints,
                     modifier = Modifier.fillMaxSize()
                 )
+
+                TipRenderOverlay(
+                    tips = tips.filter { it.lead == null || it.lead == stream.lead },
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                if (toolMode == ToolMode.Tips && isEditable) {
+                    TipPlacementOverlay(
+                        kind = selectedTipKind,
+                        endCap = selectedTipEndCap,
+                        homeLead = selectedTipLead ?: stream.lead,
+                        onTipPlaced = onTipPlaced,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
 
                 if (toolMode == ToolMode.Select || toolMode == ToolMode.Points) {
                     SampleHandleOverlay(

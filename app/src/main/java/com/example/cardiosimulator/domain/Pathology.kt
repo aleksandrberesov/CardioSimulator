@@ -74,8 +74,20 @@ data class PathologyFile(
     val nameRu: String?,
     val leads: Map<Lead, LeadStream>,
     val significantPoints: List<SignificantPoint> = emptyList(),
+    val tips: List<TipOverlay> = emptyList(),
+    val tipComments: List<String> = emptyList(),
     val group: String? = null,
     val description: String? = null,
     val clinicalCase: String? = null,
     val number: Int? = null,
+)
+
+data class TipPoint(val sample: Float, val adc: Float) // adc = baseline-relative amplitude, 0 = isoline
+
+data class TipOverlay(
+    val kind: TipOverlayKind,
+    val points: List<TipPoint>,
+    val text: String? = null,
+    val lead: Lead? = null,          // home lead (which cell it renders in)
+    val endCap: TipLineEndCap = TipLineEndCap.Plain,
 )

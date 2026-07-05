@@ -138,6 +138,9 @@ class AppViewModel(
     private val _collapsedRhythmGroups = MutableStateFlow<Set<String>>(emptySet())
     val collapsedRhythmGroups: StateFlow<Set<String>> = _collapsedRhythmGroups.asStateFlow()
 
+    private val _collapsedSubgroups = MutableStateFlow<Set<String>>(emptySet())
+    val collapsedSubgroups: StateFlow<Set<String>> = _collapsedSubgroups.asStateFlow()
+
     private val _tcpConnectionState = MutableStateFlow<TcpConnectionState>(TcpConnectionState.Disconnected)
     val tcpConnectionState: StateFlow<TcpConnectionState> = _tcpConnectionState.asStateFlow()
 
@@ -366,6 +369,34 @@ class AppViewModel(
             _collapsedRhythmGroups.value = current - groupKey
         } else {
             _collapsedRhythmGroups.value = current + groupKey
+        }
+    }
+
+    fun toggleSubgroupCollapsed(subgroupKey: String) {
+        val current = _collapsedSubgroups.value
+        if (current.contains(subgroupKey)) {
+            _collapsedSubgroups.value = current - subgroupKey
+        } else {
+            _collapsedSubgroups.value = current + subgroupKey
+        }
+    }
+
+    fun expandAllRhythms() {
+        _collapsedRhythmGroups.value = emptySet()
+        _collapsedSubgroups.value = emptySet()
+    }
+
+    fun collapseAllRhythms(groupKeys: Set<String>, subgroupKeys: Set<String>) {
+        _collapsedRhythmGroups.value = _collapsedRhythmGroups.value + groupKeys
+        _collapsedSubgroups.value = _collapsedSubgroups.value + subgroupKeys
+    }
+
+    fun expandGroupAndSubgroup(groupKey: String?, subgroupKey: String?) {
+        if (groupKey != null) {
+            _collapsedRhythmGroups.value = _collapsedRhythmGroups.value - groupKey
+        }
+        if (subgroupKey != null) {
+            _collapsedSubgroups.value = _collapsedSubgroups.value - subgroupKey
         }
     }
 

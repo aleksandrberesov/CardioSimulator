@@ -11,13 +11,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Healing
 import androidx.compose.material.icons.filled.Search
@@ -76,6 +77,7 @@ fun RhythmSelector(
     val isGrouped by appViewModel.isRhythmListGrouped.collectAsState()
     val isClinicalMode by appViewModel.isClinicalMode.collectAsState()
     val collapsedGroups by appViewModel.collapsedRhythmGroups.collectAsState()
+    val collapsedSubgroups by appViewModel.collapsedSubgroups.collectAsState()
     
     var searchQuery by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -92,50 +94,9 @@ fun RhythmSelector(
                 }
             }
             .filter { entry ->
-                val title = if (isClinicalMode) {
-                    entry.getClinicalTitle() ?: (if (currentLanguage == Language.RU) entry.nameRu ?: entry.titleEn else entry.titleEn)
-                } else {
-                    if (currentLanguage == Language.RU) entry.nameRu ?: entry.titleEn else entry.titleEn
-                }
+                val title = entry.getDisplayName(currentLanguage, isClinicalMode)
                 title.contains(searchQuery, ignoreCase = true)
             }
-    }
-
-    // Grouping logic
-    val groupedItems = remember(filtered, isGrouped, currentLanguage, groups, isClinicalMode) {
-        if (!isGrouped || groups == null) {
-            mapOf("" to filtered.sortedBy { 
-                if (isClinicalMode) {
-                    it.getClinicalTitle() ?: (if (currentLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn)
-                } else {
-                    if (currentLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn
-                }
-            })
-        } else {
-            val map = filtered.groupBy { it.group ?: PathologyGroups.OTHER_KEY }
-            val orderedKeys = groups.getOrderedKeys() + PathologyGroups.OTHER_KEY
-            orderedKeys.associateWith { key ->
-                map[key]?.sortedBy { 
-                    if (isClinicalMode) {
-                        it.getClinicalTitle() ?: (if (currentLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn)
-                    } else {
-                        if (currentLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn 
-                    }
-                }
-            }.filterValues { it != null }.mapValues { it.value!! }
-        }
-    }
-
-    LaunchedEffect(selectedId) {
-        if (selectedId != null) {
-            // Optional: scroll to selected
-        }
-    }
-
-    LaunchedEffect(isClinicalMode, filtered) {
-        if (isClinicalMode && filtered.isNotEmpty() && (selectedId == null || filtered.none { it.id == selectedId })) {
-            onRhythmSelect(filtered.first())
-        }
     }
 
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -143,6 +104,88 @@ fun RhythmSelector(
         { name ->
             val id = context.resources.getIdentifier(name, "string", context.packageName)
             if (id != 0) context.getString(id) else null
+        }
+    }
+    
+    val otherLabel = stringResource(R.string.group_other)
+    val clinicalLabel = stringResource(R.string.group_clinical)
+
+    // Grouping logic
+    val listItems = remember(filtered, isGrouped, currentLanguage, groups, isClinicalMode, collapsedGroups, collapsedSubgroups, otherLabel, clinicalLabel) {
+        val result = mutableListOf<RhythmListLine>()
+        if (!isGrouped || groups == null) {
+            filtered.sortedWith(pathologyComparator(currentLanguage, isClinicalMode))
+                .forEach { result.add(RhythmListLine.RhythmItem(it, false)) }
+        } else {
+            val map = filtered.groupBy { it.group ?: PathologyGroups.OTHER_KEY }
+            val orderedKeys = groups.getOrderedKeys() + PathologyGroups.OTHER_KEY
+            orderedKeys.forEach { groupKey ->
+                val items = map[groupKey] ?: return@forEach
+                if (items.isEmpty()) return@forEach
+                
+                val isCollapsed = collapsedGroups.contains(groupKey)
+                
+                val groupName = if (groupKey == PathologyGroups.OTHER_KEY) {
+                    otherLabel
+                } else if (isClinicalMode && groupKey == "clinical") {
+                    clinicalLabel
+                } else {
+                    groups.displayName(groupKey, currentLanguage.tag, resourceResolver) ?: groupKey
+                }
+                
+                result.add(RhythmListLine.GroupHeader(groupKey, groupName, items.size, isCollapsed))
+                
+                if (!isCollapsed) {
+                    // Complexity-based sorting within group
+                    val sortedItems = items.sortedWith(pathologyComparator(currentLanguage, isClinicalMode))
+                    
+                    // Subgrouping by identical titles
+                    val subGroups = sortedItems.groupBy { it.getDisplayName(currentLanguage, isClinicalMode) }
+                    
+                    subGroups.forEach { (title, subgroupItems) ->
+                        if (subgroupItems.size > 1) {
+                            val subgroupKey = "${groupKey}_$title"
+                            val isSubCollapsed = collapsedSubgroups.contains(subgroupKey)
+                            result.add(RhythmListLine.SubgroupHeader(subgroupKey, title, subgroupItems.size, isSubCollapsed))
+                            if (!isSubCollapsed) {
+                                subgroupItems.forEach { 
+                                    result.add(RhythmListLine.RhythmItem(it, true)) 
+                                }
+                            }
+                        } else {
+                            subgroupItems.forEach { 
+                                result.add(RhythmListLine.RhythmItem(it, false)) 
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        result
+    }
+
+    LaunchedEffect(selectedId) {
+        if (selectedId != null) {
+            val entry = rhythms.find { it.id == selectedId }
+            if (entry != null) {
+                val groupKey = entry.group ?: PathologyGroups.OTHER_KEY
+                val title = entry.getDisplayName(currentLanguage, isClinicalMode)
+                
+                // Check if it's in a subgroup within its category
+                val groupItems = rhythms.filter { (it.group ?: PathologyGroups.OTHER_KEY) == groupKey }
+                val sameTitleCount = groupItems.count { 
+                    it.getDisplayName(currentLanguage, isClinicalMode) == title 
+                }
+                val subgroupKey = if (sameTitleCount > 1) "${groupKey}_$title" else null
+                
+                appViewModel.expandGroupAndSubgroup(groupKey, subgroupKey)
+            }
+        }
+    }
+
+    LaunchedEffect(isClinicalMode, filtered) {
+        if (isClinicalMode && filtered.isNotEmpty() && (selectedId == null || filtered.none { it.id == selectedId })) {
+            onRhythmSelect(filtered.first())
         }
     }
 
@@ -164,6 +207,29 @@ fun RhythmSelector(
                 color = TextPrimary,
                 modifier = Modifier.weight(1f)
             )
+
+            if (isGrouped && !isClinicalMode) {
+                IconButton(onClick = {
+                    appViewModel.expandAllRhythms()
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.KeyboardDoubleArrowDown,
+                        contentDescription = "Expand All",
+                        tint = AccentGreen
+                    )
+                }
+                IconButton(onClick = {
+                    val groupKeys = listItems.filterIsInstance<RhythmListLine.GroupHeader>().map { it.key }.toSet()
+                    val subgroupKeys = listItems.filterIsInstance<RhythmListLine.SubgroupHeader>().map { it.key }.toSet()
+                    appViewModel.collapseAllRhythms(groupKeys, subgroupKeys)
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.KeyboardDoubleArrowUp,
+                        contentDescription = "Collapse All",
+                        tint = AccentGreen
+                    )
+                }
+            }
 
             // Grouping / Sorting toggle
             IconButton(
@@ -220,46 +286,39 @@ fun RhythmSelector(
             modifier = Modifier.fillMaxWidth().weight(1f),
             state = listState
         ) {
-            groupedItems.forEach { (groupKey, items) ->
-                if (groupKey.isNotEmpty() && isGrouped) {
-                    val isCollapsed = collapsedGroups.contains(groupKey)
-
-                    stickyHeader {
-                        val groupName = if (groupKey == PathologyGroups.OTHER_KEY) {
-                            stringResource(R.string.group_other)
-                        } else if (isClinicalMode && groupKey == "clinical") {
-                            stringResource(R.string.group_clinical)
-                        } else {
-                            groups?.displayName(groupKey, currentLanguage.tag, resourceResolver) ?: groupKey
-                        }
-                        RhythmGroupHeader(
-                            name = groupName,
-                            count = items.size,
-                            isCollapsed = isCollapsed,
-                            onClick = { appViewModel.toggleRhythmGroupCollapsed(groupKey) }
-                        )
-                    }
-
-                    if (!isCollapsed) {
-                        items(items, key = { it.id }) { rhythm ->
-                            RhythmItem(
-                                rhythm = rhythm,
-                                isSelected = rhythm.id == selectedId,
-                                currentLanguage = currentLanguage,
-                                isClinicalMode = isClinicalMode,
-                                onClick = { onRhythmSelect(rhythm) }
+            listItems.forEach { line ->
+                when (line) {
+                    is RhythmListLine.GroupHeader -> {
+                        stickyHeader(key = "group_${line.key}") {
+                            RhythmGroupHeader(
+                                name = line.name,
+                                count = line.count,
+                                isCollapsed = line.isCollapsed,
+                                onClick = { appViewModel.toggleRhythmGroupCollapsed(line.key) }
                             )
                         }
                     }
-                } else {
-                    items(items, key = { it.id }) { rhythm ->
-                        RhythmItem(
-                            rhythm = rhythm,
-                            isSelected = rhythm.id == selectedId,
-                            currentLanguage = currentLanguage,
-                            isClinicalMode = isClinicalMode,
-                            onClick = { onRhythmSelect(rhythm) }
-                        )
+                    is RhythmListLine.SubgroupHeader -> {
+                        item(key = "subgroup_${line.key}") {
+                            RhythmSubgroupHeader(
+                                name = line.name,
+                                count = line.count,
+                                isCollapsed = line.isCollapsed,
+                                onClick = { appViewModel.toggleSubgroupCollapsed(line.key) }
+                            )
+                        }
+                    }
+                    is RhythmListLine.RhythmItem -> {
+                        item(key = "item_${line.entry.id}") {
+                            RhythmItem(
+                                rhythm = line.entry,
+                                isSelected = line.entry.id == selectedId,
+                                currentLanguage = currentLanguage,
+                                isClinicalMode = isClinicalMode,
+                                isIndented = line.isIndented,
+                                onClick = { onRhythmSelect(line.entry) }
+                            )
+                        }
                     }
                 }
             }
@@ -295,7 +354,7 @@ fun RhythmGroupHeader(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Icon(
-                imageVector = if (isCollapsed) Icons.Default.ChevronRight else Icons.Default.ExpandMore,
+                imageVector = if (isCollapsed) Icons.Default.KeyboardArrowRight else Icons.Default.KeyboardArrowDown,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
                 tint = AccentGreen
@@ -309,7 +368,50 @@ fun RhythmGroupHeader(
                 modifier = Modifier.weight(1f)
             )
             Text(
-                text = count.toString(),
+                text = "($count)",
+                style = MaterialTheme.typography.labelMedium.copy(
+                    color = TextSecondary
+                )
+            )
+        }
+    }
+}
+
+@Composable
+fun RhythmSubgroupHeader(
+    name: String,
+    count: Int,
+    isCollapsed: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        color = Color.Transparent
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = if (isCollapsed) Icons.Default.KeyboardArrowRight else Icons.Default.KeyboardArrowDown,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = TextSecondary
+            )
+            Text(
+                text = name,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                ),
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = "($count)",
                 style = MaterialTheme.typography.labelMedium.copy(
                     color = TextSecondary
                 )
@@ -324,24 +426,22 @@ fun RhythmItem(
     isSelected: Boolean,
     currentLanguage: Language,
     isClinicalMode: Boolean,
+    isIndented: Boolean,
     onClick: () -> Unit
 ) {
-    val title = if (isClinicalMode) {
-        rhythm.getClinicalTitle() ?: (if (currentLanguage == Language.RU) rhythm.nameRu ?: rhythm.titleEn else rhythm.titleEn)
-    } else {
-        if (currentLanguage == Language.RU)
-            rhythm.nameRu ?: rhythm.titleEn
-        else
-            rhythm.titleEn
-    }
+    val title = rhythm.getDisplayName(currentLanguage, isClinicalMode)
 
-    val display = if (rhythm.number != null) "${rhythm.number} $title" else title
+    val display = if (isIndented) {
+        if (rhythm.number != null) "${rhythm.number} $title" else "$title (${rhythm.id})"
+    } else {
+        if (rhythm.number != null) "${rhythm.number} $title" else title
+    }
     
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = 10.dp, horizontal = 12.dp) // Tighter rows
+            .padding(vertical = 10.dp, horizontal = if (isIndented) 32.dp else 12.dp) // Indentation
     ) {
         Text(
             text = display,
@@ -354,6 +454,32 @@ fun RhythmItem(
         thickness = 0.5.dp,
         color = Hairline,
     )
+}
+
+sealed class RhythmListLine {
+    data class GroupHeader(val key: String, val name: String, val count: Int, val isCollapsed: Boolean) : RhythmListLine()
+    data class SubgroupHeader(val key: String, val name: String, val count: Int, val isCollapsed: Boolean) : RhythmListLine()
+    data class RhythmItem(val entry: PathologyEntry, val isIndented: Boolean) : RhythmListLine()
+}
+
+private fun PathologyEntry.getDisplayName(language: Language, isClinicalMode: Boolean): String {
+    return if (isClinicalMode) {
+        getClinicalTitle() ?: (if (language == Language.RU) nameRu ?: titleEn else titleEn)
+    } else {
+        if (language == Language.RU) nameRu ?: titleEn else titleEn
+    }
+}
+
+private fun pathologyComparator(language: Language, isClinicalMode: Boolean) = Comparator<PathologyEntry> { a, b ->
+    // 1. Factor count
+    val aFactors = a.titleEn.split('+').size
+    val bFactors = b.titleEn.split('+').size
+    if (aFactors != bFactors) return@Comparator aFactors.compareTo(bFactors)
+    
+    // 2. Alphabetical
+    val aName = a.getDisplayName(language, isClinicalMode)
+    val bName = b.getDisplayName(language, isClinicalMode)
+    aName.compareTo(bName, ignoreCase = true)
 }
 
 @Composable

@@ -35,7 +35,8 @@ enum class ToolMode {
     Position,
     Points,
     Photo,
-    Pan
+    Pan,
+    Tips
 }
 
 /**
@@ -107,6 +108,58 @@ class ConstructorViewModel(
 
     private val _ghostTrace = MutableStateFlow<IntArray?>(null)
     val ghostTrace: StateFlow<IntArray?> = _ghostTrace.asStateFlow()
+
+    private val _selectedTipKind = MutableStateFlow(com.example.cardiosimulator.domain.TipOverlayKind.Arrow)
+    val selectedTipKind: StateFlow<com.example.cardiosimulator.domain.TipOverlayKind> = _selectedTipKind.asStateFlow()
+
+    private val _selectedTipEndCap = MutableStateFlow(com.example.cardiosimulator.domain.TipLineEndCap.Plain)
+    val selectedTipEndCap: StateFlow<com.example.cardiosimulator.domain.TipLineEndCap> = _selectedTipEndCap.asStateFlow()
+
+    private val _selectedTipLead = MutableStateFlow<com.example.cardiosimulator.domain.Lead?>(null)
+    val selectedTipLead: StateFlow<com.example.cardiosimulator.domain.Lead?> = _selectedTipLead.asStateFlow()
+
+    fun setSelectedTipKind(kind: com.example.cardiosimulator.domain.TipOverlayKind) {
+        _selectedTipKind.value = kind
+    }
+
+    fun setSelectedTipEndCap(cap: com.example.cardiosimulator.domain.TipLineEndCap) {
+        _selectedTipEndCap.value = cap
+    }
+
+    fun setSelectedTipLead(lead: com.example.cardiosimulator.domain.Lead?) {
+        _selectedTipLead.value = lead
+    }
+
+    fun addTip(tip: com.example.cardiosimulator.domain.TipOverlay) {
+        val currentFile = _targetFile.value ?: return
+        val currentTips = currentFile.tips.toMutableList()
+        currentTips.add(tip)
+        _targetFile.value = currentFile.copy(tips = currentTips)
+        _isMetadataDirty.value = true
+    }
+
+    fun removeLastTip() {
+        val currentFile = _targetFile.value ?: return
+        if (currentFile.tips.isEmpty()) return
+        val currentTips = currentFile.tips.toMutableList()
+        currentTips.removeAt(currentTips.size - 1)
+        _targetFile.value = currentFile.copy(tips = currentTips)
+        _isMetadataDirty.value = true
+    }
+
+    fun clearTips() {
+        val currentFile = _targetFile.value ?: return
+        if (currentFile.tips.isEmpty()) return
+        _targetFile.value = currentFile.copy(tips = emptyList())
+        _isMetadataDirty.value = true
+    }
+
+    fun setTipComments(comments: List<String>) {
+        val currentFile = _targetFile.value ?: return
+        if (currentFile.tipComments == comments) return
+        _targetFile.value = currentFile.copy(tipComments = comments)
+        _isMetadataDirty.value = true
+    }
 
     fun setToolMode(mode: ToolMode) {
         _toolMode.value = mode

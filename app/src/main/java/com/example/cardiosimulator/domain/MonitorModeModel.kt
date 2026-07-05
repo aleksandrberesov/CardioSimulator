@@ -45,8 +45,12 @@ enum class TipOverlayKind {
     EcgPart,
     VerticalLines,
     HorizontalLines,
-    Label
+    Label,
+    FreeformArea,
+    Points
 }
+
+enum class TipLineEndCap { Plain, Dots, Arrows }
 
 data class ComparisonTarget(
     val pathologyId: String,
@@ -76,9 +80,8 @@ data class MonitorModeModel(
     val showElectrodes: Boolean = false,
     val show3D: Boolean = false,
     val showEos: Boolean = false,
-    val showTips: Boolean = false,
+    val showTips: Boolean = true,
     val showRuler: Boolean = false,
-    val selectedTipKind: TipOverlayKind = TipOverlayKind.Arrow,
     val comparisonTargets: Map<Int, ComparisonTarget> = emptyMap(),
     val comparisonPresets: List<ComparisonPreset> = emptyList(),
     val leadOrder: List<Lead>? = null

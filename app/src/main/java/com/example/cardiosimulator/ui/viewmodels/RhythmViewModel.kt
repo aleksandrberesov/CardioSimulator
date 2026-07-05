@@ -73,6 +73,12 @@ class RhythmViewModel(
     private val _significantPoints = MutableStateFlow<List<com.example.cardiosimulator.domain.SignificantPoint>>(emptyList())
     val significantPoints: StateFlow<List<com.example.cardiosimulator.domain.SignificantPoint>> = _significantPoints.asStateFlow()
 
+    private val _tips = MutableStateFlow<List<com.example.cardiosimulator.domain.TipOverlay>>(emptyList())
+    val tips: StateFlow<List<com.example.cardiosimulator.domain.TipOverlay>> = _tips.asStateFlow()
+
+    private val _tipComments = MutableStateFlow<List<String>>(emptyList())
+    val tipComments: StateFlow<List<String>> = _tipComments.asStateFlow()
+
     private val _description = MutableStateFlow<String?>(null)
     val description: StateFlow<String?> = _description.asStateFlow()
 
@@ -176,6 +182,8 @@ class RhythmViewModel(
         viewModelScope.launch {
             val file = withContext(Dispatchers.IO) { repository.readPathology(id) }
             _significantPoints.value = file?.significantPoints ?: emptyList()
+            _tips.value = file?.tips ?: emptyList()
+            _tipComments.value = file?.tipComments ?: emptyList()
             _description.value = file?.description
 
             val leadOrder = repository.manifest()?.leadOrder ?: Lead.entries

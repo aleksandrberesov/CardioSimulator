@@ -265,10 +265,6 @@ class MonitorViewModel(
         _monitorMode.update { it.copy(showRuler = show) }
     }
 
-    fun setSelectedTipKind(kind: com.example.cardiosimulator.domain.TipOverlayKind) {
-        _monitorMode.update { it.copy(selectedTipKind = kind) }
-    }
-
     fun toggleCompareMode(defaultPathologyId: String? = null) {
         _monitorMode.update { prev ->
             val nextCompareMode = !prev.isCompareMode

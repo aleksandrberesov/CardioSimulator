@@ -274,4 +274,39 @@ class PathologyParserTest {
         val serializedP = PathologyParser.serializePathology(p, listOf(Lead.I))
         assertTrue(serializedP.contains("number:42\n"))
     }
+
+    @Test
+    fun `tips and tip_notes round-trip`() {
+        val pathologyWithTips = """
+            pathology:tips_test
+            title:Tips Test
+            tips:Arrow|Plain|I|Check this|100.000:10.500;200.000:20.000~Label|Plain|II|Caption with %7C %7E|500.500:-5.000
+            tip_notes:Note 1%7Cwith pipe~Note 2%0Awith newline
+            leads:1
+
+            lead:I
+            count:1
+            points:1024
+        """.trimIndent()
+
+        val file = PathologyParser.parsePathology(pathologyWithTips)
+        assertEquals(2, file.tips.size)
+        assertEquals("Check this", file.tips[0].text)
+        assertEquals(Lead.I, file.tips[0].lead)
+        assertEquals(2, file.tips[0].points.size)
+        assertEquals(10.5f, file.tips[0].points[0].adc)
+
+        assertEquals("Caption with | ~", file.tips[1].text)
+        assertEquals(Lead.II, file.tips[1].lead)
+
+        assertEquals(2, file.tipComments.size)
+        assertEquals("Note 1|with pipe", file.tipComments[0])
+        assertEquals("Note 2\nwith newline", file.tipComments[1])
+
+        val serialized = PathologyParser.serializePathology(file, listOf(Lead.I))
+        val parsedAgain = PathologyParser.parsePathology(serialized)
+
+        assertEquals(file.tips, parsedAgain.tips)
+        assertEquals(file.tipComments, parsedAgain.tipComments)
+    }
 }

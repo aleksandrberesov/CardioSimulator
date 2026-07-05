@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -27,6 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import android.provider.OpenableColumns
 import com.example.cardiosimulator.R
@@ -81,6 +83,10 @@ fun ConstructorScreen(
     rhythmViewModel: RhythmViewModel,
     constructorViewModel: ConstructorViewModel,
 ) {
+    var showTipCommentsDialog by remember { mutableStateOf(false) }
+    var showTipCaptionDialog by remember { mutableStateOf(false) }
+    var pendingTip by remember { mutableStateOf<com.example.cardiosimulator.domain.TipOverlay?>(null) }
+
     val targetFile by constructorViewModel.targetFile
     val focusedLead by constructorViewModel.focusedLead.collectAsState()
     val selectedIndex by constructorViewModel.selectedIndex.collectAsState()
@@ -98,6 +104,10 @@ fun ConstructorScreen(
     val imageLocked by constructorViewModel.imageLocked.collectAsState()
     val imageVisible by constructorViewModel.imageVisible.collectAsState()
     val ghostTrace by constructorViewModel.ghostTrace.collectAsState()
+
+    val selectedTipKind by constructorViewModel.selectedTipKind.collectAsState()
+    val selectedTipEndCap by constructorViewModel.selectedTipEndCap.collectAsState()
+    val selectedTipLead by constructorViewModel.selectedTipLead.collectAsState()
     val isDrawerFixed by appViewModel.isDrawerFixed.collectAsState()
 
     val context = LocalContext.current
@@ -283,6 +293,67 @@ fun ConstructorScreen(
             onSave = {
                 constructorViewModel.setClinicalCase(it)
                 showClinicalDialog = false
+            }
+        )
+    }
+
+    if (showTipCaptionDialog) {
+        var text by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { showTipCaptionDialog = false; pendingTip = null },
+            title = { Text(stringResource(R.string.constructor_tips_text_prompt)) },
+            text = {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingTip?.let { constructorViewModel.addTip(it.copy(text = text)) }
+                    showTipCaptionDialog = false
+                    pendingTip = null
+                }) {
+                    Text(stringResource(R.string.constructor_rename_ok))
+                }
+            }
+        )
+    }
+
+    if (showTipCommentsDialog) {
+        val comments = targetFile?.tipComments?.joinToString("\n") ?: ""
+        var text by remember { mutableStateOf(comments) }
+        AlertDialog(
+            onDismissRequest = { showTipCommentsDialog = false },
+            title = { Text(stringResource(R.string.constructor_tips_comments)) },
+            text = {
+                Column {
+                    Text(
+                        text = stringResource(R.string.constructor_tips_comments_help),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    OutlinedTextField(
+                        value = text,
+                        onValueChange = { text = it },
+                        modifier = Modifier.fillMaxWidth().height(200.dp),
+                        placeholder = { Text("Example:\n1. Sharp P wave\n2. QRS widening") }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    constructorViewModel.setTipComments(text.split('\n').filter { it.isNotBlank() })
+                    showTipCommentsDialog = false
+                }) {
+                    Text(stringResource(R.string.constructor_save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTipCommentsDialog = false }) {
+                    Text(stringResource(R.string.constructor_rename_cancel))
+                }
             }
         )
     }
@@ -536,147 +607,186 @@ fun ConstructorScreen(
 
                 // Toolbar
                 Surface(
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     color = MaterialTheme.colorScheme.surface,
                     tonalElevation = 4.dp
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
+                    Column(Modifier.fillMaxWidth()) {
                         Text(
                             text = displayTitle,
                             style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.weight(1f)
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 4.dp)
                         )
 
-                        IconButton(onClick = { constructorViewModel.createNewPathology() }) {
-                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.constructor_new_pathology))
-                        }
-
-                        IconButton(onClick = { showSynthesizerDialog = true }) {
-                            Icon(Icons.Default.GraphicEq, contentDescription = "Synthesizer")
-                        }
-
-                        var showImportMenu by remember { mutableStateOf(false) }
-                        Box {
-                            IconButton(onClick = { showImportMenu = true }) {
-                                Icon(Icons.Default.FileDownload, contentDescription = stringResource(R.string.constructor_import_wfdb))
-                            }
-                            DropdownMenu(
-                                expanded = showImportMenu,
-                                onDismissRequest = { showImportMenu = false }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.constructor_import_wfdb) + "…") },
-                                    onClick = {
-                                        showImportMenu = false
-                                        wfdbLauncher.launch(arrayOf("*/*"))
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.constructor_download_physionet) + "…") },
-                                    onClick = {
-                                        showImportMenu = false
-                                        showPhysioNetDialog = true
-                                    }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            IconButton(onClick = { constructorViewModel.createNewPathology() }) {
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = stringResource(R.string.constructor_new_pathology)
                                 )
                             }
-                        }
 
-                        if (referenceImageUri != null) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                IconButton(onClick = { constructorViewModel.undo(focusedLead) }) {
-                                    Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.constructor_undo))
+                            IconButton(onClick = { showSynthesizerDialog = true }) {
+                                Icon(Icons.Default.GraphicEq, contentDescription = "Synthesizer")
+                            }
+
+                            var showImportMenu by remember { mutableStateOf(false) }
+                            Box {
+                                IconButton(onClick = { showImportMenu = true }) {
+                                    Icon(
+                                        Icons.Default.FileDownload,
+                                        contentDescription = stringResource(R.string.constructor_import_wfdb)
+                                    )
                                 }
-                                IconButton(onClick = { constructorViewModel.redo(focusedLead) }) {
-                                    Icon(Icons.AutoMirrored.Filled.Redo, contentDescription = stringResource(R.string.cd_redo))
+                                DropdownMenu(
+                                    expanded = showImportMenu,
+                                    onDismissRequest = { showImportMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.constructor_import_wfdb) + "…") },
+                                        onClick = {
+                                            showImportMenu = false
+                                            wfdbLauncher.launch(arrayOf("*/*"))
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.constructor_download_physionet) + "…") },
+                                        onClick = {
+                                            showImportMenu = false
+                                            showPhysioNetDialog = true
+                                        }
+                                    )
                                 }
                             }
-                        }
 
-                        if (targetFile != null) {
-                            IconButton(onClick = { showRenameDialog = true }) {
-                                Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.cd_rename))
+                            if (referenceImageUri != null) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    IconButton(onClick = { constructorViewModel.undo(focusedLead) }) {
+                                        Icon(
+                                            Icons.AutoMirrored.Filled.Undo,
+                                            contentDescription = stringResource(R.string.constructor_undo)
+                                        )
+                                    }
+                                    IconButton(onClick = { constructorViewModel.redo(focusedLead) }) {
+                                        Icon(
+                                            Icons.AutoMirrored.Filled.Redo,
+                                            contentDescription = stringResource(R.string.cd_redo)
+                                        )
+                                    }
+                                }
                             }
 
-                            IconButton(onClick = { showDescriptionDialog = true }) {
-                                Icon(
-                                    imageVector = Icons.Default.Info,
-                                    contentDescription = stringResource(R.string.description_edit_tooltip)
-                                )
+                            if (targetFile != null) {
+                                IconButton(onClick = { showRenameDialog = true }) {
+                                    Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.cd_rename))
+                                }
+
+                                IconButton(onClick = { showDescriptionDialog = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Info,
+                                        contentDescription = stringResource(R.string.description_edit_tooltip)
+                                    )
+                                }
+
+                                IconButton(onClick = { showGroupDialog = true }) {
+                                    Icon(
+                                        Icons.Default.Label,
+                                        contentDescription = stringResource(R.string.constructor_group_title)
+                                    )
+                                }
+
+                                IconButton(onClick = { showClinicalDialog = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Healing,
+                                        contentDescription = stringResource(R.string.clinical_edit_tooltip)
+                                    )
+                                }
+
+                                IconButton(onClick = { constructorViewModel.duplicateCurrentPathology() }) {
+                                    Icon(
+                                        Icons.Default.ContentCopy,
+                                        contentDescription = stringResource(R.string.cd_copy)
+                                    )
+                                }
+
+                                IconButton(onClick = { showDeleteConfirmDialog = true }) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = stringResource(R.string.constructor_anchor_delete),
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
+
+                                IconButton(onClick = { showCalculateDerivedDialog = true }) {
+                                    Icon(
+                                        Icons.Default.Calculate,
+                                        contentDescription = stringResource(R.string.constructor_generate_derived)
+                                    )
+                                }
                             }
 
-                            IconButton(onClick = { showGroupDialog = true }) {
-                                Icon(Icons.Default.Label, contentDescription = stringResource(R.string.constructor_group_title))
-                            }
-
-                            IconButton(onClick = { showClinicalDialog = true }) {
-                                Icon(
-                                    imageVector = Icons.Default.Healing,
-                                    contentDescription = stringResource(R.string.clinical_edit_tooltip)
-                                )
-                            }
-
-                            IconButton(onClick = { constructorViewModel.duplicateCurrentPathology() }) {
-                                Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.cd_copy))
-                            }
-
-                            IconButton(onClick = { showDeleteConfirmDialog = true }) {
-                                Icon(
-                                    Icons.Default.Delete,
-                                    contentDescription = stringResource(R.string.constructor_anchor_delete),
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                            }
-
-                            IconButton(onClick = { showCalculateDerivedDialog = true }) {
-                                Icon(
-                                    Icons.Default.Calculate,
-                                    contentDescription = stringResource(R.string.constructor_generate_derived)
-                                )
-                            }
-
-                            IconButton(onClick = { showAllLeads = true }) {
-                                Icon(
-                                    Icons.Default.GridView,
-                                    contentDescription = stringResource(R.string.constructor_view_all_leads)
-                                )
-                            }
-                        }
-
-                        if (dirtyLeads.isNotEmpty() || isMetadataDirty) {
-                            Button(onClick = { constructorViewModel.save() }) {
-                                Text(stringResource(R.string.constructor_save))
-                            }
-                            if (dirtyLeads.isNotEmpty()) {
-                                OutlinedButton(onClick = { constructorViewModel.revertLead(focusedLead) }) {
-                                    Text(stringResource(R.string.constructor_revert_lead_btn))
+                            if (dirtyLeads.isNotEmpty() || isMetadataDirty) {
+                                Button(onClick = { constructorViewModel.save() }) {
+                                    Text(stringResource(R.string.constructor_save))
+                                }
+                                if (dirtyLeads.isNotEmpty()) {
+                                    OutlinedButton(onClick = {
+                                        constructorViewModel.revertLead(
+                                            focusedLead
+                                        )
+                                    }) {
+                                        Text(stringResource(R.string.constructor_revert_lead_btn))
+                                    }
                                 }
                             }
                         }
                     }
                 }
 
-                // Lead Tabs
-                TabRow(
-                    selectedTabIndex = Lead.entries.indexOf(focusedLead),
-                    containerColor = MaterialTheme.colorScheme.surface
+                // Lead Tabs (+ trailing "All leads" button)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Lead.entries.forEach { lead ->
-                        Tab(
-                            selected = focusedLead == lead,
-                            onClick = { constructorViewModel.selectLead(lead) },
-                            text = {
-                                Text(
-                                    text = lead.name,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    maxLines = 1,
-                                    color = if (dirtyLeads.contains(lead)) Color.Red else Color.Unspecified
-                                )
-                            }
-                        )
+                    TabRow(
+                        modifier = Modifier.weight(1f),
+                        selectedTabIndex = Lead.entries.indexOf(focusedLead),
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ) {
+                        Lead.entries.forEach { lead ->
+                            Tab(
+                                selected = focusedLead == lead,
+                                onClick = { constructorViewModel.selectLead(lead) },
+                                text = {
+                                    Text(
+                                        text = lead.name,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        maxLines = 1,
+                                        color = if (dirtyLeads.contains(lead)) Color.Red else Color.Unspecified
+                                    )
+                                }
+                            )
+                        }
+                    }
+
+                    if (targetFile != null) {
+                        IconButton(onClick = { showAllLeads = true }) {
+                            Icon(
+                                Icons.Default.GridView,
+                                contentDescription = stringResource(R.string.constructor_view_all_leads)
+                            )
+                        }
                     }
                 }
 
@@ -747,7 +857,20 @@ fun ConstructorScreen(
                                                         },
                                                         onStrokeStart = { constructorViewModel.startStroke(focusedLead) },
                                                         onTrace = { constructorViewModel.traceSamples(focusedLead, it) },
-                                                        ghostTrace = ghostTrace
+                                                        ghostTrace = ghostTrace,
+                                                        tips = targetFile?.tips ?: emptyList(),
+                                                        selectedTipKind = selectedTipKind,
+                                                        selectedTipEndCap = selectedTipEndCap,
+                                                        selectedTipLead = selectedTipLead,
+                                                        onTipPlaced = { tip ->
+                                                            if (tip.kind == com.example.cardiosimulator.domain.TipOverlayKind.Arrow ||
+                                                                tip.kind == com.example.cardiosimulator.domain.TipOverlayKind.Label) {
+                                                                pendingTip = tip
+                                                                showTipCaptionDialog = true
+                                                            } else {
+                                                                constructorViewModel.addTip(tip)
+                                                            }
+                                                        }
                                                     )
                                                 }
 
@@ -861,6 +984,18 @@ fun ConstructorScreen(
                                 )
                                 ToolMode.Pan -> PanPanel(
                                     onResetView = { monitorViewModel.resetView() }
+                                )
+                                ToolMode.Tips -> com.example.cardiosimulator.ui.panels.TipsPanel(
+                                    selectedKind = selectedTipKind,
+                                    onKindSelected = { constructorViewModel.setSelectedTipKind(it) },
+                                    selectedEndCap = selectedTipEndCap,
+                                    onEndCapSelected = { constructorViewModel.setSelectedTipEndCap(it) },
+                                    selectedLead = selectedTipLead,
+                                    onLeadSelected = { constructorViewModel.setSelectedTipLead(it) },
+                                    onUndo = { constructorViewModel.removeLastTip() },
+                                    onClearAll = { constructorViewModel.clearTips() },
+                                    onEditComments = { showTipCommentsDialog = true },
+                                    modifier = Modifier.fillMaxHeight()
                                 )
                             }
 
@@ -1168,7 +1303,10 @@ private fun BoxScope.AllLeadsPreviewOverlay(
                             xOffsetPx = 0f,
                             gridScheme = scheme,
                             significantPoints = targetFile.significantPoints,
-                            calibration = monitorMode.calibration
+                            calibration = monitorMode.calibration,
+                            tips = targetFile.tips,
+                            showTips = true,
+                            lead = lead
                         )
                     }
                 }

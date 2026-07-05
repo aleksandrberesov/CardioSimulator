@@ -99,6 +99,8 @@ object PathologyParser {
         val clinicalCase = header["clinical_case"]
         val number = header["number"]?.trim()?.toIntOrNull()
         val globalMarkers = parseMarkers(header["markers"])
+        val tips = parseTips(header["tips"])
+        val tipComments = parseTipComments(header["tip_notes"])
 
         val leadBlocks = blocks.drop(1)
         val leads = linkedMapOf<Lead, LeadStream>()
@@ -119,7 +121,10 @@ object PathologyParser {
 
             leads[lead] = LeadStream(lead, samples)
         }
-        return PathologyFile(id, title, name, leads, globalMarkers, group, description, clinicalCase, number)
+        return PathologyFile(
+            id, title, name, leads, globalMarkers, tips, tipComments,
+            group, description, clinicalCase, number
+        )
     }
 
     fun serializePathology(file: PathologyFile, leadOrder: List<Lead>): String {
@@ -149,6 +154,13 @@ object PathologyParser {
                 sb.append(pt.index).append(':').append(pt.type.name)
             }
             sb.append('\n')
+        }
+
+        if (file.tips.isNotEmpty()) {
+            sb.append("tips:").append(serializeTips(file.tips)).append('\n')
+        }
+        if (file.tipComments.isNotEmpty()) {
+            sb.append("tip_notes:").append(serializeTipComments(file.tipComments)).append('\n')
         }
 
         for (lead in leadOrder) {
@@ -218,5 +230,65 @@ object PathologyParser {
             out.add(SignificantPoint(index, type))
         }
         return out
+    }
+
+    private fun escapeTipText(text: String?): String {
+        if (text == null) return ""
+        return text.replace("%", "%25")
+            .replace("|", "%7C")
+            .replace("~", "%7E")
+            .replace("\r", "%0D")
+            .replace("\n", "%0A")
+    }
+
+    private fun unescapeTipText(text: String): String? {
+        if (text.isEmpty()) return null
+        return text.replace("%0A", "\n")
+            .replace("%0D", "\r")
+            .replace("%7E", "~")
+            .replace("%7C", "|")
+            .replace("%25", "%")
+    }
+
+    private fun parseTips(field: String?): List<TipOverlay> {
+        if (field.isNullOrBlank()) return emptyList()
+        val out = mutableListOf<TipOverlay>()
+        for (token in field.split('~')) {
+            val parts = token.split('|')
+            if (parts.size < 5) continue
+            val kind = runCatching { TipOverlayKind.valueOf(parts[0]) }.getOrNull() ?: continue
+            val endCap = runCatching { TipLineEndCap.valueOf(parts[1]) }.getOrNull() ?: TipLineEndCap.Plain
+            val lead = Lead.fromToken(parts[2])
+            val text = unescapeTipText(parts[3])
+            val pointsParts = parts[4].split(';')
+            val points = mutableListOf<TipPoint>()
+            for (pt in pointsParts) {
+                val coords = pt.split(':')
+                if (coords.size != 2) continue
+                val sample = coords[0].toFloatOrNull() ?: continue
+                val amp = coords[1].toFloatOrNull() ?: continue
+                points.add(TipPoint(sample, amp))
+            }
+            out.add(TipOverlay(kind, points, text, lead, endCap))
+        }
+        return out
+    }
+
+    private fun parseTipComments(field: String?): List<String> {
+        if (field.isNullOrBlank()) return emptyList()
+        return field.split('~').mapNotNull { unescapeTipText(it) }
+    }
+
+    private fun serializeTips(tips: List<TipOverlay>): String {
+        return tips.joinToString("~") { tip ->
+            val pointsStr = tip.points.joinToString(";") {
+                String.format(java.util.Locale.US, "%.3f:%.3f", it.sample, it.adc)
+            }
+            "${tip.kind.name}|${tip.endCap.name}|${tip.lead?.name ?: ""}|${escapeTipText(tip.text)}|$pointsStr"
+        }
+    }
+
+    private fun serializeTipComments(comments: List<String>): String {
+        return comments.joinToString("~") { escapeTipText(it) }
     }
 }
