@@ -100,10 +100,13 @@ fun RhythmSelector(
     }
 
     val context = androidx.compose.ui.platform.LocalContext.current
-    val resourceResolver: (String) -> String? = remember(context) {
+    val config = androidx.compose.ui.platform.LocalConfiguration.current
+    val resourceResolver: (String) -> String? = remember(context, config) {
         { name ->
+            @Suppress("DiscouragedApi", "LocalContextGetResourceValueCall", "LocalContextResourcesRead")
             val id = context.resources.getIdentifier(name, "string", context.packageName)
-            if (id != 0) context.getString(id) else null
+            @Suppress("LocalContextGetResourceValueCall", "LocalContextResourcesRead")
+            if (id != 0) context.resources.getString(id) else null
         }
     }
     

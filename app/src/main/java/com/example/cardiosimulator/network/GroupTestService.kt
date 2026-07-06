@@ -36,8 +36,11 @@ class GroupTestService : Service() {
         server = GroupTestServer(port, generateTest, resolveImage, onResult)
         server?.start()
 
-        startForeground(NOTIFICATION_ID, createNotification(), 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC else 0)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(NOTIFICATION_ID, createNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } else {
+            startForeground(NOTIFICATION_ID, createNotification())
+        }
     }
 
     fun stopServer() {
