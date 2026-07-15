@@ -176,6 +176,7 @@ fun TestEditor(
 
         questions.forEach { question ->
             QuestionEditorCard(
+                appViewModel = appViewModel,
                 question = question,
                 rhythms = rhythms,
                 themes = themes,
@@ -190,6 +191,10 @@ fun TestEditor(
                     } else {
                         appViewModel.sendStopCommand()
                     }
+                },
+                onToggleAssembly = { isAssembly -> viewModel.toggleAssembly(question.id, isAssembly) },
+                onBuildAssembly = { sourceId, lead, partCount ->
+                    viewModel.buildAssembly(question.id, appViewModel.repository!!, sourceId, lead, partCount)
                 },
                 extraActions = {
                     TextButton(onClick = { viewModel.saveToBank(question) }) {
@@ -299,6 +304,7 @@ fun BankEditor(
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(filtered, key = { it.id }) { question ->
                 QuestionEditorCard(
+                    appViewModel = appViewModel,
                     question = question,
                     rhythms = rhythms,
                     themes = themes,
@@ -313,6 +319,10 @@ fun BankEditor(
                         } else {
                             appViewModel.sendStopCommand()
                         }
+                    },
+                    onToggleAssembly = { isAssembly -> viewModel.toggleAssembly(question.id, isAssembly) },
+                    onBuildAssembly = { sourceId, lead, partCount ->
+                        viewModel.buildAssembly(question.id, appViewModel.repository!!, sourceId, lead, partCount)
                     },
                     extraActions = {
                         TextButton(onClick = { viewModel.addFromBank(question) }) {
@@ -368,6 +378,7 @@ fun BankEditor(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuestionEditorCard(
+    appViewModel: AppViewModel,
     question: TestQuestion,
     rhythms: List<PathologyEntry>,
     themes: List<String>,
@@ -376,6 +387,8 @@ fun QuestionEditorCard(
     onAddOption: () -> Unit,
     onRemoveOption: (String) -> Unit,
     onPreview: (String?) -> Unit,
+    onToggleAssembly: (Boolean) -> Unit = {},
+    onBuildAssembly: (String, com.example.cardiosimulator.domain.Lead, Int) -> Unit = { _, _, _ -> },
     extraActions: @Composable () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -426,12 +439,21 @@ fun QuestionEditorCard(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 FilterChip(
-                    selected = stimulus == QuestionStimulus.Ecg,
+                    selected = stimulus == QuestionStimulus.Ecg && !question.isAssembly,
                     onClick = { 
-                        onUpdate { it.copy(imagePath = null, pathologyId = rhythms.firstOrNull()?.id) }
+                        onUpdate { it.copy(imagePath = null, pathologyId = rhythms.firstOrNull()?.id, assemble = null) }
                         onPreview(rhythms.firstOrNull()?.id)
                     },
                     label = { Text(stringResource(R.string.test_ctor_stimulus_ecg)) }
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                FilterChip(
+                    selected = question.isAssembly,
+                    onClick = { 
+                        onToggleAssembly(!question.isAssembly)
+                        onPreview(null)
+                    },
+                    label = { Text(stringResource(R.string.assemble_type_label)) }
                 )
             }
 
@@ -444,39 +466,50 @@ fun QuestionEditorCard(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            if (stimulus == QuestionStimulus.Ecg) {
+            if (stimulus == QuestionStimulus.Ecg && !question.isAssembly) {
                 Spacer(modifier = Modifier.height(8.dp))
-                // ECG Picker
-                var expanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded }
-                ) {
+                var showEcgPicker by remember { mutableStateOf(false) }
+                val selected = rhythms.find { it.id == question.pathologyId }
+                val currentLanguage by appViewModel.selectedLanguage.collectAsState()
+                val label = selected?.let {
+                    if (currentLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn
+                } ?: stringResource(R.string.test_ctor_ecg_none)
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
-                        value = rhythms.find { it.id == question.pathologyId }?.titleEn ?: stringResource(R.string.test_ctor_ecg_none),
-                        onValueChange = {},
-                        readOnly = true,
+                        value = label, onValueChange = {}, readOnly = true,
                         label = { Text(stringResource(R.string.test_ctor_ecg)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null) },
+                        modifier = Modifier.weight(1f).clickable { showEcgPicker = true }
                     )
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
-                    ) {
-                        rhythms.forEach { rhythm ->
-                            DropdownMenuItem(
-                                text = { Text(rhythm.titleEn) },
-                                onClick = {
-                                    onUpdate { it.copy(pathologyId = rhythm.id) }
-                                    onPreview(rhythm.id)
-                                    expanded = false
-                                }
-                            )
+                    if (question.pathologyId != null) {
+                        IconButton(onClick = { onUpdate { it.copy(pathologyId = null) }; onPreview(null) }) {
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.test_ctor_ecg_none))
                         }
                     }
                 }
-            } else if (stimulus == QuestionStimulus.Image) {
+                if (showEcgPicker) {
+                    AlertDialog(
+                        onDismissRequest = { showEcgPicker = false },
+                        title = { Text(stringResource(R.string.test_ctor_ecg)) },
+                        text = {
+                            com.example.cardiosimulator.ui.panels.RhythmSelector(
+                                appViewModel = appViewModel,
+                                modifier = Modifier.fillMaxHeight(0.7f),
+                                rhythms = rhythms,
+                                selectedId = question.pathologyId,
+                                showPinButton = false,
+                                onRhythmSelect = { entry ->
+                                    onUpdate { it.copy(pathologyId = entry.id) }
+                                    onPreview(entry.id)
+                                    showEcgPicker = false
+                                },
+                            )
+                        },
+                        confirmButton = { TextButton(onClick = { showEcgPicker = false }) { Text(stringResource(R.string.data_source_close)) } },
+                    )
+                }
+            } else if (stimulus == QuestionStimulus.Image && !question.isAssembly) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Button(onClick = { imageLauncher.launch("image/*") }) {
@@ -491,12 +524,21 @@ fun QuestionEditorCard(
                         maxLines = 1
                     )
                 }
+            } else if (question.isAssembly) {
+                AssembleEditor(
+                    appViewModel = appViewModel,
+                    question = question,
+                    rhythms = rhythms,
+                    onUpdate = onUpdate,
+                    onBuild = onBuildAssembly
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             // Options
-            question.options.forEachIndexed { index, option ->
+            if (!question.isAssembly) {
+                question.options.forEachIndexed { index, option ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     RadioButton(
                         selected = question.correctOptionId == option.id,
@@ -517,6 +559,7 @@ fun QuestionEditorCard(
                     }
                 }
             }
+        }
 
             TextButton(onClick = onAddOption) {
                 Icon(Icons.Default.Add, contentDescription = null)
@@ -693,5 +736,202 @@ fun ThemeManagerDialog(
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AssembleEditor(
+    appViewModel: AppViewModel,
+    question: TestQuestion,
+    rhythms: List<PathologyEntry>,
+    onUpdate: ((TestQuestion) -> TestQuestion) -> Unit,
+    onBuild: (String, com.example.cardiosimulator.domain.Lead, Int) -> Unit
+) {
+    val assemble = question.assemble ?: return
+    val currentLanguage by appViewModel.selectedLanguage.collectAsState()
+
+    // We need a way to track the desired part count if not yet built
+    var desiredPartCount by remember(question.id) { mutableIntStateOf(if (assemble.parts.isEmpty()) 4 else assemble.parts.size.coerceIn(3, 6)) }
+
+    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+        Text(stringResource(R.string.assemble_ctor_hint), style = MaterialTheme.typography.bodySmall, color = com.example.cardiosimulator.ui.theme.TextSecondary)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Source Rhythm
+        var showSourcePicker by remember { mutableStateOf(false) }
+        val source = rhythms.find { it.id == assemble.sourcePathologyId }
+        val sourceLabel = source?.let { getDisplayNameForCtor(it, currentLanguage, false) } ?: stringResource(R.string.assemble_ctor_none)
+
+        OutlinedTextField(
+            value = sourceLabel,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(stringResource(R.string.assemble_ctor_source)) },
+            trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null) },
+            modifier = Modifier.fillMaxWidth().clickable { showSourcePicker = true }
+        )
+
+        if (showSourcePicker) {
+            AlertDialog(
+                onDismissRequest = { showSourcePicker = false },
+                title = { Text(stringResource(R.string.assemble_ctor_source)) },
+                text = {
+                    com.example.cardiosimulator.ui.panels.RhythmSelector(
+                        appViewModel = appViewModel,
+                        modifier = Modifier.fillMaxHeight(0.7f),
+                        rhythms = rhythms,
+                        selectedId = assemble.sourcePathologyId,
+                        showPinButton = false,
+                        onRhythmSelect = { entry ->
+                            onBuild(entry.id, assemble.sliceLead, desiredPartCount)
+                            showSourcePicker = false
+                        },
+                    )
+                },
+                confirmButton = { TextButton(onClick = { showSourcePicker = false }) { Text(stringResource(R.string.cd_close)) } },
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Lead
+        var leadExpanded by remember { mutableStateOf(false) }
+        ExposedDropdownMenuBox(
+            expanded = leadExpanded,
+            onExpandedChange = { leadExpanded = !leadExpanded }
+        ) {
+            OutlinedTextField(
+                value = assemble.sliceLead.name,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text(stringResource(R.string.assemble_ctor_lead)) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = leadExpanded) },
+                modifier = Modifier.menuAnchor().fillMaxWidth()
+            )
+            ExposedDropdownMenu(
+                expanded = leadExpanded,
+                onDismissRequest = { leadExpanded = false }
+            ) {
+                com.example.cardiosimulator.domain.Lead.entries.forEach { lead ->
+                    DropdownMenuItem(
+                        text = { Text(lead.name) },
+                        onClick = {
+                            if (assemble.sourcePathologyId != null) {
+                                onBuild(assemble.sourcePathologyId, lead, desiredPartCount)
+                            } else {
+                                onUpdate { q -> q.copy(assemble = q.assemble?.copy(sliceLead = lead)) }
+                            }
+                            leadExpanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Part Count (3-6)
+        Text(stringResource(R.string.assemble_ctor_parts), style = MaterialTheme.typography.labelMedium)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Slider(
+                value = desiredPartCount.toFloat(),
+                onValueChange = { 
+                    desiredPartCount = it.toInt()
+                    if (assemble.sourcePathologyId != null) {
+                        onBuild(assemble.sourcePathologyId, assemble.sliceLead, desiredPartCount)
+                    }
+                },
+                valueRange = 3f..6f,
+                steps = 2,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = desiredPartCount.toString(),
+                modifier = Modifier.padding(start = 16.dp),
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (assemble.parts.isNotEmpty()) {
+            Text(
+                text = stringResource(R.string.assemble_ctor_built_format, assemble.parts.size),
+                style = MaterialTheme.typography.labelSmall,
+                color = com.example.cardiosimulator.ui.theme.Positive
+            )
+        } else if (assemble.sourcePathologyId != null) {
+            Text(
+                text = stringResource(R.string.assemble_ctor_build_failed),
+                style = MaterialTheme.typography.labelSmall,
+                color = com.example.cardiosimulator.ui.theme.Negative
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RhythmPickerDialog(
+    appViewModel: AppViewModel,
+    rhythms: List<PathologyEntry>,
+    onSelect: (PathologyEntry) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    val currentLanguage by appViewModel.selectedLanguage.collectAsState()
+
+    // Precompute labels for performance
+    val rhythmsWithLabels: List<Pair<PathologyEntry, String>> = remember(rhythms, currentLanguage) {
+        rhythms.map { it to getDisplayNameForCtor(it, currentLanguage, false) }
+    }
+
+    val filtered: List<Pair<PathologyEntry, String>> = remember(rhythmsWithLabels, searchQuery) {
+        if (searchQuery.isBlank()) rhythmsWithLabels
+        else rhythmsWithLabels.filter { it.second.contains(searchQuery, ignoreCase = true) || it.first.id.contains(searchQuery, ignoreCase = true) }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.test_ctor_ecg)) },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text(stringResource(R.string.test_ctor_search_hint)) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyColumn(modifier = Modifier.height(400.dp)) {
+                    items(items = filtered) { item: Pair<PathologyEntry, String> ->
+                        val entry = item.first
+                        val label = item.second
+                        Text(
+                            text = label,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onSelect(entry) }
+                                .padding(vertical = 8.dp, horizontal = 4.dp)
+                        )
+                        HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cd_close)) }
+        }
+    )
+}
+
+fun getDisplayNameForCtor(entry: PathologyEntry, language: Language, isClinicalMode: Boolean): String {
+    return if (isClinicalMode) {
+        entry.clinicalCase?.split(',')?.firstOrNull { it.trim().startsWith("title=") }?.substringAfter("title=") 
+            ?: (if (language == Language.RU) entry.nameRu ?: entry.titleEn else entry.titleEn)
+    } else {
+        if (language == Language.RU) entry.nameRu ?: entry.titleEn else entry.titleEn
     }
 }

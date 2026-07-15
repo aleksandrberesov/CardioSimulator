@@ -39,6 +39,11 @@ import com.example.cardiosimulator.domain.EosResult
 import kotlin.math.*
 
 private val WindowsBlue = Color(0xFF5B9BD5)
+private val EosWarning = Color(0xFFFF5A5A)
+private val EosWarningPill = Color(0x77E53935)
+
+private fun isWarning(c: EosAxisClass) =
+    c == EosAxisClass.LeftDeviation || c == EosAxisClass.RightDeviation || c == EosAxisClass.ExtremeDeviation
 
 @Composable
 fun EosOverlay(
@@ -178,13 +183,14 @@ fun EosOverlay(
                             )
                             
                             val variantName = getVariantName(result.axisClass)
+                            val isWarning = isWarning(result.axisClass)
                             Text(
                                 text = stringResource(
                                     R.string.monitor_eos_angle_format,
                                     "%.0f".format(result.angleDeg),
                                     variantName
                                 ),
-                                color = Color.Yellow,
+                                color = if (isWarning) EosWarning else Color.White,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 15.sp,
                                 modifier = Modifier.padding(top = 4.dp)
@@ -214,8 +220,9 @@ fun EosOverlay(
                     }
                     val fullText = stringResource(resId)
                     val isActive = result?.axisClass == cls
+                    val warning = isWarning(cls)
                     
-                    VariantRow(fullText, isActive)
+                    VariantRow(fullText, isActive, warning)
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -225,31 +232,34 @@ fun EosOverlay(
 }
 
 @Composable
-private fun VariantRow(fullText: String, isActive: Boolean) {
+private fun VariantRow(fullText: String, isActive: Boolean, warning: Boolean) {
     val parts = fullText.split(":", "：", limit = 2)
     val name = parts.getOrNull(0) ?: fullText
     val range = parts.getOrNull(1) ?: ""
     val separator = if (fullText.contains("：")) "：" else ":"
+
+    val textColor = Color.White
+    val pillColor = if (warning) EosWarningPill else Color.White.copy(alpha = 0.25f)
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 2.dp)
             .clip(RoundedCornerShape(4.dp))
-            .background(if (isActive) Color.White.copy(alpha = 0.2f) else Color.Transparent)
+            .background(if (isActive) pillColor else Color.Transparent)
             .padding(horizontal = 8.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = name,
-            color = if (isActive) Color.Yellow else Color.White,
+            color = textColor,
             fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
             fontSize = 13.sp
         )
         if (range.isNotEmpty()) {
             Text(
                 text = "$separator$range",
-                color = Color.White,
+                color = textColor,
                 fontSize = 13.sp
             )
         }

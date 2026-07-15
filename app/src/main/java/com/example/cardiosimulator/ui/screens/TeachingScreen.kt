@@ -65,6 +65,7 @@ import com.example.cardiosimulator.domain.Lecture
 import com.example.cardiosimulator.domain.LectureEntry
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.PathologyEntry
+import com.example.cardiosimulator.domain.SeriesScheme
 import com.example.cardiosimulator.domain.SignificantPoint
 import kotlin.math.roundToInt
 import com.example.cardiosimulator.ui.components.LectureWebView
@@ -112,6 +113,10 @@ fun TeachingScreen(
     LaunchedEffect(Unit) {
         if (lastBuiltMode != OperatingMode.Teaching) {
             appViewModel.selectCourse(AppViewModel.ALL_RHYTHMS_ID)
+            // Customer default: Teaching opens the monitor as a 12-lead, 2-column layout
+            // (not the 4-column grid) so each lead trace is wider and easier to read.
+            monitorViewModel.setSeriesCount(12)
+            monitorViewModel.setSeriesScheme(SeriesScheme.TwoColumn)
             lastBuiltMode = OperatingMode.Teaching
         }
     }
@@ -309,6 +314,7 @@ private fun MonitorOverlay(
                     rhythms = rhythms,
                     selectedId = selectedRhythm?.id,
                     onRhythmSelect = { rhythmViewModel.selectRhythm(it.id) },
+                    showScrollButtons = true,   // NEW — Teaching-only large scroll buttons
                 )
             },
             handlerContent = {

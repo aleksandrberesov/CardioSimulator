@@ -2,6 +2,8 @@ package com.example.cardiosimulator.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cardiosimulator.data.EcgAssemblyBuilder
+import com.example.cardiosimulator.data.PathologyRepository
 import com.example.cardiosimulator.data.QuestionBankRepository
 import com.example.cardiosimulator.data.TestRepository
 import com.example.cardiosimulator.data.TestThemeStore
@@ -170,6 +172,42 @@ class TestConstructorViewModel(
         val q = bankRepository.questions().find { it.id == id } ?: return
         bankRepository.writeQuestion(transform(q))
         reloadBank()
+    }
+
+    fun toggleAssembly(questionId: String, isAssembly: Boolean) {
+        updateQuestion(questionId) { q ->
+            if (isAssembly) {
+                if (q.assemble != null) q 
+                else q.copy(
+                    assemble = EcgAssembly(500, emptyList(), sliceLead = Lead.II),
+                    options = emptyList(),
+                    correctOptionId = ""
+                )
+            } else {
+                q.copy(assemble = null)
+            }
+        }
+    }
+
+    fun buildAssembly(
+        questionId: String, 
+        repository: PathologyRepository, 
+        sourceId: String, 
+        lead: Lead, 
+        partCount: Int
+    ) {
+        viewModelScope.launch {
+            val built = EcgAssemblyBuilder.build(
+                repository,
+                sourceId,
+                lead,
+                partCount,
+                500 // Assuming 500Hz baseline
+            )
+            updateQuestion(questionId) { q ->
+                q.copy(assemble = built ?: EcgAssembly(500, emptyList(), sourceId, lead))
+            }
+        }
     }
 
     fun importBank(json: String) {

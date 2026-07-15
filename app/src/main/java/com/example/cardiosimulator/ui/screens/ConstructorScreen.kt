@@ -41,10 +41,12 @@ import com.example.cardiosimulator.data.wfdb.WfdbHeaderParser
 import com.example.cardiosimulator.data.wfdb.WfdbReader
 import com.example.cardiosimulator.data.wfdb.WfdbRecord
 import com.example.cardiosimulator.domain.DerivedLeads
+import com.example.cardiosimulator.domain.EcgFilterType
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.PathologyFile
 import com.example.cardiosimulator.domain.MonitorModeModel
 import com.example.cardiosimulator.domain.SignificantPoint
+import com.example.cardiosimulator.signals.biosppy.EcgFilters
 import com.example.cardiosimulator.ui.components.PreviewPane
 import com.example.cardiosimulator.ui.components.SideDrawer
 import com.example.cardiosimulator.ui.display.EditableLead
@@ -59,7 +61,6 @@ import com.example.cardiosimulator.ui.panels.ReferenceImagePanel
 import com.example.cardiosimulator.ui.panels.RhythmSelector
 import com.example.cardiosimulator.ui.panels.SelectPanel
 import com.example.cardiosimulator.ui.panels.SignificantPointPanel
-import com.example.cardiosimulator.ui.panels.SignificantPointSelector
 import com.example.cardiosimulator.ui.panels.ToolModePanel
 import com.example.cardiosimulator.ui.utils.TraceExtractor
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
@@ -516,7 +517,6 @@ fun ConstructorScreen(
     }
 
     var isRhythmDrawerExpanded by remember { mutableStateOf(false) }
-    var isPointsDrawerExpanded by remember { mutableStateOf(false) }
 
     val rhythmDrawer = @Composable {
         val editedRhythms = remember(rhythms, targetFile) {
@@ -562,47 +562,18 @@ fun ConstructorScreen(
         )
     }
 
-    val pointsDrawer = @Composable {
-        SideDrawer(
-            isExpanded = isPointsDrawerExpanded,
-            onExpandedChange = { isPointsDrawerExpanded = it },
-            handlerColor = MaterialTheme.colorScheme.secondaryContainer,
-            drawerContent = {
-                SignificantPointSelector(
-                    points = targetFile?.significantPoints?.sortedBy { it.index } ?: emptyList(),
-                    selectedIndex = selectedIndex,
-                    sampleRateHz = monitorMode.calibration.sampleRateHz,
-                    onPointSelect = { constructorViewModel.selectIndex(it.index) }
-                )
-            },
-            handlerContent = {
-                Text(
-                    text = stringResource(R.string.points_drawer_title),
-                    modifier = Modifier
-                        .requiredWidth(64.dp)
-                        .rotate(-90f),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    maxLines = 1,
-                    textAlign = TextAlign.Center
-                )
-            },
-            handlerModifier = Modifier.offset(y = 40.dp),
-            modifier = Modifier.fillMaxHeight()
-        )
-    }
-
     Row(modifier = Modifier.fillMaxSize()) {
         if (isDrawerFixed) {
             rhythmDrawer()
         }
         Box(modifier = Modifier.weight(1f)) {
             Column(modifier = Modifier.fillMaxSize()) {
-                val displayTitle = targetFile?.let {
-                    if (selectedLanguage == com.example.cardiosimulator.domain.Language.RU)
-                        it.nameRu ?: it.titleEn
+                val displayTitle = targetFile?.let { file ->
+                    val title = if (selectedLanguage == com.example.cardiosimulator.domain.Language.RU)
+                        file.nameRu ?: file.titleEn
                     else
-                        it.titleEn
+                        file.titleEn
+                    file.number?.let { "$it $title" } ?: title
                 } ?: stringResource(R.string.constructor_no_pathology_selected)
 
                 // Toolbar
@@ -874,8 +845,18 @@ fun ConstructorScreen(
                                                     )
                                                 }
 
-                                                val points = remember(stream, baseline) {
-                                                    Points(stream.samples.map { (it - baseline).toFloat() })
+                                                val points = remember(stream, baseline, monitorMode.filterType, monitorMode.calibration) {
+                                                    val zeroed = stream.samples.map { (it - baseline).toFloat() }
+                                                    if (monitorMode.filterType == EcgFilterType.NONE || zeroed.size < 50) {
+                                                        Points(zeroed)
+                                                    } else {
+                                                        val filtered = EcgFilters.apply(
+                                                            zeroed.map { it.toDouble() }.toDoubleArray(),
+                                                            monitorMode.filterType,
+                                                            monitorMode.calibration.sampleRateHz.toDouble()
+                                                        )
+                                                        Points(filtered.map { it.toFloat() })
+                                                    }
                                                 }
                                                 Surface(
                                                     modifier = Modifier
@@ -964,7 +945,8 @@ fun ConstructorScreen(
                                             lead = focusedLead,
                                             samplingRate = monitorMode.calibration.sampleRateHz.toDouble()
                                         )
-                                    }
+                                    },
+                                    onPointSelect = { constructorViewModel.selectIndex(it.index) }
                                 )
                                 ToolMode.Photo -> ReferenceImagePanel(
                                     referenceImageUri = referenceImageUri,
@@ -1027,9 +1009,6 @@ fun ConstructorScreen(
                     ) {
                         if (!isDrawerFixed) {
                             rhythmDrawer()
-                        }
-                        if (!showAllLeads) {
-                            pointsDrawer()
                         }
                     }
                 }
@@ -1094,7 +1073,10 @@ fun ClinicalCaseDialog(
     }
 
     var genderExpanded by remember { mutableStateOf(false) }
+    val genderUnset = stringResource(R.string.clinical_gender_unset)
     val genderOptions = listOf(stringResource(R.string.gender_male), stringResource(R.string.gender_female))
+
+    var clearAll by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1106,6 +1088,20 @@ fun ClinicalCaseDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = clearAll,
+                        onCheckedChange = {
+                            clearAll = it
+                            if (it) {
+                                title = ""; description = ""; name = ""; age = ""
+                                gender = ""; hr = ""; bp = ""; others = ""
+                            }
+                        }
+                    )
+                    Text(stringResource(R.string.clinical_clear_all))
+                }
+
                 TextField(
                     value = title,
                     onValueChange = { title = it },
@@ -1139,6 +1135,7 @@ fun ClinicalCaseDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text(stringResource(R.string.clinical_label_gender)) },
+                        placeholder = { Text(genderUnset) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = genderExpanded) },
                         modifier = Modifier.fillMaxWidth().clickable { genderExpanded = true }
                     )
@@ -1147,6 +1144,13 @@ fun ClinicalCaseDialog(
                         onDismissRequest = { genderExpanded = false },
                         modifier = Modifier.fillMaxWidth(0.7f)
                     ) {
+                        DropdownMenuItem(
+                            text = { Text(genderUnset) },
+                            onClick = {
+                                gender = ""
+                                genderExpanded = false
+                            }
+                        )
                         genderOptions.forEach { option ->
                             DropdownMenuItem(
                                 text = { Text(option) },
@@ -1306,7 +1310,8 @@ private fun BoxScope.AllLeadsPreviewOverlay(
                             calibration = monitorMode.calibration,
                             tips = targetFile.tips,
                             showTips = true,
-                            lead = lead
+                            lead = lead,
+                            filterType = monitorMode.filterType
                         )
                     }
                 }

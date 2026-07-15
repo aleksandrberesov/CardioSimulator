@@ -56,6 +56,7 @@ fun TestActiveView(
     val currentIndex by viewModel.currentIndex.collectAsState()
     val revealed by viewModel.revealed.collectAsState()
     val selectedOptionId by viewModel.selectedOptionId.collectAsState()
+    val assemblyAttempt by viewModel.assemblyAttempt.collectAsState()
     val remainingSeconds by viewModel.remainingSeconds.collectAsState()
     val waveforms by rhythmViewModel.waveforms.collectAsState()
     val mode by monitorViewModel.monitorMode.collectAsState()
@@ -77,7 +78,13 @@ fun TestActiveView(
 
     Row(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.weight(3f).middleSectionLeft()) {
-            if (currentQuestion?.stimulus == QuestionStimulus.Image) {
+            if (currentQuestion?.isAssembly == true && assemblyAttempt != null) {
+                EcgAssemblyWorkspace(
+                    attempt = assemblyAttempt!!,
+                    revealed = revealed,
+                    onPlace = { slotIndex, key -> viewModel.placePiece(slotIndex, key) }
+                )
+            } else if (currentQuestion?.stimulus == QuestionStimulus.Image) {
                 AsyncImage(
                     model = currentQuestion.imagePath?.let { path ->
                         if (path.startsWith("/")) File(path)
@@ -126,7 +133,9 @@ fun TestActiveView(
                     onOptionSelect = { viewModel.select(it) },
                     onNext = { viewModel.next() },
                     onAbort = { viewModel.close() },
-                    isTimed = (test?.questionTimeSeconds ?: 0) > 0
+                    isTimed = (test?.questionTimeSeconds ?: 0) > 0,
+                    assemblyAttempt = assemblyAttempt,
+                    onSubmitAssembly = { viewModel.submitAssembly() }
                 )
             }
         }

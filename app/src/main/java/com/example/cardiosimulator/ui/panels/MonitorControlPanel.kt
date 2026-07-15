@@ -62,7 +62,7 @@ import kotlinx.coroutines.launch
 import com.example.cardiosimulator.ui.components.SqiBadge
 
 @Composable
-private fun MenuInfoHeader(title: String, explanation: String) {
+internal fun MenuInfoHeader(title: String, explanation: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),

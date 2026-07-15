@@ -1,12 +1,16 @@
 package com.example.cardiosimulator.ui.panels
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -19,15 +23,18 @@ import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Healing
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material.icons.outlined.Healing
 import androidx.compose.material.icons.outlined.PushPin
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -38,6 +45,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,6 +69,7 @@ import com.example.cardiosimulator.domain.PathologyEntry
 import com.example.cardiosimulator.domain.PathologyGroups
 import com.example.cardiosimulator.ui.theme.*
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -69,8 +78,10 @@ fun RhythmSelector(
     modifier: Modifier = Modifier,
     rhythms: List<PathologyEntry> = emptyList(),
     selectedId: String? = null,
+    showPinButton: Boolean = true,
     onRhythmSelect: (PathologyEntry) -> Unit = {},
     onSearchQueryChange: (String) -> Unit = {},
+    showScrollButtons: Boolean = false,   // NEW — large up/down page-scroll buttons (Teaching drawer only)
 ) {
     val currentLanguage by appViewModel.selectedLanguage.collectAsState()
     val isDrawerFixed by appViewModel.isDrawerFixed.collectAsState()
@@ -81,6 +92,7 @@ fun RhythmSelector(
     
     var searchQuery by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
+    val scrollScope = rememberCoroutineScope()   // NEW
 
     val groups = appViewModel.repository?.groups
 
@@ -258,14 +270,16 @@ fun RhythmSelector(
             }
 
             // Fix drawer toggle
-            IconButton(
-                onClick = { appViewModel.setDrawerFixed(!isDrawerFixed) }
-            ) {
-                Icon(
-                    imageVector = if (isDrawerFixed) Icons.Default.PushPin else Icons.Outlined.PushPin,
-                    contentDescription = stringResource(R.string.fix_drawer),
-                    tint = if (isDrawerFixed) AccentGreen else TextSecondary
-                )
+            if (showPinButton) {
+                IconButton(
+                    onClick = { appViewModel.setDrawerFixed(!isDrawerFixed) }
+                ) {
+                    Icon(
+                        imageVector = if (isDrawerFixed) Icons.Default.PushPin else Icons.Outlined.PushPin,
+                        contentDescription = stringResource(R.string.fix_drawer),
+                        tint = if (isDrawerFixed) AccentGreen else TextSecondary
+                    )
+                }
             }
         }
 
@@ -285,41 +299,106 @@ fun RhythmSelector(
         // Find selected rhythm
         val selectedRhythm = remember(rhythms, selectedId) { rhythms.find { it.id == selectedId } }
 
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth().weight(1f),
-            state = listState
-        ) {
-            listItems.forEach { line ->
-                when (line) {
-                    is RhythmListLine.GroupHeader -> {
-                        stickyHeader(key = "group_${line.key}") {
-                            RhythmGroupHeader(
-                                name = line.name,
-                                count = line.count,
-                                isCollapsed = line.isCollapsed,
-                                onClick = { appViewModel.toggleRhythmGroupCollapsed(line.key) }
-                            )
+        Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                state = listState
+            ) {
+                listItems.forEach { line ->
+                    when (line) {
+                        is RhythmListLine.GroupHeader -> {
+                            stickyHeader(key = "group_${line.key}") {
+                                RhythmGroupHeader(
+                                    name = line.name,
+                                    count = line.count,
+                                    isCollapsed = line.isCollapsed,
+                                    onClick = { appViewModel.toggleRhythmGroupCollapsed(line.key) }
+                                )
+                            }
+                        }
+                        is RhythmListLine.SubgroupHeader -> {
+                            item(key = "subgroup_${line.key}") {
+                                RhythmSubgroupHeader(
+                                    name = line.name,
+                                    count = line.count,
+                                    isCollapsed = line.isCollapsed,
+                                    onClick = { appViewModel.toggleSubgroupCollapsed(line.key) }
+                                )
+                            }
+                        }
+                        is RhythmListLine.RhythmItem -> {
+                            item(key = "item_${line.entry.id}") {
+                                RhythmItem(
+                                    rhythm = line.entry,
+                                    isSelected = line.entry.id == selectedId,
+                                    currentLanguage = currentLanguage,
+                                    isClinicalMode = isClinicalMode,
+                                    isIndented = line.isIndented,
+                                    onClick = { onRhythmSelect(line.entry) }
+                                )
+                            }
                         }
                     }
-                    is RhythmListLine.SubgroupHeader -> {
-                        item(key = "subgroup_${line.key}") {
-                            RhythmSubgroupHeader(
-                                name = line.name,
-                                count = line.count,
-                                isCollapsed = line.isCollapsed,
-                                onClick = { appViewModel.toggleSubgroupCollapsed(line.key) }
+                }
+            }
+
+            // Compact page-scroll buttons anchored to the list's bottom-right. Opt-in
+            // (Teaching drawer only); page by ~90% of the viewport so a sliver of the
+            // previous view stays for context. animateScrollBy clamps at the ends.
+            // Wrapped in an opaque, bordered chip so the rhythm titles underneath stay
+            // legible instead of showing through the floating buttons.
+            if (showScrollButtons) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 8.dp, bottom = 8.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    color = PanelBackground,
+                    border = BorderStroke(1.dp, ControlBorder),
+                    shadowElevation = 3.dp
+                ) {
+                    Column(
+                        modifier = Modifier.padding(3.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        FilledIconButton(
+                            onClick = {
+                                scrollScope.launch {
+                                    val page = listState.layoutInfo.viewportSize.height * 0.9f
+                                    listState.animateScrollBy(-page)
+                                }
+                            },
+                            modifier = Modifier.size(width = 40.dp, height = 34.dp),
+                            shape = RoundedCornerShape(6.dp),
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = AccentGreen,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.KeyboardArrowUp,
+                                contentDescription = "Scroll up",
+                                modifier = Modifier.size(18.dp)
                             )
                         }
-                    }
-                    is RhythmListLine.RhythmItem -> {
-                        item(key = "item_${line.entry.id}") {
-                            RhythmItem(
-                                rhythm = line.entry,
-                                isSelected = line.entry.id == selectedId,
-                                currentLanguage = currentLanguage,
-                                isClinicalMode = isClinicalMode,
-                                isIndented = line.isIndented,
-                                onClick = { onRhythmSelect(line.entry) }
+                        FilledIconButton(
+                            onClick = {
+                                scrollScope.launch {
+                                    val page = listState.layoutInfo.viewportSize.height * 0.9f
+                                    listState.animateScrollBy(page)
+                                }
+                            },
+                            modifier = Modifier.size(width = 40.dp, height = 34.dp),
+                            shape = RoundedCornerShape(6.dp),
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = AccentGreen,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.KeyboardArrowDown,
+                                contentDescription = "Scroll down",
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }

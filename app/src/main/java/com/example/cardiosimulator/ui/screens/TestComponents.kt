@@ -15,8 +15,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import com.example.cardiosimulator.domain.AssemblyAttempt
+import com.example.cardiosimulator.domain.AssemblyPaletteItem
+import kotlin.math.abs
+import kotlin.math.max
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -40,7 +49,9 @@ fun TestQuestionPanel(
     onOptionSelect: (String) -> Unit,
     onNext: () -> Unit,
     onAbort: () -> Unit,
-    isTimed: Boolean
+    isTimed: Boolean,
+    assemblyAttempt: AssemblyAttempt? = null,
+    onSubmitAssembly: () -> Unit = {}
 ) {
     var showAbortConfirm by remember { mutableStateOf(false) }
 
@@ -114,45 +125,60 @@ fun TestQuestionPanel(
         Spacer(modifier = Modifier.height(24.dp))
 
         // Options
-        question.options.forEachIndexed { index, option ->
-            val isSelected = selectedOptionId == option.id
-            val isCorrect = option.id == question.correctOptionId
-            
-            val backgroundColor = when {
-                !revealed -> Color.Transparent
-                isSelected && isCorrect -> AccentGreenTint
-                isSelected && !isCorrect -> Negative.copy(alpha = 0.12f)
-                isCorrect -> AccentGreenTint
-                else -> Color.Transparent
-            }
-            
-            val borderColor = when {
-                !revealed -> if (isSelected) AccentGreen else ControlBorder
-                isSelected && isCorrect -> Positive
-                isSelected && !isCorrect -> Negative
-                isCorrect -> Positive
-                else -> ControlBorder
-            }
+        if (!question.isAssembly) {
+            question.options.forEachIndexed { index, option ->
+                val isSelected = selectedOptionId == option.id
+                val isCorrect = option.id == question.correctOptionId
+                
+                val backgroundColor = when {
+                    !revealed -> Color.Transparent
+                    isSelected && isCorrect -> AccentGreenTint
+                    isSelected && !isCorrect -> Negative.copy(alpha = 0.12f)
+                    isCorrect -> AccentGreenTint
+                    else -> Color.Transparent
+                }
+                
+                val borderColor = when {
+                    !revealed -> if (isSelected) AccentGreen else ControlBorder
+                    isSelected && isCorrect -> Positive
+                    isSelected && !isCorrect -> Negative
+                    isCorrect -> Positive
+                    else -> ControlBorder
+                }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp)
-                    .background(backgroundColor, RoundedCornerShape(8.dp))
-                    .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-                    .clickable(enabled = !revealed) { onOptionSelect(option.id) }
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .background(backgroundColor, RoundedCornerShape(8.dp))
+                        .border(1.dp, borderColor, RoundedCornerShape(8.dp))
+                        .clickable(enabled = !revealed) { onOptionSelect(option.id) }
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "${index + 1}. ${option.text}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = when {
+                            !revealed -> TextPrimary
+                            isCorrect -> Positive
+                            isSelected && !isCorrect -> Negative
+                            else -> TextSecondary
+                        }
+                    )
+                }
+            }
+        } else {
+            // In assembly mode, the workspace is in the left pane, 
+            // but we might want a "Check" button here if it fits the flow.
+            // Or just a message.
+            if (!revealed) {
                 Text(
-                    text = "${index + 1}. ${option.text}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = when {
-                        !revealed -> TextPrimary
-                        isCorrect -> Positive
-                        isSelected && !isCorrect -> Negative
-                        else -> TextSecondary
-                    }
+                    text = stringResource(R.string.assemble_hint),
+                    color = TextSecondary,
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
@@ -174,12 +200,22 @@ fun TestQuestionPanel(
                     fontSize = 16.sp
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = stringResource(R.string.test_correct_answer_format, question.correctOptionNumber()),
-                    color = AccentGreen,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                if (!question.isAssembly) {
+                    Text(
+                        text = stringResource(R.string.test_correct_answer_format, question.correctOptionNumber()),
+                        color = AccentGreen,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                } else {
+                    val allCorrect = assemblyAttempt?.allCorrect == true
+                    Text(
+                        text = if (allCorrect) stringResource(R.string.assemble_correct) else stringResource(R.string.assemble_wrong),
+                        color = if (allCorrect) Positive else Negative,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 Text(
                     text = question.comment,
                     color = TextPrimary
@@ -201,15 +237,15 @@ fun TestQuestionPanel(
             }
 
             if (revealed) {
-                val isCorrectSelection = selectedOptionId == question.correctOptionId
+                val isCorrect = if (question.isAssembly) assemblyAttempt?.allCorrect == true else selectedOptionId == question.correctOptionId
                 Button(
                     onClick = onNext,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isCorrectSelection) Positive else MaterialTheme.colorScheme.primary
+                        containerColor = if (isCorrect) Positive else MaterialTheme.colorScheme.primary
                     )
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (isCorrectSelection) {
+                        if (isCorrect) {
                             Icon(
                                 Icons.Default.Check,
                                 contentDescription = null
@@ -218,6 +254,14 @@ fun TestQuestionPanel(
                         }
                         Text(if (question.number < totalQuestions) stringResource(R.string.test_next) else stringResource(R.string.test_finish))
                     }
+                }
+            } else if (question.isAssembly) {
+                Button(
+                    onClick = onSubmitAssembly,
+                    enabled = assemblyAttempt?.isComplete == true,
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentGreen)
+                ) {
+                    Text(stringResource(R.string.assemble_check))
                 }
             }
         }
@@ -324,8 +368,204 @@ fun ExamQuestionPanel(
     }
 }
 
+@Composable
+fun EcgAssemblyWorkspace(
+    attempt: AssemblyAttempt,
+    revealed: Boolean,
+    onPlace: (Int, String?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var selectedPaletteKey by remember { mutableStateOf<String?>(null) }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Tape
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp),
+            shape = RoundedCornerShape(4.dp),
+            colors = CardDefaults.cardColors(containerColor = ControlFill)
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                val slotCount = attempt.spec.partCount
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val canvasSize = this.size
+                    val midY = canvasSize.height / 2
+                    // Isoline
+                    drawLine(
+                        color = Color.Gray,
+                        start = androidx.compose.ui.geometry.Offset(0f, midY),
+                        end = androidx.compose.ui.geometry.Offset(canvasSize.width, midY),
+                        strokeWidth = 1f,
+                        pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+                    )
+                    // Dividers
+                    for (i in 1 until slotCount) {
+                        val x = i * canvasSize.width / slotCount
+                        drawLine(
+                            color = Color.Gray.copy(alpha = 0.3f),
+                            start = androidx.compose.ui.geometry.Offset(x, 0f),
+                            end = androidx.compose.ui.geometry.Offset(x, canvasSize.height),
+                            strokeWidth = 1f
+                        )
+                    }
+                }
+
+                Row(modifier = Modifier.fillMaxSize()) {
+                    attempt.slots.forEachIndexed { index, slotState ->
+                        val item = attempt.placedAt(index)
+                        val isCorrect = item?.correctIndex == index
+                        
+                        val tint = when {
+                            !revealed -> Color.Transparent
+                            isCorrect -> Positive.copy(alpha = 0.1f)
+                            else -> Negative.copy(alpha = 0.1f)
+                        }
+
+                        val sharedScale = calculateSharedScale(attempt.palette)
+
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .background(tint)
+                                .clickable(!revealed) {
+                                    if (selectedPaletteKey != null) {
+                                        onPlace(index, selectedPaletteKey)
+                                        selectedPaletteKey = null
+                                    } else if (slotState.placedKey != null) {
+                                        onPlace(index, null)
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (item != null) {
+                                EcgPieceView(
+                                    samples = item.samples,
+                                    color = when {
+                                        !revealed -> TextPrimary
+                                        isCorrect -> Positive
+                                        else -> Negative
+                                    },
+                                    modifier = Modifier.fillMaxSize(),
+                                    sharedMaxAmp = sharedScale.first,
+                                    sharedMaxLen = sharedScale.second
+                                )
+                            }
+                            
+                            if (revealed && !isCorrect) {
+                                // Faintly show correct piece
+                                val correctPiece = attempt.palette.find { it.correctIndex == index }
+                                if (correctPiece != null) {
+                                    EcgPieceView(
+                                        samples = correctPiece.samples,
+                                        color = Positive.copy(alpha = 0.3f),
+                                        modifier = Modifier.fillMaxSize(),
+                                        sharedMaxAmp = sharedScale.first,
+                                        sharedMaxLen = sharedScale.second
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.assemble_pieces_label),
+            fontWeight = FontWeight.Bold,
+            color = TextSecondary
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Palette
+        Row(
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            val sharedScale = calculateSharedScale(attempt.palette)
+            attempt.palette.forEach { paletteItem ->
+                val isPlaced = attempt.slotOf(paletteItem.key) != -1
+                val isSelected = selectedPaletteKey == paletteItem.key
+
+                Box(
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .width(100.dp)
+                        .height(60.dp)
+                        .alpha(if (isPlaced) 0.3f else 1.0f)
+                        .border(
+                            width = if (isSelected) 2.dp else 1.dp,
+                            color = if (isSelected) AccentGreen else ControlBorder,
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .background(ControlFill, RoundedCornerShape(4.dp))
+                        .clickable(!revealed && !isPlaced) {
+                            selectedPaletteKey = paletteItem.key
+                        }
+                        .padding(4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    EcgPieceView(
+                        samples = paletteItem.samples,
+                        color = TextPrimary,
+                        modifier = Modifier.fillMaxSize(),
+                        sharedMaxAmp = sharedScale.first,
+                        sharedMaxLen = sharedScale.second
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun EcgPieceView(
+    samples: List<Int>,
+    color: Color,
+    modifier: Modifier = Modifier,
+    sharedMaxAmp: Int,
+    sharedMaxLen: Int
+) {
+    Canvas(modifier = modifier) {
+        if (samples.isEmpty()) return@Canvas
+
+        val canvasSize = this.size
+        val midY = canvasSize.height / 2
+        val ampScale = if (sharedMaxAmp == 0) 1f else (canvasSize.height * 0.4f) / sharedMaxAmp
+        val stepX = canvasSize.width / sharedMaxLen
+        
+        val path = Path()
+        
+        samples.forEachIndexed { index, value ->
+            val x = index * stepX
+            val y = midY - value * ampScale
+            if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        
+        drawPath(path, color, style = Stroke(width = 2f))
+    }
+}
+
+private fun calculateSharedScale(items: List<AssemblyPaletteItem>): Pair<Int, Int> {
+    var maxAmp = 0
+    var maxLen = 0
+    items.forEach { item ->
+        item.samples.forEach { maxAmp = max(maxAmp, abs(it)) }
+        maxLen = max(maxLen, item.samples.size)
+    }
+    return maxAmp to maxLen
+}
+
 private fun formatTime(seconds: Int): String {
-    val m = seconds / 60
-    val s = seconds % 60
-    return "%d:%02d".format(m, s)
+    val mins = seconds / 60
+    val secs = seconds % 60
+    return String.format("%02d:%02d", mins, secs)
 }

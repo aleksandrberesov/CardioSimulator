@@ -293,6 +293,7 @@
     <string name="constructor_smoothing_width_unit">muestras</string>
 
     <string name="constructor_significant_points">Puntos significativos</string>
+    <string name="constructor_marked_points">Puntos marcados</string>
     <string name="constructor_sample_label">Muestra: %1$d</string>
     <string name="constructor_p_wave">Onda P</string>
     <string name="constructor_qrs_complex">Complejo QRS</string>
@@ -361,4 +362,6 @@
     <string name="clinical_label_others">Otros parámetros (p. ej. temp=36.6, weight=70)</string>
     <string name="gender_male">Masculino</string>
     <string name="gender_female">Femenino</string>
+    <string name="clinical_gender_unset">— sin especificar</string>
+    <string name="clinical_clear_all">Borrar todos los campos</string>
 </resources>

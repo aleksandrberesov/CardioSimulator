@@ -188,7 +188,6 @@
     <string name="course_constructor_image_src">स्रोत (URL या assets/path)</string>
     <string name="course_constructor_image_alt">कैप्शन / शीर्षक</string>
     <string name="course_constructor_image_upload">छवि अपलोड करें</string>
-    <string name="points_drawer_title">बिंदु</string>
     <string name="rhythm_search_placeholder">लय…</string>
     <string name="rhythm_search_content_description">खोजें</string>
     <string name="rhythm_course_filter_all">सभी लय</string>
@@ -394,6 +393,7 @@
     <string name="constructor_smoothing_width_unit">नमूने</string>
 
     <string name="constructor_significant_points">महत्वपूर्ण बिंदु</string>
+    <string name="constructor_marked_points">चिह्नित बिंदु</string>
     <string name="constructor_sample_label">नमूना: %1$d</string>
     <string name="constructor_p_wave">P तरंग</string>
     <string name="constructor_qrs_complex">QRS कॉम्प्लेक्स</string>
@@ -508,4 +508,6 @@
     <string name="clinical_label_others">अन्य पैरामीटर (जैसे temp=36.6, weight=70)</string>
     <string name="gender_male">पुरुष</string>
     <string name="gender_female">महिला</string>
+    <string name="clinical_gender_unset">— निर्दिष्ट नहीं</string>
+    <string name="clinical_clear_all">सभी फ़ील्ड साफ़ करें</string>
 </resources>

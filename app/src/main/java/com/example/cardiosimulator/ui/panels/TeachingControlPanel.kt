@@ -123,6 +123,7 @@ fun TeachingControlPanel(
                                 appViewModel = appViewModel,
                                 rhythms = rhythms,
                                 selectedId = selectedRhythm?.id,
+                                showPinButton = false,
                                 onRhythmSelect = {
                                     rhythmViewModel.selectRhythm(it.id)
                                     rhythmExpanded = false

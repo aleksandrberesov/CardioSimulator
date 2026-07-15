@@ -24,22 +24,25 @@ fun SignificantPointSelector(
     points: List<SignificantPoint>,
     selectedIndex: Int,
     sampleRateHz: Float,
-    onPointSelect: (SignificantPoint) -> Unit
+    onPointSelect: (SignificantPoint) -> Unit,
+    showHeader: Boolean = true,
+    modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState()
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = modifier
             .padding(8.dp)
     ) {
-        Text(
-            text = stringResource(R.string.constructor_significant_points),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        
-        HorizontalDivider()
+        if (showHeader) {
+            Text(
+                text = stringResource(R.string.constructor_significant_points),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            HorizontalDivider()
+        }
 
         if (points.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

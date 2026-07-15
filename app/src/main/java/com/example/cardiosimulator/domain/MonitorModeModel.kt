@@ -80,7 +80,7 @@ data class MonitorModeModel(
     val showElectrodes: Boolean = false,
     val show3D: Boolean = false,
     val showEos: Boolean = false,
-    val showTips: Boolean = true,
+    val showTips: Boolean = false,
     val showRuler: Boolean = false,
     val comparisonTargets: Map<Int, ComparisonTarget> = emptyMap(),
     val comparisonPresets: List<ComparisonPreset> = emptyList(),

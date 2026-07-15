@@ -217,7 +217,6 @@
     <string name="course_constructor_image_src">Источник (URL или путь в assets)</string>
     <string name="course_constructor_image_alt">Заголовок / Подпись</string>
     <string name="course_constructor_image_upload">Загрузить изображение</string>
-    <string name="points_drawer_title">Точки</string>
     <string name="rhythm_search_placeholder">Ритм…</string>
     <string name="rhythm_search_content_description">Поиск</string>
     <string name="rhythm_course_filter_all">Все ритмы</string>
@@ -291,6 +290,24 @@
     <string name="test_ctor_tags_label">Теги (через запятую)</string>
     <string name="test_ctor_image_select">Выбрать фото</string>
     <string name="test_ctor_search_hint">Поиск по тексту или тегам…</string>
+
+    <!-- Ecg Assembly (Собери ЭКГ) -->
+    <string name="assemble_type_label">Собери ЭКГ</string>
+    <string name="assemble_hint">Восстановите комплекс ЭКГ, перетаскивая или нажимая на фрагменты.</string>
+    <string name="assemble_pieces_label">Фрагменты</string>
+    <string name="assemble_check">Проверить</string>
+    <string name="assemble_correct">Верно! Вы успешно восстановили комплекс.</string>
+    <string name="assemble_wrong">Неверно. Некоторые фрагменты не на своем месте.</string>
+
+    <string name="assemble_ctor_title">Редактор «Собери ЭКГ»</string>
+    <string name="assemble_ctor_hint">Нарезает 5-секундное окно отведения на равные части. Студент должен восстановить их порядок.</string>
+    <string name="assemble_ctor_source">Исходный ритм</string>
+    <string name="assemble_ctor_none">— нет —</string>
+    <string name="assemble_ctor_lead">Отведение</string>
+    <string name="assemble_ctor_parts">Кол-во фрагментов (3–6)</string>
+    <string name="assemble_ctor_built_format">Готово · фрагментов: %1$d</string>
+    <string name="assemble_ctor_build_failed">Ошибка нарезки (слишком короткая запись?)</string>
+
     <string name="test_ctor_manage_themes">Управление темами</string>
     <string name="test_ctor_theme_new_hint">Новая тема…</string>
     <string name="test_ctor_theme_from_course">Из курсов</string>
@@ -422,6 +439,7 @@
     <string name="constructor_smoothing_width_unit">точек</string>
 
     <string name="constructor_significant_points">Значимые точки</string>
+    <string name="constructor_marked_points">Отмеченные точки</string>
     <string name="constructor_sample_label">Точка: %1$d</string>
     <string name="constructor_p_wave">Зубец P</string>
     <string name="constructor_qrs_complex">Комплекс QRS</string>
@@ -535,4 +553,6 @@
     <string name="clinical_label_others">Другие параметры (напр. temp=36.6, weight=70)</string>
     <string name="gender_male">Мужской</string>
     <string name="gender_female">Женский</string>
+    <string name="clinical_gender_unset">— не указан</string>
+    <string name="clinical_clear_all">Очистить все поля</string>
 </resources>

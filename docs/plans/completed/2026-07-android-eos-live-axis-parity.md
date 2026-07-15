@@ -1,6 +1,6 @@
 # Plan — ЭОС window: refined content + live axis computation + trace highlight (Android parity)
 
-**Status:** active
+**Status:** active — base feature shipped 2026-07-05; reopened 2026-07-07 for the red-warning follow-up (see "Follow-up increment" at the end)
 **Owner:** a.beresov
 **Started:** 2026-07-05
 **Related:** Windows→Android UI/behaviour parity. Source of truth = Windows port
@@ -286,3 +286,70 @@ Lint the strings (all 5 locales, no missing keys), confirm no leftover reference
 - **Result:** shipped
 - **PRs:** N/A (applied directly)
 - **Deviations from plan:** `TipsOverlay` template was not available as it was retired; reused `SignificantPointOverlay` patterns instead. Consistent angle normalization used (180/-180 treated as RightDeviation, 181 as ExtremeDeviation).
+
+---
+
+## Follow-up increment (2026-07-07) — red-highlight the abnormal (deviation) axes
+
+**Status:** active (Android). Windows done + built (0 warn / 0 err) in
+`CardioSimulatorWin/src/CardioSimulator.App/Controls/EosWindow.cs`.
+
+### What Windows did
+The ЭОС window now flags the **abnormal axis classes as warnings and colours them red**. "Warning" =
+the three deviation classes only: `LeftDeviation`, `RightDeviation`, `ExtremeDeviation`
+(Normal / Horizontal / Vertical stay neutral). New Windows helper:
+```csharp
+private static bool IsWarning(EosAxisClass axisClass) =>
+    axisClass is EosAxisClass.LeftDeviation or EosAxisClass.RightDeviation or EosAxisClass.ExtremeDeviation;
+```
+Two new brushes:
+```csharp
+// bright red text on the blue panel
+private static readonly SolidColorBrush Warning     = new(Color{ A=0xFF, R=0xFF, G=0x5A, B=0x5A });
+// translucent-red pill behind the ACTIVE deviation row
+private static readonly SolidColorBrush WarningFill  = new(Color{ A=0x77, R=0xE5, G=0x39, B=0x35 });
+```
+Three visible effects:
+1. **Variants list** — the three deviation rows (`_left/_right/_extreme`) always render their text in
+   red (`Warning`), so they read as a legend of "these are abnormal". `Variant(...)` gained a
+   `warning` bool; the Normal/Horizontal/Vertical calls pass `warning:false`, the three deviations
+   pass `warning:true`.
+2. **Active deviation pill** — when the *computed* axis IS a deviation, that active row's highlight
+   pill uses `WarningFill` (red) instead of the neutral translucent-white pill, with **white** text on
+   top for contrast. Active non-warning rows are unchanged (white text on white pill).
+3. **Measured α readout** — the `α = N° — <band>` line turns red (`Warning`) when
+   `IsWarning(result.AxisClass)`, else stays white.
+   Text-brush rule per variant row: `active ? White : (warning ? Warning : White)`.
+
+No domain/analyzer/string changes — this is **presentation-only** on top of the shipped feature.
+
+### Android port (all in `ui/components/MonitorOverlays.kt` `EosOverlay`)
+Purely additive to the overlay built in Phase 4 above — no new strings, no `EosAxis`/`EosAnalyzer`
+change, no test change.
+- Add a helper (top of the file or as a local):
+  ```kotlin
+  private fun isWarning(c: EosAxisClass) =
+      c == EosAxisClass.LeftDeviation || c == EosAxisClass.RightDeviation || c == EosAxisClass.ExtremeDeviation
+  ```
+- Add two colours (next to `WindowsBlue`, e.g. in the theme/Color file or as locals):
+  `val EosWarning = Color(0xFFFF5A5A)` and `val EosWarningPill = Color(0x77E53935)`.
+- **Variant row composable** — give it a `warning: Boolean` param. Pass `true` for the left/right/
+  extreme rows, `false` for normal/horizontal/vertical (mirror the six call sites). Colour logic:
+  - text colour: `if (active) Color.White else if (warning) EosWarning else Color.White`
+  - active pill background: `if (warning) EosWarningPill else White.copy(alpha = 0.25f)`
+    (whatever the shipped active-pill alpha is — keep it, just swap to `EosWarningPill` when warning).
+- **Measured α line** — set its colour to `if (isWarning(result.axisClass)) EosWarning else Color.White`.
+
+### Verify (Android)
+- Load a **left-axis-deviation** rhythm (e.g. LAD / a rhythm whose α < 0°) → EOS window: the
+  "Left axis deviation…" variant row shows a **red pill**, the `α = …° — Left axis deviation` readout
+  is **red**, and the other two deviation rows are red text (inactive). Right/extreme deviations behave
+  the same for their bands.
+- Load a **normal-axis** rhythm → Normal/Horizontal/Vertical row highlighted with the neutral pill and
+  white readout (no red); the three deviation rows still show as red-text legend entries.
+- EN/RU/ZH/ES/HI unchanged (no new strings).
+
+### PR
+| # | PR title | Notes |
+|---|----------|-------|
+| 5 | EOS: red-highlight abnormal deviation axes | overlay-only; `warning` param on the variant row + red α readout; 2 colours + `isWarning` helper |

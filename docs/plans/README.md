@@ -57,6 +57,32 @@ Good prompts when handing off:
 Keep this list current when you add or move a plan.
 
 ### Active
+- [`2026-07-android-rhythm-expand-collapse-all-icon-parity.md`](active/2026-07-android-rhythm-expand-collapse-all-icon-parity.md) —
+  Windows fixed the rhythm selector's **Expand-All / Collapse-All** header buttons, whose icons used
+  non-existent Segoe MDL2 glyphs (`&#xE9A1;`/`&#xE9A0;`) and rendered as blank "tofu" (so they looked
+  *missing*); swapped to valid chevrons (`E70D`/`E70E`). Icon-fix only — handlers/behavior unchanged.
+  Android's shared `RhythmSelector` **already ships** these buttons with valid Material vectors
+  (`KeyboardDoubleArrowDown`/`…Up` → `expandAllRhythms()`/`collapseAllRhythms()`, `RhythmSelector.kt:225-246`)
+  and **never had the tofu bug** — so this is expected to be **verify-only, no code change** (builds on the
+  completed grouping-and-sorting plan). Two noted divergences to leave as-is: Android uses double chevrons
+  (clearer) and hides the buttons outside grouped/non-clinical mode. *Verify Phase 1, then close.*
+- [`2026-07-android-teaching-rhythm-scroll-buttons-appearance-parity.md`](active/2026-07-android-teaching-rhythm-scroll-buttons-appearance-parity.md) —
+  **reskin** the Teaching rhythm-drawer page-scroll buttons (builds on the completed
+  `2026-07-android-teaching-rhythm-list-scroll-buttons`). The customer flagged the 52×52 **circular
+  FABs** as inappropriate, **covering the pathology titles** underneath, and going **transparent on
+  press**. Windows redesigned them to **40×34 rectangular** buttons (`CornerRadius 6`) inside an
+  **opaque white bordered chip** (so titles no longer show through) using `AccentButtonStyle` (fixes
+  the WinUI-only transparent-on-press bug). Windows→Android, **appearance-only**: wrap the two
+  `FilledIconButton`s in a `Surface` chip (`PanelBackground` + `BorderStroke(ControlBorder)` +
+  `RoundedCornerShape(8)` + shadow) and shrink them to `size(40,34)` + `RoundedCornerShape(6)` in
+  `RhythmSelector.kt` (+1 import). Compose keeps the fill on press already, so problem #3 is a no-op
+  on Android. No behavior/scoping change. *Spec ready — one PR.*
+- [`2026-07-android-tips-off-by-default-parity.md`](active/2026-07-android-tips-off-by-default-parity.md) —
+  make the monitor **Tips** visibility toggle start **off** (authored overlays + "Видим:" card hidden
+  until the student taps the tab). Windows→Android; one-line default flip of `MonitorModeModel.showTips`
+  `true → false` (`MonitorModeModel.kt:83`). Keep the Constructor authoring preview forced-on
+  (`ConstructorScreen.kt:1312`); the Teaching `onDispose` `setShowTips(false)` already exists. No strings,
+  no persistence. *Spec ready — one PR.*
 - [`2026-07-android-tips-authoring-and-display-parity.md`](active/2026-07-android-tips-authoring-and-display-parity.md) —
   bring the **tips (подсказки)** feature up to the Windows port (4 rounds): a Constructor **element
   palette** (9 kinds + line end-caps + lead picker), a **data-space overlay model** placed by drawing
@@ -155,6 +181,13 @@ Keep this list current when you add or move a plan.
 *(none)*
 
 ### Completed
+- [`2026-07-android-constructor-filter-dropdown-parity.md`](completed/2026-07-android-constructor-filter-dropdown-parity.md) —
+  add a **display Filters dropdown** (None / LP / HP / BP) to the **Constructor** bottom control
+  panel, applied to preview and all-leads overview.
+- [`2026-07-android-teaching-rhythm-list-scroll-buttons.md`](completed/2026-07-android-teaching-rhythm-list-scroll-buttons.md) —
+  Teaching rhythm drawer gains large up/down page-scroll buttons.
+- [`2026-07-android-teaching-default-two-column-12lead.md`](completed/2026-07-android-teaching-default-two-column-12lead.md) —
+  Teaching monitor opens as a **12-lead, 2-column** layout by default on entry.
 - [`2026-07-android-constructor-all-leads-button-in-lead-row-parity.md`](completed/2026-07-android-constructor-all-leads-button-in-lead-row-parity.md) —
   move the Constructor's **"All leads"** (show-all-12-leads) button out of the top toolbar and
   into the **lead-button row**, trailing after `V6` (`[I]…[V6] [All leads]`). Windows→Android;

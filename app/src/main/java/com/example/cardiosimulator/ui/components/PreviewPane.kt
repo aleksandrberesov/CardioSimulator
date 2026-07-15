@@ -50,17 +50,20 @@ fun PreviewPane(
     val periodPx = durationMs / 1000f * pxPerSec
 
     val phaseState = remember { mutableFloatStateOf(0f) }
+    var accumulatedPhase by remember { mutableFloatStateOf(0f) }
+
     LaunchedEffect(isRunning, durationMs, externalXOffsetPx) {
         if (isRunning && externalXOffsetPx == null) {
-            var lastTime = 0L
-            while (isActive) {
-                withFrameNanos { frameTime ->
-                    if (lastTime != 0L) {
-                        val deltaMs = (frameTime - lastTime) / 1_000_000f
-                        phaseState.floatValue = (phaseState.floatValue + deltaMs / durationMs) % 1f
+            val startTimeNanos = withFrameNanos { it }
+            try {
+                while (isActive) {
+                    withFrameNanos { frameTime ->
+                        val elapsedInThisRunMs = (frameTime - startTimeNanos) / 1_000_000f
+                        phaseState.floatValue = (accumulatedPhase + elapsedInThisRunMs / durationMs) % 1f
                     }
-                    lastTime = frameTime
                 }
+            } finally {
+                accumulatedPhase = phaseState.floatValue
             }
         }
     }

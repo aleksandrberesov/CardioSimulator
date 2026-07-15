@@ -285,6 +285,7 @@
     <string name="constructor_smoothing_width_unit">采样点</string>
 
     <string name="constructor_significant_points">重要点</string>
+    <string name="constructor_marked_points">已标记的点</string>
     <string name="constructor_sample_label">样本: %1$d</string>
     <string name="constructor_p_wave">P 波</string>
     <string name="constructor_qrs_complex">QRS 波群</string>
@@ -353,4 +354,6 @@
     <string name="clinical_label_others">其他参数 (例如 temp=36.6, weight=70)</string>
     <string name="gender_male">男</string>
     <string name="gender_female">女</string>
+    <string name="clinical_gender_unset">— 未指定</string>
+    <string name="clinical_clear_all">清除所有字段</string>
 </resources>

@@ -44,51 +44,43 @@ fun OskeConstructorScreen(
                 .width(250.dp)
                 .fillMaxHeight()
                 .padding(16.dp)
-                .verticalScroll(rememberScrollState())
         ) {
             Text("Settings", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Specialty")
-            OskeSpecialty.entries.forEach { spec ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .selectable(
+            Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                Text("Specialty")
+                OskeSpecialty.entries.forEach { spec ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = specialty == spec,
+                                onClick = { oskeViewModel.setConstructorSelection(spec, selectedEcgId) }
+                            )
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
                             selected = specialty == spec,
                             onClick = { oskeViewModel.setConstructorSelection(spec, selectedEcgId) }
                         )
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = specialty == spec,
-                        onClick = { oskeViewModel.setConstructorSelection(spec, selectedEcgId) }
-                    )
-                    Text(spec.name)
+                        Text(spec.name)
+                    }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("ECG")
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("ECG")
-            rhythms.forEach { rhythm: PathologyEntry ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .selectable(
-                            selected = selectedEcgId == rhythm.id,
-                            onClick = { oskeViewModel.setConstructorSelection(specialty, rhythm.id) }
-                        )
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = selectedEcgId == rhythm.id,
-                        onClick = { oskeViewModel.setConstructorSelection(specialty, rhythm.id) }
-                    )
-                    Text(rhythm.titleEn)
-                }
-            }
+            com.example.cardiosimulator.ui.panels.RhythmSelector(
+                appViewModel = appViewModel,
+                modifier = Modifier.fillMaxWidth().height(320.dp),
+                rhythms = rhythms,
+                selectedId = selectedEcgId,
+                showPinButton = false,
+                onRhythmSelect = { oskeViewModel.setConstructorSelection(specialty, it.id) },
+            )
         }
 
         VerticalDivider()

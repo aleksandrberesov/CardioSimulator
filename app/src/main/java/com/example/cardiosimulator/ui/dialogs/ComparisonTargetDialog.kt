@@ -64,15 +64,6 @@ fun ComparisonTargetDialog(
         mutableStateOf(initialLead)
     }
 
-    val listState = rememberLazyListState()
-
-    LaunchedEffect(initialPathologyId, rhythms) {
-        val index = rhythms.indexOfFirst { it.id == initialPathologyId }
-        if (index >= 0) {
-            listState.scrollToItem(index)
-        }
-    }
-
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(16.dp),
@@ -91,38 +82,14 @@ fun ComparisonTargetDialog(
 
                 Row(modifier = Modifier.weight(1f)) {
                     // Left side: Pathology selection
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.rhythm_selector_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        LazyColumn(
-                            state = listState,
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .padding(end = 8.dp)
-                        ) {
-                            items(rhythms) { rhythm ->
-                                val title = if (currentLanguage == Language.RU)
-                                    rhythm.nameRu ?: rhythm.titleEn
-                                else
-                                    rhythm.titleEn
-                                
-                                val isSelected = selectedPathology?.id == rhythm.id
-                                Text(
-                                    text = title,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { selectedPathology = rhythm }
-                                        .padding(vertical = 12.dp, horizontal = 4.dp),
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                    style = if (isSelected) MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.primary) else MaterialTheme.typography.bodyLarge
-                                )
-                                HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
-                            }
-                        }
-                    }
+                    com.example.cardiosimulator.ui.panels.RhythmSelector(
+                        appViewModel = appViewModel,
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                        rhythms = rhythms,
+                        selectedId = selectedPathology?.id,
+                        showPinButton = false,
+                        onRhythmSelect = { selectedPathology = it },
+                    )
 
                     Spacer(modifier = Modifier.width(16.dp))
 

@@ -189,7 +189,7 @@ fun CourseConstructorControlPanel(
                     placeholder = { Text("Paste <!DOCTYPE html>... or fragment here") },
                     label = { Text("HTML Source") },
                     keyboardOptions = KeyboardOptions(
-                        autoCorrectEnabled = false,
+                        autoCorrect = false,
                         capitalization = KeyboardCapitalization.None
                     )
                 )
@@ -329,7 +329,7 @@ private fun SubtopicDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(
-                        autoCorrectEnabled = false,
+                        autoCorrect = false,
                         capitalization = KeyboardCapitalization.None
                     )
                 )
@@ -392,7 +392,7 @@ private fun OneFieldDialog(
                 label = { Text(label) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
-                    autoCorrectEnabled = false,
+                    autoCorrect = false,
                     capitalization = KeyboardCapitalization.None
                 )
             )

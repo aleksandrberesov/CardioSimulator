@@ -27,6 +27,7 @@ fun SignificantPointPanel(
     sampleRate: Float,
     onPointToggle: (Int, EcgPointType) -> Unit,
     onAutoDetect: () -> Unit = {},
+    onPointSelect: (SignificantPoint) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -111,6 +112,23 @@ fun SignificantPointPanel(
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
                 }
+            }
+
+            if (significantPoints.isNotEmpty()) {
+                HorizontalDivider()
+                Text(
+                    text = stringResource(R.string.constructor_marked_points),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                SignificantPointSelector(
+                    points = significantPoints.sortedBy { it.index },
+                    selectedIndex = selectedIndex ?: -1,
+                    sampleRateHz = sampleRate,
+                    onPointSelect = onPointSelect,
+                    showHeader = false,
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 200.dp)
+                )
             }
 
             val rPeaks = significantPoints.filter { it.type == EcgPointType.R_PEAK }.sortedBy { it.index }

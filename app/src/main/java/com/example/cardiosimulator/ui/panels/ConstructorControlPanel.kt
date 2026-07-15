@@ -9,12 +9,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,6 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.R
+import com.example.cardiosimulator.domain.EcgFilterType
 import com.example.cardiosimulator.ui.components.ControlPanelDivider
 import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.ui.viewmodels.ConstructorViewModel
@@ -340,7 +336,49 @@ fun ConstructorControlPanel(
 
         ControlPanelDivider()
 
-        // Speed Control (Variable)
+        Box(modifier = Modifier.weight(1.2f)) {
+            var filtersMenuExpanded by remember { mutableStateOf(false) }
+            Tab(
+                text = stringResource(R.string.monitor_filters),
+                showChevron = true,
+                onClick = { filtersMenuExpanded = true },
+                modifier = Modifier.fillMaxWidth()
+            )
+            DropdownMenu(
+                expanded = filtersMenuExpanded,
+                onDismissRequest = { filtersMenuExpanded = false }
+            ) {
+                MenuInfoHeader(
+                    title = stringResource(R.string.monitor_filters),
+                    explanation = stringResource(R.string.monitor_filters_info),
+                )
+                HorizontalDivider()
+                EcgFilterType.entries.forEach { filterType ->
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                when (filterType) {
+                                    EcgFilterType.NONE -> stringResource(R.string.monitor_filter_none)
+                                    EcgFilterType.LOWPASS -> stringResource(R.string.monitor_filter_lowpass)
+                                    EcgFilterType.HIGHPASS -> stringResource(R.string.monitor_filter_highpass)
+                                    EcgFilterType.BANDPASS -> stringResource(R.string.monitor_filter_bandpass)
+                                }
+                            )
+                        },
+                        leadingIcon = {
+                            if (filterType == monitorMode.filterType)
+                                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                        },
+                        onClick = {
+                            monitorViewModel.setFilterType(filterType)
+                            filtersMenuExpanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        ControlPanelDivider()
         Row(
             modifier = Modifier.weight(1.2f).fillMaxHeight(),
             verticalAlignment = Alignment.CenterVertically,

@@ -128,24 +128,28 @@ fun Monitor(
     }
 
     val timeState = remember { mutableFloatStateOf(0f) }
+    var accumulatedTimeMs by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(mode.isCompareMode, mode.gridScheme, mode.seriesScheme, mode.comparisonTargets, mode.count) {
         if (mode.isCompareMode) {
             timeState.floatValue = 0f
+            accumulatedTimeMs = 0f
         }
     }
 
     LaunchedEffect(mode.isRunning) {
         if (mode.isRunning) {
-            var lastTime = 0L
-            while (isActive) {
-                withFrameNanos { frameTime ->
-                    if (lastTime != 0L) {
-                        val deltaMs = (frameTime - lastTime) / 1_000_000f
-                        timeState.floatValue += deltaMs
+            val startTimeNanos = withFrameNanos { it }
+            try {
+                while (isActive) {
+                    withFrameNanos { frameTime ->
+                        val elapsedInThisRun = (frameTime - startTimeNanos) / 1_000_000f
+                        timeState.floatValue = accumulatedTimeMs + elapsedInThisRun
                     }
-                    lastTime = frameTime
                 }
+            } finally {
+                // Consolidate current run into accumulation upon stopping or cancellation.
+                accumulatedTimeMs = timeState.floatValue
             }
         }
     }

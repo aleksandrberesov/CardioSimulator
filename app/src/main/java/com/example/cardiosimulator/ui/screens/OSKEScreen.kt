@@ -92,6 +92,7 @@ fun OskeExamView(
 
     if (showStartDialog) {
         OskeStartDialog(
+            appViewModel = appViewModel,
             rhythms = rhythms,
             getEcgIdsWithKeys = { viewModel.getEcgIdsWithKeys(it) },
             onDismiss = { showStartDialog = false },
@@ -177,6 +178,7 @@ fun OskeExamView(
 
 @Composable
 fun OskeStartDialog(
+    appViewModel: AppViewModel,
     rhythms: List<PathologyEntry>,
     getEcgIdsWithKeys: (OskeSpecialty) -> List<String>,
     onDismiss: () -> Unit,
@@ -194,62 +196,61 @@ fun OskeStartDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.oske_start_title)) },
         text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text(stringResource(R.string.oske_student_name)) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = group,
-                    onValueChange = { group = it },
-                    label = { Text(stringResource(R.string.oske_student_group)) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(stringResource(R.string.oske_specialty), style = MaterialTheme.typography.titleSmall)
-                OskeSpecialty.entries.forEach { spec ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .selectable(selected = specialty == spec, onClick = { specialty = spec })
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(selected = specialty == spec, onClick = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(spec.name)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(stringResource(R.string.oske_ecg_pick), style = MaterialTheme.typography.titleSmall)
-
-                if (filteredRhythms.isEmpty()) {
-                    Text(
-                        stringResource(R.string.oske_no_key_warning),
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(vertical = 8.dp)
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text(stringResource(R.string.oske_student_name)) },
+                        modifier = Modifier.fillMaxWidth()
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = group,
+                        onValueChange = { group = it },
+                        label = { Text(stringResource(R.string.oske_student_group)) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(stringResource(R.string.oske_specialty), style = MaterialTheme.typography.titleSmall)
+                    OskeSpecialty.entries.forEach { spec ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .selectable(selected = specialty == spec, onClick = { specialty = spec })
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(selected = specialty == spec, onClick = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(spec.name)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(stringResource(R.string.oske_ecg_pick), style = MaterialTheme.typography.titleSmall)
+
+                    if (filteredRhythms.isEmpty()) {
+                        Text(
+                            stringResource(R.string.oske_no_key_warning),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
                 }
 
-                // Simple ECG picker
-                filteredRhythms.forEach { rhythm: PathologyEntry ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .selectable(selected = selectedEcgId == rhythm.id, onClick = { selectedEcgId = rhythm.id })
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(selected = selectedEcgId == rhythm.id, onClick = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(rhythm.titleEn)
-                    }
+                if (filteredRhythms.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    com.example.cardiosimulator.ui.panels.RhythmSelector(
+                        appViewModel = appViewModel,
+                        modifier = Modifier.fillMaxWidth().height(300.dp),
+                        rhythms = filteredRhythms,
+                        selectedId = selectedEcgId,
+                        showPinButton = false,
+                        onRhythmSelect = { selectedEcgId = it.id },
+                    )
                 }
             }
         },

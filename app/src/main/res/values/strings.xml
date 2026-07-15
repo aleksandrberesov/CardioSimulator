@@ -218,7 +218,6 @@
     <string name="course_constructor_image_src">Source (URL or assets/path)</string>
     <string name="course_constructor_image_alt">Caption / Title</string>
     <string name="course_constructor_image_upload">Upload Image</string>
-    <string name="points_drawer_title">Points</string>
     <string name="rhythm_search_placeholder">Rhythm…</string>
     <string name="rhythm_search_content_description">Search</string>
     <string name="rhythm_course_filter_all">All Rhythms</string>
@@ -293,6 +292,24 @@
     <string name="test_ctor_tags_label">Tags (comma separated)</string>
     <string name="test_ctor_image_select">Select Photo</string>
     <string name="test_ctor_search_hint">Search by text or tags…</string>
+
+    <!-- Ecg Assembly (Assemble the ECG) -->
+    <string name="assemble_type_label">Assemble ECG</string>
+    <string name="assemble_hint">Reconstruct the ECG complex by dragging or tapping pieces onto the tape.</string>
+    <string name="assemble_pieces_label">Pieces</string>
+    <string name="assemble_check">Check</string>
+    <string name="assemble_correct">Correct! You have successfully reconstructed the complex.</string>
+    <string name="assemble_wrong">Incorrect. Some pieces are misplaced.</string>
+
+    <string name="assemble_ctor_title">ECG Assembly Editor</string>
+    <string name="assemble_ctor_hint">Slices a 5s window of the lead into equal parts. The student must restore their order.</string>
+    <string name="assemble_ctor_source">Source rhythm</string>
+    <string name="assemble_ctor_none">— none —</string>
+    <string name="assemble_ctor_lead">Lead</string>
+    <string name="assemble_ctor_parts">Part count (3–6)</string>
+    <string name="assemble_ctor_built_format">Ready · %1$d parts</string>
+    <string name="assemble_ctor_build_failed">Slicing failed (too short?)</string>
+
     <string name="test_ctor_manage_themes">Manage Themes</string>
     <string name="test_ctor_theme_new_hint">New theme…</string>
     <string name="test_ctor_theme_from_course">From courses</string>
@@ -424,6 +441,7 @@
     <string name="constructor_smoothing_width_unit">samples</string>
 
     <string name="constructor_significant_points">Significant Points</string>
+    <string name="constructor_marked_points">Marked points</string>
     <string name="constructor_sample_label">Sample: %1$d</string>
     <string name="constructor_p_wave">P Wave</string>
     <string name="constructor_qrs_complex">QRS Complex</string>
@@ -538,4 +556,6 @@
     <string name="clinical_label_others">Other parameters (e.g. temp=36.6, weight=70)</string>
     <string name="gender_male">Male</string>
     <string name="gender_female">Female</string>
+    <string name="clinical_gender_unset">— not specified</string>
+    <string name="clinical_clear_all">Clear all fields</string>
 </resources>

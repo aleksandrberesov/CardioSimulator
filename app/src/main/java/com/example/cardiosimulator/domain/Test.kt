@@ -3,6 +3,9 @@ package com.example.cardiosimulator.domain
 import kotlinx.serialization.Serializable
 
 @Serializable
+enum class QuestionKind { SingleChoice, AssembleEcg }
+
+@Serializable
 enum class QuestionStimulus { Text, Image, Ecg }
 
 @Serializable
@@ -22,7 +25,13 @@ data class TestQuestion(
     val imagePath: String? = null,
     val theme: String? = null,
     val tags: String? = null,
+    val assemble: EcgAssembly? = null,
 ) {
+    val kind: QuestionKind
+        get() = if (assemble != null) QuestionKind.AssembleEcg else QuestionKind.SingleChoice
+
+    val isAssembly: Boolean get() = kind == QuestionKind.AssembleEcg
+
     val stimulus: QuestionStimulus
         get() = when {
             !imagePath.isNullOrBlank() -> QuestionStimulus.Image

@@ -11,24 +11,24 @@ sealed interface HtmlBlock {
     data class Header(
         override val id: String = UUID.randomUUID().toString(),
         val level: Int,
-        val text: String
+        val text: String,
     ) : HtmlBlock
 
     data class Paragraph(
         override val id: String = UUID.randomUUID().toString(),
-        val html: String
+        val html: String,
     ) : HtmlBlock
 
     data class Image(
         override val id: String = UUID.randomUUID().toString(),
         val src: String,
-        val alt: String
+        val alt: String,
     ) : HtmlBlock
 
     data class KaTeX(
         override val id: String = UUID.randomUUID().toString(),
         val expression: String,
-        val displayMode: Boolean
+        val displayMode: Boolean,
     ) : HtmlBlock
 
     data class Ecg(
@@ -39,11 +39,11 @@ sealed interface HtmlBlock {
         val gridScheme: String = "Pink",
         val count: Int = 1,
         val seriesScheme: String = "OneColumn",
-        val caption: String
+        val caption: String,
     ) : HtmlBlock
 
     data class Table(
         override val id: String = UUID.randomUUID().toString(),
-        val rows: List<List<String>> = listOf(listOf(""))
+        val rows: List<List<String>> = listOf(listOf("")),
     ) : HtmlBlock
 }
