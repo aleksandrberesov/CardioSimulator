@@ -28,12 +28,26 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    flavorDimensions += "edition"
+    productFlavors {
+        create("full") {
+            dimension = "edition"
+        }
+        create("limited") {
+            dimension = "edition"
+            applicationIdSuffix = ".limited"
+            versionNameSuffix = "-limited"
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     lint {
         disable += "MissingTranslation"
@@ -71,6 +85,7 @@ dependencies {
     implementation(libs.zxing.android.embedded)
     testImplementation(libs.junit)
     testImplementation(libs.org.json)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

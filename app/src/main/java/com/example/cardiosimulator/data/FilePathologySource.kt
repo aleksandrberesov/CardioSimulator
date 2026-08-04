@@ -26,7 +26,7 @@ class FilePathologySource(
 
     override fun readPathology(id: String): PathologyFile? = runCatching {
         val file = File(root, "$id.dat").takeIf { it.canRead() } ?: return null
-        PathologyParser.parsePathology(file.readText(Charsets.UTF_8))
+        PathologyParser.parsePathology(file.readBytes())
     }.getOrNull()
 
     override fun listPathologies(): List<String> =

@@ -57,6 +57,30 @@ Good prompts when handing off:
 Keep this list current when you add or move a plan.
 
 ### Active
+- [`2026-07-android-limited-edition-and-export-tcp-parity.md`](active/2026-07-android-limited-edition-and-export-tcp-parity.md) —
+  the **other half** of the content-protection port: a **Limited (student) edition** (hides the 4
+  authoring modes + Settings data import/export) and the **egress policy** that keeps the encrypted
+  packs meaningful. Deliberately **complements** `sync/2026-07-android-content-pack-csp2-parity.md`,
+  which owns the pack/overlay pipeline and explicitly lists the Limited split as a non-goal — no
+  overlap between the two. The urgent half is the **exfiltration hole**: `AppViewModel.kt:434` uploads
+  the *entire* dataset over TCP on **every connect**, and the TCP target is student-editable
+  (`SettingsDialog.kt:248-349`) and **auto-applies after 1 s with no button press** (`:100-105`) — so a
+  student can point the app at their own socket and receive everything the packs were meant to protect.
+  Android has **no edition concept at all** (no flavors, `buildConfig` not even enabled). Key trap:
+  `isMinifyEnabled = false` means a `BuildConfig` flag would still ship every constructor screen in the
+  "limited" APK — use a **flavor source set + `const val`** so it folds at compile time. Mode filtering
+  has one clean choke point (`MainActivity.kt:42-44`), but two `@Preview` copies and exhaustive `when`s
+  to respect. *Spec ready — 5 phases / 5 PRs.*
+- [`2026-07-android-delta-binary-dat-format-parity.md`](active/2026-07-android-delta-binary-dat-format-parity.md) —
+  Windows now stores pathology waveforms as a compact **`CSD1` delta-binary** `.dat` (16-bit deltas
+  instead of decimal text): 12.40 GB → 5.42 GB uncompressed, packs ~29 % smaller. Android can only
+  parse **text** `.dat`, so it fails the moment it is handed a binarized dataset. Add a **decode-only**
+  path — `parsePathology(ByteArray)` sniffing the 4-byte magic, else UTF-8 — plus byte reads in
+  `AssetPathologySource`/`FilePathologySource`. Purely additive: text datasets keep working, and
+  text/binary `.dat` may be **mixed** in one dataset (~0.2 % of real records stay text). Gotchas:
+  **no version byte** after the magic; delta decode needs two's-complement wrap; `Lead` ordinal is the
+  wire format (order already matches — don't reorder); `LeadStream` has no `elements` → read & discard.
+  *Non-goal: the `.pak` reader (Android has none yet) — this is its prerequisite.*
 - [`2026-07-android-rhythm-expand-collapse-all-icon-parity.md`](active/2026-07-android-rhythm-expand-collapse-all-icon-parity.md) —
   Windows fixed the rhythm selector's **Expand-All / Collapse-All** header buttons, whose icons used
   non-existent Segoe MDL2 glyphs (`&#xE9A1;`/`&#xE9A0;`) and rendered as blank "tofu" (so they looked

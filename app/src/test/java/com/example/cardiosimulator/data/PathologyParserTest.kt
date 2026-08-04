@@ -309,4 +309,76 @@ class PathologyParserTest {
         assertEquals(file.tips, parsedAgain.tips)
         assertEquals(file.tipComments, parsedAgain.tipComments)
     }
+
+    @Test
+    fun `binary CSD1 parses correctly`() {
+        val header = "pathology:bin_test\ntitle:Binary Test\n"
+        val leads = listOf(
+            0 to intArrayOf(1024, 1025, 1023), // Lead I
+            6 to intArrayOf(1000, 1100)        // Lead V1
+        )
+        val bytes = buildCSD1(header, leads)
+        
+        val file = PathologyParser.parsePathology(bytes)
+        assertEquals("bin_test", file.id)
+        assertEquals("Binary Test", file.titleEn)
+        assertEquals(2, file.leads.size)
+        
+        assertEquals(1025, file.leads[Lead.I]!!.samples[1])
+        assertEquals(1100, file.leads[Lead.V1]!!.samples[1])
+    }
+
+    @Test
+    fun `binary CSD1 handles int16 overflow wrap-around`() {
+        // {30000, -30000, 30000, 0, 32767, -32768}
+        val header = "pathology:wrap\ntitle:Wrap\n"
+        val samples = intArrayOf(30000, -30000, 30000, 0, 32767, -32768)
+        val bytes = buildCSD1(header, listOf(0 to samples))
+        
+        val file = PathologyParser.parsePathology(bytes)
+        val parsedSamples = file.leads[Lead.I]!!.samples
+        for (i in samples.indices) {
+            assertEquals("Sample at $i", samples[i], parsedSamples[i])
+        }
+    }
+
+    @Test
+    fun `text pathology with UTF-8 BOM parses`() {
+        val bom = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte())
+        val text = "pathology:bom\ntitle:BOM\nleads:0\n".toByteArray(Charsets.UTF_8)
+        val bytes = bom + text
+        
+        val file = PathologyParser.parsePathology(bytes)
+        assertEquals("bom", file.id)
+    }
+
+    private fun buildCSD1(header: String, leads: List<Pair<Int, IntArray>>): ByteArray {
+        val bos = java.io.ByteArrayOutputStream()
+        fun writeInt(i: Int) {
+            bos.write(i and 0xFF); bos.write((i shr 8) and 0xFF)
+            bos.write((i shr 16) and 0xFF); bos.write((i shr 24) and 0xFF)
+        }
+        fun writeShort(s: Short) {
+            bos.write(s.toInt() and 0xFF); bos.write((s.toInt() shr 8) and 0xFF)
+        }
+        fun writeString(s: String?) {
+            if (s == null) { writeInt(-1) } else {
+                val b = s.toByteArray(Charsets.UTF_8); writeInt(b.size); bos.write(b)
+            }
+        }
+        bos.write("CSD1".toByteArray())
+        writeString(header)
+        writeInt(leads.size)
+        for ((idx, samples) in leads) {
+            bos.write(idx)
+            writeString(null) // elements
+            writeInt(samples.size)
+            var prev = 0
+            for (v in samples) {
+                writeShort((v - prev).toShort())
+                prev = v
+            }
+        }
+        return bos.toByteArray()
+    }
 }

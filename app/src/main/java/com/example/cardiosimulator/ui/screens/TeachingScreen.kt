@@ -579,24 +579,20 @@ private fun CourseViewerOverlay(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.End
             ) {
-                TextButton(onClick = {
-                    appViewModel.updateOperatingMode(
-                        appViewModel.operatingModes.find { it.id == OperatingMode.Testing }!!
-                    )
-                }) {
-                    Icon(Icons.Default.Quiz, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.teaching_take_test))
+                appViewModel.operatingModes.find { it.id == OperatingMode.Testing }?.let { mode ->
+                    TextButton(onClick = { appViewModel.updateOperatingMode(mode) }) {
+                        Icon(Icons.Default.Quiz, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(R.string.teaching_take_test))
+                    }
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                TextButton(onClick = {
-                    appViewModel.updateOperatingMode(
-                        appViewModel.operatingModes.find { it.id == OperatingMode.Examination }!!
-                    )
-                }) {
-                    Icon(Icons.Default.School, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.teaching_take_exam))
+                appViewModel.operatingModes.find { it.id == OperatingMode.Examination }?.let { mode ->
+                    TextButton(onClick = { appViewModel.updateOperatingMode(mode) }) {
+                        Icon(Icons.Default.School, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(R.string.teaching_take_exam))
+                    }
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 IconButton(onClick = onMonitorClick) {

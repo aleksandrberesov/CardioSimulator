@@ -10,6 +10,8 @@ object PathologyParser {
 
     class FormatException(message: String) : RuntimeException(message)
 
+    private val CSD1_MAGIC = byteArrayOf(0x43, 0x53, 0x44, 0x31) // "CSD1"
+
     // ─── manifest.txt ───────────────────────────────────────────────────
 
     fun parseManifest(text: String): PathologyManifest {
@@ -86,11 +88,86 @@ object PathologyParser {
 
     // ─── <pathology>.dat ────────────────────────────────────────────────
 
+    fun parsePathology(bytes: ByteArray): PathologyFile {
+        if (bytes.isEmpty()) throw FormatException("pathology: empty file")
+        return if (hasMagic(bytes)) {
+            parsePathologyBinary(bytes)
+        } else {
+            parsePathology(decodeUtf8(bytes))
+        }
+    }
+
     fun parsePathology(text: String): PathologyFile {
         val blocks = splitBlocks(text)
         if (blocks.isEmpty()) throw FormatException("pathology: empty file")
 
         val header = blocks.first()
+        val leadBlocks = blocks.drop(1)
+        val leads = linkedMapOf<Lead, LeadStream>()
+        for (block in leadBlocks) {
+            val leadToken = block["lead"] ?: continue
+            val lead = Lead.fromToken(leadToken)
+                ?: throw FormatException("pathology: unknown lead '$leadToken'")
+            val count = block["count"]?.trim()?.toIntOrNull()
+                ?: throw FormatException("pathology: lead $lead missing 'count'")
+            val pointsField = block["points"]
+                ?: throw FormatException("pathology: lead $lead missing 'points'")
+            val samples = parseIntCsv(pointsField)
+            if (samples.size != count) {
+                throw FormatException(
+                    "pathology: lead $lead 'count' says $count but parsed ${samples.size} samples"
+                )
+            }
+
+            leads[lead] = LeadStream(lead, samples)
+        }
+        return buildFromHeader(header, leads)
+    }
+
+    private fun hasMagic(b: ByteArray) = b.size >= 4 &&
+            b[0] == CSD1_MAGIC[0] && b[1] == CSD1_MAGIC[1] && b[2] == CSD1_MAGIC[2] && b[3] == CSD1_MAGIC[3]
+
+    private fun decodeUtf8(b: ByteArray): String =
+        if (b.size >= 3 && b[0] == 0xEF.toByte() && b[1] == 0xBB.toByte() && b[2] == 0xBF.toByte())
+            String(b, 3, b.size - 3, Charsets.UTF_8) else String(b, Charsets.UTF_8)
+
+    private fun parsePathologyBinary(bytes: ByteArray): PathologyFile {
+        val buf = java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        buf.position(CSD1_MAGIC.size)
+
+        val headerText = readString(buf) ?: throw FormatException("pathology: binary missing header")
+        val header = splitBlocks(headerText).firstOrNull() ?: emptyMap()
+
+        val leadCount = buf.int
+        val leads = linkedMapOf<Lead, LeadStream>()
+        repeat(leadCount) {
+            val idx = buf.get().toInt() and 0xFF
+            if (idx >= Lead.entries.size) throw FormatException("pathology: lead index $idx out of range")
+            val lead = Lead.entries[idx]
+            readString(buf) // elements text — Android has none; discard
+            val n = buf.int
+            if (n < 0) throw FormatException("pathology: negative sample count")
+            val samples = IntArray(n)
+            var prev = 0
+            for (i in 0 until n) {
+                val v = (prev + buf.short).toShort().toInt()
+                samples[i] = v
+                prev = v
+            }
+            leads[lead] = LeadStream(lead, samples)
+        }
+        return buildFromHeader(header, leads)
+    }
+
+    private fun readString(buf: java.nio.ByteBuffer): String? {
+        val len = buf.int
+        if (len < 0) return null
+        val b = ByteArray(len)
+        buf.get(b)
+        return String(b, Charsets.UTF_8)
+    }
+
+    private fun buildFromHeader(header: Map<String, String>, leads: Map<Lead, LeadStream>): PathologyFile {
         val id = header["pathology"] ?: throw FormatException("pathology: missing 'pathology'")
         val title = header["title"].orEmpty()
         val name = header["name"]
@@ -102,25 +179,6 @@ object PathologyParser {
         val tips = parseTips(header["tips"])
         val tipComments = parseTipComments(header["tip_notes"])
 
-        val leadBlocks = blocks.drop(1)
-        val leads = linkedMapOf<Lead, LeadStream>()
-        for (block in leadBlocks) {
-            val leadToken = block["lead"] ?: continue
-            val lead = Lead.fromToken(leadToken)
-                ?: throw FormatException("pathology[$id]: unknown lead '$leadToken'")
-            val count = block["count"]?.trim()?.toIntOrNull()
-                ?: throw FormatException("pathology[$id]: lead $lead missing 'count'")
-            val pointsField = block["points"]
-                ?: throw FormatException("pathology[$id]: lead $lead missing 'points'")
-            val samples = parseIntCsv(pointsField)
-            if (samples.size != count) {
-                throw FormatException(
-                    "pathology[$id]: lead $lead 'count' says $count but parsed ${samples.size} samples"
-                )
-            }
-
-            leads[lead] = LeadStream(lead, samples)
-        }
         return PathologyFile(
             id, title, name, leads, globalMarkers, tips, tipComments,
             group, description, clinicalCase, number

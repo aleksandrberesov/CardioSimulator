@@ -18,3 +18,9 @@ data class OperatingModeModel(
     val id: OperatingMode,
     val description: String = ""
 )
+
+val OperatingMode.isAuthoring: Boolean
+    get() = this == OperatingMode.Constructor ||
+            this == OperatingMode.CourseConstructor ||
+            this == OperatingMode.TestConstructor ||
+            this == OperatingMode.OSKEConstructor

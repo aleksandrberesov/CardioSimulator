@@ -25,8 +25,11 @@ import com.example.cardiosimulator.data.FileQuestionBankSource
 import com.example.cardiosimulator.data.QuestionBankRepository
 import com.example.cardiosimulator.data.TestThemeStore
 import com.example.cardiosimulator.domain.AppStateModel
+import com.example.cardiosimulator.domain.AppEdition
 import com.example.cardiosimulator.domain.CourseEntry
 import com.example.cardiosimulator.domain.Language
+import com.example.cardiosimulator.data.EcgCalibration
+import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.domain.TestSeed
@@ -38,6 +41,7 @@ import com.example.cardiosimulator.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -54,6 +58,7 @@ import java.io.File
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.Socket
+import kotlin.math.roundToInt
 
 /**
  * High-level state of the user-controlled ECG dataset.
@@ -151,6 +156,7 @@ class AppViewModel(
     val loadingInfo: StateFlow<LoadingInfo> = _loadingInfo.asStateFlow()
 
     private var extractionJob: Job? = null
+    internal var pointsJob: Job? = null
 
     fun cancelLoading() { extractionJob?.cancel() }
 
@@ -455,6 +461,7 @@ class AppViewModel(
 
     private fun disconnectTcp() {
         connectionJob?.cancel()
+        stopPointsStream()
         viewModelScope.launch(Dispatchers.IO) {
             try { tcpSocket?.close() } catch (_: IOException) {}
             tcpSocket = null
@@ -474,12 +481,14 @@ class AppViewModel(
                     if (name != null) paramsMap["name"] = name
                     val msg = TcpMessage.StartCommand(
                         id = java.util.UUID.randomUUID().toString(),
-                        sampleRate = null,
+                        sampleRate = EcgCalibration().sampleRateHz.roundToInt(),
                         params = paramsMap,
                     )
                     val header = TcpProtocol.encode(msg) + "\n"
                     socket.getOutputStream().write(header.toByteArray(Charsets.UTF_8))
                     socket.getOutputStream().flush()
+
+                    startPointsStream(pathology, socket)
                 } catch (_: Exception) {
                 }
             }
@@ -487,6 +496,7 @@ class AppViewModel(
     }
 
     fun sendStopCommand() {
+        stopPointsStream()
         val socket = tcpSocket ?: return
         if (_tcpConnectionState.value !is TcpConnectionState.Connected) return
         viewModelScope.launch(Dispatchers.IO) {
@@ -502,7 +512,87 @@ class AppViewModel(
         }
     }
 
+    internal fun startPointsStream(pathologyId: String?, socket: Socket) {
+        stopPointsStream()
+        if (pathologyId == null || repository == null) return
+
+        val waveforms = mutableMapOf<Lead, FloatArray>()
+        repository.manifest()?.leadOrder?.forEach { lead ->
+            repository.leadWaveform(pathologyId, lead)?.let { points ->
+                if (points.values.isNotEmpty()) {
+                    waveforms[lead] = points.values.toFloatArray()
+                }
+            }
+        }
+
+        if (waveforms.isEmpty()) return
+
+        pointsJob = viewModelScope.launch(Dispatchers.IO) {
+            pointsLoopAsync(pathologyId, waveforms, socket)
+        }
+    }
+
+    internal fun stopPointsStream() {
+        pointsJob?.cancel()
+        pointsJob = null
+    }
+
+    internal suspend fun pointsLoopAsync(
+        pathologyId: String,
+        waveforms: Map<Lead, FloatArray>,
+        socketAtLaunch: Socket
+    ) {
+        val sampleRateHz = EcgCalibration().sampleRateHz
+        val chunkSize = 50
+        val periodMs = (chunkSize * 1000.0 / sampleRateHz).toLong()
+        val cursors = waveforms.keys.associateWith { 0 }.toMutableMap()
+
+        while (currentCoroutineContext().isActive) {
+            // Stale-socket and connection-state guard
+            if (tcpSocket !== socketAtLaunch || _tcpConnectionState.value !is TcpConnectionState.Connected) {
+                break
+            }
+
+            tcpSendMutex.withLock {
+                try {
+                    val out = socketAtLaunch.getOutputStream()
+                    waveforms.forEach { (lead, values) ->
+                        val offset = cursors[lead] ?: 0
+                        val count = minOf(chunkSize, values.size)
+                        val chunk = FloatArray(count)
+                        for (i in 0 until count) {
+                            chunk[i] = values[(offset + i) % values.size]
+                        }
+
+                        val msg = TcpMessage.PointsMessage(
+                            id = java.util.UUID.randomUUID().toString(),
+                            lead = lead,
+                            identy = pathologyId,
+                            offset = offset,
+                            values = chunk.toList()
+                        )
+                        val frame = TcpProtocol.encode(msg) + "\n"
+                        out.write(frame.toByteArray(Charsets.UTF_8))
+                        
+                        cursors[lead] = (offset + count) % values.size
+                    }
+                    out.flush()
+                } catch (_: Exception) {
+                    // Socket error, loop will bail on next check or via disconnectTcp
+                }
+            }
+            delay(periodMs)
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopPointsStream()
+    }
+
     private fun sendUploadArchive() {
+        if (AppEdition.IS_LIMITED) return // Interim: no upload in student edition
+
         val socket = tcpSocket ?: return
         val ctx = appContext ?: return
         val sourceDir = File(ctx.filesDir, PATHOLOGIES_DIR)

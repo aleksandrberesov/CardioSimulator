@@ -42,6 +42,7 @@ import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
 
 import com.example.cardiosimulator.domain.Language
+import com.example.cardiosimulator.domain.AppEdition
 import com.example.cardiosimulator.network.TcpConnectionState
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 
@@ -348,86 +349,102 @@ fun SettingsContent(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                if (!AppEdition.IS_LIMITED) {
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                // ECG data ZIP archive — lets the user re-pick the source file.
-                // The picker takes a persistable read permission so the chosen
-                // file keeps working across reboots.
-                val context = LocalContext.current
-                val pickZipFile = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.OpenDocument()
-                ) { uri ->
-                    if (uri != null) {
-                        runCatching {
-                            context.contentResolver.takePersistableUriPermission(
-                                uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            )
+                    // ECG data ZIP archive — lets the user re-pick the source file.
+                    // The picker takes a persistable read permission so the chosen
+                    // file keeps working across reboots.
+                    val context = LocalContext.current
+                    val pickZipFile = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.OpenDocument()
+                    ) { uri ->
+                        if (uri != null) {
+                            runCatching {
+                                context.contentResolver.takePersistableUriPermission(
+                                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                )
+                            }
+                            appViewModel.setDataFolder(context, uri)
+                            onDismiss()
                         }
-                        appViewModel.setDataFolder(context, uri)
-                        onDismiss()
                     }
-                }
-                Text(
-                    text = stringResource(R.string.data_source_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                OutlinedButton(onClick = { pickZipFile.launch(arrayOf("application/zip", "application/x-zip-compressed")) }) {
-                    Text(stringResource(R.string.data_source_change_folder))
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Export ZIP: re-packs the in-memory dataset (with edits) to
-                // a user-picked destination. SAF CreateDocument lets the user
-                // choose the file name and folder; no auto-upload.
-                val exportZipLauncher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.CreateDocument("application/zip")
-                ) { uri ->
-                    if (uri != null) appViewModel.exportZip(context, uri)
-                }
-                OutlinedButton(onClick = { exportZipLauncher.launch("ecg_export.zip") }) {
-                    Text(stringResource(R.string.data_source_export_zip))
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Course Data ZIP archive
-                val pickCourseZipFile = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.OpenDocument()
-                ) { uri ->
-                    if (uri != null) {
-                        runCatching {
-                            context.contentResolver.takePersistableUriPermission(
-                                uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    Text(
+                        text = stringResource(R.string.data_source_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    OutlinedButton(onClick = {
+                        pickZipFile.launch(
+                            arrayOf(
+                                "application/zip",
+                                "application/x-zip-compressed"
                             )
-                        }
-                        appViewModel.setCourseDataFolder(context, uri)
-                        onDismiss()
+                        )
+                    }) {
+                        Text(stringResource(R.string.data_source_change_folder))
                     }
-                }
-                val exportCourseZipLauncher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.CreateDocument("application/zip")
-                ) { uri ->
-                    if (uri != null) appViewModel.exportCoursesZip(context, uri)
-                }
 
-                Text(
-                    text = stringResource(R.string.course_data_source_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                OutlinedButton(onClick = { pickCourseZipFile.launch(arrayOf("application/zip", "application/x-zip-compressed")) }) {
-                    Text(stringResource(R.string.course_data_source_change))
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Export ZIP: re-packs the in-memory dataset (with edits) to
+                    // a user-picked destination. SAF CreateDocument lets the user
+                    // choose the file name and folder; no auto-upload.
+                    val exportZipLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.CreateDocument("application/zip")
+                    ) { uri ->
+                        if (uri != null) appViewModel.exportZip(context, uri)
+                    }
+                    OutlinedButton(onClick = { exportZipLauncher.launch("ecg_export.zip") }) {
+                        Text(stringResource(R.string.data_source_export_zip))
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Course Data ZIP archive
+                    val pickCourseZipFile = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.OpenDocument()
+                    ) { uri ->
+                        if (uri != null) {
+                            runCatching {
+                                context.contentResolver.takePersistableUriPermission(
+                                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                )
+                            }
+                            appViewModel.setCourseDataFolder(context, uri)
+                            onDismiss()
+                        }
+                    }
+                    val exportCourseZipLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.CreateDocument("application/zip")
+                    ) { uri ->
+                        if (uri != null) appViewModel.exportCoursesZip(context, uri)
+                    }
+
+                    Text(
+                        text = stringResource(R.string.course_data_source_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    OutlinedButton(onClick = {
+                        pickCourseZipFile.launch(
+                            arrayOf(
+                                "application/zip",
+                                "application/x-zip-compressed"
+                            )
+                        )
+                    }) {
+                        Text(stringResource(R.string.course_data_source_change))
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedButton(onClick = { exportCourseZipLauncher.launch("courses_export.zip") }) {
+                        Text(stringResource(R.string.course_data_source_export))
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedButton(onClick = { exportCourseZipLauncher.launch("courses_export.zip") }) {
-                    Text(stringResource(R.string.course_data_source_export))
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
             }
 
             TextButton(

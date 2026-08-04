@@ -18,8 +18,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.domain.AppBuilder
+import com.example.cardiosimulator.domain.AppEdition
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
+import com.example.cardiosimulator.domain.isAuthoring
 import com.example.cardiosimulator.domain.OskeAnswerKey
 import com.example.cardiosimulator.domain.Test
 import com.example.cardiosimulator.domain.TestQuestion
@@ -413,9 +415,11 @@ fun MainScreen(appViewModel: AppViewModel) {
 @Composable
 fun MainScreenPreview() {
     val appBuilder = AppBuilder()
-    OperatingMode.entries.forEach { mode ->
-        appBuilder.addMode(OperatingModeModel(mode))
-    }
+    OperatingMode.entries
+        .filter { !AppEdition.IS_LIMITED || !it.isAuthoring }
+        .forEach { mode ->
+            appBuilder.addMode(OperatingModeModel(mode))
+        }
 
     val previewViewModel: AppViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {

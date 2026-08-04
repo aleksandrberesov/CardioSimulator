@@ -1,0 +1,10 @@
+- [x] Phase 1: Implement `CSD1` decoder in `PathologyParser.kt`
+    - [x] Refactor `buildFromHeader`
+    - [x] Implement `parsePathology(ByteArray)` and `parsePathologyBinary`
+- [x] Phase 2: Update `AssetPathologySource.kt` to read bytes
+- [x] Phase 3: Update `FilePathologySource.kt` to read bytes
+- [x] Phase 4: Verification
+    - [x] Add unit tests for binary format
+    - [x] Run all `PathologyParserTest` cases
+- [x] Phase 5: Cleanup
+    - [x] Move plan to `completed`

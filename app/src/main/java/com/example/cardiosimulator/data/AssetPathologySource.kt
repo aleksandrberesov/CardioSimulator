@@ -23,8 +23,8 @@ class AssetPathologySource(
     }.getOrNull()
 
     override fun readPathology(id: String): PathologyFile? = runCatching {
-        val text = readText("$baseDir/$id.dat") ?: return null
-        PathologyParser.parsePathology(text)
+        val bytes = readBytes("$baseDir/$id.dat") ?: return null
+        PathologyParser.parsePathology(bytes)
     }.getOrNull()
 
     override fun listPathologies(): List<String> = runCatching {
@@ -36,7 +36,12 @@ class AssetPathologySource(
     override fun readGroupsText(): String? = readText("$baseDir/groups.txt")
 
     private fun readText(path: String): String? = runCatching {
-        assets.open(path).use { String(it.readBytes(), Charsets.UTF_8) }
+        val bytes = readBytes(path) ?: return null
+        String(bytes, Charsets.UTF_8)
+    }.getOrNull()
+
+    private fun readBytes(path: String): ByteArray? = runCatching {
+        assets.open(path).use { it.readBytes() }
     }.getOrNull()
 
     companion object {
