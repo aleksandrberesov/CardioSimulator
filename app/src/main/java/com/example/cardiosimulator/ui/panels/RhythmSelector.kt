@@ -219,7 +219,7 @@ fun RhythmSelector(
             Text(
                 text = stringResource(R.string.rhythm_selector_title),
                 style = MaterialTheme.typography.titleMedium,
-                color = TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
 
@@ -254,7 +254,7 @@ fun RhythmSelector(
                 Icon(
                     imageVector = if (isGrouped) Icons.Default.ViewList else Icons.AutoMirrored.Filled.Sort,
                     contentDescription = null,
-                    tint = if (isClinicalMode) TextSecondary else AccentGreen
+                    tint = if (isClinicalMode) MaterialTheme.colorScheme.onSurfaceVariant else AccentGreen
                 )
             }
 
@@ -265,7 +265,7 @@ fun RhythmSelector(
                 Icon(
                     imageVector = if (isClinicalMode) Icons.Default.Healing else Icons.Outlined.Healing,
                     contentDescription = stringResource(R.string.clinical_mode_tooltip),
-                    tint = if (isClinicalMode) Color.Red else TextSecondary
+                    tint = if (isClinicalMode) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -277,7 +277,7 @@ fun RhythmSelector(
                     Icon(
                         imageVector = if (isDrawerFixed) Icons.Default.PushPin else Icons.Outlined.PushPin,
                         contentDescription = stringResource(R.string.fix_drawer),
-                        tint = if (isDrawerFixed) AccentGreen else TextSecondary
+                        tint = if (isDrawerFixed) AccentGreen else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -353,8 +353,8 @@ fun RhythmSelector(
                         .align(Alignment.BottomEnd)
                         .padding(end = 8.dp, bottom = 8.dp),
                     shape = RoundedCornerShape(8.dp),
-                    color = PanelBackground,
-                    border = BorderStroke(1.dp, ControlBorder),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     shadowElevation = 3.dp
                 ) {
                     Column(
@@ -427,7 +427,7 @@ fun RhythmGroupHeader(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        color = AccentGreenTint
+        color = MaterialTheme.colorScheme.primaryContainer
     ) {
         Row(
             modifier = Modifier
@@ -439,20 +439,20 @@ fun RhythmGroupHeader(
                 imageVector = if (isCollapsed) Icons.Default.KeyboardArrowRight else Icons.Default.KeyboardArrowDown,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
-                tint = AccentGreen
+                tint = MaterialTheme.colorScheme.primary
             )
             Text(
                 text = name,
                 style = MaterialTheme.typography.labelLarge.copy(
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 ),
                 modifier = Modifier.weight(1f)
             )
             Text(
                 text = "($count)",
                 style = MaterialTheme.typography.labelMedium.copy(
-                    color = TextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
         }
@@ -482,20 +482,20 @@ fun RhythmSubgroupHeader(
                 imageVector = if (isCollapsed) Icons.Default.KeyboardArrowRight else Icons.Default.KeyboardArrowDown,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
-                tint = TextSecondary
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = name,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 ),
                 modifier = Modifier.weight(1f)
             )
             Text(
                 text = "($count)",
                 style = MaterialTheme.typography.labelMedium.copy(
-                    color = TextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
         }
@@ -527,14 +527,14 @@ fun RhythmItem(
     ) {
         Text(
             text = display,
-            color = if (isSelected) Color.Red else TextPrimary,
+            color = if (isSelected) Color.Red else MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp), // Smaller font
         )
     }
     HorizontalDivider(
         modifier = Modifier.padding(horizontal = 8.dp),
         thickness = 0.5.dp,
-        color = Hairline,
+        color = MaterialTheme.colorScheme.outlineVariant,
     )
 }
 

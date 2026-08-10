@@ -324,7 +324,7 @@ private fun MonitorOverlay(
                         .requiredWidth(64.dp)
                         .rotate(-90f),
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     textAlign = TextAlign.Center
                 )

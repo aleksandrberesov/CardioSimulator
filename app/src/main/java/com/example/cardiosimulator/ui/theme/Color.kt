@@ -16,6 +16,15 @@ val HoverFill = Color(0x14808080)
 val TextPrimary = Color(0xFF1B2430)
 val TextSecondary = Color(0xFF5A6B82)
 
+// Dark Theme Tokens
+val DarkPageBackground = Color(0xFF000000)
+val DarkPanelBackground = Color(0xFF1C1C1E)
+val DarkControlFill = Color(0xFF2C2C2E)
+val DarkControlBorder = Color(0xFF38383A)
+val DarkTextPrimary = Color(0xFFFFFFFF)
+val DarkTextSecondary = Color(0xFF8E8E93)
+val DarkAccentTint = Color(0xFF1E3B2B)
+
 // Semantic colors for Testing/Examination
 val Positive = Color(0xFF2E9E5B)   // correct answer / pass
 val Negative = Color(0xFFCC3A3A)   // wrong answer / fail / countdown urgency

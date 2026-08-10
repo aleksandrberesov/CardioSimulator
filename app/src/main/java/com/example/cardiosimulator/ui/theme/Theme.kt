@@ -14,21 +14,22 @@ import androidx.compose.ui.unit.dp
 private val DarkColorScheme = darkColorScheme(
     primary = AccentGreen,
     onPrimary = OnAccent,
-    secondary = TextSecondary,
+    secondary = DarkTextSecondary,
     tertiary = EcgTraceTeal,
-    background = PageBackground,
-    surface = PanelBackground,
-    onBackground = TextPrimary,
-    onSurface = TextPrimary,
-    surfaceVariant = ControlFill,
-    onSurfaceVariant = TextSecondary,
-    outline = ControlBorder,
-    outlineVariant = Hairline,
-    surfaceContainer = PanelBackground,
-    surfaceContainerLow = PanelBackground,
-    surfaceContainerLowest = PanelBackground,
-    surfaceContainerHigh = PanelBackground,
-    surfaceContainerHighest = PanelBackground,
+    background = DarkPageBackground,
+    surface = DarkPanelBackground,
+    onBackground = DarkTextPrimary,
+    onSurface = DarkTextPrimary,
+    surfaceVariant = DarkControlFill,
+    onSurfaceVariant = DarkTextSecondary,
+    outline = DarkControlBorder,
+    outlineVariant = DarkControlFill,
+    surfaceContainer = DarkPanelBackground,
+    surfaceContainerLow = DarkPanelBackground,
+    surfaceContainerLowest = DarkPanelBackground,
+    surfaceContainerHigh = DarkPanelBackground,
+    surfaceContainerHighest = DarkPanelBackground,
+    primaryContainer = DarkAccentTint,
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -49,6 +50,7 @@ private val LightColorScheme = lightColorScheme(
     surfaceContainerLowest = PanelBackground,
     surfaceContainerHigh = PanelBackground,
     surfaceContainerHighest = PanelBackground,
+    primaryContainer = AccentGreenTint,
 )
 
 val CardioShapes = Shapes(

@@ -23,7 +23,7 @@ fun SideDrawer(
     handlerContent: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     drawerWidth: Dp = 300.dp,
-    drawerColor: Color = MaterialTheme.colorScheme.surfaceVariant,
+    drawerColor: Color = MaterialTheme.colorScheme.surface,
     handlerColor: Color = MaterialTheme.colorScheme.surfaceVariant,
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
     handlerModifier: Modifier = Modifier,
