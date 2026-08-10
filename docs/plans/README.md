@@ -205,6 +205,8 @@ Keep this list current when you add or move a plan.
 *(none)*
 
 ### Completed
+- [`2026-08-android-anglesharp-dependency-update-parity.md`](completed/2026-08-android-anglesharp-dependency-update-parity.md) —
+  Port AngleSharp security update dependency parity to Android (updated Jsoup to 1.23.1).
 - [`2026-07-android-constructor-filter-dropdown-parity.md`](completed/2026-07-android-constructor-filter-dropdown-parity.md) —
   add a **display Filters dropdown** (None / LP / HP / BP) to the **Constructor** bottom control
   panel, applied to preview and all-leads overview.

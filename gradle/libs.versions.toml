@@ -21,7 +21,7 @@ datastorePreferences = "1.1.1"
 json = "20240303"
 coil = "2.7.0"
 webkit = "1.12.1"
-jsoup = "1.22.2"
+jsoup = "1.23.1"
 kotlinxCoroutines = "1.10.1"
 
 [libraries]
