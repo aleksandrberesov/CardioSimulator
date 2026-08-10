@@ -248,5 +248,9 @@ Keep this list current when you add or move a plan.
   (Dropped) superseded by `2026-05-transit-from-legacy.md`.
 - [`2026-05-editor-anchor-dot-projection.md`](completed/2026-05-editor-anchor-dot-projection.md) —
   (Dropped) superseded by `2026-05-transit-from-legacy.md`.
+- [`2026-06-android-top-panel-size-height-parity.md`](completed/2026-06-android-top-panel-size-height-parity.md) —
+  sync the top-panel pill size + compact bar height to Android (Windows parity). Shared `Tab` gains
+  a `Large` variant (padding 9,3→14,7, font 13→14) applied to top-bar selectors; top bar hugs content
+  (logo height 44dp) and drops vertical padding.
 - [`2026-05-editor-mode.md`](completed/2026-05-editor-mode.md) — (Dropped)
   replaced by `2026-05-transit-from-legacy.md`. Anchor-based design dropped.

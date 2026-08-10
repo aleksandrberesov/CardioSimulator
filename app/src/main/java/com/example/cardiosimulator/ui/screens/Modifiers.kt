@@ -22,7 +22,7 @@ import com.example.cardiosimulator.ui.theme.PageBackground
 fun Modifier.topSection(): Modifier {
     return this
         .background(Color.Transparent)
-        .padding(8.dp)
+        .padding(horizontal = 8.dp, vertical = 0.dp)
         .fillMaxWidth()
 }
 

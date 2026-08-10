@@ -261,7 +261,7 @@ fun MainScreen(appViewModel: AppViewModel) {
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize().background(PageBackground).systemBarsPadding()) {
             Box(
-                modifier = Modifier.weight(2f).topSection(),
+                modifier = Modifier.topSection(),
                 contentAlignment = Alignment.Center
             ) {
                 TopControlPanel(

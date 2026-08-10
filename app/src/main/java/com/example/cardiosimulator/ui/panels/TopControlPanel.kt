@@ -4,8 +4,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.DropdownMenu
@@ -67,24 +67,23 @@ fun TopControlPanel(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight()
-                .padding(horizontal = 8.dp),
+                .padding(horizontal = 8.dp, vertical = 0.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
+                    .weight(1f),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
-                    modifier = Modifier.wrapContentWidth().fillMaxHeight()
+                    modifier = Modifier.wrapContentWidth()
                 ) {
                     Tab(
                         text = stringResource(selectedOperatingMode.id.titleRes),
                         showChevron = true,
+                        isLarge = true,
                         onClick = { expanded = true },
                         modifier = Modifier.padding(vertical = 4.dp)
                     )
@@ -104,7 +103,7 @@ fun TopControlPanel(
                     }
                 }
                 Box(
-                    modifier = Modifier.weight(1f).fillMaxWidth().fillMaxHeight()
+                    modifier = Modifier.weight(1f).fillMaxWidth()
                 ){
                     when (selectedOperatingMode.id) {
                         OperatingMode.Teaching -> {
@@ -129,12 +128,14 @@ fun TopControlPanel(
                                     Tab(
                                         text = stringResource(R.string.test_ctor_tab_test),
                                         isActive = activeTab == ConstructorTab.TEST,
+                                        isLarge = true,
                                         onClick = { testConstructorViewModel.setTab(ConstructorTab.TEST) },
                                         modifier = Modifier.padding(vertical = 4.dp)
                                     )
                                     Tab(
                                         text = stringResource(R.string.test_ctor_tab_bank),
                                         isActive = activeTab == ConstructorTab.BANK,
+                                        isLarge = true,
                                         onClick = { testConstructorViewModel.setTab(ConstructorTab.BANK) },
                                         modifier = Modifier.padding(vertical = 4.dp)
                                     )
@@ -165,7 +166,7 @@ fun TopControlPanel(
             Image(
                 painter = painterResource(id = R.drawable.main_logo),
                 contentDescription = "Company Logo",
-                modifier = Modifier.fillMaxHeight()
+                modifier = Modifier.height(44.dp)
             )
         }
     }

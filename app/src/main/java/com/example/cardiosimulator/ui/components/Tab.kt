@@ -36,6 +36,7 @@ fun Tab(
     isActive: Boolean = false,
     showChevron: Boolean = false,
     isRepeatable: Boolean = false,
+    isLarge: Boolean = false,
     text: String? = null,
     subText: String? = null,
     icon: ImageVector? = null,
@@ -94,7 +95,10 @@ fun Tab(
     Row(
         modifier = baseModifier
             .then(clickModifier)
-            .padding(horizontal = if (showChevron) 9.dp else 4.dp),
+            .padding(
+                horizontal = if (isLarge) 14.dp else if (showChevron) 9.dp else 4.dp,
+                vertical = if (isLarge) 7.dp else 3.dp
+            ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -108,13 +112,13 @@ fun Tab(
                     imageVector = icon,
                     contentDescription = iconContentDescription ?: text,
                     tint = resolvedContentColor,
-                    modifier = iconModifier.padding(4.dp)
+                    modifier = iconModifier.padding(4.dp).size(if (isLarge) 17.dp else 16.dp)
                 )
             } else if (painter != null) {
                 androidx.compose.foundation.Image(
                     painter = painter,
                     contentDescription = iconContentDescription ?: text,
-                    modifier = iconModifier.padding(4.dp)
+                    modifier = iconModifier.padding(4.dp).size(if (isLarge) 17.dp else 16.dp)
                 )
             }
 
@@ -126,22 +130,22 @@ fun Tab(
                     ) {
                         AutoResizeText(
                             text = text,
-                            style = MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = if (isLarge) 14.sp else 13.sp),
                             color = resolvedContentColor,
                             textAlign = TextAlign.Center,
                             maxLines = 1,
                             softWrap = false,
-                            minFontSize = 9.sp,
+                            minFontSize = if (isLarge) 10.sp else 9.sp,
                             modifier = Modifier.padding(horizontal = 1.dp)
                         )
                         AutoResizeText(
                             text = subText,
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = if (isLarge) 10.sp else 8.sp),
                             color = resolvedContentColor,
                             textAlign = TextAlign.Center,
                             maxLines = 1,
                             softWrap = false,
-                            minFontSize = 7.sp,
+                            minFontSize = if (isLarge) 8.sp else 7.sp,
                             modifier = Modifier.padding(horizontal = 1.dp)
                         )
                     }
@@ -149,13 +153,13 @@ fun Tab(
                 text != null -> {
                     AutoResizeText(
                         text = text,
-                        style = MaterialTheme.typography.labelLarge,
+                        style = MaterialTheme.typography.labelLarge.copy(fontSize = if (isLarge) 14.sp else 13.sp),
                         color = resolvedContentColor,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
                         softWrap = false,
-                        minFontSize = 10.sp,
-                        modifier = Modifier.padding(horizontal = 2.dp, vertical = 1.dp)
+                        minFontSize = if (isLarge) 11.sp else 10.sp,
+                        modifier = Modifier.padding(horizontal = 2.dp)
                     )
                 }
             }
@@ -166,7 +170,7 @@ fun Tab(
                 imageVector = Icons.Default.KeyboardArrowDown,
                 contentDescription = null,
                 tint = TextSecondary,
-                modifier = Modifier.size(16.dp).padding(start = 4.dp)
+                modifier = Modifier.size(if (isLarge) 18.dp else 16.dp).padding(start = if (isLarge) 6.dp else 4.dp)
             )
         }
     }

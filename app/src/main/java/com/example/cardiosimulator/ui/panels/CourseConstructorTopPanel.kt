@@ -32,7 +32,7 @@ fun CourseConstructorTopPanel(
     val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
 
     Row(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -48,6 +48,7 @@ fun CourseConstructorTopPanel(
                         "Select Course..."
                     }
                 },
+                isLarge = true,
                 onClick = { courseExpanded = true },
                 modifier = Modifier.padding(horizontal = 4.dp).width(200.dp)
             )
@@ -78,6 +79,7 @@ fun CourseConstructorTopPanel(
                             "Select Lecture..."
                         }
                     },
+                    isLarge = true,
                     onClick = { lectureExpanded = true },
                     modifier = Modifier.padding(horizontal = 4.dp).width(200.dp)
                 )

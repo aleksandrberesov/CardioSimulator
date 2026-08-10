@@ -71,6 +71,7 @@ fun TeachingControlPanel(
             Tab(
                 text = selectedLabel,
                 showChevron = true,
+                isLarge = true,
                 onClick = { if (courses.isNotEmpty()) courseExpanded = true },
                 modifier = Modifier.padding(horizontal = 4.dp).wrapContentWidth()
             )
@@ -104,6 +105,7 @@ fun TeachingControlPanel(
                 Tab(
                     text = rhythmLabel,
                     showChevron = true,
+                    isLarge = true,
                     onClick = { if (rhythms.isNotEmpty()) rhythmExpanded = true },
                     modifier = Modifier.padding(horizontal = 4.dp).wrapContentWidth()
                 )
@@ -142,6 +144,7 @@ fun TeachingControlPanel(
                 Tab(
                     text = lectureLabel,
                     showChevron = true,
+                    isLarge = true,
                     onClick = { if (lectures.isNotEmpty()) lectureExpanded = true },
                     modifier = Modifier.padding(horizontal = 4.dp).wrapContentWidth()
                 )
