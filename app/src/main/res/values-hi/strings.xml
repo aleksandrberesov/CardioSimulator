@@ -442,6 +442,7 @@
     <string name="ecg_point_q_peak">Q शिखर</string>
     <string name="ecg_point_r_peak">R शिखर</string>
     <string name="ecg_point_s_peak">S शिखर</string>
+    <string name="ecg_point_j_point">J बिंदु</string>
     <string name="ecg_point_qrs_start">QRS आरंभ</string>
     <string name="ecg_point_qrs_end">QRS अंत</string>
     <string name="ecg_point_t_start">T आरंभ</string>
@@ -510,4 +511,11 @@
     <string name="gender_female">महिला</string>
     <string name="clinical_gender_unset">— निर्दिष्ट नहीं</string>
     <string name="clinical_clear_all">सभी फ़ील्ड साफ़ करें</string>
+    <string name="back_to_lecture">लेक्टर पर वापस जाएं</string>
+
+    <string name="unsaved_changes_title">असुरक्षित परिवर्तन</string>
+    <string name="unsaved_changes_body">आपके पास असुरक्षित परिवर्तन हैं। क्या आप बाहर निकलने से पहले उन्हें सहेजना चाहते हैं?</string>
+    <string name="common_dont_save">न सहेजें</string>
+    <string name="common_save">सहेजें</string>
+    <string name="common_cancel">रद्द करें</string>
 </resources>

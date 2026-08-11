@@ -109,6 +109,14 @@ class ConstructorViewModel(
     private val _ghostTrace = MutableStateFlow<IntArray?>(null)
     val ghostTrace: StateFlow<IntArray?> = _ghostTrace.asStateFlow()
 
+    val hasUnsavedChanges: Boolean get() = _dirtyLeads.value.isNotEmpty() || _isMetadataDirty.value
+
+    /** Throw away unsaved edits by re-reading the current pathology from disk. */
+    fun discardChanges() {
+        val id = _targetFile.value?.id ?: return
+        selectPathology(id)
+    }
+
     private val _selectedTipKind = MutableStateFlow(com.example.cardiosimulator.domain.TipOverlayKind.Arrow)
     val selectedTipKind: StateFlow<com.example.cardiosimulator.domain.TipOverlayKind> = _selectedTipKind.asStateFlow()
 

@@ -83,6 +83,7 @@ dependencies {
     implementation(libs.nanohttpd)
     implementation(libs.zxing.core)
     implementation(libs.zxing.android.embedded)
+    implementation("org.apache.commons:commons-compress:1.26.2")
     testImplementation(libs.junit)
     testImplementation(libs.org.json)
     testImplementation(libs.kotlinx.coroutines.test)

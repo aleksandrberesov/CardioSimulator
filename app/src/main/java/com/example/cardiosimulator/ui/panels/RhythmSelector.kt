@@ -81,7 +81,7 @@ fun RhythmSelector(
     showPinButton: Boolean = true,
     onRhythmSelect: (PathologyEntry) -> Unit = {},
     onSearchQueryChange: (String) -> Unit = {},
-    showScrollButtons: Boolean = false,   // NEW — large up/down page-scroll buttons (Teaching drawer only)
+    showScrollButtons: Boolean = false,
 ) {
     val currentLanguage by appViewModel.selectedLanguage.collectAsState()
     val isDrawerFixed by appViewModel.isDrawerFixed.collectAsState()
@@ -92,7 +92,7 @@ fun RhythmSelector(
     
     var searchQuery by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
-    val scrollScope = rememberCoroutineScope()   // NEW
+    val scrollScope = rememberCoroutineScope()
 
     val groups = appViewModel.repository?.groups
 
@@ -230,7 +230,7 @@ fun RhythmSelector(
                     Icon(
                         imageVector = Icons.Default.KeyboardDoubleArrowDown,
                         contentDescription = "Expand All",
-                        tint = AccentGreen
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
                 IconButton(onClick = {
@@ -241,7 +241,7 @@ fun RhythmSelector(
                     Icon(
                         imageVector = Icons.Default.KeyboardDoubleArrowUp,
                         contentDescription = "Collapse All",
-                        tint = AccentGreen
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -254,7 +254,7 @@ fun RhythmSelector(
                 Icon(
                     imageVector = if (isGrouped) Icons.Default.ViewList else Icons.AutoMirrored.Filled.Sort,
                     contentDescription = null,
-                    tint = if (isClinicalMode) MaterialTheme.colorScheme.onSurfaceVariant else AccentGreen
+                    tint = if (isClinicalMode) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary
                 )
             }
 
@@ -265,7 +265,7 @@ fun RhythmSelector(
                 Icon(
                     imageVector = if (isClinicalMode) Icons.Default.Healing else Icons.Outlined.Healing,
                     contentDescription = stringResource(R.string.clinical_mode_tooltip),
-                    tint = if (isClinicalMode) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = if (isClinicalMode) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -277,7 +277,7 @@ fun RhythmSelector(
                     Icon(
                         imageVector = if (isDrawerFixed) Icons.Default.PushPin else Icons.Outlined.PushPin,
                         contentDescription = stringResource(R.string.fix_drawer),
-                        tint = if (isDrawerFixed) AccentGreen else MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = if (isDrawerFixed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -342,11 +342,6 @@ fun RhythmSelector(
                 }
             }
 
-            // Compact page-scroll buttons anchored to the list's bottom-right. Opt-in
-            // (Teaching drawer only); page by ~90% of the viewport so a sliver of the
-            // previous view stays for context. animateScrollBy clamps at the ends.
-            // Wrapped in an opaque, bordered chip so the rhythm titles underneath stay
-            // legible instead of showing through the floating buttons.
             if (showScrollButtons) {
                 Surface(
                     modifier = Modifier
@@ -371,8 +366,8 @@ fun RhythmSelector(
                             modifier = Modifier.size(width = 40.dp, height = 34.dp),
                             shape = RoundedCornerShape(6.dp),
                             colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = AccentGreen,
-                                contentColor = Color.White
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
                             )
                         ) {
                             Icon(
@@ -391,8 +386,8 @@ fun RhythmSelector(
                             modifier = Modifier.size(width = 40.dp, height = 34.dp),
                             shape = RoundedCornerShape(6.dp),
                             colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = AccentGreen,
-                                contentColor = Color.White
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
                             )
                         ) {
                             Icon(
@@ -523,12 +518,12 @@ fun RhythmItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = 10.dp, horizontal = if (isIndented) 32.dp else 12.dp) // Indentation
+            .padding(vertical = 10.dp, horizontal = if (isIndented) 32.dp else 12.dp)
     ) {
         Text(
             text = display,
-            color = if (isSelected) Color.Red else MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp), // Smaller font
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
         )
     }
     HorizontalDivider(
@@ -553,12 +548,10 @@ private fun PathologyEntry.getDisplayName(language: Language, isClinicalMode: Bo
 }
 
 private fun pathologyComparator(language: Language, isClinicalMode: Boolean) = Comparator<PathologyEntry> { a, b ->
-    // 1. Factor count
     val aFactors = a.titleEn.split('+').size
     val bFactors = b.titleEn.split('+').size
     if (aFactors != bFactors) return@Comparator aFactors.compareTo(bFactors)
     
-    // 2. Alphabetical
     val aName = a.getDisplayName(language, isClinicalMode)
     val bName = b.getDisplayName(language, isClinicalMode)
     aName.compareTo(bName, ignoreCase = true)
@@ -646,6 +639,7 @@ private fun PathologyEntry.getClinicalTitle(): String? {
     if (clinicalCase.isNullOrBlank()) return null
     return clinicalCase!!.split(',').firstOrNull { it.trim().startsWith("title=") }?.substringAfter("title=")
 }
+
 @Composable
 fun RhythmSelectorPreview() {
     val previewAppViewModel: AppViewModel = viewModel(

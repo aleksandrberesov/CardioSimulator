@@ -30,6 +30,8 @@ private val DarkColorScheme = darkColorScheme(
     surfaceContainerHigh = DarkPanelBackground,
     surfaceContainerHighest = DarkPanelBackground,
     primaryContainer = DarkAccentTint,
+    error = Negative,
+    onError = OnAccent,
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -51,6 +53,8 @@ private val LightColorScheme = lightColorScheme(
     surfaceContainerHigh = PanelBackground,
     surfaceContainerHighest = PanelBackground,
     primaryContainer = AccentGreenTint,
+    error = Negative,
+    onError = OnAccent,
 )
 
 val CardioShapes = Shapes(

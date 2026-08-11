@@ -15,6 +15,8 @@ object HtmlCompiler {
      */
     fun parse(html: String): List<HtmlBlock> {
         if (html.isBlank()) return emptyList()
+        if (isFullDocument(html)) return listOf(HtmlBlock.Raw(html = html))
+        
         val doc = Jsoup.parseBodyFragment(html)
         val body = doc.body()
         val blocks = mutableListOf<HtmlBlock>()
@@ -48,16 +50,76 @@ object HtmlCompiler {
                     if (elementId != null) HtmlBlock.Image(id = elementId, src = element.attr("src"), alt = element.attr("alt"))
                     else HtmlBlock.Image(src = element.attr("src"), alt = element.attr("alt"))
                 }
-                "figure" -> {
-                    val img = element.selectFirst("img")
-                    if (img != null) {
-                        val figcaption = element.selectFirst("figcaption")
-                        val alt = figcaption?.text() ?: img.attr("alt")
-                        if (elementId != null) HtmlBlock.Image(id = elementId, src = img.attr("src"), alt = alt)
-                        else HtmlBlock.Image(src = img.attr("src"), alt = alt)
+                "ul", "ol" -> {
+                    val items = element.select("li").joinToString("\n") { it.html() }
+                    if (elementId != null) HtmlBlock.HtmlList(id = elementId, items = items, numbered = element.tagName() == "ol")
+                    else HtmlBlock.HtmlList(items = items, numbered = element.tagName() == "ol")
+                }
+                "blockquote" -> {
+                    if (elementId != null) HtmlBlock.Quote(id = elementId, html = element.html())
+                    else HtmlBlock.Quote(html = element.html())
+                }
+                "hr" -> {
+                    if (elementId != null) HtmlBlock.Divider(id = elementId)
+                    else HtmlBlock.Divider()
+                }
+                "div" -> {
+                    when {
+                        element.hasClass("lecture-card") -> {
+                            val title = element.selectFirst(".lecture-card-title")?.text() ?: ""
+                            val bodyHtml = element.selectFirst(".lecture-card-body")?.html() ?: element.html()
+                            if (elementId != null) HtmlBlock.Card(id = elementId, title = title, html = bodyHtml)
+                            else HtmlBlock.Card(title = title, html = bodyHtml)
+                        }
+                        element.hasClass("lecture-note") -> {
+                            val variant = element.classNames().find { it.startsWith("lecture-note-") }?.removePrefix("lecture-note-") ?: "info"
+                            if (elementId != null) HtmlBlock.Note(id = elementId, variant = variant, html = element.html())
+                            else HtmlBlock.Note(variant = variant, html = element.html())
+                        }
+                        element.hasClass("lecture-container") -> {
+                            if (elementId != null) HtmlBlock.Container(id = elementId, html = element.html())
+                            else HtmlBlock.Container(html = element.html())
+                        }
+                        else -> {
+                            val nestedTable = element.selectFirst("table")
+                            if (nestedTable != null && element.text().trim() == nestedTable.text().trim()) {
+                                parseTable(nestedTable)
+                            } else {
+                                if (elementId != null) HtmlBlock.Raw(id = elementId, html = element.outerHtml())
+                                else HtmlBlock.Raw(html = element.outerHtml())
+                            }
+                        }
+                    }
+                }
+                "section" -> {
+                    if (element.hasClass("lecture-section")) {
+                        val title = element.selectFirst(".lecture-section-title")?.text() ?: ""
+                        val temp = element.clone()
+                        temp.selectFirst(".lecture-section-title")?.remove()
+                        if (elementId != null) HtmlBlock.Section(id = elementId, title = title, html = temp.html())
+                        else HtmlBlock.Section(title = title, html = temp.html())
                     } else {
-                        if (elementId != null) HtmlBlock.Paragraph(id = elementId, html = element.outerHtml())
-                        else HtmlBlock.Paragraph(html = element.outerHtml())
+                        if (elementId != null) HtmlBlock.Raw(id = elementId, html = element.outerHtml())
+                        else HtmlBlock.Raw(html = element.outerHtml())
+                    }
+                }
+                "figure" -> {
+                    if (element.hasClass("lecture-figure")) {
+                        val caption = element.selectFirst("figcaption")?.text() ?: ""
+                        val bodyHtml = element.selectFirst(".lecture-figure-body")?.html() ?: element.html()
+                        if (elementId != null) HtmlBlock.Figure(id = elementId, html = bodyHtml, caption = caption)
+                        else HtmlBlock.Figure(html = bodyHtml, caption = caption)
+                    } else {
+                        val img = element.selectFirst("img")
+                        if (img != null) {
+                            val figcaption = element.selectFirst("figcaption")
+                            val alt = figcaption?.text() ?: img.attr("alt")
+                            if (elementId != null) HtmlBlock.Image(id = elementId, src = img.attr("src"), alt = alt)
+                            else HtmlBlock.Image(src = img.attr("src"), alt = alt)
+                        } else {
+                            if (elementId != null) HtmlBlock.Raw(id = elementId, html = element.outerHtml())
+                            else HtmlBlock.Raw(html = element.outerHtml())
+                        }
                     }
                 }
                 "ecg" -> {
@@ -90,6 +152,32 @@ object HtmlCompiler {
                         caption = caption
                     )
                 }
+                "ecgsegment" -> {
+                    val pathology = element.attr("pathology")
+                    val lead = element.attr("lead")
+                    val start = element.attr("start").toFloatOrNull() ?: 0f
+                    val duration = element.attr("duration").toFloatOrNull() ?: 2.5f
+                    val caption = element.attr("caption").takeIf { it.isNotBlank() }
+                    val tips = TipOverlaySerializer.decodeAttribute(element.attr("tips"))
+
+                    if (elementId != null) HtmlBlock.EcgSegment(
+                        id = elementId,
+                        pathology = pathology,
+                        lead = lead,
+                        startSec = start,
+                        durationSec = duration,
+                        caption = caption,
+                        tips = tips
+                    )
+                    else HtmlBlock.EcgSegment(
+                        pathology = pathology,
+                        lead = lead,
+                        startSec = start,
+                        durationSec = duration,
+                        caption = caption,
+                        tips = tips
+                    )
+                }
                 "table" -> parseTable(element)
                 // Handle unknown tags as paragraphs
                 else -> {
@@ -98,8 +186,8 @@ object HtmlCompiler {
                     if (nestedTable != null && element.text().trim() == nestedTable.text().trim()) {
                         parseTable(nestedTable)
                     } else {
-                        if (elementId != null) HtmlBlock.Paragraph(id = elementId, html = element.outerHtml())
-                        else HtmlBlock.Paragraph(html = element.outerHtml())
+                        if (elementId != null) HtmlBlock.Raw(id = elementId, html = element.outerHtml())
+                        else HtmlBlock.Raw(html = element.outerHtml())
                     }
                 }
             }
@@ -150,13 +238,7 @@ object HtmlCompiler {
                     }
                 }
                 is HtmlBlock.Ecg -> {
-                    append("<ecg id=\"${block.id}\" pathology=\"").append(block.pathology).append("\"")
-                    if (block.lead != null) append(" lead=\"").append(block.lead).append("\"")
-                    if (block.leads.isNotEmpty()) append(" leads=\"").append(block.leads.joinToString(",")).append("\"")
-                    append(" gridScheme=\"").append(block.gridScheme).append("\"")
-                    append(" count=\"").append(block.count).append("\"")
-                    append(" seriesScheme=\"").append(block.seriesScheme).append("\"")
-                    append(" caption=\"").append(block.caption).append("\"></ecg>\n")
+                    append(buildEcgTag(block)).append("\n")
                 }
                 is HtmlBlock.Table -> {
                     append("<table id=\"${block.id}\">\n")
@@ -169,8 +251,176 @@ object HtmlCompiler {
                     }
                     append("</table>\n")
                 }
+                is HtmlBlock.HtmlList -> {
+                    append(ensureRootId(HtmlComponents.list(block.items, block.numbered), block.id)).append("\n")
+                }
+                is HtmlBlock.Quote -> {
+                    append(ensureRootId(HtmlComponents.quote(block.html, null), block.id)).append("\n")
+                }
+                is HtmlBlock.Note -> {
+                    append(ensureRootId(HtmlComponents.note(block.variant, block.html), block.id)).append("\n")
+                }
+                is HtmlBlock.Card -> {
+                    append(ensureRootId(HtmlComponents.card(block.title, block.html), block.id)).append("\n")
+                }
+                is HtmlBlock.Section -> {
+                    append(ensureRootId(HtmlComponents.section(block.title, block.html), block.id)).append("\n")
+                }
+                is HtmlBlock.Figure -> {
+                    append(ensureRootId(HtmlComponents.figure(block.html, block.caption), block.id)).append("\n")
+                }
+                is HtmlBlock.Divider -> {
+                    append(ensureRootId(HtmlComponents.divider(), block.id)).append("\n")
+                }
+                is HtmlBlock.EcgSegment -> {
+                    append(buildEcgSegmentTag(block)).append("\n")
+                }
+                is HtmlBlock.Raw -> {
+                    append(ensureRootId(block.html, block.id)).append("\n")
+                }
+                is HtmlBlock.Container -> {
+                    append(ensureRootId(HtmlComponents.container(block.html), block.id)).append("\n")
+                }
             }
             append("\n") // Spacer between blocks
         }
     }.trim()
+
+    fun buildEcgTag(block: HtmlBlock.Ecg): String = buildString {
+        append("<ecg id=\"${block.id}\" pathology=\"").append(block.pathology).append("\"")
+        if (block.lead != null) append(" lead=\"").append(block.lead).append("\"")
+        if (block.leads.isNotEmpty()) append(" leads=\"").append(block.leads.joinToString(",")).append("\"")
+        append(" gridScheme=\"").append(block.gridScheme).append("\"")
+        append(" count=\"").append(block.count).append("\"")
+        append(" seriesScheme=\"").append(block.seriesScheme).append("\"")
+        append(" caption=\"").append(block.caption).append("\"></ecg>")
+    }
+
+    fun buildEcgSegmentTag(block: HtmlBlock.EcgSegment): String = buildString {
+        append("<ecgsegment id=\"${block.id}\" pathology=\"").append(block.pathology).append("\"")
+        append(" lead=\"").append(block.lead).append("\"")
+        append(" start=\"").append(String.format(java.util.Locale.US, "%.3f", block.startSec)).append("\"")
+        append(" duration=\"").append(String.format(java.util.Locale.US, "%.3f", block.durationSec)).append("\"")
+        if (block.caption != null) append(" caption=\"").append(block.caption).append("\"")
+        if (block.tips.isNotEmpty()) {
+            append(" tips=\"").append(TipOverlaySerializer.encodeAttribute(block.tips)).append("\"")
+        }
+        append("></ecgsegment>")
+    }
+
+    fun isFullDocument(html: String): Boolean {
+        val t = html.trimStart()
+        return t.startsWith("<!doctype", true) || t.startsWith("<html", true)
+    }
+
+    /**
+     * Decomposes a full document into a composable fragment scoped under .lecture-embed.
+     */
+    fun embedDocument(fullDoc: String): String {
+        if (!isFullDocument(fullDoc)) return fullDoc
+        
+        val doc = Jsoup.parse(fullDoc)
+        val styles = doc.select("style")
+        val css = styles.joinToString("\n") { it.data() }
+        val scopedCss = scopeCss(css)
+        
+        // Remove scripts and styles from body to avoid side effects in the host doc
+        doc.body().select("script, style").remove()
+        
+        val bodyContent = doc.body().html()
+        
+        return buildString {
+            append("<div class=\"lecture-embed\">\n")
+            if (scopedCss.isNotBlank()) {
+                append("<style>\n").append(scopedCss).append("\n</style>\n")
+            }
+            append(bodyContent)
+            append("\n</div>")
+        }
+    }
+
+    /**
+     * Simple brace-aware CSS scoper that prefixes rules with .lecture-embed.
+     */
+    fun scopeCss(css: String): String {
+        if (css.isBlank()) return ""
+        
+        val result = StringBuilder()
+        var pos = 0
+        val len = css.length
+        
+        while (pos < len) {
+            val brace = css.indexOf('{', pos)
+            if (brace == -1) break
+            
+            val selector = css.substring(pos, brace).trim()
+            val nextBrace = findClosingBrace(css, brace)
+            if (nextBrace == -1) break
+            
+            val content = css.substring(brace + 1, nextBrace)
+            
+            if (selector.startsWith("@media") || selector.startsWith("@supports") || selector.startsWith("@container")) {
+                result.append(selector).append(" {\n")
+                result.append(scopeCss(content))
+                result.append("\n}\n")
+            } else if (selector.startsWith("@keyframes") || selector.startsWith("@font-face")) {
+                result.append(selector).append(" {").append(content).append("}\n")
+            } else if (selector.isNotBlank()) {
+                val scopedSelector = splitSelectors(selector).joinToString(", ") { s ->
+                    val ts = s.trim()
+                    when {
+                        ts == "html" || ts == "body" || ts == ":root" -> ".lecture-embed"
+                        ts == "*" -> ".lecture-embed *"
+                        ts.startsWith("@") -> ts
+                        else -> ".lecture-embed $ts"
+                    }
+                }
+                // Drop viewport-height to avoid reserving full screen in embed
+                val filteredContent = content.replace(Regex("""\b(min-)?height\s*:\s*[^;]*vh[^;]*""", RegexOption.IGNORE_CASE), "/* $0 */")
+                result.append(scopedSelector).append(" {").append(filteredContent).append("}\n")
+            }
+            
+            pos = nextBrace + 1
+        }
+        
+        return result.toString()
+    }
+
+    private fun splitSelectors(selector: String): List<String> {
+        val parts = mutableListOf<String>()
+        var start = 0
+        var depth = 0
+        for (i in selector.indices) {
+            when (selector[i]) {
+                '(', '[' -> depth++
+                ')', ']' -> depth--
+                ',' -> if (depth == 0) {
+                    parts.add(selector.substring(start, i))
+                    start = i + 1
+                }
+            }
+        }
+        parts.add(selector.substring(start))
+        return parts
+    }
+
+    private fun findClosingBrace(text: String, openBracePos: Int): Int {
+        var depth = 0
+        for (i in openBracePos until text.length) {
+            if (text[i] == '{') depth++
+            else if (text[i] == '}') {
+                depth--
+                if (depth == 0) return i
+            }
+        }
+        return -1
+    }
+
+    private fun ensureRootId(html: String, id: String): String {
+        if (isFullDocument(html)) return html
+        val open = Regex("""<\s*[A-Za-z][\w:-]*""").find(html) ?: return html
+        val gt = html.indexOf('>', open.range.first); if (gt < 0) return html
+        if (Regex("""\sid\s*=""", RegexOption.IGNORE_CASE).containsMatchIn(html.substring(open.range.first, gt))) return html
+        return StringBuilder(html).insert(open.range.last + 1, " id=\"$id\"").toString()
+    }
 }

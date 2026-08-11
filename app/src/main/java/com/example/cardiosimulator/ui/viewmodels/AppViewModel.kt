@@ -4,16 +4,14 @@ import android.content.Context
 import android.net.Uri
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cardiosimulator.data.CourseRepository
-import com.example.cardiosimulator.data.CourseZipExtractor
 import com.example.cardiosimulator.data.DataSourcePrefs
-import com.example.cardiosimulator.data.FileCourseSource
-import com.example.cardiosimulator.data.FilePathologySource
 import com.example.cardiosimulator.data.PathologyRepository
-import com.example.cardiosimulator.data.PathologyZipExtractor
-import com.example.cardiosimulator.data.SampleCourseSeeder
 import com.example.cardiosimulator.data.FileOskeSource
 import com.example.cardiosimulator.data.OskeRepository
 import com.example.cardiosimulator.data.OskeResultStore
@@ -32,6 +30,7 @@ import com.example.cardiosimulator.data.EcgCalibration
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
+import com.example.cardiosimulator.domain.Test
 import com.example.cardiosimulator.domain.TestSeed
 import com.example.cardiosimulator.network.TcpConnectionState
 import com.example.cardiosimulator.network.TcpMessage
@@ -54,10 +53,21 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import com.example.cardiosimulator.data.EncryptedPathologySource
+import com.example.cardiosimulator.data.EncryptedCourseSource
+import com.example.cardiosimulator.data.OverlayPathologySource
+import com.example.cardiosimulator.data.OverlayCourseSource
+import com.example.cardiosimulator.data.EncryptedArchive
+import com.example.cardiosimulator.data.crypto.ChunkedPackChannel
+import com.example.cardiosimulator.data.crypto.ContentCrypto
+import com.example.cardiosimulator.data.crypto.WritableEncryptedOverlay
+import java.io.FileInputStream
 import java.io.File
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.Socket
+import android.provider.OpenableColumns
+import android.provider.DocumentsContract
 import kotlin.math.roundToInt
 
 /**
@@ -74,6 +84,25 @@ sealed class DataState {
         enum class Reason { Unreadable, Empty, BadManifest }
     }
 }
+
+/** Report DTO for post-import feedback (Part B). */
+data class CourseLoadReport(
+    val success: Boolean,
+    val fileName: String,
+    val courses: List<CourseLoadSummary>,
+    val totalLectures: Int,
+    val previewCourseTitle: String?,
+    val previewLectureTitle: String?,
+    val previewSnippet: String?,
+) {
+    val courseCount get() = courses.size
+    /** Manifest advertises lectures but none yielded readable body text. */
+    val structureWithoutContent get() =
+        success && totalLectures > 0 && previewSnippet.isNullOrEmpty()
+}
+
+/** Per-course summary for [CourseLoadReport]. */
+data class CourseLoadSummary(val title: String, val lectureCount: Int, val languages: List<String>)
 
 /**
  * Snapshot of the current background loading process (extraction, counting, etc).
@@ -119,8 +148,46 @@ class AppViewModel(
     private val _selectedLanguage = MutableStateFlow(currentSystemLanguage(appState.selectedLanguage))
     val selectedLanguage: StateFlow<Language> = _selectedLanguage.asStateFlow()
 
+    var preserveCourseSelection by mutableStateOf(false)
+        private set
+
+    fun setPreserveCourseSelection(value: Boolean) {
+        preserveCourseSelection = value
+    }
+
     private val _selectedOperatingMode = MutableStateFlow(appState.selectedOperatingMode)
     val selectedOperatingMode: StateFlow<OperatingModeModel> = _selectedOperatingMode
+
+    private val _pendingMode = MutableStateFlow<OperatingModeModel?>(null)
+    val pendingMode: StateFlow<OperatingModeModel?> = _pendingMode.asStateFlow()
+
+    /** The active screen registers this to veto/deferred-confirm leaving it (null = no guard). */
+    var leaveGuard: (() -> Boolean)? = null
+
+    fun requestOperatingMode(mode: OperatingModeModel) {
+        if (mode.id == _selectedOperatingMode.value.id) return
+        if (leaveGuard?.invoke() == false) {
+            _pendingMode.value = mode
+            return
+        }
+        updateOperatingMode(mode)
+    }
+
+    fun confirmPendingMode() {
+        _pendingMode.value?.let { updateOperatingMode(it) }
+        _pendingMode.value = null
+    }
+
+    fun cancelPendingMode() {
+        _pendingMode.value = null
+    }
+
+    private val _pendingTest = MutableStateFlow<Test?>(null)
+    val pendingTest: StateFlow<Test?> = _pendingTest.asStateFlow()
+
+    fun setPendingTest(test: Test?) {
+        _pendingTest.value = test
+    }
 
     private val _tcpIp = MutableStateFlow(appState.tcpIp)
     val tcpIp: StateFlow<String> = _tcpIp.asStateFlow()
@@ -152,6 +219,9 @@ class AppViewModel(
     private val _dataState = MutableStateFlow<DataState>(DataState.NotConfigured)
     val dataState: StateFlow<DataState> = _dataState.asStateFlow()
 
+    private val _refreshTrigger = MutableStateFlow(0)
+    val refreshTrigger: StateFlow<Int> = _refreshTrigger.asStateFlow()
+
     private val _loadingInfo = MutableStateFlow(LoadingInfo())
     val loadingInfo: StateFlow<LoadingInfo> = _loadingInfo.asStateFlow()
 
@@ -165,6 +235,11 @@ class AppViewModel(
     // field will be renamed to `itemCount` across both pipelines.
     private val _courseDataState = MutableStateFlow<DataState>(DataState.NotConfigured)
     val courseDataState: StateFlow<DataState> = _courseDataState.asStateFlow()
+
+    private val _courseLoadReport = MutableStateFlow<CourseLoadReport?>(null)
+    val courseLoadReport: StateFlow<CourseLoadReport?> = _courseLoadReport.asStateFlow()
+
+    fun clearCourseLoadReport() { _courseLoadReport.value = null }
 
     /**
      * Course index derived from the loaded course manifest, sorted by
@@ -195,10 +270,17 @@ class AppViewModel(
     val showMonitorOverlay: StateFlow<Boolean> = _showMonitorOverlay.asStateFlow()
 
     fun selectCourse(id: String?) {
+        val same = _selectedCourseId.value == id
         _selectedCourseId.value = id
         if (id != ALL_RHYTHMS_ID) {
             _showMonitorOverlay.value = false
         }
+        // Force a refresh if selecting the same course (e.g. from a reload context)
+        if (same) triggerRefresh()
+    }
+
+    fun triggerRefresh() {
+        _refreshTrigger.value++
     }
 
     fun setShowMonitorOverlay(show: Boolean) {
@@ -216,12 +298,25 @@ class AppViewModel(
         val p = prefs
         if (repo != null && ctx != null && p != null) {
             viewModelScope.launch {
+                // CSP2 Content Pack (Phase 2): Copy bundled packs to filesDir if they exist in assets.
+                // Ciphertext copy is safe for the "no-plaintext-at-rest" invariant.
+                withContext(Dispatchers.IO) {
+                    copyBundledPacks(ctx)
+                    cleanupExtractedData(ctx)
+                    dropLegacyPicks(ctx)
+                }
+
                 val savedUri = p.treeUri.first()
                 if (savedUri != null) {
-                    loadFromSaf(ctx, savedUri)
+                    loadFromSafPack(ctx, savedUri, isCourse = false)
                     if (_dataState.value is DataState.Ready) {
                         _isDataConfirmed.value = true
                     }
+                }
+
+                // If no SAF pick exists (or it failed), try the encrypted pack baseline.
+                if (_dataState.value is DataState.NotConfigured) {
+                    tryLoadPathologyPack(ctx, repo)
                 }
 
                 p.languageTag.first()?.let { tag ->
@@ -245,19 +340,15 @@ class AppViewModel(
                 // the Windows port behavior.
 
                 // Courses pipeline — restore the user's last picked bundle
-                // if one exists, else pick up a previously seeded / extracted
-                // `filesDir/courses/` (e.g. the sample template). Failures are
-                // silent here; the UI surfaces them via [courseDataState].
+                // if one exists, else pick up the encrypted pack baseline.
                 if (courseRepository != null) {
                     val coursesUri = p.coursesTreeUri.first()
                     if (coursesUri != null) {
-                        loadCoursesFromSaf(ctx, coursesUri)
-                    } else {
-                        val source = FileCourseSource(File(ctx.filesDir, COURSES_DIR))
-                        if (source.isValid()) {
-                            courseRepository.setSource(source)
-                            reloadCourses(courseRepository)
-                        }
+                        loadFromSafPack(ctx, coursesUri, isCourse = true)
+                    }
+
+                    if (_courseDataState.value is DataState.NotConfigured) {
+                        tryLoadCoursePack(ctx, courseRepository)
                     }
                 }
 
@@ -287,17 +378,24 @@ class AppViewModel(
                         questionBankRepository.import(bankSource.readQuestions()) // Reload from source
                     }
 
-                    // Seed the demo test once pathologies are loaded if no tests exist
+                    // Seed the demo test and question bank once pathologies are loaded
                     viewModelScope.launch {
                         dataState.collect { state ->
-                            if (state is DataState.Ready && testRepository.tests().isEmpty()) {
+                            if (state is DataState.Ready) {
                                 val pathologyIds = repo.pathologies().map { it.id }
                                 if (pathologyIds.isNotEmpty()) {
-                                    val demoTest = TestSeed.sample(pathologyIds)
-                                    testRepository.writeTest(demoTest)
+                                    // 1. Seed demo test if missing
+                                    if (testRepository.tests().isEmpty()) {
+                                        val demoTest = TestSeed.sample(pathologyIds)
+                                        testRepository.writeTest(demoTest)
+                                    }
                                     
-                                    // Also seed the bank from the demo test questions
-                                    questionBankRepository?.import(demoTest.questions)
+                                    // 2. Seed question bank if missing (Part A requirement)
+                                    if (questionBankRepository != null && questionBankRepository.questions().isEmpty()) {
+                                        val bankQuestions = TestSeed.bankQuestions(pathologyIds)
+                                        questionBankRepository.import(bankQuestions)
+                                    }
+                                    
                                     // Seed themes if missing
                                     testThemeStore?.readThemes()
                                 }
@@ -625,9 +723,11 @@ class AppViewModel(
         val p = prefs ?: return
         _isDataConfirmed.value = false
         extractionJob = viewModelScope.launch {
+            val stats = getFileStats(context, uri)
             p.setTreeUri(uri)
+            p.setTreeUriStats(stats.first, stats.second)
             try {
-                loadFromSaf(context, uri, forceUnzip = true)
+                loadFromSafPack(context, uri, isCourse = false)
             } catch (ce: CancellationException) {
                 _loadingInfo.value = LoadingInfo()
                 _dataState.value = DataState.NotConfigured
@@ -638,42 +738,31 @@ class AppViewModel(
 
     /**
      * SAF entry point for the courses bundle. Mirrors [setDataFolder]
-     * for pathologies — persists the picked URI and re-extracts into
-     * `filesDir/courses/`. No confirmation gate.
+     * for pathologies.
      */
     fun setCourseDataFolder(context: Context, uri: Uri) {
         val p = prefs ?: return
         if (courseRepository == null) return
         _isDataConfirmed.value = false
         viewModelScope.launch {
+            val stats = getFileStats(context, uri)
             p.setCoursesTreeUri(uri)
-            loadCoursesFromSaf(context, uri, forceUnzip = true)
+            p.setCoursesTreeUriStats(stats.first, stats.second)
+            loadFromSafPack(context, uri, isCourse = true)
+            val fileName = androidx.documentfile.provider.DocumentFile.fromSingleUri(context, uri)?.name ?: "course pack"
+            _courseLoadReport.value = buildCourseLoadReport(fileName, _courseDataState.value is DataState.Ready)
         }
     }
 
     /**
-     * Seeds the bundled starter course into `filesDir/courses/` and loads it
-     * — the "New course from template" path for authors with no bundle of
-     * their own. Clears any saved SAF courses URI so the seeded copy (not a
-     * stale picked zip) is what reloads next launch.
+     * Loads the bundled starter course.
      */
     fun loadSampleCourses(context: Context) {
         val repo = courseRepository ?: return
         _isDataConfirmed.value = false
         viewModelScope.launch {
-            _courseDataState.value = DataState.Loading
             prefs?.setCoursesTreeUri(null)
-            val targetDir = File(context.filesDir, COURSES_DIR)
-            val ok = withContext(Dispatchers.IO) { SampleCourseSeeder.seed(context, targetDir) }
-            if (ok) {
-                val source = FileCourseSource(targetDir)
-                if (source.isValid()) {
-                    repo.setSource(source)
-                    reloadCourses(repo)
-                    return@launch
-                }
-            }
-            _courseDataState.value = DataState.Error(DataState.Error.Reason.Empty)
+            tryLoadCoursePack(context, repo)
         }
     }
 
@@ -700,46 +789,90 @@ class AppViewModel(
     }
 
 
-    private suspend fun loadFromSaf(context: Context, uri: Uri, forceUnzip: Boolean = false) {
-        val repo = repository ?: return
-        _dataState.value = DataState.Loading
+    private suspend fun loadFromSafPack(context: Context, uri: Uri, isCourse: Boolean) {
+        val repo = if (isCourse) courseRepository else repository
+        val prefs = prefs ?: return
+        if (repo == null) return
+
+        val stateFlow = if (isCourse) _courseDataState else _dataState
+        stateFlow.value = DataState.Loading
         _loadingInfo.value = LoadingInfo(
             title = context.getString(R.string.data_source_preparing),
-            indeterminate = true, canCancel = true,
+            indeterminate = true, canCancel = false
         )
 
-        val targetDir = File(context.filesDir, PATHOLOGIES_DIR)
-        val fileSource = FilePathologySource(targetDir)
-
-        if (!forceUnzip && fileSource.isValid()) {
-            repo.setSource(fileSource)
-            if (reload(repo)) return
+        val isPack = withContext(Dispatchers.IO) { isPack(context, uri) }
+        if (!isPack) {
+            // Drop legacy pick and fallback
+            if (isCourse) prefs.setCoursesTreeUri(null) else prefs.setTreeUri(null)
+            if (isCourse) tryLoadCoursePack(context, repo as CourseRepository) else tryLoadPathologyPack(context, repo as PathologyRepository)
+            return
         }
 
-        val ok = withContext(Dispatchers.IO) {
-            PathologyZipExtractor.extract(context, uri, targetDir) { p ->
-                val pct = if (p.total > 0) p.done * 100 / p.total else 0
-                _loadingInfo.value = LoadingInfo(
-                    title = context.getString(R.string.data_source_extracting_title),
-                    statusLine = context.getString(R.string.data_source_records_format, p.done, p.total, pct),
-                    detail = p.currentEntry ?: "",
-                    percent = pct, indeterminate = false, canCancel = true,
-                )
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val pfd = context.contentResolver.openFileDescriptor(uri, "r") ?: throw IOException("Failed to open PFD")
+                val channel = ChunkedPackChannel(FileInputStream(pfd.fileDescriptor).channel)
+                val archive = EncryptedArchive(channel)
+                
+                val hash = getPackHash(context, uri)
+                val overlayFile = WritableEncryptedOverlay.getOverlayFile(context.filesDir, hash)
+                val overlay = WritableEncryptedOverlay(overlayFile)
+
+                withContext(Dispatchers.Main) {
+                    if (isCourse) {
+                        val source = OverlayCourseSource(EncryptedCourseSource(archive), overlay)
+                        (repo as CourseRepository).setSource(source)
+                        reloadCourses(repo)
+                    } else {
+                        val source = OverlayPathologySource(EncryptedPathologySource(archive), overlay)
+                        (repo as PathologyRepository).setSource(source)
+                        reload(repo)
+                    }
+                }
+            }.onFailure {
+                withContext(Dispatchers.Main) {
+                    stateFlow.value = DataState.Error(DataState.Error.Reason.Unreadable)
+                }
             }
         }
+    }
 
-        if (ok) {
-            _loadingInfo.value = _loadingInfo.value.copy(
-                title = context.getString(R.string.data_source_loading_manifest),
-                indeterminate = true, canCancel = false, detail = "", statusLine = ""
-            )
-            val newSource = FilePathologySource(targetDir)
-            if (newSource.isValid()) {
-                repo.setSource(newSource)
-                if (reload(repo)) return
-            }
+    private fun isPack(context: Context, uri: Uri): Boolean {
+        return try {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                val magic = ByteArray(4)
+                input.read(magic) == 4 && ContentCrypto.looksLikePack(magic)
+            } ?: false
+        } catch (e: Exception) {
+            false
         }
-        _dataState.value = DataState.Error(DataState.Error.Reason.Empty)
+    }
+
+    private fun getPackHash(context: Context, uri: Uri): String {
+        val name = try {
+            androidx.documentfile.provider.DocumentFile.fromSingleUri(context, uri)?.name
+        } catch (e: Exception) {
+            null
+        } ?: "unknown"
+        return name.hashCode().toString(16)
+    }
+
+    private suspend fun dropLegacyPicks(context: Context) {
+        val p = prefs ?: return
+        val uri = p.treeUri.first()
+        if (uri != null && !isPack(context, uri)) {
+            p.setTreeUri(null)
+        }
+        val courseUri = p.coursesTreeUri.first()
+        if (courseUri != null && !isPack(context, courseUri)) {
+            p.setCoursesTreeUri(null)
+        }
+    }
+
+    private fun cleanupExtractedData(context: Context) {
+        File(context.filesDir, PATHOLOGIES_DIR).deleteRecursively()
+        File(context.filesDir, COURSES_DIR).deleteRecursively()
     }
 
     private suspend fun reload(repo: PathologyRepository): Boolean {
@@ -754,39 +887,73 @@ class AppViewModel(
             false
         } else {
             _dataState.value = DataState.Ready(count)
+            triggerRefresh()
             true
         }
     }
 
     // ─── Courses pipeline (mirrors the pathology helpers above) ────────
 
-    private suspend fun loadCoursesFromSaf(
-        context: Context,
-        uri: Uri,
-        forceUnzip: Boolean = false,
-    ) {
-        val repo = courseRepository ?: return
-        _courseDataState.value = DataState.Loading
+    private fun buildCourseLoadReport(fileName: String, loaded: Boolean): CourseLoadReport {
+        val repo = courseRepository
+        if (!loaded || repo == null)
+            return CourseLoadReport(false, fileName, emptyList(), 0, null, null, null)
 
-        val targetDir = File(context.filesDir, COURSES_DIR)
-        val fileSource = FileCourseSource(targetDir)
+        val summaries = mutableListOf<CourseLoadSummary>()
+        var total = 0
+        var pc: String? = null
+        var pl: String? = null
+        var ps: String? = null
 
-        if (!forceUnzip && fileSource.isValid()) {
-            repo.setSource(fileSource)
-            if (reloadCourses(repo)) return
-        }
-
-        val ok = withContext(Dispatchers.IO) {
-            CourseZipExtractor.extract(context, uri, targetDir)
-        }
-        if (ok) {
-            val newSource = FileCourseSource(targetDir)
-            if (newSource.isValid()) {
-                repo.setSource(newSource)
-                if (reloadCourses(repo)) return
+        for (entry in repo.courses()) {
+            if (entry.id == ALL_RHYTHMS_ID) continue
+            val course = repo.readCourse(entry.id)
+            val count = course?.lectures?.size ?: entry.lecturesCount
+            total += count
+            summaries.add(CourseLoadSummary(displayTitle(entry.nameRu, entry.titleEn, entry.id),
+                                            count, course?.languages ?: emptyList()))
+            
+            if (ps != null || course == null) continue
+            
+            // Try to find a lecture with content for the preview
+            for (item in contentItems(course)) {
+                val lang = course.languages.firstOrNull() ?: "en"
+                val text = repo.readLecture(entry.id, item.id, lang)?.rawHtml?.let { plainTextPreview(it, 400) }
+                if (!text.isNullOrBlank()) {
+                    pc = displayTitle(entry.nameRu, entry.titleEn, entry.id)
+                    pl = displayTitle(item.nameRu, item.titleEn, item.id)
+                    ps = text
+                    break
+                }
             }
         }
-        _courseDataState.value = DataState.Error(DataState.Error.Reason.Empty)
+        return CourseLoadReport(true, fileName, summaries, total, pc, pl, ps)
+    }
+
+    private data class ContentItem(val id: String, val titleEn: String, val nameRu: String?)
+
+    private fun contentItems(course: com.example.cardiosimulator.domain.Course): List<ContentItem> {
+        val items = mutableListOf<ContentItem>()
+        course.lectures.forEach { items.add(ContentItem(it.id, it.titleEn, it.nameRu)) }
+        // Also include topics just in case they have a corresponding lecture file (Part B parity)
+        course.topics.forEach { items.add(ContentItem(it.id, it.titleEn, it.nameRu)) }
+        return items
+    }
+
+    private fun displayTitle(nameRu: String?, titleEn: String, id: String): String {
+        return if (selectedLanguage.value == Language.RU && !nameRu.isNullOrBlank()) {
+            nameRu
+        } else {
+            titleEn.ifBlank { nameRu ?: id }
+        }
+    }
+
+    private fun plainTextPreview(html: String, maxLength: Int): String {
+        val plain = androidx.core.text.HtmlCompat.fromHtml(html, androidx.core.text.HtmlCompat.FROM_HTML_MODE_COMPACT)
+            .toString()
+            .replace(Regex("\\s+"), " ")
+            .trim()
+        return if (plain.length > maxLength) plain.take(maxLength) + "…" else plain
     }
 
     private suspend fun reloadCourses(repo: CourseRepository): Boolean {
@@ -801,7 +968,88 @@ class AppViewModel(
             false
         } else {
             _courseDataState.value = DataState.Ready(count)
+            triggerRefresh()
             true
+        }
+    }
+
+    private fun getFileStats(context: Context, uri: Uri): Pair<Long, Long> {
+        return try {
+            context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+                val modifiedIndex = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
+                if (cursor.moveToFirst()) {
+                    val size = if (sizeIndex != -1) cursor.getLong(sizeIndex) else 0L
+                    val modified = if (modifiedIndex != -1) cursor.getLong(modifiedIndex) else 0L
+                    size to modified
+                } else 0L to 0L
+            } ?: (0L to 0L)
+        } catch (e: Exception) {
+            0L to 0L
+        }
+    }
+
+    private fun copyBundledPacks(ctx: Context) {
+        val packs = listOf("Pathologies.pak", "Courses.pak")
+        packs.forEach { fileName ->
+            val dest = File(ctx.filesDir, fileName)
+            if (!dest.exists()) {
+                runCatching {
+                    ctx.assets.open(fileName).use { input ->
+                        dest.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun tryLoadPathologyPack(ctx: Context, repo: PathologyRepository) {
+        val pak = File(ctx.filesDir, "Pathologies.pak")
+        if (!pak.canRead()) return
+        
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val channel = ChunkedPackChannel(FileInputStream(pak).channel)
+                val archive = EncryptedArchive(channel)
+                
+                val overlayFile = WritableEncryptedOverlay.getOverlayFile(ctx.filesDir, "bundled_pathologies")
+                val overlay = WritableEncryptedOverlay(overlayFile)
+                
+                val baseSource = EncryptedPathologySource(archive)
+                val source = OverlayPathologySource(baseSource, overlay)
+                if (source.readManifest() != null) {
+                    withContext(Dispatchers.Main) {
+                        repo.setSource(source)
+                        reload(repo)
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun tryLoadCoursePack(ctx: Context, repo: CourseRepository) {
+        val pak = File(ctx.filesDir, "Courses.pak")
+        if (!pak.canRead()) return
+
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val channel = ChunkedPackChannel(FileInputStream(pak).channel)
+                val archive = EncryptedArchive(channel)
+                
+                val overlayFile = WritableEncryptedOverlay.getOverlayFile(ctx.filesDir, "bundled_courses")
+                val overlay = WritableEncryptedOverlay(overlayFile)
+                
+                val baseSource = EncryptedCourseSource(archive)
+                val source = OverlayCourseSource(baseSource, overlay)
+                if (source.readManifest() != null) {
+                    withContext(Dispatchers.Main) {
+                        repo.setSource(source)
+                        reloadCourses(repo)
+                    }
+                }
+            }
         }
     }
 

@@ -70,7 +70,7 @@ fun SignificantPointPanel(
 
                 val waves = listOf(
                     stringResource(R.string.constructor_p_wave) to listOf(EcgPointType.P_START, EcgPointType.P_PEAK, EcgPointType.P_END),
-                    stringResource(R.string.constructor_qrs_complex) to listOf(EcgPointType.QRS_START, EcgPointType.Q_PEAK, EcgPointType.R_PEAK, EcgPointType.S_PEAK, EcgPointType.QRS_END),
+                    stringResource(R.string.constructor_qrs_complex) to listOf(EcgPointType.QRS_START, EcgPointType.Q_PEAK, EcgPointType.R_PEAK, EcgPointType.S_PEAK, EcgPointType.J_POINT, EcgPointType.QRS_END),
                     stringResource(R.string.constructor_t_wave) to listOf(EcgPointType.T_START, EcgPointType.T_PEAK, EcgPointType.T_END)
                 )
 
@@ -144,7 +144,7 @@ fun SignificantPointPanel(
                     Text(
                         text = stringResource(R.string.ecg_rr_value_format, durationS),
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF2E7D32)
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }

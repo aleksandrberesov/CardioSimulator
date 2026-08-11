@@ -316,6 +316,7 @@
     <string name="ecg_point_q_peak">Pico Q</string>
     <string name="ecg_point_r_peak">Pico R</string>
     <string name="ecg_point_s_peak">Pico S</string>
+    <string name="ecg_point_j_point">Punto J</string>
     <string name="ecg_point_qrs_start">Inicio QRS</string>
     <string name="ecg_point_qrs_end">Fin QRS</string>
     <string name="ecg_point_t_start">Inicio T</string>
@@ -364,4 +365,11 @@
     <string name="gender_female">Femenino</string>
     <string name="clinical_gender_unset">— sin especificar</string>
     <string name="clinical_clear_all">Borrar todos los campos</string>
+    <string name="back_to_lecture">Volver a la lección</string>
+
+    <string name="unsaved_changes_title">Cambios sin guardar</string>
+    <string name="unsaved_changes_body">Tienes cambios sin guardar. ¿Quieres guardarlos antes de salir?</string>
+    <string name="common_dont_save">No guardar</string>
+    <string name="common_save">Guardar</string>
+    <string name="common_cancel">Cancelar</string>
 </resources>

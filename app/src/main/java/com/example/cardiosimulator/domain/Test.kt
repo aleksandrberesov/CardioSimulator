@@ -9,6 +9,9 @@ enum class QuestionKind { SingleChoice, AssembleEcg }
 enum class QuestionStimulus { Text, Image, Ecg }
 
 @Serializable
+enum class QuestionDifficulty { Easy, Medium, Hard }
+
+@Serializable
 data class TestOption(val id: String, val text: String)
 
 @Serializable
@@ -26,6 +29,7 @@ data class TestQuestion(
     val theme: String? = null,
     val tags: String? = null,
     val assemble: EcgAssembly? = null,
+    val difficulty: QuestionDifficulty? = null,
 ) {
     val kind: QuestionKind
         get() = if (assemble != null) QuestionKind.AssembleEcg else QuestionKind.SingleChoice

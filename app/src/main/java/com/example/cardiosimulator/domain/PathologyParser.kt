@@ -176,7 +176,7 @@ object PathologyParser {
         val clinicalCase = header["clinical_case"]
         val number = header["number"]?.trim()?.toIntOrNull()
         val globalMarkers = parseMarkers(header["markers"])
-        val tips = parseTips(header["tips"])
+        val tips = TipOverlaySerializer.parse(header["tips"])
         val tipComments = parseTipComments(header["tip_notes"])
 
         return PathologyFile(
@@ -215,7 +215,7 @@ object PathologyParser {
         }
 
         if (file.tips.isNotEmpty()) {
-            sb.append("tips:").append(serializeTips(file.tips)).append('\n')
+            sb.append("tips:").append(TipOverlaySerializer.serialize(file.tips)).append('\n')
         }
         if (file.tipComments.isNotEmpty()) {
             sb.append("tip_notes:").append(serializeTipComments(file.tipComments)).append('\n')
@@ -235,6 +235,87 @@ object PathologyParser {
             sb.append('\n')
         }
         return sb.toString()
+    }
+
+    /**
+     * Serializes [file] into CSD1 binary format.
+     */
+    fun serializePathologyBinary(file: PathologyFile, leadOrder: List<Lead>): ByteArray {
+        val bos = java.io.ByteArrayOutputStream()
+        val dos = java.io.DataOutputStream(bos)
+        
+        // Use Little Endian for consistency with Windows CSD1
+        fun writeIntLE(v: Int) {
+            dos.write(v and 0xFF)
+            dos.write((v shr 8) and 0xFF)
+            dos.write((v shr 16) and 0xFF)
+            dos.write((v shr 24) and 0xFF)
+        }
+        fun writeShortLE(v: Int) {
+            dos.write(v and 0xFF)
+            dos.write((v shr 8) and 0xFF)
+        }
+        fun writeString(s: String?) {
+            if (s == null) {
+                writeIntLE(-1)
+            } else {
+                val b = s.toByteArray(Charsets.UTF_8)
+                writeIntLE(b.size)
+                dos.write(b)
+            }
+        }
+
+        dos.write(CSD1_MAGIC)
+        
+        // Header block as text
+        val headerSb = StringBuilder()
+        headerSb.append("pathology:").append(file.id).append('\n')
+        headerSb.append("title:").append(file.titleEn).append('\n')
+        headerSb.append("name:").append(file.nameRu.orEmpty()).append('\n')
+        if (!file.group.isNullOrBlank()) headerSb.append("group:").append(file.group).append('\n')
+        if (!file.description.isNullOrBlank()) {
+            val escaped = file.description.replace("\r\n", "\n").replace("\n", "\\n")
+            headerSb.append("description:").append(escaped).append('\n')
+        }
+        if (!file.clinicalCase.isNullOrBlank()) headerSb.append("clinical_case:").append(file.clinicalCase).append('\n')
+        if (file.number != null) headerSb.append("number:").append(file.number).append('\n')
+        
+        if (file.significantPoints.isNotEmpty()) {
+            headerSb.append("markers:")
+            file.significantPoints.forEachIndexed { i, pt ->
+                if (i > 0) headerSb.append(',')
+                headerSb.append(pt.index).append(':').append(pt.type.name)
+            }
+            headerSb.append('\n')
+        }
+        if (file.tips.isNotEmpty()) {
+            headerSb.append("tips:").append(TipOverlaySerializer.serialize(file.tips)).append('\n')
+        }
+        if (file.tipComments.isNotEmpty()) {
+            headerSb.append("tip_notes:").append(serializeTipComments(file.tipComments)).append('\n')
+        }
+        
+        writeString(headerSb.toString())
+
+        val leadsToWrite = leadOrder.filter { file.leads.containsKey(it) }
+        writeIntLE(leadsToWrite.size)
+        
+        for (lead in leadsToWrite) {
+            val stream = file.leads[lead]!!
+            dos.writeByte(Lead.entries.indexOf(lead))
+            writeString(null) // elements text placeholder
+            
+            writeIntLE(stream.samples.size)
+            var prev = 0
+            for (v in stream.samples) {
+                val delta = (v - prev).toShort()
+                writeShortLE(delta.toInt())
+                prev = v
+            }
+        }
+        
+        dos.flush()
+        return bos.toByteArray()
     }
 
     // ─── helpers ────────────────────────────────────────────────────────
@@ -308,42 +389,9 @@ object PathologyParser {
             .replace("%25", "%")
     }
 
-    private fun parseTips(field: String?): List<TipOverlay> {
-        if (field.isNullOrBlank()) return emptyList()
-        val out = mutableListOf<TipOverlay>()
-        for (token in field.split('~')) {
-            val parts = token.split('|')
-            if (parts.size < 5) continue
-            val kind = runCatching { TipOverlayKind.valueOf(parts[0]) }.getOrNull() ?: continue
-            val endCap = runCatching { TipLineEndCap.valueOf(parts[1]) }.getOrNull() ?: TipLineEndCap.Plain
-            val lead = Lead.fromToken(parts[2])
-            val text = unescapeTipText(parts[3])
-            val pointsParts = parts[4].split(';')
-            val points = mutableListOf<TipPoint>()
-            for (pt in pointsParts) {
-                val coords = pt.split(':')
-                if (coords.size != 2) continue
-                val sample = coords[0].toFloatOrNull() ?: continue
-                val amp = coords[1].toFloatOrNull() ?: continue
-                points.add(TipPoint(sample, amp))
-            }
-            out.add(TipOverlay(kind, points, text, lead, endCap))
-        }
-        return out
-    }
-
     private fun parseTipComments(field: String?): List<String> {
         if (field.isNullOrBlank()) return emptyList()
         return field.split('~').mapNotNull { unescapeTipText(it) }
-    }
-
-    private fun serializeTips(tips: List<TipOverlay>): String {
-        return tips.joinToString("~") { tip ->
-            val pointsStr = tip.points.joinToString(";") {
-                String.format(java.util.Locale.US, "%.3f:%.3f", it.sample, it.adc)
-            }
-            "${tip.kind.name}|${tip.endCap.name}|${tip.lead?.name ?: ""}|${escapeTipText(tip.text)}|$pointsStr"
-        }
     }
 
     private fun serializeTipComments(comments: List<String>): String {

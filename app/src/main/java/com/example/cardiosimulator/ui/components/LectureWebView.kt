@@ -20,6 +20,7 @@ import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewClientCompat
 import com.example.cardiosimulator.data.EcgSvgRenderer
 import com.example.cardiosimulator.data.EcgTrace
+import com.example.cardiosimulator.domain.HtmlComponents
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.Lecture
 import java.io.File
@@ -54,7 +55,9 @@ private const val ASSET_DOMAIN = "https://appassets.androidplatform.net"
 fun LectureWebView(
     lecture: Lecture,
     modifier: Modifier = Modifier,
+    refreshTrigger: Int = 0,
     resolveEcg: (pathologyId: String, leads: List<Lead>) -> List<EcgTrace> = { _, _ -> emptyList() },
+    resolveEcgSegment: (pathologyId: String, lead: Lead, start: Float, duration: Float) -> EcgTrace? = { _, _, _, _ -> null },
     answers: Map<String, Map<String, String>> = emptyMap(),
     scrollToBlockId: String? = null,
     onCellEdit: ((quizId: String, row: Int, col: Int, value: String) -> Unit)? = null,
@@ -63,7 +66,7 @@ fun LectureWebView(
     val colors = MaterialTheme.colorScheme
     val bgArgb = colors.background.toArgb()
 
-    val css = remember(colors) {
+    val css = remember(colors, refreshTrigger) {
         themeCss(
             bg = colors.background.toArgb(),
             fg = colors.onBackground.toArgb(),
@@ -77,12 +80,16 @@ fun LectureWebView(
     val interactive = onCellEdit != null
     // Build the document off the main thread: <ecg> resolution reads pathology
     // .dat files, so it must not block composition.
-    val html by produceState<String?>(initialValue = null, lecture, css, interactive, onMonitorClick) {
+    val html by produceState<String?>(initialValue = null, lecture, css, interactive, onMonitorClick, refreshTrigger) {
         value = withContext(Dispatchers.IO) {
-            val body = EcgSvgRenderer.substituteEcgTags(
+            val withEcg = EcgSvgRenderer.substituteEcgTags(
                 lecture.rawHtml,
                 showMonitorButton = onMonitorClick != null,
                 resolve = resolveEcg
+            )
+            val body = EcgSvgRenderer.substituteEcgSegmentTags(
+                withEcg,
+                resolve = resolveEcgSegment
             )
             if (lecture.isStandalone) {
                 buildStandaloneDocument(body = body, css = css, interactive = interactive)
@@ -141,8 +148,9 @@ fun LectureWebView(
             
             web.setBackgroundColor(bgArgb)
             val current = html
+            val cacheKey = current to refreshTrigger
             // Avoid redundant reloads (and flicker) when recomposition leaves the HTML unchanged.
-            if (current != null && web.tag != current) {
+            if (current != null && web.tag != cacheKey) {
                 web.loadDataWithBaseURL(
                     "$ASSET_DOMAIN/course/${lecture.courseId}/",
                     current,
@@ -151,7 +159,7 @@ fun LectureWebView(
                     null,
                 )
                 // Commit the cache ONLY after a successful call (mirroring Windows fix)
-                web.tag = current
+                web.tag = cacheKey
             } else if (current != null && scrollToBlockId != null) {
                 // If the content didn't change but the scroll ID did, scroll now.
                 web.evaluateJavascript("document.getElementById('$scrollToBlockId')?.scrollIntoView({behavior: 'auto'})", null)
@@ -284,6 +292,7 @@ svg.ecg-monitor{max-width:100%;height:auto;display:block;margin:0 auto;border:1p
 .monitor-btn{display:block;margin:8px auto;padding:6px 16px;background:var(--primary);color:white;border:none;border-radius:4px;font-size:14px;cursor:pointer}
 figcaption{font-size:.9em;color:var(--muted);margin-top:6px;text-align:center;font-style:italic}
 .ecg-missing figcaption{color:#b00020}
+${HtmlComponents.Css}
 """.trimIndent()
 }
 

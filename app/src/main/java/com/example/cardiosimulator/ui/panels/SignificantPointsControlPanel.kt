@@ -28,7 +28,7 @@ fun SignificantPointsControlPanel(
 
     val pointTypes = listOf(
         EcgPointType.P_START, EcgPointType.P_PEAK, EcgPointType.P_END,
-        EcgPointType.QRS_START, EcgPointType.Q_PEAK, EcgPointType.R_PEAK, EcgPointType.S_PEAK, EcgPointType.QRS_END,
+        EcgPointType.QRS_START, EcgPointType.Q_PEAK, EcgPointType.R_PEAK, EcgPointType.S_PEAK, EcgPointType.J_POINT, EcgPointType.QRS_END,
         EcgPointType.T_START, EcgPointType.T_PEAK, EcgPointType.T_END
     )
 

@@ -29,6 +29,11 @@ val DarkAccentTint = Color(0xFF1E3B2B)
 val Positive = Color(0xFF2E9E5B)   // correct answer / pass
 val Negative = Color(0xFFCC3A3A)   // wrong answer / fail / countdown urgency
 
+// Learning Scale Colors
+val LsGreen = Color(0xFF1A9A82)
+val LsAmber = Color(0xFFD6A84A)
+val LsRed   = Color(0xFFD66A6A)
+
 // ECG Specific Colors
 val EcgTraceTeal = Color(0xFF2C6E8E)
 val PaperBackground = Color(0xFFFCFCEC)

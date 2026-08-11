@@ -14,7 +14,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.cardiosimulator.R
@@ -37,6 +36,10 @@ fun Heart3DDialog(
     var isEditing by remember { mutableStateOf(false) }
     var isCutaway by remember { mutableStateOf(false) }
     var cutPosition by remember { mutableFloatStateOf(0.5f) }
+    
+    var infarctProgress by remember { mutableFloatStateOf(0f) }
+    var isLeadsSchemeOn by remember { mutableStateOf(false) }
+    var hasScaffold by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         delay(15_000) // 15 second backstop
@@ -144,8 +147,69 @@ fun Heart3DDialog(
                             Text(stringResource(if (isEditing) R.string.monitor_3d_done_editing else R.string.monitor_3d_edit_pathway))
                         }
 
+                        // Leads Scheme Button
+                        Button(
+                            onClick = { 
+                                isLeadsSchemeOn = !isLeadsSchemeOn
+                                controller.setLeadsScheme(isLeadsSchemeOn)
+                            },
+                            enabled = hasScaffold,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isLeadsSchemeOn) Color.Gray else WindowsBlue
+                            ),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(stringResource(if (isLeadsSchemeOn) R.string.monitor_3d_lead_scheme_hide else R.string.monitor_3d_lead_scheme))
+                        }
+
                         Divider(color = Color.LightGray, thickness = 1.dp)
 
+                        // Infarct Group
+                        Text(
+                            text = stringResource(R.string.monitor_3d_infarct),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = WindowsBlue,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        val infarctLabel = when {
+                            infarctProgress <= 0f -> stringResource(R.string.monitor_3d_infarct_healthy)
+                            infarctProgress >= 1f -> stringResource(R.string.monitor_3d_infarct_full)
+                            else -> stringResource(R.string.monitor_3d_infarct_percent, (infarctProgress * 100).toInt())
+                        }
+                        
+                        Text(text = infarctLabel, style = MaterialTheme.typography.bodySmall)
+                        
+                        Slider(
+                            value = infarctProgress,
+                            onValueChange = { 
+                                infarctProgress = it
+                                controller.setInfarctProgress(it)
+                            },
+                            valueRange = 0f..1f,
+                            colors = SliderDefaults.colors(thumbColor = WindowsBlue, activeTrackColor = WindowsBlue)
+                        )
+
+                        Button(
+                            onClick = { controller.playInfarct() },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = WindowsBlue),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(stringResource(R.string.monitor_3d_develop_infarct))
+                        }
+                    }
+
+                    // Middle Column: Cutaway
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(WindowsBlue.copy(alpha = 0.1f))
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
                         // Cutaway Group
                         Text(
                             text = stringResource(R.string.monitor_3d_cutaway),
@@ -185,24 +249,6 @@ fun Heart3DDialog(
                         }
                     }
 
-                    // Middle Column: Description (Legacy placeholder)
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(WindowsBlue.copy(alpha = 0.1f))
-                            .padding(12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = stringResource(R.string.monitor_3d_description),
-                            color = WindowsBlue,
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-
                     // Right Column: Heart Viewer
                     Column(
                         modifier = Modifier.weight(2f),
@@ -226,6 +272,7 @@ fun Heart3DDialog(
                                         isLoading = false 
                                         controller.setBpm(bpm.toInt())
                                     },
+                                    onScaffoldAvailable = { hasScaffold = it },
                                     onError = { isLoading = false }
                                 )
 

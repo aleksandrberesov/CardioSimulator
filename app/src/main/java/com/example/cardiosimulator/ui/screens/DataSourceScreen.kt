@@ -13,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -110,11 +109,10 @@ fun DataSourceScreen(
                 title = stringResource(R.string.data_source_title),
                 description = stringResource(R.string.data_source_description),
                 state = state,
-                onPickFile = { pickZipFile.launch(ZIP_MIME) },
+                onPickFile = { pickZipFile.launch(arrayOf("*/*")) },
                 readyText = { count -> stringResource(R.string.data_source_loaded_format, count) },
                 onShowDetails = { showDetails = true },
                 info = info,
-                onCancel = { appViewModel.cancelLoading() }
             )
 
             Spacer(Modifier.height(24.dp))
@@ -125,7 +123,7 @@ fun DataSourceScreen(
                 title = stringResource(R.string.course_data_source_title),
                 description = stringResource(R.string.course_data_source_description),
                 state = courseState,
-                onPickFile = { pickCourseZipFile.launch(ZIP_MIME) },
+                onPickFile = { pickCourseZipFile.launch(arrayOf("*/*")) },
                 readyText = { count -> stringResource(R.string.course_data_source_loaded_format, count) },
                 onShowDetails = { showCourseDetails = true }
             )
@@ -197,7 +195,6 @@ private fun DataSourceSection(
     readyText: @Composable (Int) -> String,
     onShowDetails: (() -> Unit)? = null,
     info: LoadingInfo = LoadingInfo(),
-    onCancel: (() -> Unit)? = null,
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
@@ -217,45 +214,12 @@ private fun DataSourceSection(
 
         when (state) {
             is DataState.Loading -> {
-                if (info.title.isEmpty() && !info.canCancel) {
-                    CircularProgressIndicator()
-                    Spacer(Modifier.height(8.dp))
-                    Text(stringResource(R.string.data_source_loading), color = TextPrimary)
-                } else {
-                    Text(
-                        text = info.title.ifEmpty { stringResource(R.string.data_source_loading) },
-                        style = MaterialTheme.typography.titleMedium,
-                        color = TextPrimary
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    if (info.indeterminate) {
-                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth(0.8f))
-                    } else {
-                        LinearProgressIndicator(
-                            progress = { info.percent / 100f },
-                            modifier = Modifier.fillMaxWidth(0.8f)
-                        )
-                    }
-                    if (info.statusLine.isNotEmpty()) {
-                        Spacer(Modifier.height(8.dp))
-                        Text(info.statusLine, color = TextPrimary)
-                    }
-                    if (info.detail.isNotEmpty()) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = info.detail,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontFamily = FontFamily.Monospace,
-                            color = TextSecondary
-                        )
-                    }
-                    if (info.canCancel && onCancel != null) {
-                        Spacer(Modifier.height(12.dp))
-                        OutlinedButton(onClick = onCancel) {
-                            Text(stringResource(R.string.data_source_cancel))
-                        }
-                    }
-                }
+                CircularProgressIndicator()
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = info.title.ifEmpty { stringResource(R.string.data_source_loading) },
+                    color = TextPrimary
+                )
             }
             is DataState.Error -> {
                 val msg = when (state.reason) {
@@ -295,8 +259,6 @@ private fun DataSourceSection(
         }
     }
 }
-
-private val ZIP_MIME = arrayOf("application/zip", "application/x-zip-compressed")
 
 @Composable
 private fun previewAppViewModel(): AppViewModel {

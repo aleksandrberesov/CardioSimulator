@@ -13,6 +13,7 @@ enum class EcgPointType(val label: String, val descriptionRu: String) {
     Q_PEAK("Q", "Пик зубца Q"),
     R_PEAK("R", "Пик зубца R"),
     S_PEAK("S", "Пик зубца S"),
+    J_POINT("J", "Точка J"),
     QRS_END("QRS<sub>e</sub>", "Конец комплекса QRS"),
     
     T_START("T<sub>s</sub>", "Начало зубца T"),

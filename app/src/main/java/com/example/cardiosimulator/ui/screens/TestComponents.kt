@@ -5,12 +5,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,7 +19,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalContext
 import com.example.cardiosimulator.domain.AssemblyAttempt
 import com.example.cardiosimulator.domain.AssemblyPaletteItem
 import kotlin.math.abs
@@ -31,12 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.example.cardiosimulator.R
-import com.example.cardiosimulator.domain.QuestionStimulus
 import com.example.cardiosimulator.domain.TestQuestion
-import com.example.cardiosimulator.ui.theme.*
-import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import java.io.File
 
 @Composable
@@ -65,7 +58,7 @@ fun TestQuestionPanel(
                     showAbortConfirm = false
                     onAbort()
                 }) {
-                    Text(stringResource(R.string.test_abort), color = Negative)
+                    Text(stringResource(R.string.test_abort), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -86,14 +79,14 @@ fun TestQuestionPanel(
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(
                 text = stringResource(R.string.test_counter_format, question.number, totalQuestions),
-                color = TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             )
             if (isTimed) {
                 Text(
                     text = formatTime(remainingSeconds),
-                    color = Negative,
+                    color = MaterialTheme.colorScheme.error,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 )
@@ -107,7 +100,7 @@ fun TestQuestionPanel(
             text = stringResource(R.string.test_question_title_format, question.number),
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
-            color = AccentGreen,
+            color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp
         )
@@ -117,7 +110,7 @@ fun TestQuestionPanel(
         // Question Text
         Text(
             text = question.text,
-            color = TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp
         )
@@ -132,18 +125,18 @@ fun TestQuestionPanel(
                 
                 val backgroundColor = when {
                     !revealed -> Color.Transparent
-                    isSelected && isCorrect -> AccentGreenTint
-                    isSelected && !isCorrect -> Negative.copy(alpha = 0.12f)
-                    isCorrect -> AccentGreenTint
+                    isSelected && isCorrect -> MaterialTheme.colorScheme.primaryContainer
+                    isSelected && !isCorrect -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                    isCorrect -> MaterialTheme.colorScheme.primaryContainer
                     else -> Color.Transparent
                 }
                 
                 val borderColor = when {
-                    !revealed -> if (isSelected) AccentGreen else ControlBorder
-                    isSelected && isCorrect -> Positive
-                    isSelected && !isCorrect -> Negative
-                    isCorrect -> Positive
-                    else -> ControlBorder
+                    !revealed -> if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                    isSelected && isCorrect -> MaterialTheme.colorScheme.primary
+                    isSelected && !isCorrect -> MaterialTheme.colorScheme.error
+                    isCorrect -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.outline
                 }
 
                 Row(
@@ -160,10 +153,10 @@ fun TestQuestionPanel(
                         text = "${index + 1}. ${option.text}",
                         style = MaterialTheme.typography.bodyLarge,
                         color = when {
-                            !revealed -> TextPrimary
-                            isCorrect -> Positive
-                            isSelected && !isCorrect -> Negative
-                            else -> TextSecondary
+                            !revealed -> MaterialTheme.colorScheme.onSurface
+                            isCorrect -> MaterialTheme.colorScheme.primary
+                            isSelected && !isCorrect -> MaterialTheme.colorScheme.error
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
                         }
                     )
                 }
@@ -175,7 +168,7 @@ fun TestQuestionPanel(
             if (!revealed) {
                 Text(
                     text = stringResource(R.string.assemble_hint),
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
@@ -190,12 +183,12 @@ fun TestQuestionPanel(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(ControlFill, RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
                     .padding(16.dp)
             ) {
                 Text(
                     text = stringResource(R.string.test_comment_title),
-                    color = AccentGreen,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
@@ -203,7 +196,7 @@ fun TestQuestionPanel(
                 if (!question.isAssembly) {
                     Text(
                         text = stringResource(R.string.test_correct_answer_format, question.correctOptionNumber()),
-                        color = AccentGreen,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -211,14 +204,14 @@ fun TestQuestionPanel(
                     val allCorrect = assemblyAttempt?.allCorrect == true
                     Text(
                         text = if (allCorrect) stringResource(R.string.assemble_correct) else stringResource(R.string.assemble_wrong),
-                        color = if (allCorrect) Positive else Negative,
+                        color = if (allCorrect) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
                 Text(
                     text = question.comment,
-                    color = TextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
         }
@@ -233,7 +226,7 @@ fun TestQuestionPanel(
             verticalAlignment = Alignment.CenterVertically
         ) {
             TextButton(onClick = { showAbortConfirm = true }) {
-                Text(stringResource(R.string.test_abort), color = Negative)
+                Text(stringResource(R.string.test_abort), color = MaterialTheme.colorScheme.error)
             }
 
             if (revealed) {
@@ -241,7 +234,7 @@ fun TestQuestionPanel(
                 Button(
                     onClick = onNext,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isCorrect) Positive else MaterialTheme.colorScheme.primary
+                        containerColor = if (isCorrect) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary
                     )
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -259,7 +252,7 @@ fun TestQuestionPanel(
                 Button(
                     onClick = onSubmitAssembly,
                     enabled = assemblyAttempt?.isComplete == true,
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentGreen)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text(stringResource(R.string.assemble_check))
                 }
@@ -288,14 +281,14 @@ fun ExamQuestionPanel(
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(
                 text = stringResource(R.string.test_counter_format, question.number, totalQuestions),
-                color = TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             )
             if (isTimed) {
                 Text(
                     text = formatTime(remainingSeconds),
-                    color = Negative,
+                    color = MaterialTheme.colorScheme.error,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 )
@@ -309,7 +302,7 @@ fun ExamQuestionPanel(
             text = stringResource(R.string.test_question_title_format, question.number),
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
-            color = AccentGreen,
+            color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp
         )
@@ -319,7 +312,7 @@ fun ExamQuestionPanel(
         // Question Text
         Text(
             text = question.text,
-            color = TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp
         )
@@ -336,7 +329,7 @@ fun ExamQuestionPanel(
                     .padding(vertical = 4.dp)
                     .border(
                         width = 1.dp,
-                        color = if (isSelected) AccentGreen else ControlBorder,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                         shape = RoundedCornerShape(8.dp)
                     )
                     .clickable { onOptionSelect(option.id) }
@@ -346,7 +339,7 @@ fun ExamQuestionPanel(
                 Text(
                     text = "${index + 1}. ${option.text}",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = if (isSelected) TextPrimary else TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                 )
             }
@@ -360,7 +353,7 @@ fun ExamQuestionPanel(
             modifier = Modifier.fillMaxWidth(),
             enabled = selectedOptionId != null,
             colors = ButtonDefaults.buttonColors(
-                containerColor = AccentGreen
+                containerColor = MaterialTheme.colorScheme.primary
             )
         ) {
             Text(if (question.number < totalQuestions) stringResource(R.string.test_next) else stringResource(R.string.test_finish))
@@ -389,7 +382,7 @@ fun EcgAssemblyWorkspace(
                 .fillMaxWidth()
                 .height(180.dp),
             shape = RoundedCornerShape(4.dp),
-            colors = CardDefaults.cardColors(containerColor = ControlFill)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 val slotCount = attempt.spec.partCount
@@ -423,8 +416,8 @@ fun EcgAssemblyWorkspace(
                         
                         val tint = when {
                             !revealed -> Color.Transparent
-                            isCorrect -> Positive.copy(alpha = 0.1f)
-                            else -> Negative.copy(alpha = 0.1f)
+                            isCorrect -> MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                            else -> MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
                         }
 
                         val sharedScale = calculateSharedScale(attempt.palette)
@@ -448,9 +441,9 @@ fun EcgAssemblyWorkspace(
                                 EcgPieceView(
                                     samples = item.samples,
                                     color = when {
-                                        !revealed -> TextPrimary
-                                        isCorrect -> Positive
-                                        else -> Negative
+                                        !revealed -> MaterialTheme.colorScheme.onSurface
+                                        isCorrect -> MaterialTheme.colorScheme.primary
+                                        else -> MaterialTheme.colorScheme.error
                                     },
                                     modifier = Modifier.fillMaxSize(),
                                     sharedMaxAmp = sharedScale.first,
@@ -464,7 +457,7 @@ fun EcgAssemblyWorkspace(
                                 if (correctPiece != null) {
                                     EcgPieceView(
                                         samples = correctPiece.samples,
-                                        color = Positive.copy(alpha = 0.3f),
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
                                         modifier = Modifier.fillMaxSize(),
                                         sharedMaxAmp = sharedScale.first,
                                         sharedMaxLen = sharedScale.second
@@ -481,7 +474,7 @@ fun EcgAssemblyWorkspace(
         Text(
             text = stringResource(R.string.assemble_pieces_label),
             fontWeight = FontWeight.Bold,
-            color = TextSecondary
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -503,10 +496,10 @@ fun EcgAssemblyWorkspace(
                         .alpha(if (isPlaced) 0.3f else 1.0f)
                         .border(
                             width = if (isSelected) 2.dp else 1.dp,
-                            color = if (isSelected) AccentGreen else ControlBorder,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                             shape = RoundedCornerShape(4.dp)
                         )
-                        .background(ControlFill, RoundedCornerShape(4.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
                         .clickable(!revealed && !isPlaced) {
                             selectedPaletteKey = paletteItem.key
                         }
@@ -515,7 +508,7 @@ fun EcgAssemblyWorkspace(
                 ) {
                     EcgPieceView(
                         samples = paletteItem.samples,
-                        color = TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.fillMaxSize(),
                         sharedMaxAmp = sharedScale.first,
                         sharedMaxLen = sharedScale.second

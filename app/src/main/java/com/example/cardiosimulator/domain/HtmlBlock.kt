@@ -46,4 +46,63 @@ sealed interface HtmlBlock {
         override val id: String = UUID.randomUUID().toString(),
         val rows: List<List<String>> = listOf(listOf("")),
     ) : HtmlBlock
+
+    data class HtmlList(
+        override val id: String = UUID.randomUUID().toString(),
+        val items: String,
+        val numbered: Boolean,
+    ) : HtmlBlock
+
+    data class Quote(
+        override val id: String = UUID.randomUUID().toString(),
+        val html: String,
+    ) : HtmlBlock
+
+    data class Note(
+        override val id: String = UUID.randomUUID().toString(),
+        val variant: String,
+        val html: String,
+    ) : HtmlBlock
+
+    data class Card(
+        override val id: String = UUID.randomUUID().toString(),
+        val title: String,
+        val html: String,
+    ) : HtmlBlock
+
+    data class Section(
+        override val id: String = UUID.randomUUID().toString(),
+        val title: String,
+        val html: String,
+    ) : HtmlBlock
+
+    data class Figure(
+        override val id: String = UUID.randomUUID().toString(),
+        val html: String,
+        val caption: String,
+    ) : HtmlBlock
+
+    data class Divider(
+        override val id: String = UUID.randomUUID().toString(),
+    ) : HtmlBlock
+
+    data class Raw(
+        override val id: String = java.util.UUID.randomUUID().toString().replace("-", ""),
+        val html: String,
+    ) : HtmlBlock
+
+    data class Container(
+        override val id: String = java.util.UUID.randomUUID().toString().replace("-", ""),
+        val html: String,
+    ) : HtmlBlock
+
+    data class EcgSegment(
+        override val id: String = UUID.randomUUID().toString().replace("-", ""),
+        val pathology: String,
+        val lead: String,
+        val startSec: Float = 0f,
+        val durationSec: Float = 2.5f,
+        val caption: String? = null,
+        val tips: List<TipOverlay> = emptyList(),
+    ) : HtmlBlock
 }

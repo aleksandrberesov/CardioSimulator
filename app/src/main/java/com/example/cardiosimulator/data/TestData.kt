@@ -180,12 +180,14 @@ class QuestionBankRepository(private var source: IQuestionBankSource) {
 class TestThemeStore(private val themeFile: File) {
     companion object {
         val DefaultThemes = listOf(
-            "Норма",
+            "Основы ЭКГ",
             "Нарушения ритма",
             "Нарушения проводимости",
-            "Гипертрофии",
-            "Ишемия и инфаркт",
-            "Прочее"
+            "Гипертрофия",
+            "Ишемия миокарда",
+            "Инфаркт миокарда",
+            "Электролитные нарушения",
+            "ЭКГ-синдромы"
         )
     }
 

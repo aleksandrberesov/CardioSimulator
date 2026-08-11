@@ -9,14 +9,19 @@ import com.example.cardiosimulator.data.TestRepository
 import com.example.cardiosimulator.data.TestThemeStore
 import com.example.cardiosimulator.data.testJson
 import com.example.cardiosimulator.domain.*
+import com.example.cardiosimulator.domain.generators.TestGenType
+import com.example.cardiosimulator.domain.generators.TestGenerator
 import kotlinx.serialization.decodeFromString
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.UUID
 
-enum class ConstructorTab { TEST, BANK }
+enum class ConstructorTab { TEST, BANK, GENERATOR }
 
 class TestConstructorViewModel(
     private val repository: TestRepository,
@@ -24,8 +29,27 @@ class TestConstructorViewModel(
     private val themeStore: TestThemeStore
 ) : ViewModel() {
 
-    private val _activeTab = MutableStateFlow(ConstructorTab.TEST)
+    private val _activeTab = MutableStateFlow(ConstructorTab.GENERATOR)
     val activeTab: StateFlow<ConstructorTab> = _activeTab.asStateFlow()
+
+    // Generator state
+    private val _selectedGenTypes = MutableStateFlow<Set<TestGenType>>(setOf(TestGenType.Questions))
+    val selectedGenTypes: StateFlow<Set<TestGenType>> = _selectedGenTypes.asStateFlow()
+
+    private val _selectedGenThemes = MutableStateFlow<Set<String>>(emptySet())
+    val selectedGenThemes: StateFlow<Set<String>> = _selectedGenThemes.asStateFlow()
+
+    private val _selectedGenRhythms = MutableStateFlow<Set<String>>(emptySet())
+    val selectedGenRhythms: StateFlow<Set<String>> = _selectedGenRhythms.asStateFlow()
+
+    private val _isGenOrMode = MutableStateFlow(true)
+    val isGenOrMode: StateFlow<Boolean> = _isGenOrMode.asStateFlow()
+
+    private val _genCount = MutableStateFlow(10)
+    val genCount: StateFlow<Int> = _genCount.asStateFlow()
+
+    private val _genTimeMinutes = MutableStateFlow(15)
+    val genTimeMinutes: StateFlow<Int> = _genTimeMinutes.asStateFlow()
 
     // Test editing state
     private val _testId = MutableStateFlow("")
@@ -52,6 +76,44 @@ class TestConstructorViewModel(
 
     private val _selectedTheme = MutableStateFlow<String?>(null)
     val selectedTheme: StateFlow<String?> = _selectedTheme.asStateFlow()
+
+    // Redesigned Bank state
+    private val _editingQuestionId = MutableStateFlow<String?>(null)
+    val editingQuestionId: StateFlow<String?> = _editingQuestionId.asStateFlow()
+
+    private val _bankPage = MutableStateFlow(0)
+    val bankPage: StateFlow<Int> = _bankPage.asStateFlow()
+
+    private val _selectedBankRhythm = MutableStateFlow<String?>(null)
+    val selectedBankRhythm: StateFlow<String?> = _selectedBankRhythm.asStateFlow()
+
+    private val _selectedBankTypes = MutableStateFlow<Set<TestGenType>>(emptySet())
+    val selectedBankTypes: StateFlow<Set<TestGenType>> = _selectedBankTypes.asStateFlow()
+
+    val filteredBankQuestions: StateFlow<List<TestQuestion>> = combine(
+        _bankQuestions, _searchQuery, _selectedTheme, _selectedBankRhythm, _selectedBankTypes
+    ) { bank, query, theme, rhythm, types ->
+        bank.filter { q ->
+            (theme == null || q.theme == theme) &&
+            (rhythm == null || q.pathologyId == rhythm) &&
+            (types.isEmpty() || types.any { t ->
+                when (t) {
+                    TestGenType.Assemble -> q.isAssembly
+                    TestGenType.Image -> q.stimulus == QuestionStimulus.Image
+                    TestGenType.Detect -> q.stimulus == QuestionStimulus.Ecg
+                    TestGenType.Questions -> q.stimulus == QuestionStimulus.Text
+                    else -> true
+                }
+            }) &&
+            (query.isBlank() || 
+                q.id.contains(query, ignoreCase = true) ||
+                q.text.contains(query, ignoreCase = true) ||
+                q.theme?.contains(query, ignoreCase = true) == true ||
+                q.pathologyId?.contains(query, ignoreCase = true) == true ||
+                q.tagList.any { it.contains(query, ignoreCase = true) }
+            )
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
         reloadBank()
@@ -157,6 +219,23 @@ class TestConstructorViewModel(
         reloadBank()
     }
 
+    fun newBankQuestion() {
+        val newQuestion = TestQuestion(
+            id = generateId(),
+            number = (_bankQuestions.value.maxOfOrNull { it.number } ?: 0) + 1,
+            text = "Новый вопрос",
+            options = listOf(
+                TestOption(generateId(), "Опция 1"),
+                TestOption(generateId(), "Опция 2")
+            ),
+            correctOptionId = "",
+            comment = ""
+        )
+        bankRepository.writeQuestion(newQuestion)
+        reloadBank()
+        startEditingQuestion(newQuestion.id)
+    }
+
     fun deleteFromBank(id: String) {
         bankRepository.deleteQuestion(id)
         reloadBank()
@@ -224,10 +303,40 @@ class TestConstructorViewModel(
 
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
+        _bankPage.value = 0
     }
 
     fun setSelectedTheme(theme: String?) {
         _selectedTheme.value = theme
+        _bankPage.value = 0
+    }
+
+    fun setSelectedBankRhythm(rhythmId: String?) {
+        _selectedBankRhythm.value = rhythmId
+        _bankPage.value = 0
+    }
+
+    fun toggleBankType(type: TestGenType) {
+        val current = _selectedBankTypes.value
+        _selectedBankTypes.value = if (current.contains(type)) current - type else current + type
+        _bankPage.value = 0
+    }
+
+    fun clearBankTypes() {
+        _selectedBankTypes.value = emptySet()
+        _bankPage.value = 0
+    }
+
+    fun setBankPage(page: Int) {
+        _bankPage.value = page
+    }
+
+    fun startEditingQuestion(id: String) {
+        _editingQuestionId.value = id
+    }
+
+    fun stopEditingQuestion() {
+        _editingQuestionId.value = null
     }
 
     fun addTheme(theme: String) {
@@ -240,6 +349,50 @@ class TestConstructorViewModel(
         val newThemes = _themes.value.filterNot { it == theme }
         themeStore.writeThemes(newThemes)
         reloadThemes()
+    }
+
+    // Generator operations
+    fun toggleGenType(type: TestGenType) {
+        val current = _selectedGenTypes.value
+        _selectedGenTypes.value = if (current.contains(type)) current - type else current + type
+    }
+
+    fun toggleGenTheme(theme: String) {
+        val current = _selectedGenThemes.value
+        _selectedGenThemes.value = if (current.contains(theme)) current - theme else current + theme
+    }
+
+    fun toggleGenRhythm(rhythmId: String) {
+        val current = _selectedGenRhythms.value
+        _selectedGenRhythms.value = if (current.contains(rhythmId)) current - rhythmId else current + rhythmId
+    }
+
+    fun setGenOrMode(isOr: Boolean) {
+        _isGenOrMode.value = isOr
+    }
+
+    fun setGenCount(count: Int) {
+        _genCount.value = count
+    }
+
+    fun setGenTimeMinutes(minutes: Int) {
+        _genTimeMinutes.value = minutes
+    }
+
+    fun generateTest() {
+        val generated = TestGenerator.generate(
+            bank = bankRepository.questions(),
+            count = _genCount.value,
+            types = _selectedGenTypes.value,
+            themes = _selectedGenThemes.value,
+            rhythms = _selectedGenRhythms.value,
+            minutes = _genTimeMinutes.value,
+            isOrMode = _isGenOrMode.value
+        )
+        repository.writeTest(generated)
+        repository.reload()
+        _activeTab.value = ConstructorTab.TEST
+        load(generated.testId)
     }
 
     private fun generateId(): String = UUID.randomUUID().toString().take(8)

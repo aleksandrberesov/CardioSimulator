@@ -95,7 +95,7 @@ fun TopControlPanel(
                             DropdownMenuItem(
                                 text = { Text(stringResource(item.id.titleRes)) },
                                 onClick = {
-                                    viewModel.updateOperatingMode(item)
+                                    viewModel.requestOperatingMode(item)
                                     expanded = false
                                 }
                             )
@@ -125,6 +125,13 @@ fun TopControlPanel(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
+                                    Tab(
+                                        text = stringResource(R.string.test_gen_view),
+                                        isActive = activeTab == ConstructorTab.GENERATOR,
+                                        isLarge = true,
+                                        onClick = { testConstructorViewModel.setTab(ConstructorTab.GENERATOR) },
+                                        modifier = Modifier.padding(vertical = 4.dp)
+                                    )
                                     Tab(
                                         text = stringResource(R.string.test_ctor_tab_test),
                                         isActive = activeTab == ConstructorTab.TEST,

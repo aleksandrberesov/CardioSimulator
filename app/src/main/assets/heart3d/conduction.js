@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 
 export class ConductionSystemRenderer {
-    constructor(scene, camera, container) {
+    constructor(scene, camera, container, controls) {
         this.scene = scene;
         this.camera = camera;
         this.container = container;
+        this.controls = controls;
 
         this.nodes = [];
         this.pathMesh = null;
@@ -14,6 +15,29 @@ export class ConductionSystemRenderer {
         this.isPlaying = false;
         this.bpm = 75;
         this.startTime = 0;
+
+        // Infarct state
+        this.infarctProgress = 0;
+        this.infarctPlaying = false;
+        this.infarctStartTime = 0;
+        this.infarctFrom = 0;
+
+        // Textures
+        const tl = new THREE.TextureLoader();
+        const assetPath = 'https://appassets.androidplatform.net/assets/heart3d/';
+        this.infarctTex = tl.load(assetPath + 'heart.infarct.jpg');
+        this.maskTex = tl.load(assetPath + 'heart.mask.jpg');
+        this.infarctTex.colorSpace = THREE.SRGBColorSpace;
+        this.maskTex.colorSpace = THREE.NoColorSpace;
+        [this.infarctTex, this.maskTex].forEach(t => {
+            t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        });
+
+        this.uProgress = { value: 0.0 };
+
+        this.heartBox = new THREE.Box3();
+        this.fullBox = new THREE.Box3();
+        this.hasScaffold = false;
 
         this.isXray = false;
         this.isCutaway = false;
@@ -54,6 +78,69 @@ export class ConductionSystemRenderer {
 
     setModel(model) {
         this.model = model;
+
+        // Heart Isolation
+        const SCAFFOLD_TOKENS = ['silhouette', 'human', 'ecg', 'lead', 'axes', 'text'];
+        this.heartBox = new THREE.Box3();
+        this.hasScaffold = false;
+
+        const heartMats = new Set();
+
+        this.model.traverse((o) => {
+            if (!o.isMesh) return;
+
+            const name = (o.name || '').toLowerCase();
+            if (SCAFFOLD_TOKENS.some(t => name.includes(t))) {
+                o.visible = false;
+                o.userData.scaffold = true;
+                this.hasScaffold = true;
+            } else {
+                this.heartBox.expandByObject(o);
+                if (o.material && o.material.map) {
+                    heartMats.add(o.material);
+                }
+            }
+        });
+
+        this.fullBox = new THREE.Box3().setFromObject(this.model);
+        if (!this.hasScaffold) this.heartBox.copy(this.fullBox);
+
+        this.frameCamera(this.heartBox);
+
+        if (typeof Android !== 'undefined') {
+            Android.onScaffoldAvailable(this.hasScaffold);
+        }
+
+        // Infarct shader blend
+        heartMats.forEach(mat => {
+            if (this.infarctTex.flipY !== undefined && mat.map) {
+                this.infarctTex.flipY = mat.map.flipY;
+                this.maskTex.flipY = mat.map.flipY;
+            }
+            mat.onBeforeCompile = (shader) => {
+                shader.uniforms.uInfarct = { value: this.infarctTex };
+                shader.uniforms.uMask = { value: this.maskTex };
+                shader.uniforms.uProgress = this.uProgress;
+
+                shader.fragmentShader = `
+                    uniform sampler2D uInfarct;
+                    uniform sampler2D uMask;
+                    uniform float uProgress;
+                ` + shader.fragmentShader;
+
+                shader.fragmentShader = shader.fragmentShader.replace(
+                    '#include <map_fragment>',
+                    `#include <map_fragment>
+                    {
+                        float _w = texture2D(uMask, vMapUv).r * uProgress;
+                        vec3 _inf = texture2D(uInfarct, vMapUv).rgb;
+                        diffuseColor.rgb = mix(diffuseColor.rgb, _inf, _w);
+                    }`
+                );
+            };
+            mat.needsUpdate = true;
+        });
+
         this.applyClippingAndXray();
     }
 
@@ -208,7 +295,66 @@ export class ConductionSystemRenderer {
         }
     }
 
+    setInfarctProgress(p) {
+        this.infarctProgress = Math.max(0, Math.min(1, p));
+        this.uProgress.value = this.infarctProgress;
+    }
+
+    playInfarct() {
+        this.infarctFrom = (this.infarctProgress >= 0.999) ? 0 : this.infarctProgress;
+        if (this.infarctFrom === 0) this.setInfarctProgress(0);
+        this.infarctStartTime = performance.now();
+        this.infarctPlaying = true;
+    }
+
+    stopInfarct() {
+        this.infarctPlaying = false;
+    }
+
+    updateInfarct(time) {
+        if (!this.infarctPlaying) return;
+
+        const duration = 6000;
+        const elapsed = time - this.infarctStartTime;
+        const p = Math.min(1, this.infarctFrom + elapsed / duration);
+
+        this.setInfarctProgress(p);
+
+        if (p >= 1) {
+            this.infarctPlaying = false;
+        }
+    }
+
+    setLeadsScheme(on) {
+        if (!this.model) return;
+        this.model.traverse((o) => {
+            if (o.userData.scaffold) {
+                o.visible = on;
+            }
+        });
+        this.frameCamera(on ? this.fullBox : this.heartBox);
+        this.applyClippingAndXray();
+    }
+
+    frameCamera(box) {
+        if (!this.camera || !this.controls) return;
+
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const fov = this.camera.fov * (Math.PI / 180);
+        let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 2.0;
+
+        this.camera.position.copy(center);
+        this.camera.position.z += cameraZ;
+        this.camera.lookAt(center);
+        this.controls.target.copy(center);
+        this.controls.update();
+    }
+
     update(time) {
+        this.updateInfarct(time);
+
         if (!this.isPlaying || this.nodes.length < 2) return;
 
         const cycleMs = 60000 / this.bpm;

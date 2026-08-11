@@ -12,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -55,22 +56,75 @@ fun ExaminationScreen(
     testRepository: TestRepository
 ) {
     var subMode by remember { mutableStateOf(ExamSubMode.Exam) }
+    var showAbortDialog by remember { mutableStateOf(false) }
+
+    val selectedCourseId by appViewModel.selectedCourseId.collectAsState()
+    val activeTest by examinationViewModel.activeTest.collectAsState()
+
+    if (showAbortDialog) {
+        AlertDialog(
+            onDismissRequest = { showAbortDialog = false },
+            title = { Text(stringResource(R.string.test_abort)) },
+            text = { Text("Abort exam and return to lecture?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showAbortDialog = false
+                    appViewModel.setPreserveCourseSelection(true)
+                    appViewModel.operatingModes.find { it.id == OperatingMode.Teaching }?.let {
+                        appViewModel.updateOperatingMode(it)
+                    }
+                }) {
+                    Text(stringResource(R.string.cd_apply))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAbortDialog = false }) {
+                    Text(stringResource(R.string.cd_cancel))
+                }
+            }
+        )
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TabRow(selectedTabIndex = subMode.ordinal) {
-            ExamSubMode.entries.forEach { mode ->
-                Tab(
-                    selected = subMode == mode,
-                    onClick = { subMode = mode },
-                    text = {
-                        Text(
-                            when (mode) {
-                                ExamSubMode.Exam -> stringResource(R.string.exam_tab_exam)
-                                ExamSubMode.Results -> stringResource(R.string.exam_tab_results)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TabRow(
+                selectedTabIndex = subMode.ordinal,
+                modifier = Modifier.weight(1f)
+            ) {
+                ExamSubMode.entries.forEach { mode ->
+                    Tab(
+                        selected = subMode == mode,
+                        onClick = { subMode = mode },
+                        text = {
+                            Text(
+                                when (mode) {
+                                    ExamSubMode.Exam -> stringResource(R.string.exam_tab_exam)
+                                    ExamSubMode.Results -> stringResource(R.string.exam_tab_results)
+                                }
+                            )
+                        }
+                    )
+                }
+            }
+
+            if (selectedCourseId != null && selectedCourseId != AppViewModel.ALL_RHYTHMS_ID) {
+                Button(
+                    onClick = {
+                        if (activeTest != null) {
+                            showAbortDialog = true
+                        } else {
+                            appViewModel.setPreserveCourseSelection(true)
+                            appViewModel.operatingModes.find { it.id == OperatingMode.Teaching }?.let {
+                                appViewModel.updateOperatingMode(it)
                             }
-                        )
-                    }
-                )
+                        }
+                    },
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.back_to_lecture))
+                }
             }
         }
 

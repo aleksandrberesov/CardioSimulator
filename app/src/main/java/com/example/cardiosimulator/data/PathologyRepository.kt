@@ -27,15 +27,27 @@ class PathologyRepository(private var source: PathologySource) {
 
     val groups = com.example.cardiosimulator.domain.PathologyGroups()
 
+    // Phase 5: Memoization for last-read pathology
+    private var lastReadId: String? = null
+    private var lastReadFile: PathologyFile? = null
+
+    private fun invalidateMemo() {
+        lastReadId = null
+        lastReadFile = null
+    }
+
     fun setSource(newSource: PathologySource) {
         source = newSource
         _manifest.value = null
+        invalidateMemo()
     }
 
     fun loadManifest(): Boolean {
         val m = source.readManifest()
+        _manifest.value = null
         _manifest.value = m
         groups.load(source.readGroupsText())
+        invalidateMemo()
         return m != null
     }
 
@@ -44,7 +56,13 @@ class PathologyRepository(private var source: PathologySource) {
     fun pathologies(): List<PathologyEntry> =
         _manifest.value?.entries?.sortedBy { it.titleEn.lowercase() } ?: emptyList()
 
-    fun readPathology(id: String): PathologyFile? = source.readPathology(id)
+    fun readPathology(id: String): PathologyFile? {
+        if (id == lastReadId) return lastReadFile
+        val file = source.readPathology(id)
+        lastReadId = id
+        lastReadFile = file
+        return file
+    }
 
     fun createGroup(key: String, name: String): Boolean {
         val s = source
@@ -55,37 +73,43 @@ class PathologyRepository(private var source: PathologySource) {
                 groups.load(s.readGroupsText())
             }
             return success
+        } else if (s is OverlayPathologySource) {
+            // Not implemented in overlay yet, but source has readGroupsText support
+            return false
         }
         return false
     }
 
     /**
-     * Persists [file] back to the source. Only supported if the current source
-     * is a [FilePathologySource]. Returns true on success.
+     * Persists [file] back to the source. Supported by [FilePathologySource]
+     * (legacy) and [OverlayPathologySource] (modern). Returns true on success.
      */
     fun writePathology(file: PathologyFile): Boolean {
         val s = source
-        if (s is FilePathologySource) {
-            val success = s.writePathology(file, manifest()?.leadOrder)
-            if (success) {
-                // Reload manifest to pick up title changes
-                loadManifest()
-            }
-            return success
+        val ok = when (s) {
+            is FilePathologySource -> s.writePathology(file, manifest()?.leadOrder)
+            is OverlayPathologySource -> s.writePathology(file, manifest()?.leadOrder)
+            else -> false
         }
-        return false
+        if (ok) {
+            invalidateMemo()
+            loadManifest()
+        }
+        return ok
     }
 
     fun deletePathology(id: String): Boolean {
         val s = source
-        if (s is FilePathologySource) {
-            val success = s.deletePathology(id)
-            if (success) {
-                loadManifest()
-            }
-            return success
+        val ok = when (s) {
+            is FilePathologySource -> s.deletePathology(id)
+            is OverlayPathologySource -> s.deletePathology(id)
+            else -> false
         }
-        return false
+        if (ok) {
+            invalidateMemo()
+            loadManifest()
+        }
+        return ok
     }
 
     fun duplicatePathology(id: String): String? {
@@ -120,7 +144,7 @@ class PathologyRepository(private var source: PathologySource) {
 
     fun importPathology(file: PathologyFile): String? {
         val s = source
-        if (s is FilePathologySource) {
+        if (s is FilePathologySource || s is OverlayPathologySource) {
             var uniqueId = file.id.replace(Regex("[^a-zA-Z0-9_]"), "_").lowercase()
             val existingIds = pathologies().map { it.id }.toSet()
             if (existingIds.contains(uniqueId)) {

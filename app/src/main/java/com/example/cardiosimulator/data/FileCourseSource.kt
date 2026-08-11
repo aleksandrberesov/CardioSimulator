@@ -33,7 +33,7 @@ class FileCourseSource(
     }.getOrNull()
 
     override fun readLecture(courseId: String, lectureId: String, language: String): Lecture? {
-        for (lang in fallbackLanguages(language)) {
+        for (lang in fallbackLanguages(courseId, lectureId, language)) {
             val file = File(root, "$courseId/lectures/$lectureId.$lang.html")
             if (!file.canRead()) continue
             return runCatching {
@@ -113,6 +113,34 @@ class FileCourseSource(
         root.isDirectory && File(root, "manifest.txt").canRead()
 
     // ─── helpers ────────────────────────────────────────────────────────
+
+    /**
+     * Languages to try for a lecture, in order: the requested one, then the "en"
+     * fallback, then whatever language suffixes actually exist on disk for this
+     * lecture. The last step saves a course whose declared `language` does not
+     * match its files (e.g. `language: en` but `<id>.ru.html`) — without it the
+     * requested/en probes both miss and the lecture reads as empty even though the
+     * body is right there under another suffix. Only reached when the exact probes
+     * miss, so a well-formed course pays nothing.
+     */
+    private fun fallbackLanguages(courseId: String, lectureId: String, language: String): List<String> {
+        val ordered = LinkedHashSet<String>()
+        ordered.add(language)
+        ordered.add(COURSE_FALLBACK_LANG)
+        ordered.addAll(availableLanguages(courseId, lectureId))
+        return ordered.toList()
+    }
+
+    /** Language suffixes present for a lecture, from its `<id>.<lang>.html` files. */
+    private fun availableLanguages(courseId: String, lectureId: String): List<String> =
+        File(root, "$courseId/lectures")
+            .listFiles { f -> f.isFile && f.name.startsWith("$lectureId.") && f.name.endsWith(".html") }
+            ?.mapNotNull { f ->
+                // "<lectureId>.<lang>.html" -> "<lang>"; skip ".answers.json" (not .html) and dotted remainders.
+                val lang = f.name.removePrefix("$lectureId.").removeSuffix(".html")
+                lang.takeIf { it.isNotEmpty() && !it.contains('.') }
+            }
+            ?: emptyList()
 
     private fun syncManifestEntry(course: Course): Boolean {
         val manifest = readManifest() ?: return true   // no manifest yet, nothing to sync

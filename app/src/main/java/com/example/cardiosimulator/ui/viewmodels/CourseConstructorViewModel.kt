@@ -160,13 +160,13 @@ class CourseConstructorViewModel(
         previewJob = viewModelScope.launch {
             delay(PREVIEW_DEBOUNCE_MS)
             val parsed = withContext(Dispatchers.Default) {
-                runCatching { CourseParser.parseLecture(text, courseId, loadedLang) }.getOrNull()
+                runCatching {
+                    CourseParser.parseLecture(text, courseId, loadedLang).withReconciledLayout()
+                }.getOrNull()
             }
             if (parsed != null) {
                 _previewLecture.value = parsed
-                // Sync blocks if they weren't just edited visually (or always sync if preferred)
-                // For now, we only sync blocks on initial load or if text is edited manually.
-                // But wait, if the user edits text, blocks should update too.
+                // Sync blocks if they weren't just edited manually.
                 _blocks.value = HtmlCompiler.parse(parsed.rawHtml)
             }
         }
@@ -177,13 +177,24 @@ class CourseConstructorViewModel(
         _blocks.value = newBlocks
         val newHtml = HtmlCompiler.compile(newBlocks)
         val currentLec = _previewLecture.value ?: return
-        val updatedLec = currentLec.copy(rawHtml = newHtml)
+        val updatedLec = currentLec.copy(rawHtml = newHtml).withReconciledLayout()
         _previewLecture.value = updatedLec
         _draft.value = CourseParser.serializeLecture(updatedLec)
     }
 
     fun addBlock(block: HtmlBlock) {
-        setBlocks(_blocks.value + block)
+        val currentBlocks = _blocks.value
+        val reconciledBlocks = if (currentBlocks.size == 1) {
+            val first = currentBlocks.first()
+            if (first is HtmlBlock.Raw && HtmlCompiler.isFullDocument(first.html)) {
+                listOf(first.copy(html = HtmlCompiler.embedDocument(first.html)))
+            } else {
+                currentBlocks
+            }
+        } else {
+            currentBlocks
+        }
+        setBlocks(reconciledBlocks + block)
         _focusedBlockId.value = block.id
     }
 
@@ -230,24 +241,18 @@ class CourseConstructorViewModel(
 
     fun importFullPage(html: String) {
         val courseId = _selectedCourseId.value ?: return
-        val isFull = html.contains("<!doctype", ignoreCase = true) || html.contains("<html", ignoreCase = true)
         val currentLecture = _previewLecture.value
 
-        val newFm = if (isFull) {
-            val fm = currentLecture?.frontMatter ?: LectureFrontMatter(id = _selectedLectureId.value ?: "new_lecture")
-            fm.copy(extras = fm.extras + ("layout" to "standalone"))
-        } else {
-            currentLecture?.frontMatter ?: LectureFrontMatter(id = _selectedLectureId.value ?: "new_lecture")
-        }
+        val newFm = currentLecture?.frontMatter ?: LectureFrontMatter(id = _selectedLectureId.value ?: "new_lecture")
 
-        val newLecture = currentLecture?.copy(frontMatter = newFm, rawHtml = html)
+        val newLecture = (currentLecture?.copy(frontMatter = newFm, rawHtml = html)
             ?: Lecture(
                 id = newFm.id,
                 courseId = courseId,
                 language = languageTag,
                 frontMatter = newFm,
                 rawHtml = html
-            )
+            )).withReconciledLayout()
 
         setHtml(CourseParser.serializeLecture(newLecture))
     }

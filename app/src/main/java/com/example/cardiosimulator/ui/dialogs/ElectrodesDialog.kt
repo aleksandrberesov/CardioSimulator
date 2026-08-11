@@ -92,7 +92,7 @@ fun ElectrodesDialog(
 
                     // Middle Column: Legend and States
                     Column(
-                        modifier = Modifier.weight(1.2f),
+                        modifier = Modifier.weight(1.6f),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -226,12 +226,15 @@ private fun StateButton(
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.height(36.dp),
+        modifier = modifier.heightIn(min = 36.dp),
         shape = RoundedCornerShape(4.dp),
         color = if (selected) WindowsBlue else Color.White,
         border = if (selected) null else BorderStroke(1.dp, WindowsBlue)
     ) {
-        Box(contentAlignment = Alignment.Center) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)
+        ) {
             Text(
                 text = text,
                 color = if (selected) Color.White else WindowsBlue,

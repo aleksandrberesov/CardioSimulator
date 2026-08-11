@@ -308,6 +308,7 @@
     <string name="ecg_point_q_peak">Q 峰值</string>
     <string name="ecg_point_r_peak">R 峰值</string>
     <string name="ecg_point_s_peak">S 峰值</string>
+    <string name="ecg_point_j_point">J 点</string>
     <string name="ecg_point_qrs_start">QRS 开始</string>
     <string name="ecg_point_qrs_end">QRS 结束</string>
     <string name="ecg_point_t_start">T 开始</string>
@@ -356,4 +357,11 @@
     <string name="gender_female">女</string>
     <string name="clinical_gender_unset">— 未指定</string>
     <string name="clinical_clear_all">清除所有字段</string>
+    <string name="back_to_lecture">返回课件</string>
+
+    <string name="unsaved_changes_title">未保存的更改</string>
+    <string name="unsaved_changes_body">您有未保存的更改。离开前要保存吗？</string>
+    <string name="common_dont_save">不保存</string>
+    <string name="common_save">保存</string>
+    <string name="common_cancel">取消</string>
 </resources>

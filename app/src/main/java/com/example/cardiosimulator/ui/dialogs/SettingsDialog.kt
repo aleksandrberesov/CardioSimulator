@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LinkOff
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -45,6 +46,8 @@ import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.domain.AppEdition
 import com.example.cardiosimulator.network.TcpConnectionState
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
+import com.example.cardiosimulator.ui.viewmodels.DataState
+import com.example.cardiosimulator.ui.viewmodels.CourseLoadReport
 
 @Composable
 fun SettingsDialog(
@@ -412,7 +415,7 @@ fun SettingsContent(
                                 )
                             }
                             appViewModel.setCourseDataFolder(context, uri)
-                            onDismiss()
+                            // Don't call onDismiss() yet so the load report dialog can show on top of this one
                         }
                     }
                     val exportCourseZipLauncher = rememberLauncherForActivityResult(
@@ -426,6 +429,10 @@ fun SettingsContent(
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
+                    val courseDataState by appViewModel.courseDataState.collectAsState()
+                    if (courseDataState is DataState.Loading) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
+                    }
                     OutlinedButton(onClick = {
                         pickCourseZipFile.launch(
                             arrayOf(
@@ -454,6 +461,98 @@ fun SettingsContent(
                 Text(stringResource(R.string.settings_close))
             }
         }
+    }
+
+    val report by appViewModel.courseLoadReport.collectAsState()
+    report?.let { r ->
+        AlertDialog(
+            onDismissRequest = { appViewModel.clearCourseLoadReport() },
+            confirmButton = {
+                TextButton(onClick = { appViewModel.clearCourseLoadReport() }) {
+                    Text(stringResource(R.string.settings_close))
+                }
+            },
+            title = {
+                Text(stringResource(
+                    if (r.success) R.string.course_load_title else R.string.course_load_failed_title
+                ))
+            },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    Text(r.fileName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                    Spacer(Modifier.height(8.dp))
+                    when {
+                        !r.success -> Text(stringResource(R.string.course_load_failed_body))
+                        r.courseCount == 0 -> Text(stringResource(R.string.course_load_no_courses))
+                        else -> {
+                            Text(
+                                text = stringResource(R.string.course_load_summary_format, r.courseCount, r.totalLectures),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            if (r.structureWithoutContent) {
+                                WarningBox(stringResource(R.string.course_load_empty_warning))
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            r.courses.forEach { c ->
+                                val langs = if (c.languages.isNotEmpty()) "  [${c.languages.joinToString()}]" else ""
+                                Text(
+                                    text = "• ${c.title} — " +
+                                            stringResource(R.string.course_load_lectures_format, c.lectureCount) + langs,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                            if (!r.previewSnippet.isNullOrEmpty()) {
+                                PreviewBox(r.previewCourseTitle, r.previewLectureTitle, r.previewSnippet)
+                            }
+                        }
+                    }
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun WarningBox(message: String) {
+    Surface(
+        color = Color(0xFFFFB300).copy(alpha = 0.1f),
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
+    ) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFFFB300))
+            Spacer(Modifier.width(12.dp))
+            Text(message, style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+@Composable
+private fun PreviewBox(courseTitle: String?, lectureTitle: String?, snippet: String?) {
+    Column(
+        modifier = Modifier
+            .padding(vertical = 12.dp)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .padding(12.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.course_load_preview_header),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = "${courseTitle ?: ""} > ${lectureTitle ?: ""}",
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(vertical = 4.dp)
+        )
+        Text(
+            text = snippet ?: "",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

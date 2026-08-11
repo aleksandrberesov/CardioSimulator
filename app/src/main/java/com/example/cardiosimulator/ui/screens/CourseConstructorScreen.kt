@@ -34,6 +34,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.EcgTrace
+import com.example.cardiosimulator.data.Points
+import com.example.cardiosimulator.data.EcgCalibration
 import com.example.cardiosimulator.domain.HtmlBlock
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.ui.components.HtmlBlockEditor
@@ -68,6 +70,21 @@ fun CourseConstructorScreen(
         { pathologyId: String, leads: List<Lead> ->
             val requested = leads.ifEmpty { LEAD_ORDER }
             requested.mapNotNull { l -> pathologyRepo?.leadWaveform(pathologyId, l)?.let { EcgTrace(l, it) } }
+        }
+    }
+
+    val resolveEcgSegment = remember(pathologyRepo) {
+        { id: String, lead: Lead, start: Float, duration: Float ->
+            pathologyRepo?.leadWaveform(id, lead)?.let { points ->
+                val sampleRate = EcgCalibration().sampleRateHz
+                val startIdx = (start * sampleRate).toInt().coerceAtLeast(0)
+                val durationIdx = (duration * sampleRate).toInt()
+                val values = points.values
+                val endIdx = (startIdx + durationIdx).coerceAtMost(values.size)
+                if (startIdx < values.size) {
+                    EcgTrace(lead, Points(values.subList(startIdx, endIdx)))
+                } else null
+            }
         }
     }
 
@@ -137,6 +154,7 @@ fun CourseConstructorScreen(
                             onUpdateBlock = { id, updated -> courseConstructorViewModel.updateBlock(id, updated) },
                             onDeleteBlock = { id -> courseConstructorViewModel.deleteBlock(id) },
                             onMoveBlock = { id, delta -> courseConstructorViewModel.moveBlock(id, delta) },
+                            onAddBlock = { block -> courseConstructorViewModel.addBlock(block) },
                             onImportImage = { name, bytes -> courseConstructorViewModel.importImage(name, bytes) },
                             scrollToBlockId = focusedBlockId,
                             modifier = Modifier.weight(1f).fillMaxHeight(),
@@ -152,6 +170,7 @@ fun CourseConstructorScreen(
                                 LectureWebView(
                                     lecture = preview,
                                     resolveEcg = resolveEcg,
+                                    resolveEcgSegment = resolveEcgSegment,
                                     answers = answers,
                                     scrollToBlockId = focusedBlockId,
                                     onCellEdit = { quizId, row, col, value ->

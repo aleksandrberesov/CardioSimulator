@@ -50,6 +50,7 @@ object EcgSvgRenderer {
 
     private val ecgTag = Regex("<ecg\\b((?:[^>\"]|\"[^\"]*\")*?)\\s*/?>(?:\\s*</ecg>)?", RegexOption.IGNORE_CASE)
     private val attr = Regex("([\\w-]+)\\s*=\\s*\"([^\"]*)\"")
+    private val ecgSegmentTag = Regex("<ecgsegment\\b((?:[^>\"]|\"[^\"]*\")*?)\\s*/?>(?:\\s*</ecgsegment>)?", RegexOption.IGNORE_CASE)
 
     /**
      * Replaces every `<ecg …>` element in [html] with an inline-SVG figure.
@@ -90,6 +91,39 @@ object EcgSvgRenderer {
                 seriesScheme = seriesScheme,
                 count = count,
                 showMonitorButton = showMonitorButton
+            )
+        }
+    }
+
+    /**
+     * Replaces every `<ecgsegment …>` element in [html] with an inline-SVG figure.
+     */
+    fun substituteEcgSegmentTags(
+        html: String,
+        resolve: (pathologyId: String, lead: Lead, startSec: Float, durationSec: Float) -> EcgTrace?,
+    ): String {
+        var figureIndex = 0
+        return ecgSegmentTag.replace(html) { match ->
+            val attrs = attr.findAll(match.groupValues[1])
+                .associate { it.groupValues[1].lowercase() to it.groupValues[2] }
+            val pathologyId = attrs["pathology"].orEmpty().trim()
+            val leadToken = attrs["lead"]
+            val lead = leadToken?.let { Lead.fromToken(it) }
+            val start = attrs["start"]?.toFloatOrNull() ?: 0f
+            val duration = attrs["duration"]?.toFloatOrNull() ?: 2.5f
+            val caption = attrs["caption"]?.takeIf { it.isNotBlank() }
+            val tips = com.example.cardiosimulator.domain.TipOverlaySerializer.decodeAttribute(attrs["tips"])
+
+            val trace = if (pathologyId.isEmpty() || lead == null) null
+            else resolve(pathologyId, lead, start, duration)
+
+            if (trace == null) missingFigure(pathologyId, leadToken)
+            else segmentFigureHtml(
+                trace = trace,
+                caption = caption,
+                figureIndex = figureIndex++,
+                startSec = start,
+                tips = tips
             )
         }
     }
@@ -169,6 +203,86 @@ object EcgSvgRenderer {
             "\n  <button class=\"monitor-btn\" onclick=\"if(window.Android)Android.onMonitor()\">Monitor</button>"
         } else ""
         return "<figure class=\"ecg-figure\">\n$svg$monitorBtn$cap\n</figure>"
+    }
+
+    fun segmentFigureHtml(
+        trace: EcgTrace,
+        caption: String?,
+        figureIndex: Int,
+        startSec: Float,
+        tips: List<com.example.cardiosimulator.domain.TipOverlay> = emptyList()
+    ): String {
+        val colors = gridSchemes["Pink"]!!
+        val leadHeight = 20f * PX_PER_MM
+        val traceWidth = max(1f, (trace.points.values.size - 1) * pxPerSample)
+
+        val margin = 4f
+        val totalWidth = traceWidth + margin * 2
+        val totalHeight = leadHeight
+        val uid = "ecgseg$figureIndex"
+
+        val svg = buildString {
+            append("<svg class=\"ecg-segment\" xmlns=\"http://www.w3.org/2000/svg\" ")
+            append("viewBox=\"0 0 ${fmt(totalWidth)} ${fmt(totalHeight)}\" ")
+            append("width=\"${fmt(totalWidth)}\" height=\"${fmt(totalHeight)}\" ")
+            append("preserveAspectRatio=\"xMidYMid meet\" role=\"img\">")
+            append(gridDefs(uid, colors))
+            append("<rect width=\"${fmt(totalWidth)}\" height=\"${fmt(totalHeight)}\" fill=\"${colors.bg}\"/>")
+            append("<rect width=\"${fmt(totalWidth)}\" height=\"${fmt(totalHeight)}\" fill=\"url(#$uid)\"/>")
+
+            val baselineY = leadHeight / 2f
+            append("<g transform=\"translate(${fmt(margin)}, 0)\">")
+            append(tracePath(trace, baselineY))
+
+            if (tips.isNotEmpty()) {
+                append(drawTipsSvg(tips, startSec * cal.sampleRateHz, baselineY, totalHeight))
+            }
+
+            append("</g>")
+            append("</svg>")
+        }
+
+        val cap = caption?.let { "\n  <figcaption>${escape(it)}</figcaption>" }.orEmpty()
+        return "<figure class=\"ecg-figure ecg-segment-figure\">\n$svg$cap\n</figure>"
+    }
+
+    private fun drawTipsSvg(
+        tips: List<com.example.cardiosimulator.domain.TipOverlay>,
+        startSample: Float,
+        baselineY: Float,
+        height: Float
+    ): String = buildString {
+        for (tip in tips) {
+            val color = "#D32F2F"
+            for (pt in tip.points) {
+                val x = (pt.sample - startSample) * pxPerSample
+                val y = baselineY - pt.adc * pxPerAdcCount
+
+                when (tip.kind) {
+                    com.example.cardiosimulator.domain.TipOverlayKind.VerticalLines -> {
+                        append("<line x1=\"${fmt(x)}\" y1=\"0\" x2=\"${fmt(x)}\" y2=\"${fmt(height)}\" ")
+                        append("stroke=\"$color\" stroke-width=\"1\" stroke-dasharray=\"4,2\"/>")
+                    }
+                    com.example.cardiosimulator.domain.TipOverlayKind.HorizontalLines -> {
+                        append("<line x1=\"0\" y1=\"${fmt(y)}\" x2=\"2000\" y2=\"${fmt(y)}\" ")
+                        append("stroke=\"$color\" stroke-width=\"1\" stroke-dasharray=\"4,2\"/>")
+                    }
+                    com.example.cardiosimulator.domain.TipOverlayKind.Points -> {
+                        append("<circle cx=\"${fmt(x)}\" cy=\"${fmt(y)}\" r=\"3\" fill=\"$color\"/>")
+                    }
+                    else -> {}
+                }
+            }
+
+            if (tip.kind == com.example.cardiosimulator.domain.TipOverlayKind.Label && tip.text != null && tip.points.isNotEmpty()) {
+                val pt = tip.points[0]
+                val x = (pt.sample - startSample) * pxPerSample
+                val y = baselineY - pt.adc * pxPerAdcCount
+                append("<text x=\"${fmt(x + 4f)}\" y=\"${fmt(y - 4f)}\" ")
+                append("font-family=\"sans-serif\" font-size=\"12\" fill=\"$color\">")
+                append(escape(tip.text)).append("</text>")
+            }
+        }
     }
 
     private fun tracePath(trace: EcgTrace, baselineY: Float): String {

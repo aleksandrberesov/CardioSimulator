@@ -88,7 +88,7 @@ fun SignificantPointOverlay(
                                 setShadowLayer(3f, 0f, 0f, Color.White.toArgb())
                             }
                             
-                            val cleanLabel = pt.type.name.replace("_PEAK", "")
+                            val cleanLabel = pt.type.name.replace("_PEAK", "").replace("_POINT", "")
                             drawText(cleanLabel, x, y - 20f, paint)
                         }
                     }

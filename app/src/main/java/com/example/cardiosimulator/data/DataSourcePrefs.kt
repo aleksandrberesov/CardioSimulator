@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -26,6 +27,14 @@ class DataSourcePrefs(private val context: Context) {
 
     val coursesTreeUri: Flow<Uri?> = context.dataSourceDataStore.data.map { prefs ->
         prefs[KEY_COURSES_TREE_URI]?.takeIf { it.isNotBlank() }?.let(Uri::parse)
+    }
+
+    val treeUriStats: Flow<Pair<Long, Long>> = context.dataSourceDataStore.data.map { prefs ->
+        (prefs[KEY_TREE_URI_SIZE] ?: 0L) to (prefs[KEY_TREE_URI_MODIFIED] ?: 0L)
+    }
+
+    val coursesTreeUriStats: Flow<Pair<Long, Long>> = context.dataSourceDataStore.data.map { prefs ->
+        (prefs[KEY_COURSES_TREE_URI_SIZE] ?: 0L) to (prefs[KEY_COURSES_TREE_URI_MODIFIED] ?: 0L)
     }
 
     val lastCourseId: Flow<String?> = context.dataSourceDataStore.data.map { prefs ->
@@ -137,6 +146,20 @@ class DataSourcePrefs(private val context: Context) {
         context.dataSourceDataStore.edit { prefs ->
             if (uri == null) prefs.remove(KEY_COURSES_TREE_URI)
             else prefs[KEY_COURSES_TREE_URI] = uri.toString()
+        }
+    }
+
+    suspend fun setTreeUriStats(size: Long, modified: Long) {
+        context.dataSourceDataStore.edit { prefs ->
+            prefs[KEY_TREE_URI_SIZE] = size
+            prefs[KEY_TREE_URI_MODIFIED] = modified
+        }
+    }
+
+    suspend fun setCoursesTreeUriStats(size: Long, modified: Long) {
+        context.dataSourceDataStore.edit { prefs ->
+            prefs[KEY_COURSES_TREE_URI_SIZE] = size
+            prefs[KEY_COURSES_TREE_URI_MODIFIED] = modified
         }
     }
 
@@ -260,6 +283,10 @@ class DataSourcePrefs(private val context: Context) {
         private val KEY_MONITOR_SERIES_COUNT = intPreferencesKey("monitor_series_count")
         private val KEY_MONITOR_SERIES_SCHEME = stringPreferencesKey("monitor_series_scheme")
         private val KEY_COURSES_TREE_URI = stringPreferencesKey("courses_tree_uri")
+        private val KEY_TREE_URI_SIZE = longPreferencesKey("tree_uri_size")
+        private val KEY_TREE_URI_MODIFIED = longPreferencesKey("tree_uri_modified")
+        private val KEY_COURSES_TREE_URI_SIZE = longPreferencesKey("courses_tree_uri_size")
+        private val KEY_COURSES_TREE_URI_MODIFIED = longPreferencesKey("courses_tree_uri_modified")
         private val KEY_LAST_COURSE_ID = stringPreferencesKey("last_course_id")
         private val KEY_WELCOME_OPT_OUT = booleanPreferencesKey("welcome_opt_out")
     }

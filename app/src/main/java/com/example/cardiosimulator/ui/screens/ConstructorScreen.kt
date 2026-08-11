@@ -49,6 +49,7 @@ import com.example.cardiosimulator.domain.SignificantPoint
 import com.example.cardiosimulator.signals.biosppy.EcgFilters
 import com.example.cardiosimulator.ui.components.PreviewPane
 import com.example.cardiosimulator.ui.components.SideDrawer
+import com.example.cardiosimulator.ui.components.UnsavedChangesDialog
 import com.example.cardiosimulator.ui.display.EditableLead
 import com.example.cardiosimulator.ui.display.Lead as LeadView
 import com.example.cardiosimulator.ui.display.LeadsGrid
@@ -84,6 +85,11 @@ fun ConstructorScreen(
     rhythmViewModel: RhythmViewModel,
     constructorViewModel: ConstructorViewModel,
 ) {
+    LaunchedEffect(targetFile?.id, targetFile?.clinicalCase) {
+        val f = targetFile
+        if (f != null) appViewModel.setClinicalMode(!f.clinicalCase.isNullOrBlank())
+    }
+
     var showTipCommentsDialog by remember { mutableStateOf(false) }
     var showTipCaptionDialog by remember { mutableStateOf(false) }
     var pendingTip by remember { mutableStateOf<com.example.cardiosimulator.domain.TipOverlay?>(null) }
@@ -159,6 +165,43 @@ fun ConstructorScreen(
     var showAllLeads by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showSynthesizerDialog by remember { mutableStateOf(false) }
+    var pendingSwitchId by remember { mutableStateOf<String?>(null) }
+
+    val pendingMode by appViewModel.pendingMode.collectAsState()
+
+    DisposableEffect(Unit) {
+        appViewModel.leaveGuard = { !constructorViewModel.hasUnsavedChanges }
+        onDispose { appViewModel.leaveGuard = null }
+    }
+
+    if (pendingSwitchId != null) {
+        UnsavedChangesDialog(
+            onSave = {
+                constructorViewModel.save()
+                constructorViewModel.selectPathology(pendingSwitchId!!)
+                pendingSwitchId = null
+            },
+            onDiscard = {
+                constructorViewModel.selectPathology(pendingSwitchId!!)
+                pendingSwitchId = null
+            },
+            onCancel = { pendingSwitchId = null }
+        )
+    }
+
+    if (pendingMode != null) {
+        UnsavedChangesDialog(
+            onSave = {
+                constructorViewModel.save()
+                appViewModel.confirmPendingMode()
+            },
+            onDiscard = {
+                constructorViewModel.discardChanges()
+                appViewModel.confirmPendingMode()
+            },
+            onCancel = { appViewModel.cancelPendingMode() }
+        )
+    }
 
     var showPhysioNetDialog by remember { mutableStateOf(false) }
     var physioNetProject by remember { mutableStateOf("mitdb/1.0.0") }
@@ -542,7 +585,13 @@ fun ConstructorScreen(
                     appViewModel = appViewModel,
                     rhythms = editedRhythms,
                     selectedId = targetFile?.id,
-                    onRhythmSelect = { constructorViewModel.selectPathology(it.id) },
+                    onRhythmSelect = { entry ->
+                        if (entry.id != targetFile?.id && constructorViewModel.hasUnsavedChanges) {
+                            pendingSwitchId = entry.id
+                        } else {
+                            constructorViewModel.selectPathology(entry.id)
+                        }
+                    },
                 )
             },
             handlerContent = {
@@ -744,7 +793,11 @@ fun ConstructorScreen(
                                         text = lead.name,
                                         style = MaterialTheme.typography.labelSmall,
                                         maxLines = 1,
-                                        color = if (dirtyLeads.contains(lead)) Color.Red else Color.Unspecified
+                                        color = if (dirtyLeads.contains(lead)) {
+                                            MaterialTheme.colorScheme.error
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface
+                                        }
                                     )
                                 }
                             )
@@ -1275,7 +1328,7 @@ private fun BoxScope.AllLeadsPreviewOverlay(
         )
     }
 
-    Surface(modifier = Modifier.matchParentSize(), color = MaterialTheme.colorScheme.surface) {
+    Surface(modifier = Modifier.matchParentSize(), color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Top bar: pathology title + close.
             Surface(tonalElevation = 4.dp, color = MaterialTheme.colorScheme.surface) {
@@ -1285,6 +1338,7 @@ private fun BoxScope.AllLeadsPreviewOverlay(
                 ) {
                     Text(
                         titleName, style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = onClose) {

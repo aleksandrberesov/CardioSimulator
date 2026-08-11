@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * file-backed source. Mirrors [PathologyRepository] one-to-one in shape
  * so the two pipelines compose the same way inside `AppViewModel`.
  *
- * Writes are routed through [withFileSource] so asset-backed sources
+ * Writes are routed through [withWritableSource] so asset-backed sources
  * (which can't be written to) short-circuit to `false` cleanly. Callers
  * never see the source instance directly — the wrapping keeps the
  * file/asset asymmetry encapsulated here.
@@ -33,6 +33,7 @@ class CourseRepository(private var source: CourseSource) {
 
     fun loadManifest(): Boolean {
         val m = source.readManifest()
+        _manifest.value = null
         _manifest.value = m
         return m != null
     }
@@ -60,34 +61,70 @@ class CourseRepository(private var source: CourseSource) {
     fun readAnswers(courseId: String, lectureId: String, language: String): String? =
         (source as? FileCourseSource)?.readAnswers(courseId, lectureId, language)
 
-    // ─── writes (no-op on non-file sources) ─────────────────────────────
+    private inline fun <T> withWritableSource(block: (CourseSource) -> T): T? {
+        val s = source
+        return if (s is FileCourseSource || s is OverlayCourseSource) {
+            block(s)
+        } else null
+    }
 
-    fun writeLecture(lecture: Lecture): Boolean = withFileSource { it.writeLecture(lecture) }
+    fun writeLecture(lecture: Lecture): Boolean = withWritableSource {
+        when (it) {
+            is FileCourseSource -> it.writeLecture(lecture)
+            is OverlayCourseSource -> {
+                it.writeLecture(lecture.courseId, lecture.id, lecture.language, lecture.rawHtml)
+                true
+            }
+            else -> false
+        }
+    } ?: false
 
     fun writeLectureRaw(courseId: String, lectureId: String, language: String, body: String): Boolean =
-        withFileSource { it.writeLectureRaw(courseId, lectureId, language, body) }
+        withWritableSource {
+            when (it) {
+                is FileCourseSource -> it.writeLectureRaw(courseId, lectureId, language, body)
+                is OverlayCourseSource -> {
+                    it.writeLecture(courseId, lectureId, language, body)
+                    true
+                }
+                else -> false
+            }
+        } ?: false
 
     fun writeAnswers(courseId: String, lectureId: String, language: String, json: String): Boolean =
-        withFileSource { it.writeAnswers(courseId, lectureId, language, json) }
+        withWritableSource {
+            when (it) {
+                is FileCourseSource -> it.writeAnswers(courseId, lectureId, language, json)
+                else -> false // Not implemented in overlay
+            }
+        } ?: false
 
     fun importAsset(courseId: String, fileName: String, bytes: ByteArray): Boolean =
-        withFileSource { it.writeAsset(courseId, fileName, bytes) }
+        withWritableSource {
+            when (it) {
+                is FileCourseSource -> it.writeAsset(courseId, fileName, bytes)
+                else -> false // Not implemented in overlay
+            }
+        } ?: false
 
     fun deleteLecture(courseId: String, lectureId: String, language: String): Boolean =
-        withFileSource { it.deleteLecture(courseId, lectureId, language) }
+        withWritableSource {
+            when (it) {
+                is FileCourseSource -> it.deleteLecture(courseId, lectureId, language)
+                else -> false // Not implemented in overlay
+            }
+        } ?: false
 
     /**
      * Persists [course] (course.txt + manifest sync). Refreshes the
      * cached manifest on success so subsequent reads see the new entry.
      */
-    fun writeCourse(course: Course): Boolean = withFileSource {
-        val ok = it.writeCourse(course)
+    fun writeCourse(course: Course): Boolean = withWritableSource {
+        val ok = when (it) {
+            is FileCourseSource -> it.writeCourse(course)
+            else -> false // Not implemented in overlay
+        }
         if (ok) loadManifest()
         ok
-    }
-
-    private inline fun withFileSource(block: (FileCourseSource) -> Boolean): Boolean {
-        val s = source as? FileCourseSource ?: return false
-        return block(s)
-    }
+    } ?: false
 }

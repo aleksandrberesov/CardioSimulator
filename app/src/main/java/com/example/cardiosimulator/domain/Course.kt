@@ -94,6 +94,24 @@ data class Lecture(
      * and [LectureWebView] serves it as-is (with KaTeX/SVG injection).
      */
     val isStandalone: Boolean get() = frontMatter.extras["layout"] == "standalone"
+
+    /**
+     * Reconciles the 'layout: standalone' flag with the actual content of [rawHtml].
+     * Returns a new instance if the flag was updated, otherwise returns this.
+     */
+    fun withReconciledLayout(): Lecture {
+        val isFull = HtmlCompiler.isFullDocument(rawHtml)
+        val currentStandalone = isStandalone
+        if (isFull == currentStandalone) return this
+
+        val newExtras = frontMatter.extras.toMutableMap()
+        if (isFull) {
+            newExtras["layout"] = "standalone"
+        } else {
+            newExtras.remove("layout")
+        }
+        return copy(frontMatter = frontMatter.copy(extras = newExtras))
+    }
 }
 
 /**

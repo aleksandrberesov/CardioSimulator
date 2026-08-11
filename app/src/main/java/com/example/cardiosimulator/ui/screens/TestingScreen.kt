@@ -16,6 +16,7 @@ import com.example.cardiosimulator.data.Points
 import androidx.compose.ui.platform.LocalContext
 import com.example.cardiosimulator.domain.QuestionStimulus
 import com.example.cardiosimulator.domain.Test
+import com.example.cardiosimulator.domain.OperatingMode
 import coil.compose.AsyncImage
 import com.example.cardiosimulator.ui.display.Lead as LeadView
 import java.io.File
@@ -35,11 +36,19 @@ fun TestingScreen(
 ) {
     val activeTest by testViewModel.activeTest.collectAsState()
     val finished by testViewModel.finished.collectAsState()
+    val pendingTest by appViewModel.pendingTest.collectAsState()
+
+    LaunchedEffect(pendingTest) {
+        pendingTest?.let {
+            testViewModel.start(it)
+            appViewModel.setPendingTest(null)
+        }
+    }
 
     if (finished) {
-        TestResultSummary(testViewModel)
+        TestResultSummary(testViewModel, appViewModel)
     } else if (activeTest == null) {
-        TestPicker(testViewModel, appViewModel.testRepository?.tests() ?: emptyList())
+        TestPicker(testViewModel, appViewModel.testRepository?.tests() ?: emptyList(), appViewModel)
     } else {
         TestActiveView(testViewModel, monitorViewModel, rhythmViewModel, appViewModel)
     }
@@ -143,7 +152,10 @@ fun TestActiveView(
 }
 
 @Composable
-fun TestPicker(viewModel: TestViewModel, tests: List<Test>) {
+fun TestPicker(viewModel: TestViewModel, tests: List<Test>, appViewModel: AppViewModel) {
+    val selectedCourseId by appViewModel.selectedCourseId.collectAsState()
+    val showBackToLecture = selectedCourseId != null && selectedCourseId != AppViewModel.ALL_RHYTHMS_ID
+
     Column(
         modifier = Modifier.fillMaxSize().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -164,14 +176,31 @@ fun TestPicker(viewModel: TestViewModel, tests: List<Test>) {
                 }
             }
         }
+
+        if (showBackToLecture) {
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = {
+                    appViewModel.setPreserveCourseSelection(true)
+                    appViewModel.operatingModes.find { it.id == OperatingMode.Teaching }?.let {
+                        appViewModel.updateOperatingMode(it)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(0.6f)
+            ) {
+                Text(stringResource(R.string.back_to_lecture))
+            }
+        }
     }
 }
 
 @Composable
-fun TestResultSummary(viewModel: TestViewModel) {
+fun TestResultSummary(viewModel: TestViewModel, appViewModel: AppViewModel) {
     val correctCount by viewModel.correctCount.collectAsState()
     val test by viewModel.activeTest.collectAsState()
     val totalCount = test?.questions?.size ?: 0
+    val selectedCourseId by appViewModel.selectedCourseId.collectAsState()
+    val showBackToLecture = selectedCourseId != null && selectedCourseId != AppViewModel.ALL_RHYTHMS_ID
 
     Column(
         modifier = Modifier.fillMaxSize().padding(32.dp),
@@ -188,6 +217,17 @@ fun TestResultSummary(viewModel: TestViewModel) {
         Row {
             Button(onClick = { viewModel.restart() }) {
                 Text(stringResource(R.string.test_restart))
+            }
+            if (showBackToLecture) {
+                Spacer(modifier = Modifier.width(16.dp))
+                Button(onClick = {
+                    appViewModel.setPreserveCourseSelection(true)
+                    appViewModel.operatingModes.find { it.id == OperatingMode.Teaching }?.let {
+                        appViewModel.updateOperatingMode(it)
+                    }
+                }) {
+                    Text(stringResource(R.string.back_to_lecture))
+                }
             }
             Spacer(modifier = Modifier.width(16.dp))
             Button(onClick = { viewModel.close() }) {

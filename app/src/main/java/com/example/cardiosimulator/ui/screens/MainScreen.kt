@@ -234,6 +234,18 @@ fun MainScreen(appViewModel: AppViewModel) {
         }
     )
 
+    val learningScaleViewModel: LearningScaleViewModel = viewModel(
+        key = selectedMode.id.name + "_learning_scale",
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return LearningScaleViewModel(
+                    persistenceFile = java.io.File(context.filesDir, "learning_scale.json")
+                ) as T
+            }
+        }
+    )
+
     LaunchedEffect(dataState, rhythmViewModel) {
         if (dataState is DataState.Ready) {
             rhythmViewModel.loadManifest()
@@ -347,6 +359,9 @@ fun MainScreen(appViewModel: AppViewModel) {
                         rhythmViewModel = rhythmViewModel,
                         courseConstructorViewModel = courseConstructorViewModel,
                     )
+                    OperatingMode.LearningScale -> LearningScaleScreen(
+                        viewModel = learningScaleViewModel
+                    )
                 }
             }
             Box(
@@ -392,6 +407,9 @@ fun MainScreen(appViewModel: AppViewModel) {
                                 oskeViewModel = oskeViewModel,
                                 rhythmViewModel = rhythmViewModel
                             )
+                        }
+                        OperatingMode.LearningScale -> {
+                            // No specific control panel for LearningScale
                         }
                         else -> {}
                     }

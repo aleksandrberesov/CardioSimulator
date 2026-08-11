@@ -46,7 +46,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -55,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.EcgTrace
 import com.example.cardiosimulator.data.Points
+import com.example.cardiosimulator.data.EcgCalibration
 import com.example.cardiosimulator.domain.CourseEntry
 import com.example.cardiosimulator.domain.EosAnalyzer
 import com.example.cardiosimulator.domain.ElectrodeFault
@@ -108,11 +108,18 @@ fun TeachingScreen(
     val selectedLectureId by courseViewerViewModel.selectedLectureId.collectAsState()
     val viewerLecture by courseViewerViewModel.lecture.collectAsState()
     val showMonitorOverlay by appViewModel.showMonitorOverlay.collectAsState()
+    val refreshTrigger by appViewModel.refreshTrigger.collectAsState()
+
+    var showQuickTestLauncher by remember { mutableStateOf(false) }
 
     var lastBuiltMode by rememberSaveable { mutableStateOf<OperatingMode?>(null) }
     LaunchedEffect(Unit) {
         if (lastBuiltMode != OperatingMode.Teaching) {
-            appViewModel.selectCourse(AppViewModel.ALL_RHYTHMS_ID)
+            if (appViewModel.preserveCourseSelection) {
+                appViewModel.setPreserveCourseSelection(false)
+            } else {
+                appViewModel.selectCourse(AppViewModel.ALL_RHYTHMS_ID)
+            }
             // Customer default: Teaching opens the monitor as a 12-lead, 2-column layout
             // (not the 4-column grid) so each lead trace is wider and easier to read.
             monitorViewModel.setSeriesCount(12)
@@ -126,6 +133,21 @@ fun TeachingScreen(
         { pathologyId: String, leads: List<Lead> ->
             val requested = leads.ifEmpty { LEAD_ORDER }
             requested.mapNotNull { l -> pathologyRepo?.leadWaveform(pathologyId, l)?.let { EcgTrace(l, it) } }
+        }
+    }
+
+    val resolveEcgSegment = remember(pathologyRepo) {
+        { id: String, lead: Lead, start: Float, duration: Float ->
+            pathologyRepo?.leadWaveform(id, lead)?.let { points ->
+                val sampleRate = EcgCalibration().sampleRateHz
+                val startIdx = (start * sampleRate).toInt().coerceAtLeast(0)
+                val durationIdx = (duration * sampleRate).toInt()
+                val values = points.values
+                val endIdx = (startIdx + durationIdx).coerceAtMost(values.size)
+                if (startIdx < values.size) {
+                    EcgTrace(lead, com.example.cardiosimulator.data.Points(values.subList(startIdx, endIdx)))
+                } else null
+            }
         }
     }
 
@@ -166,10 +188,34 @@ fun TeachingScreen(
                 lecture = viewerLecture,
                 language = selectedLanguage,
                 resolveEcg = resolveEcg,
+                resolveEcgSegment = resolveEcgSegment,
+                refreshTrigger = refreshTrigger,
                 onLectureSelect = { courseViewerViewModel.selectLecture(it.id) },
                 onClose = { /* Not used in main mode */ },
-                onMonitorClick = { appViewModel.setShowMonitorOverlay(true) }
+                onMonitorClick = { appViewModel.setShowMonitorOverlay(true) },
+                onTakeTest = { showQuickTestLauncher = true }
             )
+
+            if (showQuickTestLauncher && viewerLecture != null) {
+                val course = courses.find { it.id == appSelectedCourseId }
+                val context = QuickTestContext(
+                    section = if (selectedLanguage == Language.RU) course?.nameRu ?: course?.titleEn ?: "" else course?.titleEn ?: "",
+                    subtopic = viewerLecture?.frontMatter?.title ?: "",
+                    theme = null // No theme mapping yet
+                )
+                
+                QuickTestScreen(
+                    context = context,
+                    testRepository = appViewModel.testRepository!!,
+                    bankRepository = appViewModel.questionBankRepository!!,
+                    onBack = { showQuickTestLauncher = false },
+                    onStart = { test ->
+                        showQuickTestLauncher = false
+                        appViewModel.setPendingTest(test)
+                        appViewModel.requestOperatingMode(appViewModel.operatingModes.first { it.id == OperatingMode.Testing })
+                    }
+                )
+            }
 
             if (showMonitorOverlay) {
                 MonitorOverlay(
@@ -399,7 +445,7 @@ private fun MonitorOverlay(
                                             .fillMaxSize()
                                             .padding(8.dp)
                                             .clip(RoundedCornerShape(8.dp))
-                                            .background(Color.LightGray.copy(alpha = 0.5f))
+                                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                                             .clickable { editingPaneIndex = index },
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -407,7 +453,7 @@ private fun MonitorOverlay(
                                             text = stringResource(R.string.monitor_compare_placeholder),
                                             textAlign = TextAlign.Center,
                                             style = MaterialTheme.typography.bodyMedium,
-                                            color = Color.DarkGray
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 } else {
@@ -488,13 +534,13 @@ private fun MonitorOverlay(
                                     .padding(16.dp)
                                     .width(280.dp)
                                     .align(Alignment.TopStart),
-                                color = Color.Black.copy(alpha = 0.6f),
+                                color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f),
                                 shape = RoundedCornerShape(8.dp)
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Text(
                                         text = stringResource(R.string.monitor_tips_preview_header),
-                                        color = Color.White,
+                                        color = MaterialTheme.colorScheme.inverseOnSurface,
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -502,7 +548,7 @@ private fun MonitorOverlay(
                                     tipComments.forEachIndexed { index, comment ->
                                         Text(
                                             text = "${index + 1}. $comment",
-                                            color = Color.White,
+                                            color = MaterialTheme.colorScheme.inverseOnSurface,
                                             style = MaterialTheme.typography.bodySmall
                                         )
                                     }
@@ -560,9 +606,12 @@ private fun CourseViewerOverlay(
     lecture: Lecture?,
     language: Language,
     resolveEcg: (String, List<Lead>) -> List<EcgTrace>,
+    resolveEcgSegment: (String, Lead, Float, Float) -> EcgTrace?,
+    refreshTrigger: Int = 0,
     onLectureSelect: (LectureEntry) -> Unit,
     onClose: () -> Unit,
     onMonitorClick: () -> Unit = {},
+    onTakeTest: () -> Unit = {},
 ) {
     val rhythms by rhythmViewModel.rhythms.collectAsState()
     val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
@@ -580,7 +629,7 @@ private fun CourseViewerOverlay(
                 horizontalArrangement = Arrangement.End
             ) {
                 appViewModel.operatingModes.find { it.id == OperatingMode.Testing }?.let { mode ->
-                    TextButton(onClick = { appViewModel.updateOperatingMode(mode) }) {
+                    TextButton(onClick = onTakeTest) {
                         Icon(Icons.Default.Quiz, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(stringResource(R.string.teaching_take_test))
@@ -588,7 +637,7 @@ private fun CourseViewerOverlay(
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 appViewModel.operatingModes.find { it.id == OperatingMode.Examination }?.let { mode ->
-                    TextButton(onClick = { appViewModel.updateOperatingMode(mode) }) {
+                    TextButton(onClick = { appViewModel.requestOperatingMode(mode) }) {
                         Icon(Icons.Default.School, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(stringResource(R.string.teaching_take_exam))
@@ -606,7 +655,9 @@ private fun CourseViewerOverlay(
                 if (lecture != null) {
                     LectureWebView(
                         lecture = lecture,
+                        refreshTrigger = refreshTrigger,
                         resolveEcg = resolveEcg,
+                        resolveEcgSegment = resolveEcgSegment,
                         onMonitorClick = onMonitorClick,
                         modifier = Modifier.fillMaxSize(),
                     )

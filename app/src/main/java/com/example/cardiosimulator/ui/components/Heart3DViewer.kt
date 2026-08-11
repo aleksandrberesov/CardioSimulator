@@ -61,6 +61,22 @@ class Heart3DController {
     fun setEditing(enabled: Boolean) {
         webView?.evaluateJavascript("window.setEditing($enabled)", null)
     }
+
+    fun setInfarctProgress(progress: Float) {
+        webView?.evaluateJavascript("window.setInfarctProgress($progress)", null)
+    }
+
+    fun playInfarct() {
+        webView?.evaluateJavascript("window.playInfarct()", null)
+    }
+
+    fun stopInfarct() {
+        webView?.evaluateJavascript("window.stopInfarct()", null)
+    }
+
+    fun setLeadsScheme(enabled: Boolean) {
+        webView?.evaluateJavascript("window.setLeadsScheme($enabled)", null)
+    }
 }
 
 /**
@@ -73,6 +89,7 @@ fun Heart3DViewer(
     controller: Heart3DController? = null,
     modelPath: String = "heart3d/heart.glb",
     onLoaded: () -> Unit = {},
+    onScaffoldAvailable: (Boolean) -> Unit = {},
     onError: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -122,6 +139,7 @@ fun Heart3DViewer(
                 
                 val bridge = Heart3DBridge(
                     onLoaded = onLoaded,
+                    onScaffoldAvailable = onScaffoldAvailable,
                     onError = onError,
                     onSaveConduction = { json ->
                         try {
@@ -191,7 +209,7 @@ fun Heart3DViewer(
                                 directionalLight.position.set(1, 1, 1);
                                 scene.add(directionalLight);
 
-                                conductionRenderer = new ConductionSystemRenderer(scene, camera, document.getElementById('container'));
+                                conductionRenderer = new ConductionSystemRenderer(scene, camera, document.getElementById('container'), controls);
                                 window.conductionTemplate = ${Json.encodeToString(ConductionSystem.Template)};
                                 
                                 const initialNodes = $initialPathway;
@@ -206,20 +224,8 @@ fun Heart3DViewer(
                                         scene.add(model);
                                         conductionRenderer.setModel(model);
 
-                                        const box = new THREE.Box3().setFromObject(model);
-                                        const center = box.getCenter(new THREE.Vector3());
-                                        const size = box.getSize(new THREE.Vector3());
-                                        const maxDim = Math.max(size.x, size.y, size.z);
-                                        const fov = camera.fov * (Math.PI / 180);
-                                        let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 2.0;
-
-                                        camera.position.copy(center);
-                                        camera.position.z += cameraZ;
-                                        camera.lookAt(center);
-                                        controls.target.copy(center);
-                                        controls.update();
-
                                         if (initialNodes.length === 0) {
+                                            const box = new THREE.Box3().setFromObject(model);
                                             createDefaultPathway(box);
                                         }
 
@@ -260,6 +266,10 @@ fun Heart3DViewer(
                             window.setCutaway = (enabled) => conductionRenderer.setCutaway(enabled);
                             window.setCutPosition = (pos) => conductionRenderer.setCutPosition(pos);
                             window.setEditing = (enabled) => conductionRenderer.setEditing(enabled);
+                            window.setInfarctProgress = (p) => conductionRenderer.setInfarctProgress(p);
+                            window.playInfarct = () => conductionRenderer.playInfarct();
+                            window.stopInfarct = () => conductionRenderer.stopInfarct();
+                            window.setLeadsScheme = (enabled) => conductionRenderer.setLeadsScheme(enabled);
 
                             function animate() {
                                 requestAnimationFrame(animate);
@@ -290,6 +300,7 @@ fun Heart3DViewer(
 
 private class Heart3DBridge(
     private val onLoaded: () -> Unit,
+    private val onScaffoldAvailable: (Boolean) -> Unit,
     private val onError: () -> Unit,
     private val onSaveConduction: (String) -> Unit
 ) {
@@ -298,6 +309,11 @@ private class Heart3DBridge(
     @JavascriptInterface
     fun onLoaded() {
         main.post { onLoaded() }
+    }
+
+    @JavascriptInterface
+    fun onScaffoldAvailable(available: Boolean) {
+        main.post { onScaffoldAvailable(available) }
     }
 
     @JavascriptInterface
