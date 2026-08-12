@@ -11,11 +11,14 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -201,7 +204,8 @@ fun TeachingScreen(
                 val context = QuickTestContext(
                     section = if (selectedLanguage == Language.RU) course?.nameRu ?: course?.titleEn ?: "" else course?.titleEn ?: "",
                     subtopic = viewerLecture?.frontMatter?.title ?: "",
-                    theme = null // No theme mapping yet
+                    theme = null, // No theme mapping yet
+                    subsection = viewerLecture?.frontMatter?.extras?.get("subsection")
                 )
                 
                 QuickTestScreen(
@@ -579,7 +583,12 @@ private fun MonitorOverlay(
                                 language = selectedLanguage,
                                 description = description,
                                 onClose = { showRhythmInfo = false },
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    // Sit under the graduation-cap button (top ≈ 56.dp) at the top-right corner, mirroring
+                                    // the Windows _infoCard Margin(12, 56, 12, 12).
+                                    .padding(top = 56.dp, end = 12.dp, bottom = 12.dp)
+                                    .widthIn(min = 240.dp, max = 360.dp)
                             )
                         }
                     }
@@ -659,6 +668,7 @@ private fun CourseViewerOverlay(
                         resolveEcg = resolveEcg,
                         resolveEcgSegment = resolveEcgSegment,
                         onMonitorClick = onMonitorClick,
+                        showLoadingIndicator = true,
                         modifier = Modifier.fillMaxSize(),
                     )
                 } else {
@@ -685,14 +695,24 @@ private fun RhythmInfoScreen(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Opaque so the monitor behind it is hidden; tonalElevation lifts it above the trace.
-    Surface(modifier = modifier, color = MaterialTheme.colorScheme.background, tonalElevation = 8.dp) {
-        Column(Modifier.fillMaxSize()) {
+    // Compact card anchored at the top-right, under the graduation-cap button.
+    // Opaque surface with rounded corners; shadow lifts it above the trace.
+    Surface(
+        modifier = modifier.clickable(
+            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+            indication = null
+        ) { /* swallow taps: no-op */ },
+        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 8.dp,
+        shadowElevation = 6.dp
+    ) {
+        Column(Modifier.wrapContentHeight()) {
             // Header: title + close.
             Surface(
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier.fillMaxWidth().height(48.dp),
                 color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 4.dp
+                tonalElevation = 2.dp
             ) {
                 Row(
                     modifier = Modifier.fillMaxSize().padding(start = 16.dp, end = 8.dp),
@@ -708,29 +728,32 @@ private fun RhythmInfoScreen(
                     }
                 }
             }
-            // Scrollable details.
+            // CAP the height so long descriptions scroll rather than growing the card off-screen.
             Column(
-                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(40.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier
+                    .heightIn(max = 360.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 if (pathology == null) {
-                    Text(text = stringResource(R.string.mode_teaching), style = MaterialTheme.typography.headlineSmall)
+                    Text(text = stringResource(R.string.mode_teaching), style = MaterialTheme.typography.titleLarge)
                     return@Column
                 }
                 val primary = if (language == Language.RU) pathology.nameRu ?: pathology.titleEn else pathology.titleEn
                 val secondary = if (language == Language.RU) pathology.titleEn else pathology.nameRu
-                Text(text = primary, style = MaterialTheme.typography.headlineMedium)
+                Text(text = primary, style = MaterialTheme.typography.titleLarge)
                 if (!secondary.isNullOrBlank() && secondary != primary) {
                     Text(
                         text = secondary,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(4.dp))
                 Text(
                     text = "${stringResource(R.string.pathology_leads_label)}: ${pathology.leadsCount}",
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyMedium
                 )
                 // Distinct marker labels in complex order; the enum's declaration order IS complex order,
                 // so sortedBy { ordinal } matches the Windows OrderBy((int)type). Strip <sub> tags.
@@ -742,20 +765,20 @@ private fun RhythmInfoScreen(
                 if (markers.isNotEmpty()) {
                     Text(
                         text = "${stringResource(R.string.pathology_markers_label)}: $markers",
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
                 if (!description.isNullOrBlank()) {
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(10.dp))
                     Text(
                         text = "${stringResource(R.string.pathology_description_label)}:",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
                     )
                     Text(
                         text = description,
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(top = 4.dp)
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 2.dp)
                     )
                 }
             }

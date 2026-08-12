@@ -1,5 +1,6 @@
 package com.example.cardiosimulator.ui.screens
 
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.DropdownMenu
@@ -30,6 +32,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.cardiosimulator.R
@@ -64,6 +70,9 @@ fun CourseConstructorScreen(
     val viewMode by courseConstructorViewModel.viewMode.collectAsState()
     
     var showAddBlockMenu by remember { mutableStateOf(false) }
+    var editRequestId by remember { mutableStateOf<String?>(null) }
+    var splitFraction by remember { mutableStateOf(0.5f) }
+    var rowWidthPx by remember { mutableStateOf(0f) }
 
     val pathologyRepo = appViewModel.repository
     val resolveEcg = remember(pathologyRepo) {
@@ -145,7 +154,12 @@ fun CourseConstructorScreen(
             }
         ) { paddingValues ->
             Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-                Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .onGloballyPositioned { rowWidthPx = it.size.width.toFloat() }
+                ) {
                     if (viewMode == ConstructorViewMode.EDITOR || viewMode == ConstructorViewMode.BOTH) {
                         HtmlBlockEditor(
                             appViewModel = appViewModel,
@@ -157,14 +171,30 @@ fun CourseConstructorScreen(
                             onAddBlock = { block -> courseConstructorViewModel.addBlock(block) },
                             onImportImage = { name, bytes -> courseConstructorViewModel.importImage(name, bytes) },
                             scrollToBlockId = focusedBlockId,
-                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            editElementId = editRequestId,
+                            onEditHandled = { editRequestId = null },
+                            modifier = Modifier
+                                .weight(if (viewMode == ConstructorViewMode.BOTH) splitFraction else 1f)
+                                .fillMaxHeight(),
                         )
                     }
                     if (viewMode == ConstructorViewMode.BOTH) {
-                        VerticalDivider()
+                        Box(Modifier.fillMaxHeight().width(10.dp)
+                            .pointerHoverIcon(PointerIcon.Hand) // Using Hand as horizontal-resize placeholder
+                            .pointerInput(Unit) {
+                                detectHorizontalDragGestures { _, dx ->
+                                    if (rowWidthPx > 0) splitFraction = (splitFraction + dx / rowWidthPx).coerceIn(0.2f, 0.8f)
+                                }
+                            }) { 
+                            VerticalDivider(Modifier.align(Alignment.Center)) 
+                        }
                     }
                     if (viewMode == ConstructorViewMode.PREVIEW || viewMode == ConstructorViewMode.BOTH) {
-                        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                        Box(
+                            modifier = Modifier
+                                .weight(if (viewMode == ConstructorViewMode.BOTH) 1f - splitFraction else 1f)
+                                .fillMaxHeight()
+                        ) {
                             val preview = previewLecture
                             if (preview != null) {
                                 LectureWebView(
@@ -175,6 +205,12 @@ fun CourseConstructorScreen(
                                     scrollToBlockId = focusedBlockId,
                                     onCellEdit = { quizId, row, col, value ->
                                         courseConstructorViewModel.setTableCell(quizId, row, col, value)
+                                    },
+                                    onEditElement = { id ->
+                                        editRequestId = id
+                                        if (viewMode == ConstructorViewMode.PREVIEW) {
+                                            courseConstructorViewModel.setViewMode(ConstructorViewMode.BOTH)
+                                        }
                                     },
                                     modifier = Modifier.fillMaxSize(),
                                 )

@@ -30,6 +30,9 @@ import com.example.cardiosimulator.data.EcgCalibration
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
+import com.example.cardiosimulator.domain.MasteryReport
+import com.example.cardiosimulator.domain.MasteryRollup
+import com.example.cardiosimulator.domain.Taxonomy
 import com.example.cardiosimulator.domain.Test
 import com.example.cardiosimulator.domain.TestSeed
 import com.example.cardiosimulator.network.TcpConnectionState
@@ -148,11 +151,11 @@ class AppViewModel(
     private val _selectedLanguage = MutableStateFlow(currentSystemLanguage(appState.selectedLanguage))
     val selectedLanguage: StateFlow<Language> = _selectedLanguage.asStateFlow()
 
-    var preserveCourseSelection by mutableStateOf(false)
-        private set
+    private val _preserveCourseSelection = mutableStateOf(false)
+    val preserveCourseSelection: Boolean get() = _preserveCourseSelection.value
 
     fun setPreserveCourseSelection(value: Boolean) {
-        preserveCourseSelection = value
+        _preserveCourseSelection.value = value
     }
 
     private val _selectedOperatingMode = MutableStateFlow(appState.selectedOperatingMode)
@@ -218,6 +221,9 @@ class AppViewModel(
 
     private val _dataState = MutableStateFlow<DataState>(DataState.NotConfigured)
     val dataState: StateFlow<DataState> = _dataState.asStateFlow()
+
+    private val _masteryReport = MutableStateFlow(MasteryReport.Empty)
+    val masteryReport: StateFlow<MasteryReport> = _masteryReport.asStateFlow()
 
     private val _refreshTrigger = MutableStateFlow(0)
     val refreshTrigger: StateFlow<Int> = _refreshTrigger.asStateFlow()
@@ -376,6 +382,17 @@ class AppViewModel(
                         val bankDir = File(ctx.filesDir, TEST_BANK_DIR)
                         val bankSource = FileQuestionBankSource(bankDir)
                         questionBankRepository.import(bankSource.readQuestions()) // Reload from source
+                    }
+
+                    if (examResultStore != null) {
+                        viewModelScope.launch {
+                            examResultStore.resultsChanged.collect {
+                                withContext(Dispatchers.IO) {
+                                    val report = MasteryRollup.compute(examResultStore.list(), Taxonomy.shared)
+                                    _masteryReport.value = report
+                                }
+                            }
+                        }
                     }
 
                     // Seed the demo test and question bank once pathologies are loaded

@@ -46,6 +46,7 @@ data class PathologyEntry(
     val description: String? = null,
     val clinicalCase: String? = null,
     val number: Int? = null,
+    val acronym: String? = null,
 )
 
 /** One lead block inside a `<pathology>.dat` file. */
@@ -80,6 +81,7 @@ data class PathologyFile(
     val description: String? = null,
     val clinicalCase: String? = null,
     val number: Int? = null,
+    val acronym: String? = null,
 )
 
 data class TipPoint(val sample: Float, val adc: Float) // adc = baseline-relative amplitude, 0 = isoline

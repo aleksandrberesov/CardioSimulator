@@ -240,7 +240,8 @@ fun MainScreen(appViewModel: AppViewModel) {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return LearningScaleViewModel(
-                    persistenceFile = java.io.File(context.filesDir, "learning_scale.json")
+                    persistenceFile = java.io.File(context.filesDir, "learning_scale.json"),
+                    masteryReportFlow = appViewModel.masteryReport
                 ) as T
             }
         }

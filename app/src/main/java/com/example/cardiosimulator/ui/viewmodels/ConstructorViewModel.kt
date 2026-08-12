@@ -668,6 +668,25 @@ class ConstructorViewModel(
         }
     }
 
+    fun setAcronym(acronym: String?) {
+        val currentFile = _targetFile.value ?: return
+        val normalized = com.example.cardiosimulator.domain.Taxonomy.normalize(acronym)
+        if (currentFile.acronym != normalized) {
+            var updatedFile = currentFile.copy(acronym = normalized)
+
+            // Tagging an ungrouped rhythm auto-files it into the acronym's taxonomy group.
+            if (normalized != null && currentFile.group == null) {
+                val entry = com.example.cardiosimulator.domain.Taxonomy.shared.find(normalized)
+                if (entry != null && entry.group.isNotEmpty()) {
+                    updatedFile = updatedFile.copy(group = entry.group)
+                }
+            }
+
+            _targetFile.value = updatedFile
+            _isMetadataDirty.value = true
+        }
+    }
+
     fun setClinicalCase(clinicalCase: String?) {
         val currentFile = _targetFile.value ?: return
         val normalized = if (clinicalCase.isNullOrBlank()) null else clinicalCase

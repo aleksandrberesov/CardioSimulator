@@ -63,7 +63,7 @@ data class Course(
 
 /** A "Тема" (topic): a named grouping of lectures. Its [id] is referenced by member
  *  lectures' [LectureEntry.topic]; can exist with no lectures yet. */
-data class TopicEntry(val id: String, val titleEn: String, val nameRu: String?)
+data class TopicEntry(val id: String, val titleEn: String, val nameRu: String?, val subsection: String? = null)
 
 /** One row of [Course.lectures] — the lecture index inside a course. */
 data class LectureEntry(
@@ -72,6 +72,7 @@ data class LectureEntry(
     val nameRu: String?,
     /** Owning topic id (null = ungrouped). */
     val topic: String? = null,
+    val subsection: String? = null,
 )
 
 /** Parsed `<lecture-id>.<lang>.html`. */

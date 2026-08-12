@@ -4,6 +4,9 @@ import com.example.cardiosimulator.domain.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 val testJson = Json {
     encodeDefaults = false
@@ -93,6 +96,9 @@ class TestRepository(private var source: ITestSource) {
 }
 
 class ExamResultStore(val root: File) {
+    private val _resultsChanged = MutableStateFlow(0)
+    val resultsChanged: StateFlow<Int> = _resultsChanged.asStateFlow()
+
     init {
         root.mkdirs()
     }
@@ -100,7 +106,11 @@ class ExamResultStore(val root: File) {
     fun save(result: ExamResult): Boolean {
         val filename = "${result.timestamp}_${result.student.fullName.replace(" ", "_")}.json"
         val file = File(root, filename)
-        return atomicWriteText(file, TestJson.serializeResult(result))
+        val ok = atomicWriteText(file, TestJson.serializeResult(result))
+        if (ok) {
+            _resultsChanged.value++
+        }
+        return ok
     }
 
     fun list(): List<ExamResult> {

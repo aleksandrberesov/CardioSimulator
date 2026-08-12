@@ -58,6 +58,7 @@ import com.example.cardiosimulator.domain.TestQuestion
 import com.example.cardiosimulator.ui.display.Lead as LeadView
 import com.example.cardiosimulator.ui.display.LeadsGrid
 import com.example.cardiosimulator.ui.display.Monitor
+import com.example.cardiosimulator.ui.components.AcronymPicker
 import com.example.cardiosimulator.ui.components.Tab as CustomTab
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
 import com.example.cardiosimulator.ui.viewmodels.ConstructorTab
@@ -163,6 +164,7 @@ fun SingleQuestionEditor(
             onRemove = { viewModel.deleteFromBank(question.id); viewModel.stopEditingQuestion() },
             onAddOption = { viewModel.addOption(question.id) },
             onRemoveOption = { optId -> viewModel.removeOption(question.id, optId) },
+            onAcronymsChange = { acrs -> viewModel.updateBankAcronyms(question.id, acrs) },
             onPreview = { pathologyId ->
                 if (pathologyId != null) {
                     rhythmViewModel.selectRhythm(pathologyId, persist = false)
@@ -267,6 +269,7 @@ fun TestEditor(
                 onRemove = { viewModel.removeQuestion(question.id) },
                 onAddOption = { viewModel.addOption(question.id) },
                 onRemoveOption = { optId -> viewModel.removeOption(question.id, optId) },
+                onAcronymsChange = { acrs -> viewModel.updateAcronyms(question.id, acrs) },
                 onPreview = { pathologyId ->
                     if (pathologyId != null) {
                         rhythmViewModel.selectRhythm(pathologyId, persist = false)
@@ -678,6 +681,9 @@ fun BankQuestionCard(
                 if (question.pathologyId != null) {
                     MetaChip(icon = Icons.Default.Favorite, label = question.pathologyId)
                 }
+                question.acronyms.forEach { acr ->
+                    MetaChip(icon = Icons.Default.Bookmark, label = acr)
+                }
                 question.tagList.forEach { tag ->
                     MetaChip(icon = Icons.Default.Tag, label = tag)
                 }
@@ -866,6 +872,7 @@ fun QuestionEditorCard(
     onRemove: () -> Unit,
     onAddOption: () -> Unit,
     onRemoveOption: (String) -> Unit,
+    onAcronymsChange: (List<String>) -> Unit,
     onPreview: (String?) -> Unit,
     onToggleAssembly: (Boolean) -> Unit = {},
     onBuildAssembly: (String, com.example.cardiosimulator.domain.Lead, Int) -> Unit = { _, _, _ -> },
@@ -943,6 +950,14 @@ fun QuestionEditorCard(
                 value = question.text,
                 onValueChange = { text -> onUpdate { it.copy(text = text) } },
                 label = { Text(stringResource(R.string.test_ctor_question_text)) },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            AcronymPicker(
+                selectedAcronyms = question.acronyms,
+                onAcronymsChange = onAcronymsChange,
                 modifier = Modifier.fillMaxWidth()
             )
 

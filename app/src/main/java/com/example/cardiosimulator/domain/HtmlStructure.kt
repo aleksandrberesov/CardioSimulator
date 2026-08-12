@@ -33,6 +33,20 @@ object HtmlStructure {
         return roots.mapIndexed { index, element -> buildNode(element, listOf(index)) }
     }
 
+    fun nodeById(html: String, id: String): Node? {
+        if (html.isBlank() || id.isEmpty()) return null
+        val roots = parseAny(html).body().children()
+        for (i in roots.indices) findById(roots[i], listOf(i), id)?.let { return it }
+        return null
+    }
+
+    private fun findById(el: Element, path: List<Int>, id: String): Node? {
+        if (el.id() == id) return buildNode(el, path)
+        val kids = el.children()
+        for (i in kids.indices) findById(kids[i], path + i, id)?.let { return it }
+        return null
+    }
+
     private fun buildNode(element: Element, path: List<Int>): Node {
         val kind = classify(element)
         val label = getLabel(element, kind)

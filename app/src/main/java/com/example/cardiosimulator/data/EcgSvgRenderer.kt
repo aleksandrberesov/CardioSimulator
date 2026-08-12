@@ -65,6 +65,7 @@ object EcgSvgRenderer {
         return ecgTag.replace(html) { match ->
             val attrs = attr.findAll(match.groupValues[1])
                 .associate { it.groupValues[1].lowercase() to it.groupValues[2] }
+            val id = attrs["id"]
             val pathologyId = attrs["pathology"].orEmpty().trim()
             val leadToken = attrs["lead"]?.takeIf { it.isNotBlank() }
             val leadsAttr = attrs["leads"]?.takeIf { it.isNotBlank() }
@@ -82,7 +83,7 @@ object EcgSvgRenderer {
             }
 
             val traces = if (pathologyId.isEmpty()) emptyList() else resolve(pathologyId, requestedLeads)
-            if (traces.isEmpty()) missingFigure(pathologyId, leadToken ?: leadsAttr)
+            if (traces.isEmpty()) missingFigure(pathologyId, leadToken ?: leadsAttr, id)
             else figureHtml(
                 traces = traces,
                 caption = caption,
@@ -90,7 +91,8 @@ object EcgSvgRenderer {
                 gridScheme = gridScheme,
                 seriesScheme = seriesScheme,
                 count = count,
-                showMonitorButton = showMonitorButton
+                showMonitorButton = showMonitorButton,
+                id = id
             )
         }
     }
@@ -106,6 +108,7 @@ object EcgSvgRenderer {
         return ecgSegmentTag.replace(html) { match ->
             val attrs = attr.findAll(match.groupValues[1])
                 .associate { it.groupValues[1].lowercase() to it.groupValues[2] }
+            val id = attrs["id"]
             val pathologyId = attrs["pathology"].orEmpty().trim()
             val leadToken = attrs["lead"]
             val lead = leadToken?.let { Lead.fromToken(it) }
@@ -117,13 +120,14 @@ object EcgSvgRenderer {
             val trace = if (pathologyId.isEmpty() || lead == null) null
             else resolve(pathologyId, lead, start, duration)
 
-            if (trace == null) missingFigure(pathologyId, leadToken)
+            if (trace == null) missingFigure(pathologyId, leadToken, id)
             else segmentFigureHtml(
                 trace = trace,
                 caption = caption,
                 figureIndex = figureIndex++,
                 startSec = start,
-                tips = tips
+                tips = tips,
+                id = id
             )
         }
     }
@@ -136,7 +140,8 @@ object EcgSvgRenderer {
         gridScheme: String = "Pink",
         seriesScheme: String = "OneColumn",
         count: Int = 1,
-        showMonitorButton: Boolean = false
+        showMonitorButton: Boolean = false,
+        id: String? = null
     ): String {
         val colors = gridSchemes[gridScheme] ?: gridSchemes["Pink"]!!
         val visibleTraces = traces.take(count)
@@ -202,7 +207,8 @@ object EcgSvgRenderer {
         val monitorBtn = if (showMonitorButton) {
             "\n  <button class=\"monitor-btn\" onclick=\"if(window.Android)Android.onMonitor()\">Monitor</button>"
         } else ""
-        return "<figure class=\"ecg-figure\">\n$svg$monitorBtn$cap\n</figure>"
+        val idAttr = if (id.isNullOrEmpty()) "" else " id=\"${escape(id)}\""
+        return "<figure$idAttr class=\"ecg-figure\">\n$svg$monitorBtn$cap\n</figure>"
     }
 
     fun segmentFigureHtml(
@@ -210,7 +216,8 @@ object EcgSvgRenderer {
         caption: String?,
         figureIndex: Int,
         startSec: Float,
-        tips: List<com.example.cardiosimulator.domain.TipOverlay> = emptyList()
+        tips: List<com.example.cardiosimulator.domain.TipOverlay> = emptyList(),
+        id: String? = null
     ): String {
         val colors = gridSchemes["Pink"]!!
         val leadHeight = 20f * PX_PER_MM
@@ -243,7 +250,8 @@ object EcgSvgRenderer {
         }
 
         val cap = caption?.let { "\n  <figcaption>${escape(it)}</figcaption>" }.orEmpty()
-        return "<figure class=\"ecg-figure ecg-segment-figure\">\n$svg$cap\n</figure>"
+        val idAttr = if (id.isNullOrEmpty()) "" else " id=\"${escape(id)}\""
+        return "<figure$idAttr class=\"ecg-figure ecg-segment-figure\">\n$svg$cap\n</figure>"
     }
 
     private fun drawTipsSvg(
@@ -331,11 +339,12 @@ object EcgSvgRenderer {
             "</pattern></defs>"
     }
 
-    private fun missingFigure(pathologyId: String, leadToken: String?): String {
+    private fun missingFigure(pathologyId: String, leadToken: String?, id: String? = null): String {
         val leadPart = leadToken?.let { " (lead ${escape(it)})" }.orEmpty()
-        val id = if (pathologyId.isEmpty()) "(unspecified)" else escape(pathologyId)
-        return "<figure class=\"ecg-figure ecg-missing\">" +
-            "<figcaption>ECG unavailable: $id$leadPart</figcaption></figure>"
+        val pathId = if (pathologyId.isEmpty()) "(unspecified)" else escape(pathologyId)
+        val idAttr = if (id.isNullOrEmpty()) "" else " id=\"${escape(id)}\""
+        return "<figure$idAttr class=\"ecg-figure ecg-missing\">" +
+            "<figcaption>ECG unavailable: $pathId$leadPart</figcaption></figure>"
     }
 
     /** 0.1-px precision, locale-independent (Float.toString always uses '.'). */

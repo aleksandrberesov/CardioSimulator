@@ -2,10 +2,13 @@ package com.example.cardiosimulator.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cardiosimulator.domain.MasteryReport
+import com.example.cardiosimulator.domain.Taxonomy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
@@ -58,7 +61,8 @@ data class LearningScaleState(
     val accuracyChange: String = "▲2.1%",
     val rank: String = "#6",
     val avgSeconds: Int = 47,
-    val hasInteracted: Boolean = false
+    val hasInteracted: Boolean = false,
+    val hasRealData: Boolean = false
 )
 
 @Serializable
@@ -81,7 +85,10 @@ private data class SubtopicDto(
     @SerialName("progress") val progress: Int
 )
 
-class LearningScaleViewModel(private val persistenceFile: File) : ViewModel() {
+class LearningScaleViewModel(
+    private val persistenceFile: File,
+    private val masteryReportFlow: StateFlow<MasteryReport>? = null
+) : ViewModel() {
 
     private val _state = MutableStateFlow(LearningScaleState())
     val state: StateFlow<LearningScaleState> = _state.asStateFlow()
@@ -89,6 +96,7 @@ class LearningScaleViewModel(private val persistenceFile: File) : ViewModel() {
     private var _sections: List<LsSection> = seedCourse()
     private val _completed = mutableSetOf<String>()
     private var _hasInteracted = false
+    private var _currentReport: MasteryReport = MasteryReport.Empty
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -97,22 +105,75 @@ class LearningScaleViewModel(private val persistenceFile: File) : ViewModel() {
 
     init {
         load()
+        viewModelScope.launch {
+            masteryReportFlow?.collectLatest { report ->
+                _currentReport = report
+                if (report.hasData) {
+                    applyReport(report)
+                }
+                updateState()
+            }
+        }
         updateState()
     }
 
+    private fun applyReport(report: MasteryReport) {
+        for (section in _sections) {
+            val sectionStat = report.section(section.id)
+            for (sub in section.subtopics) {
+                val subStat = report.subtopic(sub.id)
+                // If there's no data for this subtopic in the report, it stays at 0 or demo?
+                // The plan says: "subtopic progress = rolled-up accuracy (0 + "no data" flag when a subtopic has no attempts)"
+                // I'll set it to progress from report.
+                sub.progress = if (subStat.answered > 0) subStat.progress else 0
+            }
+            
+            // Section progress = average over assessed subtopics only
+            val assessed = section.subtopics.filter { report.subtopic(it.id).answered > 0 }
+            section.progress = if (assessed.isNotEmpty()) {
+                assessed.map { it.progress }.average().roundToInt()
+            } else {
+                0
+            }
+            section.status = bandFor(section.progress)
+        }
+    }
+
     private fun updateState() {
+        val report = _currentReport
+        val hasRealData = report.hasData
+        
         val avgProgress = if (_sections.isEmpty()) 0.0 else _sections.map { it.progress }.average()
         
-        val globalProgress = avgProgress.roundToInt()
-        val cases = 184 + _completed.size
-        val accuracy = String.format(Locale.US, "%.1f", 78.4 + (avgProgress - 50) * 0.2)
-        val accuracyChange = if (_completed.isNotEmpty()) {
+        val globalProgress = if (hasRealData) {
+            if (report.totalAnswered > 0) (100.0 * report.totalCorrect / report.totalAnswered).roundToInt() else 0
+        } else {
+            avgProgress.roundToInt()
+        }
+        
+        val cases = if (hasRealData) report.totalAnswered else 184 + _completed.size
+        
+        val accuracyValue = if (hasRealData) {
+            if (report.totalAnswered > 0) 100.0 * report.totalCorrect / report.totalAnswered else 0.0
+        } else {
+            78.4 + (avgProgress - 50) * 0.2
+        }
+        
+        val accuracy = String.format(Locale.US, "%.1f", accuracyValue)
+        val accuracyChange = if (hasRealData) {
+            // Placeholder for real change tracking if available, otherwise neutral
+            "▲0.0%"
+        } else if (_completed.isNotEmpty()) {
             "▲" + String.format(Locale.US, "%.1f", 2.1 + _completed.size * 0.1) + "%"
         } else {
             "▲2.1%"
         }
         
-        val rankIdx = (floor(_completed.size / 1.5)).toInt().coerceAtMost(6)
+        val rankIdx = if (hasRealData) {
+            (accuracyValue / 15).toInt().coerceAtMost(6) // rough estimate
+        } else {
+            (floor(_completed.size / 1.5)).toInt().coerceAtMost(6)
+        }
         val rank = if (rankIdx >= 6) "🏆" else "#${6 - rankIdx}"
 
         _state.value = LearningScaleState(
@@ -124,13 +185,21 @@ class LearningScaleViewModel(private val persistenceFile: File) : ViewModel() {
             accuracyChange = accuracyChange,
             rank = rank,
             avgSeconds = 47,
-            hasInteracted = _hasInteracted
+            hasInteracted = _hasInteracted,
+            hasRealData = hasRealData
         )
     }
 
     private fun generateTasks(): List<PlanTask> {
+        // Adaptive plan only recommends assessed subtopics when real data is present?
+        // Actually the plan says: "the adaptive plan only recommends assessed subtopics"
+        val report = _currentReport
+        val hasRealData = report.hasData
+
         val all = _sections.flatMap { section ->
             section.subtopics.map { sub -> section to sub }
+        }.filter { (section, sub) ->
+            if (hasRealData) report.subtopic(sub.id).answered > 0 else true
         }.sortedBy { it.second.progress }
 
         val critical = all.filter { it.second.progress < 30 }.take(3)
@@ -182,7 +251,7 @@ class LearningScaleViewModel(private val persistenceFile: File) : ViewModel() {
         }
 
         val sub = section.subtopics.find { it.id == task.subtopicId }
-        if (sub != null) {
+        if (sub != null && !_currentReport.hasData) {
             sub.progress = (sub.progress + 8).coerceAtMost(100)
         }
 

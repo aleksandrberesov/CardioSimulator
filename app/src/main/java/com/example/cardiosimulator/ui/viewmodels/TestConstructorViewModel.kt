@@ -182,6 +182,10 @@ class TestConstructorViewModel(
         _questions.value = _questions.value.map { if (it.id == id) transform(it) else it }
     }
 
+    fun updateAcronyms(id: String, acronyms: List<String>) {
+        updateQuestion(id) { it.copy(acronyms = acronyms) }
+    }
+
     fun addOption(questionId: String) {
         updateQuestion(questionId) { q ->
             if (q.options.size >= 6) return@updateQuestion q
@@ -251,6 +255,10 @@ class TestConstructorViewModel(
         val q = bankRepository.questions().find { it.id == id } ?: return
         bankRepository.writeQuestion(transform(q))
         reloadBank()
+    }
+
+    fun updateBankAcronyms(id: String, acronyms: List<String>) {
+        updateBankQuestion(id) { it.copy(acronyms = acronyms) }
     }
 
     fun toggleAssembly(questionId: String, isAssembly: Boolean) {

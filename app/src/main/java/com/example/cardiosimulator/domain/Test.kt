@@ -30,6 +30,7 @@ data class TestQuestion(
     val tags: String? = null,
     val assemble: EcgAssembly? = null,
     val difficulty: QuestionDifficulty? = null,
+    val acronyms: List<String> = emptyList(),
 ) {
     val kind: QuestionKind
         get() = if (assemble != null) QuestionKind.AssembleEcg else QuestionKind.SingleChoice

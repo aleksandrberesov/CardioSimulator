@@ -25,10 +25,10 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PushPin
-import androidx.compose.material.icons.filled.Healing
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ViewList
-import androidx.compose.material.icons.outlined.Healing
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
@@ -263,7 +263,9 @@ fun RhythmSelector(
                 onClick = { appViewModel.setClinicalMode(!isClinicalMode) }
             ) {
                 Icon(
-                    imageVector = if (isClinicalMode) Icons.Default.Healing else Icons.Outlined.Healing,
+                    // Person = "patient clinical case"; matches the Windows U+E77B Contact glyph.
+                    // Not a heart/pulse — that reads as the ECG/rhythm (the other mode).
+                    imageVector = if (isClinicalMode) Icons.Default.Person else Icons.Outlined.Person,
                     contentDescription = stringResource(R.string.clinical_mode_tooltip),
                     tint = if (isClinicalMode) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                 )

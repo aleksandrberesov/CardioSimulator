@@ -2,6 +2,7 @@ package com.example.cardiosimulator.ui.screens
 
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -14,23 +15,20 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.Healing
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import android.provider.OpenableColumns
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.LocalPixelScale
 import com.example.cardiosimulator.data.PixelScale
@@ -42,13 +40,18 @@ import com.example.cardiosimulator.data.wfdb.WfdbReader
 import com.example.cardiosimulator.data.wfdb.WfdbRecord
 import com.example.cardiosimulator.domain.DerivedLeads
 import com.example.cardiosimulator.domain.EcgFilterType
+import com.example.cardiosimulator.domain.Language
 import com.example.cardiosimulator.domain.Lead
 import com.example.cardiosimulator.domain.PathologyFile
 import com.example.cardiosimulator.domain.MonitorModeModel
 import com.example.cardiosimulator.domain.SignificantPoint
+import com.example.cardiosimulator.domain.TipOverlay
+import com.example.cardiosimulator.domain.TipOverlayKind
+import com.example.cardiosimulator.network.PhysioNetClient
 import com.example.cardiosimulator.signals.biosppy.EcgFilters
 import com.example.cardiosimulator.ui.components.PreviewPane
 import com.example.cardiosimulator.ui.components.SideDrawer
+import com.example.cardiosimulator.ui.components.SynthesizerDialog
 import com.example.cardiosimulator.ui.components.UnsavedChangesDialog
 import com.example.cardiosimulator.ui.display.EditableLead
 import com.example.cardiosimulator.ui.display.Lead as LeadView
@@ -62,6 +65,7 @@ import com.example.cardiosimulator.ui.panels.ReferenceImagePanel
 import com.example.cardiosimulator.ui.panels.RhythmSelector
 import com.example.cardiosimulator.ui.panels.SelectPanel
 import com.example.cardiosimulator.ui.panels.SignificantPointPanel
+import com.example.cardiosimulator.ui.panels.TipsPanel
 import com.example.cardiosimulator.ui.panels.ToolModePanel
 import com.example.cardiosimulator.ui.utils.TraceExtractor
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
@@ -85,15 +89,6 @@ fun ConstructorScreen(
     rhythmViewModel: RhythmViewModel,
     constructorViewModel: ConstructorViewModel,
 ) {
-    LaunchedEffect(targetFile?.id, targetFile?.clinicalCase) {
-        val f = targetFile
-        if (f != null) appViewModel.setClinicalMode(!f.clinicalCase.isNullOrBlank())
-    }
-
-    var showTipCommentsDialog by remember { mutableStateOf(false) }
-    var showTipCaptionDialog by remember { mutableStateOf(false) }
-    var pendingTip by remember { mutableStateOf<com.example.cardiosimulator.domain.TipOverlay?>(null) }
-
     val targetFile by constructorViewModel.targetFile
     val focusedLead by constructorViewModel.focusedLead.collectAsState()
     val selectedIndex by constructorViewModel.selectedIndex.collectAsState()
@@ -116,6 +111,15 @@ fun ConstructorScreen(
     val selectedTipEndCap by constructorViewModel.selectedTipEndCap.collectAsState()
     val selectedTipLead by constructorViewModel.selectedTipLead.collectAsState()
     val isDrawerFixed by appViewModel.isDrawerFixed.collectAsState()
+
+    LaunchedEffect(targetFile?.id, targetFile?.clinicalCase) {
+        val f = targetFile
+        if (f != null) appViewModel.setClinicalMode(!f.clinicalCase.isNullOrBlank())
+    }
+
+    var showTipCommentsDialog by remember { mutableStateOf(false) }
+    var showTipCaptionDialog by remember { mutableStateOf(false) }
+    var pendingTip by remember { mutableStateOf<TipOverlay?>(null) }
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -264,7 +268,7 @@ fun ConstructorScreen(
                         downloadError = null
                         scope.launch {
                             try {
-                                val record = com.example.cardiosimulator.network.PhysioNetClient.downloadRecord(physioNetProject, physioNetRecord)
+                                val record = PhysioNetClient.downloadRecord(physioNetProject, physioNetRecord)
                                 pendingImportRecord = record
                                 showPhysioNetDialog = false
                             } catch (e: Exception) {
@@ -314,7 +318,7 @@ fun ConstructorScreen(
     }
 
     if (showSynthesizerDialog) {
-        com.example.cardiosimulator.ui.components.SynthesizerDialog(
+        SynthesizerDialog(
             onDismiss = { showSynthesizerDialog = false },
             onGenerate = { bpm, ap, ar, asVal, at, variance ->
                 constructorViewModel.generateSynthesizedBeat(
@@ -403,7 +407,43 @@ fun ConstructorScreen(
     }
 
     if (showRenameDialog && targetFile != null) {
-        // ... Existing rename dialog ...
+        var titleEn by remember { mutableStateOf(targetFile?.titleEn ?: "") }
+        var nameRu by remember { mutableStateOf(targetFile?.nameRu ?: "") }
+
+        AlertDialog(
+            onDismissRequest = { showRenameDialog = false },
+            title = { Text(stringResource(R.string.constructor_rename_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextField(
+                        value = titleEn,
+                        onValueChange = { titleEn = it },
+                        label = { Text(stringResource(R.string.constructor_import_label_en)) },
+                        singleLine = true
+                    )
+                    TextField(
+                        value = nameRu,
+                        onValueChange = { nameRu = it },
+                        label = { Text(stringResource(R.string.constructor_import_label_ru)) },
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    constructorViewModel.rename(titleEn, Language.EN)
+                    constructorViewModel.rename(nameRu, Language.RU)
+                    showRenameDialog = false
+                }) {
+                    Text(stringResource(R.string.constructor_rename_ok))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRenameDialog = false }) {
+                    Text(stringResource(R.string.constructor_rename_cancel))
+                }
+            }
+        )
     }
 
     if (showDescriptionDialog && targetFile != null) {
@@ -440,21 +480,76 @@ fun ConstructorScreen(
     if (showGroupDialog && targetFile != null) {
         val groups = rhythmViewModel.repository.groups
         val currentGroup = targetFile?.group
+        val currentAcronym = targetFile?.acronym
         val availableKeys = groups.getOrderedKeys()
-        
+
         var selectedKey by remember { mutableStateOf(currentGroup) }
         var newGroupName by remember { mutableStateOf("") }
+        var acronymText by remember { mutableStateOf(currentAcronym ?: "") }
         var dropdownExpanded by remember { mutableStateOf(false) }
+        var acronymSuggestionsExpanded by remember { mutableStateOf(false) }
+
+        val acronymSuggestions = remember(acronymText) {
+            if (acronymText.isBlank()) emptyList<com.example.cardiosimulator.domain.TaxonomyEntry>()
+            else com.example.cardiosimulator.domain.Taxonomy.shared.allEntries.filter {
+                it.acronym.contains(acronymText, ignoreCase = true) ||
+                        it.nameRu.contains(acronymText, ignoreCase = true)
+            }.take(5)
+        }
 
         AlertDialog(
             onDismissRequest = { showGroupDialog = false },
             title = { Text(stringResource(R.string.constructor_group_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Acronym Field
                     Box {
                         OutlinedTextField(
-                            value = if (selectedKey == null) stringResource(R.string.constructor_group_no_group) 
-                                   else groups.displayName(selectedKey!!, selectedLanguage.tag) { null },
+                            value = acronymText,
+                            onValueChange = {
+                                acronymText = it
+                                acronymSuggestionsExpanded = it.isNotBlank()
+                            },
+                            label = { Text(stringResource(R.string.test_ctor_acronyms)) },
+                            placeholder = { Text(stringResource(R.string.test_ctor_acronyms_placeholder)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            trailingIcon = {
+                                if (acronymText.isNotEmpty()) {
+                                    IconButton(onClick = { acronymText = ""; acronymSuggestionsExpanded = false }) {
+                                        Icon(Icons.Default.Close, null)
+                                    }
+                                }
+                            }
+                        )
+
+                        if (acronymSuggestionsExpanded && acronymSuggestions.isNotEmpty()) {
+                            DropdownMenu(
+                                expanded = acronymSuggestionsExpanded,
+                                onDismissRequest = { acronymSuggestionsExpanded = false },
+                            ) {
+                                acronymSuggestions.forEach { entry ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Column {
+                                                Text(entry.acronym, fontWeight = FontWeight.Bold)
+                                                Text(entry.nameRu, style = MaterialTheme.typography.bodySmall)
+                                            }
+                                        },
+                                        onClick = {
+                                            acronymText = entry.acronym
+                                            acronymSuggestionsExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Box {
+                        OutlinedTextField(
+                            value = if (selectedKey == null) stringResource(R.string.constructor_group_no_group)
+                            else groups.displayName(selectedKey!!, selectedLanguage.tag) { null },
                             onValueChange = {},
                             readOnly = true,
                             label = { Text(stringResource(R.string.constructor_group_label)) },
@@ -478,7 +573,7 @@ fun ConstructorScreen(
                             }
                         }
                     }
-                    
+
                     TextField(
                         value = newGroupName,
                         onValueChange = { newGroupName = it },
@@ -489,6 +584,7 @@ fun ConstructorScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
+                    constructorViewModel.setAcronym(acronymText)
                     if (newGroupName.isNotBlank()) {
                         constructorViewModel.createAndSetGroup(newGroupName)
                     } else {
@@ -618,7 +714,7 @@ fun ConstructorScreen(
         Box(modifier = Modifier.weight(1f)) {
             Column(modifier = Modifier.fillMaxSize()) {
                 val displayTitle = targetFile?.let { file ->
-                    val title = if (selectedLanguage == com.example.cardiosimulator.domain.Language.RU)
+                    val title = if (selectedLanguage == Language.RU)
                         file.nameRu ?: file.titleEn
                     else
                         file.titleEn
@@ -728,7 +824,8 @@ fun ConstructorScreen(
 
                                 IconButton(onClick = { showClinicalDialog = true }) {
                                     Icon(
-                                        imageVector = Icons.Default.Healing,
+                                        // Person = "patient clinical case"; matches the Windows U+E77B Contact glyph.
+                                        imageVector = Icons.Default.Person,
                                         contentDescription = stringResource(R.string.clinical_edit_tooltip)
                                     )
                                 }
@@ -887,8 +984,8 @@ fun ConstructorScreen(
                                                         selectedTipEndCap = selectedTipEndCap,
                                                         selectedTipLead = selectedTipLead,
                                                         onTipPlaced = { tip ->
-                                                            if (tip.kind == com.example.cardiosimulator.domain.TipOverlayKind.Arrow ||
-                                                                tip.kind == com.example.cardiosimulator.domain.TipOverlayKind.Label) {
+                                                            if (tip.kind == TipOverlayKind.Arrow ||
+                                                                tip.kind == TipOverlayKind.Label) {
                                                                 pendingTip = tip
                                                                 showTipCaptionDialog = true
                                                             } else {
@@ -1020,7 +1117,7 @@ fun ConstructorScreen(
                                 ToolMode.Pan -> PanPanel(
                                     onResetView = { monitorViewModel.resetView() }
                                 )
-                                ToolMode.Tips -> com.example.cardiosimulator.ui.panels.TipsPanel(
+                                ToolMode.Tips -> TipsPanel(
                                     selectedKind = selectedTipKind,
                                     onKindSelected = { constructorViewModel.setSelectedTipKind(it) },
                                     selectedEndCap = selectedTipEndCap,

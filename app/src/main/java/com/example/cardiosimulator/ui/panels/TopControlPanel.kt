@@ -46,13 +46,13 @@ import com.example.cardiosimulator.ui.viewmodels.TestConstructorViewModel
 @Composable
 fun TopControlPanel(
     viewModel: AppViewModel,
+    modifier: Modifier = Modifier,
     monitorViewModel: MonitorViewModel = viewModel(),
     rhythmViewModel: RhythmViewModel? = null,
     constructorViewModel: ConstructorViewModel? = null,
     courseConstructorViewModel: CourseConstructorViewModel? = null,
     courseViewerViewModel: CourseViewerViewModel? = null,
     testConstructorViewModel: TestConstructorViewModel? = null,
-    modifier: Modifier = Modifier,
     onStartStopClick: (Boolean) -> Unit = {},
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -62,7 +62,7 @@ fun TopControlPanel(
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = Color.Transparent,
-        tonalElevation = 0.dp
+        tonalElevation = 0.dp,
     ) {
         Row(
             modifier = Modifier
@@ -81,11 +81,11 @@ fun TopControlPanel(
                     modifier = Modifier.wrapContentWidth()
                 ) {
                     Tab(
-                        text = stringResource(selectedOperatingMode.id.titleRes),
+                        onClick = { expanded = true },
+                        modifier = Modifier.padding(vertical = 4.dp),
                         showChevron = true,
                         isLarge = true,
-                        onClick = { expanded = true },
-                        modifier = Modifier.padding(vertical = 4.dp)
+                        text = stringResource(selectedOperatingMode.id.titleRes)
                     )
                     DropdownMenu(
                         expanded = expanded,
@@ -107,7 +107,7 @@ fun TopControlPanel(
                 ){
                     when (selectedOperatingMode.id) {
                         OperatingMode.Teaching -> {
-                            if (courseViewerViewModel != null && rhythmViewModel != null) {
+                            if ((courseViewerViewModel != null) && (rhythmViewModel != null)) {
                                 TeachingControlPanel(
                                     appViewModel = viewModel,
                                     courseViewerViewModel = courseViewerViewModel,
@@ -167,6 +167,7 @@ fun TopControlPanel(
                                 )
                             }
                         }
+                        OperatingMode.LearningScale -> {}
                     }
                 }
             }
@@ -190,41 +191,20 @@ fun TopControlPanelPreview() {
         }
     )
 
-    val previewViewModel: AppViewModel = viewModel(
-        factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return AppViewModel(
-                    appState = AppBuilder()
-                        .addMode(OperatingModeModel(OperatingMode.Constructor))
-                        .build(),
-                    repository = mockRepo
-                ) as T
-            }
-        }
+    val previewViewModel = AppViewModel(
+        appState = AppBuilder()
+            .addMode(OperatingModeModel(OperatingMode.Constructor))
+            .build(),
+        repository = mockRepo
     )
 
-    val previewConstructorViewModel: ConstructorViewModel = viewModel(
-        factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return ConstructorViewModel(
-                    repository = mockRepo,
-                    mode = OperatingMode.Constructor
-                ) as T
-            }
-        }
+    val previewConstructorViewModel = ConstructorViewModel(
+        repository = mockRepo,
+        mode = OperatingMode.Constructor
     )
 
-    val previewMonitorViewModel: MonitorViewModel = viewModel(
-        factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return MonitorViewModel(
-                    mode = OperatingMode.Constructor
-                ) as T
-            }
-        }
+    val previewMonitorViewModel = MonitorViewModel(
+        mode = OperatingMode.Constructor
     )
 
     CardioSimulatorTheme {

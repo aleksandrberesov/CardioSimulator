@@ -5,9 +5,12 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -20,47 +23,38 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.cardiosimulator.R
-import com.example.cardiosimulator.domain.GridScheme
-import com.example.cardiosimulator.domain.HtmlBlock
-import com.example.cardiosimulator.domain.HtmlCompiler
-import com.example.cardiosimulator.domain.HtmlStructure
-import com.example.cardiosimulator.domain.Language
-import com.example.cardiosimulator.domain.Lead
-import com.example.cardiosimulator.domain.PathologyEntry
-import com.example.cardiosimulator.domain.SeriesScheme
+import com.example.cardiosimulator.data.EcgCalibration
+import com.example.cardiosimulator.domain.*
 import com.example.cardiosimulator.ui.dialogs.ComparisonTargetDialog
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
-
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
 import kotlin.math.max
 import kotlin.math.min
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HtmlBlockEditor(
     appViewModel: AppViewModel,
@@ -75,12 +69,49 @@ fun HtmlBlockEditor(
     lazyListState: LazyListState = rememberLazyListState(),
     scrollToBlockId: String? = null,
     onExecuteJs: ((String) -> Unit)? = null,
+    editElementId: String? = null,
+    onEditHandled: () -> Unit = {},
 ) {
+    var autoOpenBlockId by remember { mutableStateOf<String?>(null) }
+    var autoEditNodeId by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(scrollToBlockId) {
         if (scrollToBlockId != null) {
             val index = blocks.indexOfFirst { it.id == scrollToBlockId }
             if (index != -1) {
                 lazyListState.animateScrollToItem(index + 1) // +1 for AddBar
+            }
+        }
+    }
+
+    LaunchedEffect(editElementId) {
+        if (editElementId != null) {
+            // 1. Top-level block
+            val directBlock = blocks.firstOrNull { it.id == editElementId }
+            if (directBlock != null) {
+                if (directBlock is HtmlBlock.Ecg || directBlock is HtmlBlock.EcgSegment) {
+                    autoOpenBlockId = editElementId
+                } else {
+                    val index = blocks.indexOfFirst { it.id == editElementId }
+                    if (index != -1) lazyListState.animateScrollToItem(index + 1)
+                }
+                onEditHandled()
+                return@LaunchedEffect
+            }
+
+            // 2. Nested element
+            val owner = blocks.firstOrNull { block ->
+                val body = bodyHtmlOf(block) ?: ""
+                HtmlStructure.nodeById(body, editElementId) != null
+            }
+            if (owner != null) {
+                val index = blocks.indexOfFirst { it.id == owner.id }
+                if (index != -1) lazyListState.animateScrollToItem(index + 1)
+                autoOpenBlockId = owner.id
+                autoEditNodeId = editElementId
+                onEditHandled()
+            } else {
+                onEditHandled()
             }
         }
     }
@@ -104,8 +135,18 @@ fun HtmlBlockEditor(
                     is HtmlBlock.Paragraph -> ParagraphEditor(block) { onUpdateBlock(block.id, it) }
                     is HtmlBlock.Image -> ImageEditor(block, onImportImage) { onUpdateBlock(block.id, it) }
                     is HtmlBlock.KaTeX -> KaTeXEditor(block) { onUpdateBlock(block.id, it) }
-                    is HtmlBlock.Ecg -> EcgEditor(appViewModel, rhythms, block) { onUpdateBlock(block.id, it) }
-                    is HtmlBlock.EcgSegment -> EcgSegmentEditor(appViewModel, rhythms, block) { onUpdateBlock(block.id, it) }
+                    is HtmlBlock.Ecg -> EcgEditor(
+                        appViewModel, rhythms, block,
+                        autoOpen = autoOpenBlockId == block.id,
+                        onUpdate = { onUpdateBlock(block.id, it) },
+                        onOpened = { if (autoOpenBlockId == block.id) autoOpenBlockId = null }
+                    )
+                    is HtmlBlock.EcgSegment -> EcgSegmentEditor(
+                        appViewModel, rhythms, block,
+                        autoOpen = autoOpenBlockId == block.id,
+                        onUpdate = { onUpdateBlock(block.id, it) },
+                        onOpened = { if (autoOpenBlockId == block.id) autoOpenBlockId = null }
+                    )
                     is HtmlBlock.Table -> TableEditor(block) { onUpdateBlock(block.id, it) }
                     is HtmlBlock.HtmlList -> HtmlListEditor(block) { onUpdateBlock(block.id, it) }
                     is HtmlBlock.Quote -> QuoteEditor(block) { onUpdateBlock(block.id, it) }
@@ -114,45 +155,55 @@ fun HtmlBlockEditor(
                         rhythms = rhythms,
                         block = block,
                         blocks = blocks,
+                        autoEditNodeId = if (autoOpenBlockId == block.id) autoEditNodeId else null,
                         onUpdate = { onUpdateBlock(block.id, it) },
                         onImportImage = onImportImage,
-                        onExecuteJs = onExecuteJs
+                        onExecuteJs = onExecuteJs,
+                        onAutoEditHandled = { autoOpenBlockId = null; autoEditNodeId = null }
                     )
                     is HtmlBlock.Card -> CardEditor(
                         appViewModel = appViewModel,
                         rhythms = rhythms,
                         block = block,
                         blocks = blocks,
+                        autoEditNodeId = if (autoOpenBlockId == block.id) autoEditNodeId else null,
                         onUpdate = { onUpdateBlock(block.id, it) },
                         onImportImage = onImportImage,
-                        onExecuteJs = onExecuteJs
+                        onExecuteJs = onExecuteJs,
+                        onAutoEditHandled = { autoOpenBlockId = null; autoEditNodeId = null }
                     )
                     is HtmlBlock.Section -> SectionEditor(
                         appViewModel = appViewModel,
                         rhythms = rhythms,
                         block = block,
                         blocks = blocks,
+                        autoEditNodeId = if (autoOpenBlockId == block.id) autoEditNodeId else null,
                         onUpdate = { onUpdateBlock(block.id, it) },
                         onImportImage = onImportImage,
-                        onExecuteJs = onExecuteJs
+                        onExecuteJs = onExecuteJs,
+                        onAutoEditHandled = { autoOpenBlockId = null; autoEditNodeId = null }
                     )
                     is HtmlBlock.Figure -> FigureEditor(
                         appViewModel = appViewModel,
                         rhythms = rhythms,
                         block = block,
                         blocks = blocks,
+                        autoEditNodeId = if (autoOpenBlockId == block.id) autoEditNodeId else null,
                         onUpdate = { onUpdateBlock(block.id, it) },
                         onImportImage = onImportImage,
-                        onExecuteJs = onExecuteJs
+                        onExecuteJs = onExecuteJs,
+                        onAutoEditHandled = { autoOpenBlockId = null; autoEditNodeId = null }
                     )
                     is HtmlBlock.Container -> ContainerEditor(
                         appViewModel = appViewModel,
                         rhythms = rhythms,
                         block = block,
                         blocks = blocks,
+                        autoEditNodeId = if (autoOpenBlockId == block.id) autoEditNodeId else null,
                         onUpdate = { onUpdateBlock(block.id, it) },
                         onImportImage = onImportImage,
-                        onExecuteJs = onExecuteJs
+                        onExecuteJs = onExecuteJs,
+                        onAutoEditHandled = { autoOpenBlockId = null; autoEditNodeId = null }
                     )
                     is HtmlBlock.Divider -> DividerEditor()
                     is HtmlBlock.Raw -> RawEditor(
@@ -160,29 +211,17 @@ fun HtmlBlockEditor(
                         rhythms = rhythms,
                         block = block,
                         blocks = blocks,
+                        autoEditNodeId = if (autoOpenBlockId == block.id) autoEditNodeId else null,
                         onUpdate = { onUpdateBlock(block.id, it) },
                         onImportImage = onImportImage,
-                        onExecuteJs = onExecuteJs
+                        onExecuteJs = onExecuteJs,
+                        onAutoEditHandled = { autoOpenBlockId = null; autoEditNodeId = null }
                     )
                 }
             }
         }
     }
 }
-
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 private fun AddBar(onAddBlock: (HtmlBlock) -> Unit) {
@@ -213,20 +252,6 @@ private fun AddBar(onAddBlock: (HtmlBlock) -> Unit) {
     }
 }
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
-
 @Composable
 private fun AddButton(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
     OutlinedButton(
@@ -239,20 +264,6 @@ private fun AddButton(label: String, icon: androidx.compose.ui.graphics.vector.I
         Text(label, style = MaterialTheme.typography.labelMedium)
     }
 }
-
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 private fun BlockWrapper(
@@ -285,19 +296,15 @@ private fun BlockWrapper(
     }
 }
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
+private fun bodyHtmlOf(block: HtmlBlock): String? = when (block) {
+    is HtmlBlock.Note -> block.html
+    is HtmlBlock.Card -> block.html
+    is HtmlBlock.Section -> block.html
+    is HtmlBlock.Figure -> block.html
+    is HtmlBlock.Container -> block.html
+    is HtmlBlock.Raw -> block.html
+    else -> null
+}
 
 @Composable
 private fun HeaderEditor(block: HtmlBlock.Header, onUpdate: (HtmlBlock.Header) -> Unit) {
@@ -317,20 +324,6 @@ private fun HeaderEditor(block: HtmlBlock.Header, onUpdate: (HtmlBlock.Header) -
     }
 }
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
-
 @Composable
 private fun ParagraphEditor(block: HtmlBlock.Paragraph, onUpdate: (HtmlBlock.Paragraph) -> Unit) {
     Column {
@@ -344,20 +337,6 @@ private fun ParagraphEditor(block: HtmlBlock.Paragraph, onUpdate: (HtmlBlock.Par
         )
     }
 }
-
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 private fun ImageEditor(
@@ -426,20 +405,6 @@ private val KatexSymbols = listOf(
     "\\times" to "×", "\\div" to "÷", "\\sqrt{}" to "√", "\\frac{}{}" to "n/m", "^" to "xⁿ", "_" to "xₙ"
 )
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
-
 @Composable
 private fun KaTeXEditor(block: HtmlBlock.KaTeX, onUpdate: (HtmlBlock.KaTeX) -> Unit) {
     var textFieldValue by remember(block.id) {
@@ -492,34 +457,30 @@ private fun KaTeXEditor(block: HtmlBlock.KaTeX, onUpdate: (HtmlBlock.KaTeX) -> U
             },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("e.g. E = mc^2") },
-            textStyle = androidx.compose.ui.text.TextStyle(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+            textStyle = TextStyle(fontFamily = FontFamily.Monospace)
         )
     }
 }
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
-
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun EcgEditor(
     appViewModel: AppViewModel,
     rhythms: List<PathologyEntry>,
     block: HtmlBlock.Ecg,
-    onUpdate: (HtmlBlock.Ecg) -> Unit
+    autoOpen: Boolean = false,
+    onUpdate: (HtmlBlock.Ecg) -> Unit,
+    onOpened: () -> Unit = {}
 ) {
     var showSelector by remember { mutableStateOf(false) }
     val selectedLanguage by appViewModel.selectedLanguage.collectAsState()
+
+    LaunchedEffect(autoOpen) {
+        if (autoOpen) {
+            showSelector = true
+            onOpened()
+        }
+    }
 
     if (showSelector) {
         ComparisonTargetDialog(
@@ -673,9 +634,18 @@ private fun EcgSegmentEditor(
     appViewModel: AppViewModel,
     rhythms: List<PathologyEntry>,
     block: HtmlBlock.EcgSegment,
-    onUpdate: (HtmlBlock.EcgSegment) -> Unit
+    autoOpen: Boolean = false,
+    onUpdate: (HtmlBlock.EcgSegment) -> Unit,
+    onOpened: () -> Unit = {}
 ) {
     var showDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(autoOpen) {
+        if (autoOpen) {
+            showDialog = true
+            onOpened()
+        }
+    }
 
     Card(
         modifier = Modifier
@@ -754,20 +724,6 @@ private fun DividerEditor() {
     }
 }
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
-
 @Composable
 private fun HtmlListEditor(block: HtmlBlock.HtmlList, onUpdate: (HtmlBlock.HtmlList) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -786,20 +742,6 @@ private fun HtmlListEditor(block: HtmlBlock.HtmlList, onUpdate: (HtmlBlock.HtmlL
     }
 }
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
-
 @Composable
 private fun QuoteEditor(block: HtmlBlock.Quote, onUpdate: (HtmlBlock.Quote) -> Unit) {
     Column {
@@ -814,29 +756,17 @@ private fun QuoteEditor(block: HtmlBlock.Quote, onUpdate: (HtmlBlock.Quote) -> U
     }
 }
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
-
 @Composable
 private fun NoteEditor(
     appViewModel: AppViewModel,
     rhythms: List<PathologyEntry>,
     block: HtmlBlock.Note,
     blocks: List<HtmlBlock>,
+    autoEditNodeId: String? = null,
     onUpdate: (HtmlBlock.Note) -> Unit,
     onImportImage: (String, ByteArray) -> String?,
-    onExecuteJs: ((String) -> Unit)?
+    onExecuteJs: ((String) -> Unit)?,
+    onAutoEditHandled: () -> Unit = {}
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -861,25 +791,13 @@ private fun NoteEditor(
             html = block.html,
             onUpdateHtml = { onUpdate(block.copy(html = it)) },
             blocks = blocks,
+            autoEditNodeId = autoEditNodeId,
             onImportImage = onImportImage,
-            onExecuteJs = onExecuteJs
+            onExecuteJs = onExecuteJs,
+            onAutoEditHandled = onAutoEditHandled
         )
     }
 }
-
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 private fun CardEditor(
@@ -887,9 +805,11 @@ private fun CardEditor(
     rhythms: List<PathologyEntry>,
     block: HtmlBlock.Card,
     blocks: List<HtmlBlock>,
+    autoEditNodeId: String? = null,
     onUpdate: (HtmlBlock.Card) -> Unit,
     onImportImage: (String, ByteArray) -> String?,
-    onExecuteJs: ((String) -> Unit)?
+    onExecuteJs: ((String) -> Unit)?,
+    onAutoEditHandled: () -> Unit = {}
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Card", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
@@ -907,25 +827,13 @@ private fun CardEditor(
             html = block.html,
             onUpdateHtml = { onUpdate(block.copy(html = it)) },
             blocks = blocks,
+            autoEditNodeId = autoEditNodeId,
             onImportImage = onImportImage,
-            onExecuteJs = onExecuteJs
+            onExecuteJs = onExecuteJs,
+            onAutoEditHandled = onAutoEditHandled
         )
     }
 }
-
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 private fun SectionEditor(
@@ -933,9 +841,11 @@ private fun SectionEditor(
     rhythms: List<PathologyEntry>,
     block: HtmlBlock.Section,
     blocks: List<HtmlBlock>,
+    autoEditNodeId: String? = null,
     onUpdate: (HtmlBlock.Section) -> Unit,
     onImportImage: (String, ByteArray) -> String?,
-    onExecuteJs: ((String) -> Unit)?
+    onExecuteJs: ((String) -> Unit)?,
+    onAutoEditHandled: () -> Unit = {}
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Section", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
@@ -953,25 +863,13 @@ private fun SectionEditor(
             html = block.html,
             onUpdateHtml = { onUpdate(block.copy(html = it)) },
             blocks = blocks,
+            autoEditNodeId = autoEditNodeId,
             onImportImage = onImportImage,
-            onExecuteJs = onExecuteJs
+            onExecuteJs = onExecuteJs,
+            onAutoEditHandled = onAutoEditHandled
         )
     }
 }
-
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 private fun FigureEditor(
@@ -979,9 +877,11 @@ private fun FigureEditor(
     rhythms: List<PathologyEntry>,
     block: HtmlBlock.Figure,
     blocks: List<HtmlBlock>,
+    autoEditNodeId: String? = null,
     onUpdate: (HtmlBlock.Figure) -> Unit,
     onImportImage: (String, ByteArray) -> String?,
-    onExecuteJs: ((String) -> Unit)?
+    onExecuteJs: ((String) -> Unit)?,
+    onAutoEditHandled: () -> Unit = {}
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Figure", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
@@ -992,8 +892,10 @@ private fun FigureEditor(
             html = block.html,
             onUpdateHtml = { onUpdate(block.copy(html = it)) },
             blocks = blocks,
+            autoEditNodeId = autoEditNodeId,
             onImportImage = onImportImage,
-            onExecuteJs = onExecuteJs
+            onExecuteJs = onExecuteJs,
+            onAutoEditHandled = onAutoEditHandled
         )
         TextField(
             value = block.caption,
@@ -1005,29 +907,17 @@ private fun FigureEditor(
     }
 }
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
-
 @Composable
 private fun ContainerEditor(
     appViewModel: AppViewModel,
     rhythms: List<PathologyEntry>,
     block: HtmlBlock.Container,
     blocks: List<HtmlBlock>,
+    autoEditNodeId: String? = null,
     onUpdate: (HtmlBlock.Container) -> Unit,
     onImportImage: (String, ByteArray) -> String?,
-    onExecuteJs: ((String) -> Unit)?
+    onExecuteJs: ((String) -> Unit)?,
+    onAutoEditHandled: () -> Unit = {}
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Container", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
@@ -1038,25 +928,13 @@ private fun ContainerEditor(
             html = block.html,
             onUpdateHtml = { onUpdate(block.copy(html = it)) },
             blocks = blocks,
+            autoEditNodeId = autoEditNodeId,
             onImportImage = onImportImage,
-            onExecuteJs = onExecuteJs
+            onExecuteJs = onExecuteJs,
+            onAutoEditHandled = onAutoEditHandled
         )
     }
 }
-
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 private fun TableEditor(block: HtmlBlock.Table, onUpdate: (HtmlBlock.Table) -> Unit) {
@@ -1161,29 +1039,17 @@ private fun TableEditor(block: HtmlBlock.Table, onUpdate: (HtmlBlock.Table) -> U
     }
 }
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
-
 @Composable
 private fun RawEditor(
     appViewModel: AppViewModel,
     rhythms: List<PathologyEntry>,
     block: HtmlBlock.Raw,
     blocks: List<HtmlBlock>,
+    autoEditNodeId: String? = null,
     onUpdate: (HtmlBlock.Raw) -> Unit,
     onImportImage: (String, ByteArray) -> String?,
-    onExecuteJs: ((String) -> Unit)? = null
+    onExecuteJs: ((String) -> Unit)? = null,
+    onAutoEditHandled: () -> Unit = {}
 ) {
     StructureEditor(
         appViewModel = appViewModel,
@@ -1192,24 +1058,12 @@ private fun RawEditor(
         html = block.html,
         onUpdateHtml = { onUpdate(block.copy(html = it)) },
         blocks = blocks,
+        autoEditNodeId = autoEditNodeId,
         onImportImage = onImportImage,
-        onExecuteJs = onExecuteJs
+        onExecuteJs = onExecuteJs,
+        onAutoEditHandled = onAutoEditHandled
     )
 }
-
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 private fun StructureEditor(
@@ -1219,8 +1073,10 @@ private fun StructureEditor(
     html: String,
     onUpdateHtml: (String) -> Unit,
     blocks: List<HtmlBlock>,
+    autoEditNodeId: String? = null,
     onImportImage: (String, ByteArray) -> String?,
     onExecuteJs: ((String) -> Unit)? = null,
+    onAutoEditHandled: () -> Unit = {}
 ) {
     val outline = remember(html) { HtmlStructure.outline(html) }
     var selectedPath by remember { mutableStateOf<List<Int>?>(null) }
@@ -1232,6 +1088,23 @@ private fun StructureEditor(
     var showDeleteConfirm by remember { mutableStateOf<HtmlStructure.Node?>(null) }
     var pendingAction by remember { mutableStateOf<Triple<HtmlStructure.Node, InsertionPlacement, ComponentKind>?>(null) }
     var editTarget by remember { mutableStateOf<HtmlStructure.Node?>(null) }
+
+    LaunchedEffect(autoEditNodeId) {
+        if (autoEditNodeId != null) {
+            val node = HtmlStructure.nodeById(html, autoEditNodeId)
+            if (node != null) {
+                editTarget = node
+                selectedPath = node.path
+                // Ensure parents are expanded
+                val newExpanded = expandedPaths.toMutableSet()
+                for (i in 1..node.path.size) {
+                    newExpanded.add(node.path.take(i))
+                }
+                expandedPaths = newExpanded
+            }
+            onAutoEditHandled()
+        }
+    }
 
     var showRootInsertMenu by remember { mutableStateOf(false) }
 
@@ -1466,20 +1339,6 @@ private fun StructureEditor(
     }
 }
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
-
 @Composable
 private fun ComponentKindDialog(
     kind: ComponentKind,
@@ -1518,56 +1377,6 @@ private fun ComponentKindDialog(
     }
 }
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
-
-@Composable
-private fun RawEditor(
-    appViewModel: AppViewModel,
-    rhythms: List<PathologyEntry>,
-    block: HtmlBlock.Raw,
-    blocks: List<HtmlBlock>,
-    onUpdate: (HtmlBlock.Raw) -> Unit,
-    onImportImage: (String, ByteArray) -> String?,
-    onExecuteJs: ((String) -> Unit)? = null
-) {
-    StructureEditor(
-        appViewModel = appViewModel,
-        rhythms = rhythms,
-        blockId = block.id,
-        html = block.html,
-        onUpdateHtml = { onUpdate(block.copy(html = it)) },
-        blocks = blocks,
-        onImportImage = onImportImage,
-        onExecuteJs = onExecuteJs
-    )
-}
-
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
-
 @Composable
 private fun NodeTree(
     nodes: List<HtmlStructure.Node>,
@@ -1605,20 +1414,6 @@ private fun NodeTree(
         }
     }
 }
-
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 private fun NodeRow(
@@ -1703,20 +1498,6 @@ private fun classifyColor(kind: HtmlStructure.Kind): Color = when (kind) {
     else -> Color.LightGray
 }
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
-
 @Composable
 private fun ComponentPickerMenu(
     label: String,
@@ -1748,20 +1529,6 @@ private fun ComponentPickerMenu(
 private enum class InsertionPlacement { Inside, Before, After, Replace }
 private enum class ComponentKind { Header, Text, Math, Image, Ecg, EcgSegment, Table, List, Quote, Note, Card, Section, Figure, Divider }
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
-
 @Composable
 private fun ListDialog(onConfirm: (HtmlBlock.HtmlList) -> Unit, onDismiss: () -> Unit) {
     var items by remember { mutableStateOf("") }
@@ -1783,20 +1550,6 @@ private fun ListDialog(onConfirm: (HtmlBlock.HtmlList) -> Unit, onDismiss: () ->
     )
 }
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
-
 @Composable
 private fun QuoteDialog(onConfirm: (HtmlBlock.Quote) -> Unit, onDismiss: () -> Unit) {
     var html by remember { mutableStateOf("") }
@@ -1808,20 +1561,6 @@ private fun QuoteDialog(onConfirm: (HtmlBlock.Quote) -> Unit, onDismiss: () -> U
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
-
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 private fun NoteDialog(onConfirm: (HtmlBlock.Note) -> Unit, onDismiss: () -> Unit) {
@@ -1851,20 +1590,6 @@ private fun NoteDialog(onConfirm: (HtmlBlock.Note) -> Unit, onDismiss: () -> Uni
     )
 }
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
-
 @Composable
 private fun CardDialog(onConfirm: (HtmlBlock.Card) -> Unit, onDismiss: () -> Unit) {
     var title by remember { mutableStateOf("") }
@@ -1882,20 +1607,6 @@ private fun CardDialog(onConfirm: (HtmlBlock.Card) -> Unit, onDismiss: () -> Uni
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
-
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 private fun SectionDialog(onConfirm: (HtmlBlock.Section) -> Unit, onDismiss: () -> Unit) {
@@ -1915,20 +1626,6 @@ private fun SectionDialog(onConfirm: (HtmlBlock.Section) -> Unit, onDismiss: () 
     )
 }
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
-
 @Composable
 private fun FigureDialog(onConfirm: (HtmlBlock.Figure) -> Unit, onDismiss: () -> Unit) {
     var html by remember { mutableStateOf("") }
@@ -1946,20 +1643,6 @@ private fun FigureDialog(onConfirm: (HtmlBlock.Figure) -> Unit, onDismiss: () ->
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
-
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 private fun HeaderDialog(onConfirm: (HtmlBlock.Header) -> Unit, onDismiss: () -> Unit) {
@@ -1984,20 +1667,6 @@ private fun HeaderDialog(onConfirm: (HtmlBlock.Header) -> Unit, onDismiss: () ->
     )
 }
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
-
 @Composable
 private fun TextDialog(onConfirm: (HtmlBlock.Paragraph) -> Unit, onDismiss: () -> Unit) {
     var html by remember { mutableStateOf("") }
@@ -2009,20 +1678,6 @@ private fun TextDialog(onConfirm: (HtmlBlock.Paragraph) -> Unit, onDismiss: () -
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
-
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 private fun MathDialog(onConfirm: (HtmlBlock.KaTeX) -> Unit, onDismiss: () -> Unit) {
@@ -2044,20 +1699,6 @@ private fun MathDialog(onConfirm: (HtmlBlock.KaTeX) -> Unit, onDismiss: () -> Un
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
-
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 private fun ImageDialog(onImportImage: (String, ByteArray) -> String?, onConfirm: (HtmlBlock.Image) -> Unit, onDismiss: () -> Unit) {
@@ -2091,20 +1732,6 @@ private fun ImageDialog(onImportImage: (String, ByteArray) -> String?, onConfirm
     )
 }
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
-
 @Composable
 private fun TableDialog(onConfirm: (HtmlBlock.Table) -> Unit, onDismiss: () -> Unit) {
     var rows by remember { mutableStateOf(2) }
@@ -2122,20 +1749,6 @@ private fun TableDialog(onConfirm: (HtmlBlock.Table) -> Unit, onDismiss: () -> U
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
-
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.Canvas
-import com.example.cardiosimulator.domain.*
-import com.example.cardiosimulator.data.EcgCalibration
-import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 private fun EcgDialog(

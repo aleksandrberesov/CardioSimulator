@@ -14,6 +14,7 @@ fun EcgPointType.toDisplayString(): String {
         EcgPointType.Q_PEAK -> R.string.ecg_point_q_peak
         EcgPointType.R_PEAK -> R.string.ecg_point_r_peak
         EcgPointType.S_PEAK -> R.string.ecg_point_s_peak
+        EcgPointType.J_POINT -> R.string.ecg_point_j_point
         EcgPointType.QRS_START -> R.string.ecg_point_qrs_start
         EcgPointType.QRS_END -> R.string.ecg_point_qrs_end
         EcgPointType.T_START -> R.string.ecg_point_t_start

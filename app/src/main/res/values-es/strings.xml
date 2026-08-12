@@ -161,6 +161,7 @@
     <string name="subtopic_selector_title">Subtema</string>
     <string name="lecture_selector_title">Lecciones</string>
     <string name="course_viewer_select_lecture">Selecciona una lección</string>
+    <string name="lecture_loading">Cargando…</string>
     <string name="cd_close">Cerrar</string>
     <string name="course_constructor_revert">Revertir</string>
     <string name="course_constructor_new_course">Nuevo curso</string>

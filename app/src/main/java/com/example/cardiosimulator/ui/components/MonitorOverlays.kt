@@ -36,13 +36,17 @@ import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.domain.EcgSpan
 import com.example.cardiosimulator.domain.EosAxisClass
 import com.example.cardiosimulator.domain.EosResult
+import com.example.cardiosimulator.ui.theme.ElectrodeFaultRed
 import kotlin.math.*
 
 private val WindowsBlue = Color(0xFF5B9BD5)
-private val EosWarning = Color(0xFFFF5A5A)
-private val EosWarningPill = Color(0x77E53935)
 
-private fun isWarning(c: EosAxisClass) =
+// Alert red for the abnormal (deviation) axes — reuses the app's electrode-fault red so the EOS
+// window shares the app's single "out of range" signal. Used ONLY as a solid highlight pill behind
+// white text, never as a text colour (saturated red text on the blue panel reads poorly).
+private val EosDeviationPill = ElectrodeFaultRed.copy(alpha = 0.94f)
+
+private fun isDeviation(c: EosAxisClass) =
     c == EosAxisClass.LeftDeviation || c == EosAxisClass.RightDeviation || c == EosAxisClass.ExtremeDeviation
 
 @Composable
@@ -183,18 +187,36 @@ fun EosOverlay(
                             )
                             
                             val variantName = getVariantName(result.axisClass)
-                            val isWarning = isWarning(result.axisClass)
-                            Text(
-                                text = stringResource(
-                                    R.string.monitor_eos_angle_format,
-                                    "%.0f".format(result.angleDeg),
-                                    variantName
-                                ),
-                                color = if (isWarning) EosWarning else Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp,
-                                modifier = Modifier.padding(top = 4.dp)
+                            val angleText = stringResource(
+                                R.string.monitor_eos_angle_format,
+                                "%.0f".format(result.angleDeg),
+                                variantName
                             )
+                            
+                            if (isDeviation(result.axisClass)) {
+                                Box(
+                                    modifier = Modifier
+                                        .padding(top = 4.dp)
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(EosDeviationPill)
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        text = angleText,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = angleText,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -220,9 +242,9 @@ fun EosOverlay(
                     }
                     val fullText = stringResource(resId)
                     val isActive = result?.axisClass == cls
-                    val warning = isWarning(cls)
+                    val deviation = isDeviation(cls)
                     
-                    VariantRow(fullText, isActive, warning)
+                    VariantRow(fullText, isActive, deviation)
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -232,14 +254,15 @@ fun EosOverlay(
 }
 
 @Composable
-private fun VariantRow(fullText: String, isActive: Boolean, warning: Boolean) {
+private fun VariantRow(fullText: String, isActive: Boolean, deviation: Boolean) {
     val parts = fullText.split(":", "：", limit = 2)
     val name = parts.getOrNull(0) ?: fullText
     val range = parts.getOrNull(1) ?: ""
     val separator = if (fullText.contains("：")) "：" else ":"
 
     val textColor = Color.White
-    val pillColor = if (warning) EosWarningPill else Color.White.copy(alpha = 0.25f)
+    // Solid deviation pill matches the shared electrode-fault alert red.
+    val pillColor = if (deviation) EosDeviationPill else Color.White.copy(alpha = 0.25f)
 
     Row(
         modifier = Modifier

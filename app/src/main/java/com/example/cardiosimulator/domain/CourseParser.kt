@@ -81,7 +81,7 @@ object CourseParser {
             val topicId = fields["topic"]
             val lectureId = fields["lecture"]
             if (lectureId == null && topicId != null) {          // a "topic:" definition line
-                topics += TopicEntry(topicId, fields["title"].orEmpty(), fields["name"])
+                topics += TopicEntry(topicId, fields["title"].orEmpty(), fields["name"], fields["subsection"])
                 continue
             }
             if (lectureId == null) continue
@@ -90,6 +90,7 @@ object CourseParser {
                 titleEn = fields["title"].orEmpty(),
                 nameRu = fields["name"],
                 topic = topicId,
+                subsection = fields["subsection"],
             )
         }
         return Course(
@@ -119,6 +120,7 @@ object CourseParser {
         for (t in course.topics) {
             append("topic:").append(t.id).append(";title:").append(t.titleEn)
             if (!t.nameRu.isNullOrBlank()) append(";name:").append(t.nameRu)
+            if (!t.subsection.isNullOrBlank()) append(";subsection:").append(t.subsection)
             append('\n')
         }
         for (l in course.lectures) {
@@ -126,6 +128,7 @@ object CourseParser {
                 .append(";title:").append(l.titleEn)
             if (!l.nameRu.isNullOrBlank()) append(";name:").append(l.nameRu)
             if (!l.topic.isNullOrBlank()) append(";topic:").append(l.topic)
+            if (!l.subsection.isNullOrBlank()) append(";subsection:").append(l.subsection)
             append('\n')
         }
     }

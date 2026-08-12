@@ -165,6 +165,7 @@
     <string name="subtopic_selector_title">子主题</string>
     <string name="lecture_selector_title">讲座</string>
     <string name="course_viewer_select_lecture">选择一节讲座</string>
+    <string name="lecture_loading">加载中…</string>
     <string name="cd_close">关闭</string>
     <string name="course_constructor_revert">还原</string>
     <string name="course_data_source_use_sample">使用示例课程</string>

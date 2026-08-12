@@ -95,46 +95,21 @@ fun TeachingControlPanel(
 
         val isAllRhythms = selectedCourseId == AppViewModel.ALL_RHYTHMS_ID || selectedCourseId == null
         if (isAllRhythms) {
-            val rhythms by rhythmViewModel.rhythms.collectAsState()
             val selectedRhythm by rhythmViewModel.selectedRhythm.collectAsState()
-            var rhythmExpanded by remember { mutableStateOf(false) }
             val rhythmLabel = selectedRhythm?.let { if (currentLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn }
                 ?: stringResource(R.string.rhythm_selector_title)
 
-            Box {
-                Tab(
-                    text = rhythmLabel,
-                    showChevron = true,
-                    isLarge = true,
-                    onClick = { if (rhythms.isNotEmpty()) rhythmExpanded = true },
-                    modifier = Modifier.padding(horizontal = 4.dp).wrapContentWidth()
-                )
-                if (rhythmExpanded) {
-                    androidx.compose.ui.window.Dialog(
-                        onDismissRequest = { rhythmExpanded = false }
-                    ) {
-                        androidx.compose.material3.Surface(
-                            modifier = Modifier
-                                .width(400.dp)
-                                .fillMaxHeight(0.8f),
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            tonalElevation = 6.dp
-                        ) {
-                            RhythmSelector(
-                                appViewModel = appViewModel,
-                                rhythms = rhythms,
-                                selectedId = selectedRhythm?.id,
-                                showPinButton = false,
-                                onRhythmSelect = {
-                                    rhythmViewModel.selectRhythm(it.id)
-                                    rhythmExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-            }
+            // Rhythm SELECTION belongs solely to the left rhythm drawer (functional spec §2.1). The top bar
+            // only DISPLAYS the current rhythm's name here (the standalone monitor view has no title bar and
+            // relies on this). A second picker made the choose-rhythm function appear both "сверху" and
+            // "сбоку" — the reported duplication.
+            Text(
+                text = rhythmLabel,
+                style = MaterialTheme.typography.titleMedium, // match the large Tab label size/weight
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                modifier = Modifier.padding(horizontal = 14.dp) // ~= isLarge Tab horizontal padding
+            )
         } else {
             var lectureExpanded by remember { mutableStateOf(false) }
             val lectureLabel = selectedLecture?.let { if (currentLanguage == Language.RU) it.nameRu ?: it.titleEn else it.titleEn }

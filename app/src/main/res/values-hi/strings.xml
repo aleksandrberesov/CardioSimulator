@@ -168,6 +168,7 @@
     <string name="subtopic_selector_title">उपविषय</string>
     <string name="lecture_selector_title">व्याख्यान</string>
     <string name="course_viewer_select_lecture">शुरू करने के लिए व्याख्यान चुनें</string>
+    <string name="lecture_loading">लोड हो रहा है…</string>
     <string name="cd_close">बंद करें</string>
     <string name="course_constructor_revert">पूर्ववत करें</string>
     <string name="course_constructor_new_course">नया कोर्स</string>

@@ -10,7 +10,8 @@ data class ExamQuestionResult(
     val questionId: String,
     val selected: String?,
     val correct: String,
-    val isCorrect: Boolean
+    val isCorrect: Boolean,
+    val acronyms: List<String> = emptyList()
 )
 
 @Serializable
@@ -37,7 +38,7 @@ object ExamGrader {
             val selected = selections[question.id]
             val correct = question.correctOptionId
             val isCorrect = selected == correct
-            ExamQuestionResult(question.id, selected, correct, isCorrect)
+            ExamQuestionResult(question.id, selected, correct, isCorrect, question.acronyms)
         }
 
         val correctCount = questions.count { it.isCorrect }

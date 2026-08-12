@@ -197,6 +197,7 @@
     <string name="subtopic_selector_title">Subtopic</string>
     <string name="lecture_selector_title">Lectures</string>
     <string name="course_viewer_select_lecture">Select a lecture to begin</string>
+    <string name="lecture_loading">Loading…</string>
     <string name="cd_close">Close</string>
     <string name="course_constructor_revert">Revert</string>
     <string name="course_constructor_new_course">New course</string>
@@ -289,6 +290,9 @@
     <string name="test_ctor_stimulus_image">Image</string>
     <string name="test_ctor_stimulus_ecg">ECG</string>
     <string name="test_ctor_theme_label">Theme</string>
+    <string name="test_ctor_acronyms">Acronyms</string>
+    <string name="test_ctor_acronyms_placeholder">Add acronym…</string>
+    <string name="test_ctor_acronyms_none">— none —</string>
     <string name="test_ctor_tags_label">Tags (comma separated)</string>
     <string name="test_ctor_image_select">Select Photo</string>
     <string name="test_ctor_search_hint">Search by text or tags…</string>

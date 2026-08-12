@@ -196,6 +196,7 @@
     <string name="subtopic_selector_title">Подтема</string>
     <string name="lecture_selector_title">Лекции</string>
     <string name="course_viewer_select_lecture">Выберите лекцию</string>
+    <string name="lecture_loading">Загрузка…</string>
     <string name="cd_close">Закрыть</string>
     <string name="course_constructor_revert">Отменить</string>
     <string name="course_constructor_new_course">Новый курс</string>
@@ -286,6 +287,9 @@
     <string name="test_ctor_stimulus_image">Фото</string>
     <string name="test_ctor_stimulus_ecg">ЭКГ</string>
     <string name="test_ctor_theme_label">Тема</string>
+    <string name="test_ctor_acronyms">Акронимы</string>
+    <string name="test_ctor_acronyms_placeholder">Добавить акроним…</string>
+    <string name="test_ctor_acronyms_none">— нет —</string>
     <string name="test_ctor_tags_label">Теги (через запятую)</string>
     <string name="test_ctor_image_select">Выбрать фото</string>
     <string name="test_ctor_search_hint">Поиск по тексту или тегам…</string>

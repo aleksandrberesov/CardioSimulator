@@ -58,6 +58,7 @@ import com.example.cardiosimulator.data.QuestionBankRepository
 import com.example.cardiosimulator.data.TestRepository
 import com.example.cardiosimulator.domain.QuestionDifficulty
 import com.example.cardiosimulator.domain.QuestionStimulus
+import com.example.cardiosimulator.domain.Taxonomy
 import com.example.cardiosimulator.domain.Test
 import com.example.cardiosimulator.domain.TestQuestion
 import com.example.cardiosimulator.domain.generators.TestGenType
@@ -66,7 +67,8 @@ import java.util.Random
 data class QuickTestContext(
     val section: String,
     val subtopic: String,
-    val theme: String? = null
+    val theme: String? = null,
+    val subsection: String? = null
 )
 
 @Composable
@@ -292,10 +294,19 @@ private fun ReadyTestsSection(
     onStart: (Test) -> Unit
 ) {
     val allTests = remember { testRepository.tests() }
-    val filteredTests = remember(allTests, filterByTheme, context.theme) {
-        if (filterByTheme && context.theme != null) {
+    val filteredTests = remember(allTests, filterByTheme, context.theme, context.subsection) {
+        val subsectionAcronyms = context.subsection?.let { sub ->
+            Taxonomy.shared.forSubtopic(Taxonomy.subtopicKeyOf(sub)).map { it.acronym }.toSet()
+        } ?: emptySet()
+
+        if (filterByTheme) {
             allTests.filter { test ->
-                test.questions.any { it.theme.equals(context.theme, ignoreCase = true) }
+                test.questions.any { q ->
+                    // Acronym intersection (precise)
+                    (subsectionAcronyms.isNotEmpty() && q.acronyms.any { it in subsectionAcronyms }) ||
+                    // Fallback to legacy theme match
+                    (context.theme != null && q.theme.equals(context.theme, ignoreCase = true))
+                }
             }
         } else {
             allTests
@@ -657,10 +668,18 @@ private fun generateQuickTest(
         }
     }
 
-    // 2. Filter by context theme (soft fallback)
-    var topicFiltered = if (context.theme != null) {
-        typeFiltered.filter { it.theme.equals(context.theme, ignoreCase = true) }
+    // 2. Filter by context (acronym intersection or theme fallback)
+    val subsectionAcronyms = context.subsection?.let { sub ->
+        Taxonomy.shared.forSubtopic(Taxonomy.subtopicKeyOf(sub)).map { it.acronym }.toSet()
+    } ?: emptySet()
+
+    var topicFiltered = if (subsectionAcronyms.isNotEmpty()) {
+        typeFiltered.filter { q -> q.acronyms.any { it in subsectionAcronyms } }
     } else emptyList()
+
+    if (topicFiltered.isEmpty() && context.theme != null) {
+        topicFiltered = typeFiltered.filter { it.theme.equals(context.theme, ignoreCase = true) }
+    }
 
     if (topicFiltered.isEmpty()) {
         topicFiltered = typeFiltered

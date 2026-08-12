@@ -7,17 +7,23 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewClientCompat
+import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.EcgSvgRenderer
 import com.example.cardiosimulator.data.EcgTrace
 import com.example.cardiosimulator.domain.HtmlComponents
@@ -62,11 +68,18 @@ fun LectureWebView(
     scrollToBlockId: String? = null,
     onCellEdit: ((quizId: String, row: Int, col: Int, value: String) -> Unit)? = null,
     onMonitorClick: (() -> Unit)? = null,
+    onEditElement: ((elementId: String) -> Unit)? = null,
+    showLoadingIndicator: Boolean = false,
 ) {
     val colors = MaterialTheme.colorScheme
     val bgArgb = colors.background.toArgb()
 
-    val css = remember(colors, refreshTrigger) {
+    val webLoading = remember { mutableStateOf(true) }
+
+    val interactive = onCellEdit != null
+    val editClicks = onEditElement != null
+
+    val css = remember(colors, refreshTrigger, editClicks) {
         themeCss(
             bg = colors.background.toArgb(),
             fg = colors.onBackground.toArgb(),
@@ -74,13 +87,13 @@ fun LectureWebView(
             primary = colors.primary.toArgb(),
             border = colors.outlineVariant.toArgb(),
             muted = colors.onSurfaceVariant.toArgb(),
+            editClicks = editClicks,
         )
     }
 
-    val interactive = onCellEdit != null
     // Build the document off the main thread: <ecg> resolution reads pathology
     // .dat files, so it must not block composition.
-    val html by produceState<String?>(initialValue = null, lecture, css, interactive, onMonitorClick, refreshTrigger) {
+    val html by produceState<String?>(initialValue = null, lecture, css, interactive, onMonitorClick, refreshTrigger, editClicks) {
         value = withContext(Dispatchers.IO) {
             val withEcg = EcgSvgRenderer.substituteEcgTags(
                 lecture.rawHtml,
@@ -92,12 +105,14 @@ fun LectureWebView(
                 resolve = resolveEcgSegment
             )
             if (lecture.isStandalone) {
-                buildStandaloneDocument(body = body, css = css, interactive = interactive)
+                buildStandaloneDocument(body = body, css = css, interactive = interactive, editClicks = editClicks)
             } else {
-                buildDocument(body = body, css = css, interactive = interactive)
+                buildDocument(body = body, css = css, interactive = interactive, editClicks = editClicks)
             }
         }
     }
+
+    val loading = html == null || webLoading.value
 
     // Saved quiz answers are injected after each page load (not folded into the
     // HTML), so editing a cell never triggers a reload. The factory's
@@ -109,70 +124,102 @@ fun LectureWebView(
     val scrollRef = remember { mutableStateOf<String?>(null) }
     scrollRef.value = scrollToBlockId
 
-    AndroidView(
-        modifier = modifier,
-        factory = { ctx ->
-            WebView(ctx).apply {
-                val assetLoader = WebViewAssetLoader.Builder()
-                    .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(ctx))
-                    .addPathHandler(
-                        "/course/",
-                        WebViewAssetLoader.InternalStoragePathHandler(ctx, File(ctx.filesDir, "courses")),
-                    )
-                    .build()
-                webViewClient = object : WebViewClientCompat() {
-                    override fun shouldInterceptRequest(
-                        view: WebView,
-                        request: WebResourceRequest,
-                    ): WebResourceResponse? = assetLoader.shouldInterceptRequest(request.url)
+    Box(modifier) {
+        AndroidView(
+            modifier = Modifier.fillMaxSize(),
+            factory = { ctx ->
+                WebView(ctx).apply {
+                    val assetLoader = WebViewAssetLoader.Builder()
+                        .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(ctx))
+                        .addPathHandler(
+                            "/course/",
+                            WebViewAssetLoader.InternalStoragePathHandler(ctx, File(ctx.filesDir, "courses")),
+                        )
+                        .build()
+                    webViewClient = object : WebViewClientCompat() {
+                        override fun shouldInterceptRequest(
+                            view: WebView,
+                            request: WebResourceRequest,
+                        ): WebResourceResponse? = assetLoader.shouldInterceptRequest(request.url)
 
-                    override fun onPageFinished(view: WebView, url: String) {
-                        view.evaluateJavascript(injectRef.value, null)
-                        scrollRef.value?.let { id ->
-                            // Use behavior: 'auto' (instant jump) rather than 'smooth' to avoid
-                            // distracting animations during every debounced keystroke update.
-                            view.evaluateJavascript("document.getElementById('$id')?.scrollIntoView({behavior: 'auto'})", null)
+                        override fun onPageFinished(view: WebView, url: String) {
+                            webLoading.value = false
+                            view.evaluateJavascript(injectRef.value, null)
+                            scrollRef.value?.let { id ->
+                                // Use behavior: 'auto' (instant jump) rather than 'smooth' to avoid
+                                // distracting animations during every debounced keystroke update.
+                                view.evaluateJavascript("document.getElementById('$id')?.scrollIntoView({behavior: 'auto'})", null)
+                            }
+                        }
+
+                        override fun onReceivedError(
+                            view: WebView,
+                            request: WebResourceRequest,
+                            error: androidx.webkit.WebResourceErrorCompat
+                        ) {
+                            webLoading.value = false
                         }
                     }
+                    settings.javaScriptEnabled = true
+                    settings.domStorageEnabled = true
+                    settings.allowFileAccess = false
+                    settings.allowContentAccess = false
+                    addJavascriptInterface(LectureBridge(onCellEdit, onMonitorClick, onEditElement), "Android")
                 }
-                settings.javaScriptEnabled = true
-                settings.domStorageEnabled = true
-                settings.allowFileAccess = false
-                settings.allowContentAccess = false
-                addJavascriptInterface(LectureBridge(onCellEdit, onMonitorClick), "Android")
+            },
+            update = { web ->
+                // Defensive guard: if the view is being torn down, bail.
+                if (web.handler == null) return@AndroidView
+                
+                web.setBackgroundColor(bgArgb)
+                val current = html
+                val cacheKey = current to refreshTrigger
+                // Avoid redundant reloads (and flicker) when recomposition leaves the HTML unchanged.
+                if (current != null && web.tag != cacheKey) {
+                    webLoading.value = true
+                    web.loadDataWithBaseURL(
+                        "$ASSET_DOMAIN/course/${lecture.courseId}/",
+                        current,
+                        "text/html",
+                        "utf-8",
+                        null,
+                    )
+                    // Commit the cache ONLY after a successful call (mirroring Windows fix)
+                    web.tag = cacheKey
+                } else if (current != null && scrollToBlockId != null) {
+                    // If the content didn't change but the scroll ID did, scroll now.
+                    web.evaluateJavascript("document.getElementById('$scrollToBlockId')?.scrollIntoView({behavior: 'auto'})", null)
+                }
+            },
+            onRelease = { it.destroy() },
+        )
+
+        if (showLoadingIndicator && loading) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(MaterialTheme.colorScheme.background),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator()
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = stringResource(R.string.lecture_loading),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
-        },
-        update = { web ->
-            // Defensive guard: if the view is being torn down, bail.
-            if (web.handler == null) return@AndroidView
-            
-            web.setBackgroundColor(bgArgb)
-            val current = html
-            val cacheKey = current to refreshTrigger
-            // Avoid redundant reloads (and flicker) when recomposition leaves the HTML unchanged.
-            if (current != null && web.tag != cacheKey) {
-                web.loadDataWithBaseURL(
-                    "$ASSET_DOMAIN/course/${lecture.courseId}/",
-                    current,
-                    "text/html",
-                    "utf-8",
-                    null,
-                )
-                // Commit the cache ONLY after a successful call (mirroring Windows fix)
-                web.tag = cacheKey
-            } else if (current != null && scrollToBlockId != null) {
-                // If the content didn't change but the scroll ID did, scroll now.
-                web.evaluateJavascript("document.getElementById('$scrollToBlockId')?.scrollIntoView({behavior: 'auto'})", null)
-            }
-        },
-        onRelease = { it.destroy() },
-    )
+        }
+    }
 }
 
 /** Bridge for editable quiz cells and monitor integration. */
 private class LectureBridge(
     private val onCell: ((quizId: String, row: Int, col: Int, value: String) -> Unit)? = null,
     private val onMonitor: (() -> Unit)? = null,
+    private val onEdit: ((id: String) -> Unit)? = null,
 ) {
     private val main = Handler(Looper.getMainLooper())
 
@@ -185,10 +232,16 @@ private class LectureBridge(
     fun onMonitor() {
         main.post { onMonitor?.invoke() }
     }
+
+    @JavascriptInterface
+    fun onEdit(id: String) {
+        main.post { onEdit?.invoke(id) }
+    }
 }
 
-private fun buildStandaloneDocument(body: String, css: String, interactive: Boolean): String {
+private fun buildStandaloneDocument(body: String, css: String, interactive: Boolean, editClicks: Boolean): String {
     val bridge = if (interactive) QUIZ_BRIDGE_JS else ""
+    val clickEdit = if (editClicks) CLICK_EDIT_JS else ""
     val katexCss = """<link rel="stylesheet" href="/assets/katex/katex.min.css">"""
     val katexJs = """<script src="/assets/katex/katex.min.js"></script>
 <script src="/assets/katex/contrib/auto-render.min.js"></script>"""
@@ -222,6 +275,7 @@ $katexJs
   if (document.readyState!=="loading") render();
   else document.addEventListener("DOMContentLoaded", render);
 $bridge
+$clickEdit
 })();
 </script>
 """.trimIndent()
@@ -229,8 +283,9 @@ $bridge
     return doc.replaceFirst("</body>", "$scripts\n</body>", ignoreCase = true)
 }
 
-private fun buildDocument(body: String, css: String, interactive: Boolean): String {
+private fun buildDocument(body: String, css: String, interactive: Boolean, editClicks: Boolean): String {
     val bridge = if (interactive) QUIZ_BRIDGE_JS else ""
+    val clickEdit = if (editClicks) CLICK_EDIT_JS else ""
     return """<!DOCTYPE html>
 <html>
 <head>
@@ -261,14 +316,21 @@ $body
   if (document.readyState!=="loading") render();
   else document.addEventListener("DOMContentLoaded", render);
 $bridge
+$clickEdit
 })();
 </script>
 </body>
 </html>"""
 }
 
-private fun themeCss(bg: Int, fg: Int, surface: Int, primary: Int, border: Int, muted: Int): String {
+private fun themeCss(bg: Int, fg: Int, surface: Int, primary: Int, border: Int, muted: Int, editClicks: Boolean = false): String {
     fun hex(argb: Int) = "#%06X".format(0xFFFFFF and argb)
+    val hoverAffordance = if (editClicks) """
+      body>*{cursor:pointer}
+      body>*:hover{outline:2px solid rgba(0,122,255,.35);outline-offset:2px;border-radius:4px}
+      input,textarea,select,button,a{cursor:auto}
+    """.trimIndent() else ""
+    
     return """
 :root{
   --bg:${hex(bg)}; --fg:${hex(fg)}; --surface:${hex(surface)};
@@ -293,6 +355,7 @@ svg.ecg-monitor{max-width:100%;height:auto;display:block;margin:0 auto;border:1p
 figcaption{font-size:.9em;color:var(--muted);margin-top:6px;text-align:center;font-style:italic}
 .ecg-missing figcaption{color:#b00020}
 ${HtmlComponents.Css}
+$hoverAffordance
 """.trimIndent()
 }
 
@@ -319,6 +382,14 @@ private val QUIZ_BRIDGE_JS = """
       }
     }
   });
+""".trimIndent()
+
+private val CLICK_EDIT_JS = """
+  document.body.addEventListener('click', function(e){
+    if (e.target.closest('input,textarea,select,button,a,label')) return;
+    var el = e.target.closest('[id]');
+    if (el && el.id && window.Android && Android.onEdit) Android.onEdit(el.id);
+  }, true);
 """.trimIndent()
 
 /**
