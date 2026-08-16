@@ -12,7 +12,8 @@ enum class OperatingMode(@param:StringRes val titleRes: Int) {
     Constructor(R.string.mode_editor),
     CourseConstructor(R.string.mode_course_constructor),
     TestConstructor(R.string.mode_test_constructor),
-    LearningScale(R.string.mode_learning_scale)
+    LearningScale(R.string.mode_learning_scale),
+    Students(R.string.mode_students)
 }
 
 data class OperatingModeModel(
@@ -25,3 +26,6 @@ val OperatingMode.isAuthoring: Boolean
             this == OperatingMode.CourseConstructor ||
             this == OperatingMode.TestConstructor ||
             this == OperatingMode.OSKEConstructor
+
+val OperatingMode.isFullEditionOnly: Boolean
+    get() = isAuthoring || this == OperatingMode.Students

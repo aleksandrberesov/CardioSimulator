@@ -169,7 +169,17 @@ class RhythmViewModel(
         }
     }
 
-    fun selectRhythm(id: String, persist: Boolean = true) {
+    fun selectRhythm(id: String?, persist: Boolean = true) {
+        if (id == null) {
+            _selectedRhythm.value = null
+            _waveforms.value = emptyMap()
+            _significantPoints.value = emptyList()
+            _tips.value = emptyList()
+            _tipComments.value = emptyList()
+            _description.value = null
+            return
+        }
+
         val entry = _allRhythms.value.firstOrNull { it.id == id } ?: return
         _selectedRhythm.value = entry
         
@@ -181,18 +191,20 @@ class RhythmViewModel(
 
         viewModelScope.launch {
             val file = withContext(Dispatchers.IO) { repository.readPathology(id) }
-            _significantPoints.value = file?.significantPoints ?: emptyList()
-            _tips.value = file?.tips ?: emptyList()
-            _tipComments.value = file?.tipComments ?: emptyList()
-            _description.value = file?.description
+            withContext(Dispatchers.Main) {
+                _significantPoints.value = file?.significantPoints ?: emptyList()
+                _tips.value = file?.tips ?: emptyList()
+                _tipComments.value = file?.tipComments ?: emptyList()
+                _description.value = file?.description
 
-            val leadOrder = repository.manifest()?.leadOrder ?: Lead.entries
-            val map = withContext(Dispatchers.IO) {
-                leadOrder.mapNotNull { lead ->
-                    repository.leadWaveform(id, lead)?.let { lead to it }
-                }.toMap()
+                val leadOrder = repository.manifest()?.leadOrder ?: Lead.entries
+                val map = withContext(Dispatchers.IO) {
+                    leadOrder.mapNotNull { lead ->
+                        repository.leadWaveform(id, lead)?.let { lead to it }
+                    }.toMap()
+                }
+                _waveforms.value = map
             }
-            _waveforms.value = map
         }
     }
 

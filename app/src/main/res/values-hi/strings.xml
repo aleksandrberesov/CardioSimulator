@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Cardio Simulator</string>
+    <string name="app_name">antiAI ECG Simulator</string>
 
     <!-- Operating modes -->
     <string name="mode_teaching">शिक्षण</string>
@@ -9,6 +9,7 @@
     <string name="mode_oske_constructor">OSCE कंस्ट्रक्टर</string>
     <string name="mode_editor">ईसीजी कंस्ट्रक्टर</string>
     <string name="mode_course_constructor">कोर्स कंस्ट्रक्टर</string>
+    <string name="mode_students">छात्र</string>
 
     <string name="mode_test_constructor">टेस्ट कंस्ट्रक्टर</string>
 
@@ -429,7 +430,7 @@
 
     <!-- Welcome screen -->
     <string name="welcome_title">ईसीजी की दुनिया में आपका स्वागत है</string>
-    <string name="welcome_intro">कार्डियो सिम्युलेटर इलेक्ट्रोकार्डियोग्राम सीखने और उनका विश्लेषण करने के लिए एक पेशेवर उपकरण है।</string>
+    <string name="welcome_intro">antiAI ECG Simulator इलेक्ट्रोकार्डियोग्राम सीखने और उनका विश्लेषण करने के लिए एक पेशेवर उपकरण है।</string>
     <string name="welcome_feature_1">इंटरैक्टिव ईसीजी लय एटलस</string>
     <string name="welcome_feature_2">विकृति और कोर्स कंस्ट्रक्टर</string>
     <string name="welcome_feature_3">परीक्षण और परीक्षा मोड</string>
@@ -519,4 +520,9 @@
     <string name="common_dont_save">न सहेजें</string>
     <string name="common_save">सहेजें</string>
     <string name="common_cancel">रद्द करें</string>
+
+    <!-- About / Versioning -->
+    <string name="settings_about">ऐप के बारे में</string>
+    <string name="about_version">संस्करण</string>
+    <string name="about_built">निर्मित</string>
 </resources>

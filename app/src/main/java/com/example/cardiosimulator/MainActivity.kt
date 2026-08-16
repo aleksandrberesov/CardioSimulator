@@ -26,12 +26,13 @@ import com.example.cardiosimulator.data.ExamResultStore
 import com.example.cardiosimulator.data.FileQuestionBankSource
 import com.example.cardiosimulator.data.QuestionBankRepository
 import com.example.cardiosimulator.data.TestThemeStore
+import com.example.cardiosimulator.data.StudentStore
 import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.AppEdition
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
 import com.example.cardiosimulator.domain.Taxonomy
-import com.example.cardiosimulator.domain.isAuthoring
+import com.example.cardiosimulator.domain.isFullEditionOnly
 import com.example.cardiosimulator.ui.screens.MainScreen
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.AppViewModel
@@ -44,7 +45,7 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         val appBuilder = AppBuilder()
         OperatingMode.entries
-            .filter { !AppEdition.IS_LIMITED || !it.isAuthoring }
+            .filter { !AppEdition.IS_LIMITED || !it.isFullEditionOnly }
             .forEach { mode ->
                 appBuilder.addMode(OperatingModeModel(mode))
             }
@@ -58,6 +59,7 @@ class MainActivity : AppCompatActivity() {
                         val bankDir = File(this@MainActivity.filesDir, AppViewModel.TEST_BANK_DIR)
                         val questionBankRepository = QuestionBankRepository(FileQuestionBankSource(bankDir))
                         val testThemeStore = TestThemeStore(File(bankDir, "themes.json"))
+                        val studentStore = StudentStore(File(this@MainActivity.filesDir, "students.json"))
                         return AppViewModel(
                             appState = appBuilder.build(initialMode = OperatingMode.Teaching),
                             // Boot from assets; swapped to a FilePathologySource once
@@ -85,6 +87,7 @@ class MainActivity : AppCompatActivity() {
                             ),
                             questionBankRepository = questionBankRepository,
                             testThemeStore = testThemeStore,
+                            studentStore = studentStore,
                             examResultStore = ExamResultStore(
                                 File(this@MainActivity.filesDir, AppViewModel.TEST_RESULTS_DIR)
                             ),
@@ -108,7 +111,7 @@ class MainActivity : AppCompatActivity() {
 fun MainPreview() {
     val appBuilder = AppBuilder()
     OperatingMode.entries
-        .filter { !AppEdition.IS_LIMITED || !it.isAuthoring }
+        .filter { !AppEdition.IS_LIMITED || !it.isFullEditionOnly }
         .forEach { mode ->
             appBuilder.addMode(OperatingModeModel(mode))
         }

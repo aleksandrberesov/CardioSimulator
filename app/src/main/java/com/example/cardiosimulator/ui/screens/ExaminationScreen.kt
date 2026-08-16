@@ -30,14 +30,13 @@ import com.example.cardiosimulator.R
 import com.example.cardiosimulator.data.Points
 import com.example.cardiosimulator.data.TestRepository
 import com.example.cardiosimulator.domain.*
+import com.example.cardiosimulator.domain.Student
 import com.example.cardiosimulator.ui.display.Lead as LeadView
 import com.example.cardiosimulator.ui.display.LeadsGrid
 import com.example.cardiosimulator.ui.display.Monitor
 import com.example.cardiosimulator.ui.theme.*
-import com.example.cardiosimulator.ui.viewmodels.AppViewModel
-import com.example.cardiosimulator.ui.viewmodels.ExaminationViewModel
-import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
-import com.example.cardiosimulator.ui.viewmodels.RhythmViewModel
+import com.example.cardiosimulator.ui.components.ModeCard
+import com.example.cardiosimulator.ui.viewmodels.*
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import com.journeyapps.barcodescanner.BarcodeEncoder
@@ -145,108 +144,34 @@ fun ExamWorkView(
     appViewModel: AppViewModel,
     testRepository: TestRepository
 ) {
-    val activeTest by viewModel.activeTest.collectAsState()
+    val mode by viewModel.mode.collectAsState()
     val lastResult by viewModel.lastResult.collectAsState()
-    val selections by viewModel.selections.collectAsState()
-    val waveforms by rhythmViewModel.waveforms.collectAsState()
-    val mode by monitorViewModel.monitorMode.collectAsState()
-    val remainingSeconds by viewModel.remainingSeconds.collectAsState()
+    val activeTest by viewModel.activeTest.collectAsState()
     val isGroupSessionActive by viewModel.isGroupSessionActive.collectAsState()
 
-    var showStartDialog by remember { mutableStateOf(false) }
-
-    LaunchedEffect(activeTest, isGroupSessionActive) {
-        if (activeTest == null && lastResult == null && !isGroupSessionActive) {
-            showStartDialog = true
-        }
-    }
-
-    if (showStartDialog) {
-        ExamStartSelectionDialog(
-            testThemes = appViewModel.testThemeStore?.readThemes() ?: emptyList(),
-            onDismiss = { showStartDialog = false },
-            onStartIndividual = { name, group, count, theme ->
-                viewModel.generateAndStartIndividual(count, theme, ExamStudentInfo(name, group))
-                showStartDialog = false
-            },
-            onStartGroup = { count, theme ->
-                viewModel.startGroupSession(count, theme)
-                showStartDialog = false
-            }
-        )
-    }
-
-    if (isGroupSessionActive) {
-        GroupSessionView(viewModel)
-    } else if (lastResult != null) {
+    if (lastResult != null) {
         ExamResultSummary(lastResult!!, onNewAttempt = { viewModel.reset() }, testRepository)
-    } else if (activeTest != null) {
-        val currentQuestion = viewModel.currentQuestion
-        val context = LocalContext.current
-
-        LaunchedEffect(currentQuestion?.id) {
-            val q = currentQuestion ?: return@LaunchedEffect
-            if (q.pathologyId != null) {
-                rhythmViewModel.selectRhythm(q.pathologyId, persist = false)
-                monitorViewModel.setSeriesScheme(q.scheme, persist = false)
-                monitorViewModel.setLeadOrder(q.leads.ifEmpty { null })
-                appViewModel.sendStartCommand(q.pathologyId)
-            } else {
-                appViewModel.sendStopCommand()
+    } else {
+        when (mode) {
+            ExamMode.Choice -> {
+                ExamStartArea(onSelectMode = { 
+                    if (it == ExamMode.Group) viewModel.setMode(ExamMode.Group) 
+                    else viewModel.setMode(ExamMode.IndividualSetup)
+                })
             }
-        }
-
-        Row(modifier = Modifier.fillMaxSize()) {
-            Box(modifier = Modifier.weight(3f).middleSectionLeft()) {
-                if (currentQuestion?.stimulus == QuestionStimulus.Image) {
-                    AsyncImage(
-                        model = currentQuestion.imagePath?.let { path ->
-                            if (path.startsWith("/")) File(path)
-                            else File(context.filesDir, "${AppViewModel.TEST_IMAGES_DIR}/$path")
-                        },
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize().padding(16.dp)
-                    )
+            ExamMode.IndividualSetup -> {
+                ExamIndividualSetupArea(viewModel, appViewModel)
+            }
+            ExamMode.Group -> {
+                if (isGroupSessionActive) {
+                    GroupSessionView(viewModel)
                 } else {
-                    Monitor(
-                        modifier = Modifier.fillMaxSize(),
-                        monitorViewModel = monitorViewModel,
-                    ) { rows, columns, xOffset, scheme ->
-                        LeadsGrid(
-                            rows = rows,
-                            columns = columns,
-                            itemCount = mode.count,
-                            leadOrder = mode.leadOrder ?: com.example.cardiosimulator.ui.display.LEAD_ORDER
-                        ) { _, lead ->
-                            val points = lead?.let { waveforms[it] } ?: Points(emptyList<Float>())
-                            LeadView(
-                                points = points,
-                                title = lead?.name ?: "",
-                                isRunning = mode.isRunning,
-                                xOffsetPx = xOffset,
-                                gridScheme = scheme,
-                                artifacts = mode.artifacts,
-                                filterType = mode.filterType,
-                                calibration = mode.calibration
-                            )
-                        }
-                    }
+                    ExamGroupSetupArea(viewModel, appViewModel)
                 }
             }
-
-            VerticalDivider()
-
-            Box(modifier = Modifier.weight(2f).middleSectionCenter()) {
-                if (currentQuestion != null) {
-                    ExamQuestionPanel(
-                        question = currentQuestion,
-                        totalQuestions = activeTest!!.questions.size,
-                        remainingSeconds = remainingSeconds,
-                        selectedOptionId = selections[currentQuestion.id],
-                        onOptionSelect = { viewModel.select(it) },
-                        onNext = { viewModel.next() },
-                        isTimed = activeTest!!.questionTimeSeconds > 0
-                    )
+            ExamMode.IndividualActive -> {
+                if (activeTest != null) {
+                    ExamActiveTestView(viewModel, monitorViewModel, rhythmViewModel, appViewModel)
                 }
             }
         }
@@ -254,106 +179,323 @@ fun ExamWorkView(
 }
 
 @Composable
-fun ExamStartSelectionDialog(
-    testThemes: List<String>,
-    onDismiss: () -> Unit,
-    onStartIndividual: (String, String, Int, String?) -> Unit,
-    onStartGroup: (Int, String?) -> Unit
-) {
-    var mode by remember { mutableStateOf("Individual") }
+fun ExamStartArea(onSelectMode: (ExamMode) -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            stringResource(R.string.exam_choose_prompt),
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(48.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            ModeCard(
+                title = stringResource(R.string.exam_mode_individual),
+                icon = Icons.Default.Person,
+                onClick = { onSelectMode(ExamMode.IndividualSetup) }
+            )
+            Spacer(modifier = Modifier.width(32.dp))
+            ModeCard(
+                title = stringResource(R.string.exam_mode_group),
+                icon = Icons.Default.Groups,
+                onClick = { onSelectMode(ExamMode.Group) }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ExamIndividualSetupArea(viewModel: ExaminationViewModel, appViewModel: AppViewModel) {
+    val roster = remember { appViewModel.studentStore?.list().orEmpty() }
+    val testThemes = remember { appViewModel.testThemeStore?.readThemes() ?: emptyList() }
+    
     var name by remember { mutableStateOf("") }
     var group by remember { mutableStateOf("") }
     var count by remember { mutableIntStateOf(10) }
     var selectedTheme by remember { mutableStateOf<String?>(null) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.exam_start_title)) },
-        text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    FilterChip(
-                        selected = mode == "Individual",
-                        onClick = { mode = "Individual" },
-                        label = { Text("Индивидуально") }
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    FilterChip(
-                        selected = mode == "Group",
-                        onClick = { mode = "Group" },
-                        label = { Text("Групповое") }
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
+    Column(
+        modifier = Modifier.fillMaxSize().padding(32.dp).verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { viewModel.setMode(ExamMode.Choice) }) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(R.string.exam_start_title), style = MaterialTheme.typography.headlineSmall)
+        }
+        
+        Spacer(modifier = Modifier.height(32.dp))
 
-                if (mode == "Individual") {
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text(stringResource(R.string.exam_field_full_name)) },
+        Card(modifier = Modifier.fillMaxWidth(0.6f)) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                if (roster.isNotEmpty()) {
+                    var expanded by remember { mutableStateOf(false) }
+                    val manualLabel = stringResource(R.string.exam_pick_student_manual)
+                    var selectedLabel by remember { mutableStateOf(manualLabel) }
+
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = it },
                         modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = group,
-                        onValueChange = { group = it },
-                        label = { Text(stringResource(R.string.exam_field_group)) },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    ) {
+                        OutlinedTextField(
+                            value = selectedLabel,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text(stringResource(R.string.exam_pick_student)) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                            modifier = Modifier.menuAnchor().fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(manualLabel) },
+                                onClick = {
+                                    selectedLabel = manualLabel
+                                    expanded = false
+                                }
+                            )
+                            roster.forEach { s ->
+                                DropdownMenuItem(
+                                    text = { Text("${s.fullName} · ${s.group}") },
+                                    onClick = {
+                                        name = s.fullName
+                                        group = s.group
+                                        selectedLabel = "${s.fullName} · ${s.group}"
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                Text("Количество вопросов:", style = MaterialTheme.typography.titleSmall)
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.exam_field_full_name)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = group,
+                    onValueChange = { group = it },
+                    label = { Text(stringResource(R.string.exam_field_group)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(stringResource(R.string.test_group_questions_count), style = MaterialTheme.typography.titleSmall)
                 Row {
                     listOf(10, 20, 30).forEach { c ->
                         FilterChip(
                             selected = count == c,
                             onClick = { count = c },
                             label = { Text(c.toString()) },
-                            modifier = Modifier.padding(end = 4.dp)
+                            modifier = Modifier.padding(end = 8.dp)
                         )
                     }
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                Text("Тема:", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.test_group_theme), style = MaterialTheme.typography.titleSmall)
                 Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
                     FilterChip(
                         selected = selectedTheme == null,
                         onClick = { selectedTheme = null },
-                        label = { Text("Все") },
-                        modifier = Modifier.padding(end = 4.dp)
+                        label = { Text(stringResource(R.string.exam_mode_all)) },
+                        modifier = Modifier.padding(end = 8.dp)
                     )
                     testThemes.forEach { theme ->
                         FilterChip(
                             selected = selectedTheme == theme,
                             onClick = { selectedTheme = theme },
                             label = { Text(theme) },
-                            modifier = Modifier.padding(end = 4.dp)
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Button(
+                    onClick = { viewModel.generateAndStartIndividual(count, selectedTheme, ExamStudentInfo(name, group)) },
+                    enabled = name.isNotBlank() && group.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.exam_start))
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ExamGroupSetupArea(viewModel: ExaminationViewModel, appViewModel: AppViewModel) {
+    val testThemes = remember { appViewModel.testThemeStore?.readThemes() ?: emptyList() }
+    var count by remember { mutableIntStateOf(10) }
+    var selectedTheme by remember { mutableStateOf<String?>(null) }
+
+    Column(
+        modifier = Modifier.fillMaxSize().padding(32.dp).verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { viewModel.setMode(ExamMode.Choice) }) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(R.string.test_group_setup_title), style = MaterialTheme.typography.headlineSmall)
+        }
+        
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Card(modifier = Modifier.fillMaxWidth(0.6f)) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text(stringResource(R.string.test_group_questions_count), style = MaterialTheme.typography.titleSmall)
+                Row {
+                    listOf(10, 20, 30).forEach { c ->
+                        FilterChip(
+                            selected = count == c,
+                            onClick = { count = c },
+                            label = { Text(c.toString()) },
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(stringResource(R.string.test_group_theme), style = MaterialTheme.typography.titleSmall)
+                Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+                    FilterChip(
+                        selected = selectedTheme == null,
+                        onClick = { selectedTheme = null },
+                        label = { Text(stringResource(R.string.exam_mode_all)) },
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    testThemes.forEach { theme ->
+                        FilterChip(
+                            selected = selectedTheme == theme,
+                            onClick = { selectedTheme = theme },
+                            label = { Text(theme) },
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Button(
+                    onClick = { viewModel.startGroupSession(count, selectedTheme) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.test_group_start))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ExamActiveTestView(
+    viewModel: ExaminationViewModel,
+    monitorViewModel: MonitorViewModel,
+    rhythmViewModel: RhythmViewModel,
+    appViewModel: AppViewModel
+) {
+    val activeTest by viewModel.activeTest.collectAsState()
+    val selections by viewModel.selections.collectAsState()
+    val waveforms by rhythmViewModel.waveforms.collectAsState()
+    val mode by monitorViewModel.monitorMode.collectAsState()
+    val remainingSeconds by viewModel.remainingSeconds.collectAsState()
+    val currentQuestion = viewModel.currentQuestion
+    val context = LocalContext.current
+
+    LaunchedEffect(currentQuestion?.id) {
+        val q = currentQuestion ?: return@LaunchedEffect
+        if (q.pathologyId != null) {
+            rhythmViewModel.selectRhythm(q.pathologyId, persist = false)
+            monitorViewModel.setSeriesScheme(q.scheme, persist = false)
+            monitorViewModel.setLeadOrder(q.leads.ifEmpty { null })
+            appViewModel.sendStartCommand(q.pathologyId)
+        } else {
+            appViewModel.sendStopCommand()
+        }
+    }
+
+    Row(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.weight(3f).middleSectionLeft()) {
+            if (currentQuestion?.stimulus == QuestionStimulus.Image) {
+                AsyncImage(
+                    model = currentQuestion.imagePath?.let { path ->
+                        if (path.startsWith("/")) File(path)
+                        else File(context.filesDir, "${AppViewModel.TEST_IMAGES_DIR}/$path")
+                    },
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize().padding(16.dp)
+                )
+            } else {
+                Monitor(
+                    modifier = Modifier.fillMaxSize(),
+                    monitorViewModel = monitorViewModel,
+                ) { rows, columns, xOffset, scheme ->
+                    LeadsGrid(
+                        rows = rows,
+                        columns = columns,
+                        itemCount = mode.count,
+                        leadOrder = mode.leadOrder ?: com.example.cardiosimulator.ui.display.LEAD_ORDER
+                    ) { _, lead ->
+                        val points = lead?.let { waveforms[it] } ?: Points(emptyList<Float>())
+                        LeadView(
+                            points = points,
+                            title = lead?.name ?: "",
+                            isRunning = mode.isRunning,
+                            xOffsetPx = xOffset,
+                            gridScheme = scheme,
+                            artifacts = mode.artifacts,
+                            filterType = mode.filterType,
+                            calibration = mode.calibration
                         )
                     }
                 }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = { 
-                    if (mode == "Individual") onStartIndividual(name, group, count, selectedTheme)
-                    else onStartGroup(count, selectedTheme)
-                },
-                enabled = (mode == "Group") || (name.isNotBlank() && group.isNotBlank())
-            ) {
-                Text(stringResource(R.string.exam_start))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cd_cancel))
+        }
+
+        VerticalDivider()
+
+        Box(modifier = Modifier.weight(2f).middleSectionCenter()) {
+            if (currentQuestion != null) {
+                ExamQuestionPanel(
+                    question = currentQuestion,
+                    totalQuestions = activeTest!!.questions.size,
+                    remainingSeconds = remainingSeconds,
+                    selectedOptionId = selections[currentQuestion.id],
+                    onOptionSelect = { viewModel.select(it) },
+                    onNext = { viewModel.next() },
+                    isTimed = activeTest!!.questionTimeSeconds > 0
+                )
             }
         }
-    )
+    }
 }
 
 @Composable
@@ -372,7 +514,13 @@ fun GroupSessionView(viewModel: ExaminationViewModel) {
 
     Row(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Групповое тестирование", style = MaterialTheme.typography.headlineMedium)
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { viewModel.setMode(ExamMode.Choice) }) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.test_group_title), style = MaterialTheme.typography.headlineMedium)
+            }
             Spacer(modifier = Modifier.height(16.dp))
             
             if (qrBitmap != null) {
@@ -392,14 +540,14 @@ fun GroupSessionView(viewModel: ExaminationViewModel) {
                 onClick = { viewModel.stopGroupSession() },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
             ) {
-                Text("Остановить сессию")
+                Text(stringResource(R.string.test_group_stop))
             }
         }
         
         VerticalDivider(modifier = Modifier.padding(horizontal = 16.dp))
         
         Column(modifier = Modifier.weight(1f)) {
-            Text("Участники (${participants.size})", style = MaterialTheme.typography.titleLarge)
+            Text(stringResource(R.string.test_group_participants, participants.size), style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(8.dp))
             
             LazyColumn {
@@ -415,7 +563,7 @@ fun GroupSessionView(viewModel: ExaminationViewModel) {
                                     fontWeight = FontWeight.Bold
                                 )
                             } else {
-                                Text("В процессе", color = TextSecondary)
+                                Text(stringResource(R.string.test_group_in_progress), color = TextSecondary)
                             }
                         }
                     )

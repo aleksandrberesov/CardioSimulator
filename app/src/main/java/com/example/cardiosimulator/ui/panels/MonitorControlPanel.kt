@@ -1,7 +1,5 @@
 package com.example.cardiosimulator.ui.panels
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -9,31 +7,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Straighten
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
-import androidx.compose.material3.TooltipBox
-import androidx.compose.material3.TooltipDefaults
-import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,7 +30,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -50,19 +37,19 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cardiosimulator.R
 import com.example.cardiosimulator.domain.ElectrodeState
 import com.example.cardiosimulator.domain.OperatingMode
+import com.example.cardiosimulator.domain.EcgArtifact
+import com.example.cardiosimulator.domain.EcgFilterType
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.theme.AccentGreen
 import com.example.cardiosimulator.ui.theme.ElectrodeFaultRed
 import com.example.cardiosimulator.ui.components.ControlPanelDivider
-import com.example.cardiosimulator.ui.components.Label
 import com.example.cardiosimulator.ui.components.Tab
 import com.example.cardiosimulator.domain.SeriesScheme
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
-import kotlinx.coroutines.launch
 import com.example.cardiosimulator.ui.components.SqiBadge
 
 @Composable
-internal fun MenuInfoHeader(title: String, explanation: String) {
+internal fun MenuInfoHeader(title: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -80,6 +67,7 @@ fun MonitorControlPanel(
     onTipsClick: () -> Unit = {},
     onCompareClick: () -> Unit = {},
     onStartStopClick: (Boolean) -> Unit = {},
+    isQuizMode: Boolean = false,
 ) {
     val monitorMode by viewModel.monitorMode.collectAsState()
     // ... (rest of the code using viewModel.setShowElectrodes, etc.)
@@ -94,146 +82,148 @@ fun MonitorControlPanel(
     ) {
         // Left section: Count, Scheme, Speed, Gain, Scale
         Row(
-            modifier = Modifier.weight(5f),
+            modifier = Modifier.weight(if (isQuizMode) 1f else 5f),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Box(modifier = Modifier.weight(1f)) {
-                var countMenuExpanded by remember { mutableStateOf(false) }
-                Tab(
-                    text = stringResource(R.string.monitor_count_format, monitorMode.count),
-                    showChevron = true,
-                    onClick = { countMenuExpanded = true },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                DropdownMenu(
-                    expanded = countMenuExpanded,
-                    onDismissRequest = { countMenuExpanded = false }
-                ) {
-                    viewModel.availableSeriesCounts.forEach { count ->
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.monitor_count_format, count)) },
-                            onClick = {
-                                viewModel.setSeriesCount(count)
-                                countMenuExpanded = false
-                            }
-                        )
+            if (!isQuizMode) {
+                Box(modifier = Modifier.weight(1f)) {
+                    var countMenuExpanded by remember { mutableStateOf(false) }
+                    Tab(
+                        text = stringResource(R.string.monitor_count_format, monitorMode.count),
+                        showChevron = true,
+                        onClick = { countMenuExpanded = true },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    DropdownMenu(
+                        expanded = countMenuExpanded,
+                        onDismissRequest = { countMenuExpanded = false }
+                    ) {
+                        viewModel.availableSeriesCounts.forEach { count ->
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.monitor_count_format, count)) },
+                                onClick = {
+                                    viewModel.setSeriesCount(count)
+                                    countMenuExpanded = false
+                                }
+                            )
+                        }
                     }
                 }
-            }
 
-            Box(modifier = Modifier.weight(1f)) {
-                var schemeMenuExpanded by remember { mutableStateOf(false) }
-                Tab(
-                    text = when (monitorMode.seriesScheme) {
-                        com.example.cardiosimulator.domain.SeriesScheme.OneColumn -> stringResource(R.string.monitor_columns_one_short)
-                        com.example.cardiosimulator.domain.SeriesScheme.TwoColumn -> stringResource(R.string.monitor_columns_two_short)
-                        com.example.cardiosimulator.domain.SeriesScheme.ThreeByFour -> stringResource(R.string.monitor_columns_three_by_four_short)
-                        com.example.cardiosimulator.domain.SeriesScheme.Grid -> stringResource(R.string.monitor_columns_grid_short)
-                    },
-                    showChevron = true,
-                    onClick = { schemeMenuExpanded = true },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                DropdownMenu(
-                    expanded = schemeMenuExpanded,
-                    onDismissRequest = { schemeMenuExpanded = false }
-                ) {
-                    viewModel.availableSeriesSchemes.forEach { scheme ->
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    when (scheme) {
-                                        com.example.cardiosimulator.domain.SeriesScheme.OneColumn -> stringResource(R.string.monitor_columns_one)
-                                        com.example.cardiosimulator.domain.SeriesScheme.TwoColumn -> stringResource(R.string.monitor_columns_two)
-                                        com.example.cardiosimulator.domain.SeriesScheme.ThreeByFour -> stringResource(R.string.monitor_columns_three_by_four)
-                                        com.example.cardiosimulator.domain.SeriesScheme.Grid -> stringResource(R.string.monitor_columns_grid)
-                                    }
-                                )
-                            },
-                            onClick = {
-                                viewModel.setSeriesScheme(scheme)
-                                schemeMenuExpanded = false
-                            }
-                        )
+                Box(modifier = Modifier.weight(1f)) {
+                    var schemeMenuExpanded by remember { mutableStateOf(false) }
+                    Tab(
+                        text = when (monitorMode.seriesScheme) {
+                            SeriesScheme.OneColumn -> stringResource(R.string.monitor_columns_one_short)
+                            SeriesScheme.TwoColumn -> stringResource(R.string.monitor_columns_two_short)
+                            SeriesScheme.ThreeByFour -> stringResource(R.string.monitor_columns_three_by_four_short)
+                            SeriesScheme.Grid -> stringResource(R.string.monitor_columns_grid_short)
+                        },
+                        showChevron = true,
+                        onClick = { schemeMenuExpanded = true },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    DropdownMenu(
+                        expanded = schemeMenuExpanded,
+                        onDismissRequest = { schemeMenuExpanded = false }
+                    ) {
+                        viewModel.availableSeriesSchemes.forEach { scheme ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        when (scheme) {
+                                            SeriesScheme.OneColumn -> stringResource(R.string.monitor_columns_one)
+                                            SeriesScheme.TwoColumn -> stringResource(R.string.monitor_columns_two)
+                                            SeriesScheme.ThreeByFour -> stringResource(R.string.monitor_columns_three_by_four)
+                                            SeriesScheme.Grid -> stringResource(R.string.monitor_columns_grid)
+                                        }
+                                    )
+                                },
+                                onClick = {
+                                    viewModel.setSeriesScheme(scheme)
+                                    schemeMenuExpanded = false
+                                }
+                            )
+                        }
                     }
                 }
-            }
 
-            Box(modifier = Modifier.weight(1f)) {
-                var speedMenuExpanded by remember { mutableStateOf(false) }
-                val formattedSpeed = if (monitorMode.speed % 1 == 0f) monitorMode.speed.toInt().toString() else monitorMode.speed.toString()
-                Tab(
-                    text = formattedSpeed,
-                    subText = stringResource(R.string.monitor_speed_unit),
-                    showChevron = true,
-                    onClick = { speedMenuExpanded = true },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                DropdownMenu(
-                    expanded = speedMenuExpanded,
-                    onDismissRequest = { speedMenuExpanded = false }
-                ) {
-                    viewModel.availableSpeeds.forEach { speed ->
-                        val displaySpeed = if (speed % 1 == 0f) speed.toInt().toString() else speed.toString()
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.monitor_speed_format, displaySpeed)) },
-                            onClick = {
-                                viewModel.setSpeed(speed)
-                                speedMenuExpanded = false
-                            }
-                        )
+                Box(modifier = Modifier.weight(1f)) {
+                    var speedMenuExpanded by remember { mutableStateOf(false) }
+                    val formattedSpeed = if (monitorMode.speed % 1 == 0f) monitorMode.speed.toInt().toString() else monitorMode.speed.toString()
+                    Tab(
+                        text = formattedSpeed,
+                        subText = stringResource(R.string.monitor_speed_unit),
+                        showChevron = true,
+                        onClick = { speedMenuExpanded = true },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    DropdownMenu(
+                        expanded = speedMenuExpanded,
+                        onDismissRequest = { speedMenuExpanded = false }
+                    ) {
+                        viewModel.availableSpeeds.forEach { speed ->
+                            val displaySpeed = if (speed % 1 == 0f) speed.toInt().toString() else speed.toString()
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.monitor_speed_format, displaySpeed)) },
+                                onClick = {
+                                    viewModel.setSpeed(speed)
+                                    speedMenuExpanded = false
+                                }
+                            )
+                        }
                     }
                 }
-            }
 
-            Box(modifier = Modifier.weight(1f)) {
-                var gainMenuExpanded by remember { mutableStateOf(false) }
-                val gain = monitorMode.calibration.gainMmPerMv
-                val formattedGain = if (gain % 1 == 0f) gain.toInt().toString() else gain.toString()
-                Tab(
-                    text = formattedGain,
-                    subText = stringResource(R.string.monitor_gain_unit),
-                    showChevron = true,
-                    onClick = { gainMenuExpanded = true },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                DropdownMenu(
-                    expanded = gainMenuExpanded,
-                    onDismissRequest = { gainMenuExpanded = false }
-                ) {
-                    viewModel.availableGains.forEach { gainOption ->
-                        val display = if (gainOption % 1 == 0f) gainOption.toInt().toString() else gainOption.toString()
-                        DropdownMenuItem(
-                            text = { Text("$display ${stringResource(R.string.monitor_gain_unit)}") },
-                            onClick = {
-                                viewModel.setGain(gainOption)
-                                gainMenuExpanded = false
-                            }
-                        )
+                Box(modifier = Modifier.weight(1f)) {
+                    var gainMenuExpanded by remember { mutableStateOf(false) }
+                    val gain = monitorMode.calibration.gainMmPerMv
+                    val formattedGain = if (gain % 1 == 0f) gain.toInt().toString() else gain.toString()
+                    Tab(
+                        text = formattedGain,
+                        subText = stringResource(R.string.monitor_gain_unit),
+                        showChevron = true,
+                        onClick = { gainMenuExpanded = true },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    DropdownMenu(
+                        expanded = gainMenuExpanded,
+                        onDismissRequest = { gainMenuExpanded = false }
+                    ) {
+                        viewModel.availableGains.forEach { gainOption ->
+                            val display = if (gainOption % 1 == 0f) gainOption.toInt().toString() else gainOption.toString()
+                            DropdownMenuItem(
+                                text = { Text("$display ${stringResource(R.string.monitor_gain_unit)}") },
+                                onClick = {
+                                    viewModel.setGain(gainOption)
+                                    gainMenuExpanded = false
+                                }
+                            )
+                        }
                     }
                 }
-            }
 
-            Box(modifier = Modifier.weight(1f)) {
-                var scaleMenuExpanded by remember { mutableStateOf(false) }
-                Tab(
-                    text = "${(monitorMode.scale * 100).toInt()}%",
-                    showChevron = true,
-                    onClick = { scaleMenuExpanded = true },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                DropdownMenu(
-                    expanded = scaleMenuExpanded,
-                    onDismissRequest = { scaleMenuExpanded = false }
-                ) {
-                    viewModel.availableScales.forEach { scaleOption ->
-                        DropdownMenuItem(
-                            text = { Text("${(scaleOption * 100).toInt()}%") },
-                            onClick = {
-                                viewModel.setScale(scaleOption)
-                                scaleMenuExpanded = false
-                            }
-                        )
+                Box(modifier = Modifier.weight(1f)) {
+                    var scaleMenuExpanded by remember { mutableStateOf(false) }
+                    Tab(
+                        text = "${(monitorMode.scale * 100).toInt()}%",
+                        showChevron = true,
+                        onClick = { scaleMenuExpanded = true },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    DropdownMenu(
+                        expanded = scaleMenuExpanded,
+                        onDismissRequest = { scaleMenuExpanded = false }
+                    ) {
+                        viewModel.availableScales.forEach { scaleOption ->
+                            DropdownMenuItem(
+                                text = { Text("${(scaleOption * 100).toInt()}%") },
+                                onClick = {
+                                    viewModel.setScale(scaleOption)
+                                    scaleMenuExpanded = false
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -243,194 +233,194 @@ fun MonitorControlPanel(
 
         // Middle-left group: Artifacts, Filters | Electrodes, 3D
         Row(
-            modifier = Modifier.weight(3.5f),
+            modifier = Modifier.weight(if (isQuizMode) 1f else 3.5f),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Box(modifier = Modifier.weight(1.5f)) {
-                var artifactsMenuExpanded by remember { mutableStateOf(false) }
-                val artifactsActive = monitorMode.artifacts.isNotEmpty()
-                val artifactsText = if (monitorMode.artifacts.isEmpty()) {
-                    stringResource(R.string.monitor_artifacts)
-                } else {
-                    "${stringResource(R.string.monitor_artifacts)} (${monitorMode.artifacts.size})"
-                }
+            if (!isQuizMode) {
+                Box(modifier = Modifier.weight(1.5f)) {
+                    var artifactsMenuExpanded by remember { mutableStateOf(false) }
+                    val artifactsActive = monitorMode.artifacts.isNotEmpty()
+                    val artifactsText = if (monitorMode.artifacts.isEmpty()) {
+                        stringResource(R.string.monitor_artifacts)
+                    } else {
+                        "${stringResource(R.string.monitor_artifacts)} (${monitorMode.artifacts.size})"
+                    }
 
-                Tab(
-                    text = artifactsText,
-                    showChevron = true,
-                    isActive = artifactsActive,
-                    onClick = { artifactsMenuExpanded = true },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                DropdownMenu(
-                    expanded = artifactsMenuExpanded,
-                    onDismissRequest = { artifactsMenuExpanded = false }
-                ) {
-                    MenuInfoHeader(
-                        title = stringResource(R.string.monitor_artifacts),
-                        explanation = stringResource(R.string.monitor_artifacts_info),
+                    Tab(
+                        text = artifactsText,
+                        showChevron = true,
+                        isActive = artifactsActive,
+                        onClick = { artifactsMenuExpanded = true },
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    HorizontalDivider()
+                    DropdownMenu(
+                        expanded = artifactsMenuExpanded,
+                        onDismissRequest = { artifactsMenuExpanded = false }
+                    ) {
+                        MenuInfoHeader(title = stringResource(R.string.monitor_artifacts))
+                        HorizontalDivider()
 
-                    com.example.cardiosimulator.domain.EcgArtifact.entries.forEach { artifact ->
-                        val isSelected = if (artifact == com.example.cardiosimulator.domain.EcgArtifact.None) {
-                            monitorMode.artifacts.isEmpty()
-                        } else {
-                            artifact in monitorMode.artifacts
-                        }
+                        EcgArtifact.entries.forEach { artifact ->
+                            val isSelected = if (artifact == EcgArtifact.None) {
+                                monitorMode.artifacts.isEmpty()
+                            } else {
+                                artifact in monitorMode.artifacts
+                            }
 
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    when (artifact) {
-                                        com.example.cardiosimulator.domain.EcgArtifact.None -> stringResource(R.string.monitor_artifact_none)
-                                        com.example.cardiosimulator.domain.EcgArtifact.Muscle -> stringResource(R.string.monitor_artifact_muscle)
-                                        com.example.cardiosimulator.domain.EcgArtifact.Mains -> stringResource(R.string.monitor_artifact_mains)
-                                        com.example.cardiosimulator.domain.EcgArtifact.Baseline -> stringResource(R.string.monitor_artifact_baseline)
-                                        com.example.cardiosimulator.domain.EcgArtifact.Contact -> stringResource(R.string.monitor_artifact_contact)
-                                        com.example.cardiosimulator.domain.EcgArtifact.Motion -> stringResource(R.string.monitor_artifact_motion)
-                                    }
-                                )
-                            },
-                            trailingIcon = {
-                                if (isSelected) {
-                                    Icon(
-                                        imageVector = Icons.Default.Check,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        when (artifact) {
+                                            EcgArtifact.None -> stringResource(R.string.monitor_artifact_none)
+                                            EcgArtifact.Muscle -> stringResource(R.string.monitor_artifact_muscle)
+                                            EcgArtifact.Mains -> stringResource(R.string.monitor_artifact_mains)
+                                            EcgArtifact.Baseline -> stringResource(R.string.monitor_artifact_baseline)
+                                            EcgArtifact.Contact -> stringResource(R.string.monitor_artifact_contact)
+                                            EcgArtifact.Motion -> stringResource(R.string.monitor_artifact_motion)
+                                        }
                                     )
-                                }
-                            },
-                            onClick = {
-                                if (artifact == com.example.cardiosimulator.domain.EcgArtifact.None) {
-                                    viewModel.setArtifacts(emptySet())
-                                    // Optionally close here, but multi-select usually stays open. 
-                                    // Plan says "matching Windows behavior" which is stays open.
-                                } else {
-                                    val next = if (artifact in monitorMode.artifacts) {
-                                        monitorMode.artifacts - artifact
+                                },
+                                trailingIcon = {
+                                    if (isSelected) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                },
+                                onClick = {
+                                    if (artifact == EcgArtifact.None) {
+                                        viewModel.setArtifacts(emptySet())
                                     } else {
-                                        monitorMode.artifacts + artifact
+                                        val next = if (artifact in monitorMode.artifacts) {
+                                            monitorMode.artifacts - artifact
+                                        } else {
+                                            monitorMode.artifacts + artifact
+                                        }
+                                        viewModel.setArtifacts(next)
                                     }
-                                    viewModel.setArtifacts(next)
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
                 }
-            }
 
-            Box(modifier = Modifier.weight(1.5f)) {
-                var filtersMenuExpanded by remember { mutableStateOf(false) }
-                Tab(
-                    text = stringResource(R.string.monitor_filters),
-                    showChevron = true,
-                    onClick = { filtersMenuExpanded = true },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                DropdownMenu(
-                    expanded = filtersMenuExpanded,
-                    onDismissRequest = { filtersMenuExpanded = false }
-                ) {
-                    MenuInfoHeader(
-                        title = stringResource(R.string.monitor_filters),
-                        explanation = stringResource(R.string.monitor_filters_info),
+                Box(modifier = Modifier.weight(1.5f)) {
+                    var filtersMenuExpanded by remember { mutableStateOf(false) }
+                    Tab(
+                        text = stringResource(R.string.monitor_filters),
+                        showChevron = true,
+                        onClick = { filtersMenuExpanded = true },
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    val sqi by viewModel.signalQuality.collectAsState()
-                    SqiBadge(sqi, Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
-                    HorizontalDivider()
+                    DropdownMenu(
+                        expanded = filtersMenuExpanded,
+                        onDismissRequest = { filtersMenuExpanded = false }
+                    ) {
+                        MenuInfoHeader(title = stringResource(R.string.monitor_filters))
+                        val sqi by viewModel.signalQuality.collectAsState()
+                        SqiBadge(sqi, Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+                        HorizontalDivider()
 
-                    com.example.cardiosimulator.domain.EcgFilterType.entries.forEach { filterType ->
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    when (filterType) {
-                                        com.example.cardiosimulator.domain.EcgFilterType.NONE -> stringResource(R.string.monitor_filter_none)
-                                        com.example.cardiosimulator.domain.EcgFilterType.LOWPASS -> stringResource(R.string.monitor_filter_lowpass)
-                                        com.example.cardiosimulator.domain.EcgFilterType.HIGHPASS -> stringResource(R.string.monitor_filter_highpass)
-                                        com.example.cardiosimulator.domain.EcgFilterType.BANDPASS -> stringResource(R.string.monitor_filter_bandpass)
+                        EcgFilterType.entries.forEach { filterType ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        when (filterType) {
+                                            EcgFilterType.NONE -> stringResource(R.string.monitor_filter_none)
+                                            EcgFilterType.LOWPASS -> stringResource(R.string.monitor_filter_lowpass)
+                                            EcgFilterType.HIGHPASS -> stringResource(R.string.monitor_filter_highpass)
+                                            EcgFilterType.BANDPASS -> stringResource(R.string.monitor_filter_bandpass)
+                                        }
+                                    )
+                                },
+                                leadingIcon = {
+                                    if (filterType == monitorMode.filterType) {
+                                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                                     }
-                                )
-                            },
-                            leadingIcon = {
-                                if (filterType == monitorMode.filterType) {
-                                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                                },
+                                onClick = {
+                                    viewModel.setFilterType(filterType)
+                                    filtersMenuExpanded = false
                                 }
-                            },
-                            onClick = {
-                                viewModel.setFilterType(filterType)
-                                filtersMenuExpanded = false
-                            }
-                        )
+                            )
+                        }
                     }
                 }
-            }
 
+                ControlPanelDivider()
+
+                val electrodeFault = monitorMode.electrodeState != ElectrodeState.Ok
+                Tab(
+                    text = stringResource(R.string.monitor_electrodes),
+                    onClick = { viewModel.setShowElectrodes(!monitorMode.showElectrodes) },
+                    isActive = monitorMode.electrodeStateUserSet,
+                    activeColor = if (electrodeFault) ElectrodeFaultRed else AccentGreen,
+                    modifier = Modifier.weight(1f)
+                )
+
+                Tab(
+                    text = "3D",
+                    painter = androidx.compose.ui.res.painterResource(R.drawable.heart_3d),
+                    onClick = { viewModel.setShow3D(!monitorMode.show3D) },
+                    isActive = monitorMode.show3D,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        if (!isQuizMode) {
             ControlPanelDivider()
 
-            val electrodeFault = monitorMode.electrodeState != ElectrodeState.Ok
-            Tab(
-                text = stringResource(R.string.monitor_electrodes),
-                onClick = { viewModel.setShowElectrodes(!monitorMode.showElectrodes) },
-                isActive = monitorMode.electrodeStateUserSet,
-                activeColor = if (electrodeFault) ElectrodeFaultRed else AccentGreen,
-                modifier = Modifier.weight(1f)
-            )
+            // Middle-right section: pQRSt, EOS, Tips
+            Row(
+                modifier = Modifier.weight(3f),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Tab(
+                    text = "pQRSt",
+                    onClick = { viewModel.setShowImpulseLabels(!monitorMode.showImpulseLabels) },
+                    isActive = monitorMode.showImpulseLabels,
+                    modifier = Modifier.weight(1f)
+                )
+                Tab(
+                    text = stringResource(R.string.monitor_eos),
+                    contentColor = Color.Red,
+                    onClick = { viewModel.setShowEos(!monitorMode.showEos) },
+                    isActive = monitorMode.showEos,
+                    modifier = Modifier.weight(1f)
+                )
+                Tab(
+                    text = stringResource(R.string.monitor_tips),
+                    onClick = {
+                        val next = !monitorMode.showTips
+                        viewModel.setShowTips(next)
+                        onTipsClick()
+                    },
+                    isActive = monitorMode.showTips,
+                    modifier = Modifier.weight(1f)
+                )
+            }
 
-            Tab(
-                text = "3D",
-                painter = androidx.compose.ui.res.painterResource(R.drawable.heart_3d),
-                onClick = { viewModel.setShow3D(!monitorMode.show3D) },
-                isActive = monitorMode.show3D,
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        ControlPanelDivider()
-
-        // Middle-right section: pQRSt, EOS, Tips
-        Row(
-            modifier = Modifier.weight(3f),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Tab(
-                text = "pQRSt",
-                onClick = { viewModel.setShowImpulseLabels(!monitorMode.showImpulseLabels) },
-                isActive = monitorMode.showImpulseLabels,
-                modifier = Modifier.weight(1f)
-            )
-            Tab(
-                text = stringResource(R.string.monitor_eos),
-                contentColor = Color.Red,
-                onClick = { viewModel.setShowEos(!monitorMode.showEos) },
-                isActive = monitorMode.showEos,
-                modifier = Modifier.weight(1f)
-            )
-            Tab(
-                text = stringResource(R.string.monitor_tips),
-                onClick = { viewModel.setShowTips(!monitorMode.showTips) },
-                isActive = monitorMode.showTips,
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        if (viewModel.mode == OperatingMode.Teaching) {
-            Tab(
-                text = stringResource(R.string.monitor_compare),
-                onClick = onCompareClick,
-                modifier = Modifier.weight(1f),
-                isActive = monitorMode.isCompareMode
-            )
+            if (viewModel.mode == OperatingMode.Teaching) {
+                Tab(
+                    text = stringResource(R.string.monitor_compare),
+                    onClick = onCompareClick,
+                    modifier = Modifier.weight(1f),
+                    isActive = monitorMode.isCompareMode
+                )
+            }
         }
 
         ControlPanelDivider()
 
         // Right section: Ruler, Start/Stop
         Row(
-            modifier = Modifier.weight(1.6f),
+            modifier = Modifier.weight(if (isQuizMode) 0.8f else 1.6f),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            if (viewModel.mode == OperatingMode.Teaching) {
+            if (!isQuizMode && viewModel.mode == OperatingMode.Teaching) {
                 Tab(
                     icon = Icons.Default.Straighten,
                     iconModifier = Modifier.rotate(-45f),

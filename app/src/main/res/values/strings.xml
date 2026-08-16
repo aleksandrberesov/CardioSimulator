@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Cardio Simulator</string>
+    <string name="app_name">antiAI ECG Simulator</string>
 
     <!-- Operating modes -->
     <string name="mode_teaching">Teaching</string>
@@ -11,6 +11,7 @@
     <string name="mode_course_constructor">Course Constructor</string>
 
     <string name="mode_test_constructor">Test Constructor</string>
+    <string name="mode_students">Students</string>
 
     <!-- Settings dialog -->
     <string name="settings_title">Settings</string>
@@ -426,12 +427,25 @@
     <string name="exam_new_attempt">New attempt</string>
     <string name="exam_unanswered">Not answered</string>
     <string name="exam_results_empty">No saved results yet.</string>
+    <string name="exam_choose_prompt">Choose testing mode</string>
+    <string name="exam_mode_individual">Individual</string>
+    <string name="exam_mode_group">Group</string>
+    <string name="exam_mode_all">All</string>
+    <string name="test_group_setup_title">Group Testing Setup</string>
+    <string name="test_group_questions_count">Number of questions:</string>
+    <string name="test_group_theme">Theme:</string>
+    <string name="test_group_start">Start Session</string>
+    <string name="test_group_stop">Stop Session</string>
+    <string name="test_group_title">Group Testing</string>
+    <string name="test_group_participants">Participants (%1$d)</string>
+    <string name="test_group_in_progress">In progress</string>
 
     <!-- Data source picker -->
     <string name="data_source_title">ECG Data</string>
     <string name="data_source_description">Select a ZIP archive on your device containing the ECG data.</string>
     <string name="data_source_pick_folder">Select ZIP archive</string>
     <string name="data_source_change_folder">Change ZIP archive</string>
+    <string name="data_source_reset_default">Reset to default</string>
     <string name="data_source_export_zip">Export ZIP</string>
     <string name="data_source_export_zip_dirty">Export ZIP (unsaved edits)</string>
     <string name="course_data_source_title">Course Data</string>
@@ -566,7 +580,7 @@
 
     <!-- Welcome screen -->
     <string name="welcome_title">Welcome to the World of ECG</string>
-    <string name="welcome_intro">Cardio Simulator is a professional tool for learning and analyzing electrocardiograms.</string>
+    <string name="welcome_intro">antiAI ECG Simulator is a professional tool for learning and analyzing electrocardiograms.</string>
     <string name="welcome_feature_1">Interactive ECG rhythm atlas</string>
     <string name="welcome_feature_2">Pathology and course constructor</string>
     <string name="welcome_feature_3">Testing and examination modes</string>
@@ -712,6 +726,24 @@
     <string name="ls_toast_difficulty_desc_format">Level: %1$d%%</string>
     <string name="ls_toast_subtopic_desc_format">Section %1$d · Progress: %2$d%%</string>
 
+    <!-- Students Mode -->
+    <string name="students_title">Student registration</string>
+    <string name="students_subtitle">Add and register students who will take the exams.</string>
+    <string name="students_field_email">E-mail (optional)</string>
+    <string name="students_register">Register</string>
+    <string name="students_list_title">Registered students</string>
+    <string name="students_empty">No students registered yet.</string>
+    <string name="students_remove">Remove</string>
+    <string name="students_added">Student registered.</string>
+    <string name="students_duplicate">This student is already registered.</string>
+    <string name="students_invalid">Enter a full name and a group.</string>
+    <string name="students_save_failed">Couldn\'t save the student.</string>
+    <string name="students_import">Import</string>
+    <string name="students_export">Export</string>
+    <string name="students_learning_scale">Learning scale</string>
+    <string name="exam_pick_student">Registered student</string>
+    <string name="exam_pick_student_manual">— Enter manually —</string>
+
     <!-- 3D Heart Infarct -->
     <string name="monitor_3d_infarct">Infarct (necrosis)</string>
     <string name="monitor_3d_develop_infarct">▶ Develop infarct</string>
@@ -775,4 +807,9 @@
     <string name="course_load_empty_warning">This pack lists courses but no lecture content could be read — it may be empty or damaged.</string>
     <string name="course_load_failed_body">This file couldn\'t be opened as a course pack. Your current courses are unchanged.</string>
     <string name="course_load_no_courses">The pack loaded but contains no courses.</string>
+
+    <!-- About / Versioning -->
+    <string name="settings_about">About</string>
+    <string name="about_version">Version</string>
+    <string name="about_built">Built</string>
 </resources>

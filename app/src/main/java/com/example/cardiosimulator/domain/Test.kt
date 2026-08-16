@@ -24,7 +24,7 @@ data class TestQuestion(
     val comment: String,
     val pathologyId: String? = null,    // ECG shown on the monitor; null = leave monitor as-is
     val leads: List<Lead> = emptyList(),
-    val scheme: SeriesScheme = SeriesScheme.Grid,
+    val scheme: SeriesScheme = SeriesScheme.TwoColumn,
     val imagePath: String? = null,
     val theme: String? = null,
     val tags: String? = null,

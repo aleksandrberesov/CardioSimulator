@@ -11,6 +11,7 @@
     <string name="mode_course_constructor">Конструктор курсов</string>
 
     <string name="mode_test_constructor">Конструктор тестов</string>
+    <string name="mode_students">Студенты</string>
 
     <!-- Settings dialog -->
     <string name="settings_title">Настройки</string>
@@ -424,6 +425,18 @@
     <string name="exam_new_attempt">Новая попытка</string>
     <string name="exam_unanswered">Нет ответа</string>
     <string name="exam_results_empty">Сохранённых результатов пока нет.</string>
+    <string name="exam_choose_prompt">Выберите режим тестирования</string>
+    <string name="exam_mode_individual">Индивидуальное</string>
+    <string name="exam_mode_group">Групповое</string>
+    <string name="exam_mode_all">Все</string>
+    <string name="test_group_setup_title">Настройка группового тестирования</string>
+    <string name="test_group_questions_count">Количество вопросов:</string>
+    <string name="test_group_theme">Тема:</string>
+    <string name="test_group_start">Начать сессию</string>
+    <string name="test_group_stop">Остановить сессию</string>
+    <string name="test_group_title">Групповое тестирование</string>
+    <string name="test_group_participants">Участники (%1$d)</string>
+    <string name="test_group_in_progress">В процессе</string>
 
     <!-- Data source picker -->
     <string name="data_source_title">Данные ЭКГ</string>
@@ -709,6 +722,21 @@
     <string name="ls_toast_difficulty_desc_format">Уровень: %1$d%%</string>
     <string name="ls_toast_subtopic_desc_format">Раздел %1$d · Прогресс: %2$d%%</string>
 
+    <!-- Students Mode -->
+    <string name="students_title">Регистрация студентов</string>
+    <string name="students_subtitle">Добавляйте и регистрируйте студентов для экзаменов.</string>
+    <string name="students_field_email">E-mail (необязательно)</string>
+    <string name="students_register">Зарегистрировать</string>
+    <string name="students_list_title">Зарегистрированные студенты</string>
+    <string name="students_empty">Пока нет зарегистрированных студентов.</string>
+    <string name="students_remove">Удалить</string>
+    <string name="students_added">Студент зарегистрирован.</string>
+    <string name="students_duplicate">Такой студент уже зарегистрирован.</string>
+    <string name="students_invalid">Укажите ФИО и группу.</string>
+    <string name="students_save_failed">Не удалось сохранить студента.</string>
+    <string name="exam_pick_student">Зарегистрированный студент</string>
+    <string name="exam_pick_student_manual">— Ввести вручную —</string>
+
     <!-- 3D Heart Infarct -->
     <string name="monitor_3d_infarct">Инфаркт (некроз)</string>
     <string name="monitor_3d_develop_infarct">▶ Развитие инфаркта</string>
@@ -772,4 +800,9 @@
     <string name="course_load_empty_warning">В пакете есть курсы, но не удалось прочитать ни одной лекции — возможно, он пуст или повреждён.</string>
     <string name="course_load_failed_body">Не удалось открыть файл как пакет курсов. Текущие курсы не изменены.</string>
     <string name="course_load_no_courses">Пакет загружен, но не содержит курсов.</string>
+
+    <!-- About / Versioning -->
+    <string name="settings_about">О программе</string>
+    <string name="about_version">Версия</string>
+    <string name="about_built">Сборка от</string>
 </resources>

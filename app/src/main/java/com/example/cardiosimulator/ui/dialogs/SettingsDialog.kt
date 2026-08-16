@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.cardiosimulator.R
+import com.example.cardiosimulator.BuildConfig
 import com.example.cardiosimulator.domain.GridScheme
 import com.example.cardiosimulator.ui.theme.CardioSimulatorTheme
 import com.example.cardiosimulator.ui.viewmodels.MonitorViewModel
@@ -388,6 +389,12 @@ fun SettingsContent(
                         Text(stringResource(R.string.data_source_change_folder))
                     }
 
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedButton(onClick = { appViewModel.resetDataFolderToDefault(context) }) {
+                        Text(stringResource(R.string.data_source_reset_default))
+                    }
+
                     Spacer(modifier = Modifier.height(12.dp))
 
                     // Export ZIP: re-packs the in-memory dataset (with edits) to
@@ -444,6 +451,12 @@ fun SettingsContent(
                         Text(stringResource(R.string.course_data_source_change))
                     }
 
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedButton(onClick = { appViewModel.loadSampleCourses(context) }) {
+                        Text(stringResource(R.string.data_source_reset_default))
+                    }
+
                     Spacer(modifier = Modifier.height(12.dp))
 
                     OutlinedButton(onClick = { exportCourseZipLauncher.launch("courses_export.zip") }) {
@@ -452,6 +465,29 @@ fun SettingsContent(
 
                     Spacer(modifier = Modifier.height(24.dp))
                 }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    text = stringResource(R.string.settings_about),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Text(
+                    text = stringResource(R.string.app_name),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = "${stringResource(R.string.about_version)} ${BuildConfig.VERSION_NAME}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.outline
+                )
+                Text(
+                    text = "${stringResource(R.string.about_built)} ${BuildConfig.BUILD_DATE}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
             }
 
             TextButton(

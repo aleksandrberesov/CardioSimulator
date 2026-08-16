@@ -44,7 +44,7 @@ object PathologyParser {
                 description = fields["description"],
                 clinicalCase = fields["clinical_case"],
                 number = fields["number"]?.toIntOrNull(),
-                acronym = fields["acronym"],
+                acronyms = fields["acronym"]?.split(',')?.filter { it.isNotBlank() } ?: emptyList(),
             )
         }
 
@@ -82,8 +82,8 @@ object PathologyParser {
             if (e.number != null) {
                 sb.append(";number:").append(e.number)
             }
-            if (!e.acronym.isNullOrBlank()) {
-                sb.append(";acronym:").append(e.acronym)
+            if (e.acronyms.isNotEmpty()) {
+                sb.append(";acronym:").append(e.acronyms.joinToString(","))
             }
             sb.append('\n')
         }
@@ -179,14 +179,14 @@ object PathologyParser {
         val description = header["description"]?.replace("\\n", "\n")
         val clinicalCase = header["clinical_case"]
         val number = header["number"]?.trim()?.toIntOrNull()
-        val acronym = header["acronym"]
+        val acronyms = header["acronym"]?.split(',')?.filter { it.isNotBlank() } ?: emptyList()
         val globalMarkers = parseMarkers(header["markers"])
         val tips = TipOverlaySerializer.parse(header["tips"])
         val tipComments = parseTipComments(header["tip_notes"])
 
         return PathologyFile(
             id, title, name, leads, globalMarkers, tips, tipComments,
-            group, description, clinicalCase, number, acronym
+            group, description, clinicalCase, number, acronyms
         )
     }
 
@@ -208,8 +208,8 @@ object PathologyParser {
         if (file.number != null) {
             sb.append("number:").append(file.number).append('\n')
         }
-        if (!file.acronym.isNullOrBlank()) {
-            sb.append("acronym:").append(file.acronym).append('\n')
+        if (file.acronyms.isNotEmpty()) {
+            sb.append("acronym:").append(file.acronyms.joinToString(",")).append('\n')
         }
         sb.append("leads:").append(file.leads.size).append('\n')
         
@@ -287,7 +287,7 @@ object PathologyParser {
         }
         if (!file.clinicalCase.isNullOrBlank()) headerSb.append("clinical_case:").append(file.clinicalCase).append('\n')
         if (file.number != null) headerSb.append("number:").append(file.number).append('\n')
-        if (!file.acronym.isNullOrBlank()) headerSb.append("acronym:").append(file.acronym).append('\n')
+        if (file.acronyms.isNotEmpty()) headerSb.append("acronym:").append(file.acronyms.joinToString(",")).append('\n')
         
         if (file.significantPoints.isNotEmpty()) {
             headerSb.append("markers:")

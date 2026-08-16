@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -23,9 +24,16 @@ import java.util.UUID
 
 enum class ConstructorTab { TEST, BANK, GENERATOR }
 
+data class BankAcronym(
+    val code: String,
+    val name: String,
+    val count: Int
+)
+
 class TestConstructorViewModel(
     private val repository: TestRepository,
     private val bankRepository: QuestionBankRepository,
+    private val pathologyRepository: PathologyRepository,
     private val themeStore: TestThemeStore
 ) : ViewModel() {
 
@@ -90,12 +98,50 @@ class TestConstructorViewModel(
     private val _selectedBankTypes = MutableStateFlow<Set<TestGenType>>(emptySet())
     val selectedBankTypes: StateFlow<Set<TestGenType>> = _selectedBankTypes.asStateFlow()
 
+    val bankAcronyms: StateFlow<List<BankAcronym>> = _bankQuestions.map { questions ->
+        val acronymCounts = mutableMapOf<String, Int>()
+        val pathologies = pathologyRepository.pathologies()
+        
+        questions.forEach { q ->
+            val acronyms = mutableSetOf<String>()
+            acronyms.addAll(q.acronyms)
+            q.pathologyId?.let { pid ->
+                pathologies.find { it.id == pid }?.acronym?.let { 
+                    acronyms.add(it)
+                }
+            }
+            acronyms.forEach { acr ->
+                val normalized = acr.trim().uppercase()
+                if (normalized.isNotEmpty()) {
+                    acronymCounts[normalized] = (acronymCounts[normalized] ?: 0) + 1
+                }
+            }
+        }
+        
+        acronymCounts.map { (code, count) ->
+            val entry = Taxonomy.shared.find(code)
+            BankAcronym(
+                code = code,
+                name = entry?.nameRu ?: code,
+                count = count
+            )
+        }.sortedBy { it.code }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val filteredBankQuestions: StateFlow<List<TestQuestion>> = combine(
         _bankQuestions, _searchQuery, _selectedTheme, _selectedBankRhythm, _selectedBankTypes
-    ) { bank, query, theme, rhythm, types ->
+    ) { bank, query, theme, acronym, types ->
+        val pathologies = pathologyRepository.pathologies()
         bank.filter { q ->
+            val qAcronyms = q.acronyms.map { it.trim().uppercase() }.toMutableSet()
+            q.pathologyId?.let { pid ->
+                pathologies.find { it.id == pid }?.acronym?.let { 
+                    qAcronyms.add(it.trim().uppercase())
+                }
+            }
+
             (theme == null || q.theme == theme) &&
-            (rhythm == null || q.pathologyId == rhythm) &&
+            (acronym == null || qAcronyms.contains(acronym.trim().uppercase())) &&
             (types.isEmpty() || types.any { t ->
                 when (t) {
                     TestGenType.Assemble -> q.isAssembly
@@ -110,6 +156,7 @@ class TestConstructorViewModel(
                 q.text.contains(query, ignoreCase = true) ||
                 q.theme?.contains(query, ignoreCase = true) == true ||
                 q.pathologyId?.contains(query, ignoreCase = true) == true ||
+                q.acronyms.any { it.contains(query, ignoreCase = true) } ||
                 q.tagList.any { it.contains(query, ignoreCase = true) }
             )
         }

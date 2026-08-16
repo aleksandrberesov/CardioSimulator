@@ -21,6 +21,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
 
+enum class ExamMode { Choice, IndividualSetup, IndividualActive, Group }
+
 class ExaminationViewModel(
     private val resultStore: ExamResultStore,
     private val bankRepository: QuestionBankRepository? = null,
@@ -47,6 +49,13 @@ class ExaminationViewModel(
 
     private var timerJob: Job? = null
 
+    private val _mode = MutableStateFlow(ExamMode.Choice)
+    val mode: StateFlow<ExamMode> = _mode.asStateFlow()
+
+    fun setMode(mode: ExamMode) {
+        _mode.value = mode
+    }
+
     // --- Individual Mode ---
 
     fun startIndividual(test: Test, student: ExamStudentInfo) {
@@ -65,6 +74,7 @@ class ExaminationViewModel(
         _currentIndex.value = 0
         _selections.value = emptyMap()
         _lastResult.value = null
+        _mode.value = ExamMode.IndividualActive
         resetTimer()
     }
 
@@ -171,11 +181,13 @@ class ExaminationViewModel(
             }
         )
         _isGroupSessionActive.value = true
+        _mode.value = ExamMode.Group
     }
 
     fun stopGroupSession() {
         groupService?.stopServer()
         _isGroupSessionActive.value = false
+        _mode.value = ExamMode.Choice
     }
 
     // --- Results ---
@@ -196,6 +208,7 @@ class ExaminationViewModel(
         _currentIndex.value = 0
         _selections.value = emptyMap()
         _lastResult.value = null
+        _mode.value = ExamMode.Choice
         timerJob?.cancel()
     }
 }

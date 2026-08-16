@@ -1,7 +1,9 @@
 package com.example.cardiosimulator.domain
 
+import kotlinx.serialization.Serializable
 import java.util.Date
 
+@Serializable
 enum class OskeSpecialty { Therapy, Cardiology, FunctionalDiagnostics }
 
 enum class OskeAnswerKind { Single, Multi }
@@ -30,8 +32,10 @@ data class OskeAnswerKey(
     val correctOptionIds: Map<String, List<String>>
 )
 
+@Serializable
 data class OskeStudentInfo(val fullName: String, val group: String)
 
+@Serializable
 data class OskeBlockResult(
     val questionId: String,
     val selected: List<String>,
@@ -39,6 +43,7 @@ data class OskeBlockResult(
     val isCorrect: Boolean
 )
 
+@Serializable
 data class OskeResult(
     val student: OskeStudentInfo,
     val specialty: OskeSpecialty,

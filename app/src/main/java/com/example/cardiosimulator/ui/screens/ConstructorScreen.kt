@@ -480,7 +480,7 @@ fun ConstructorScreen(
     if (showGroupDialog && targetFile != null) {
         val groups = rhythmViewModel.repository.groups
         val currentGroup = targetFile?.group
-        val currentAcronym = targetFile?.acronym
+        val currentAcronym = targetFile?.acronyms?.joinToString(",")
         val availableKeys = groups.getOrderedKeys()
 
         var selectedKey by remember { mutableStateOf(currentGroup) }
@@ -584,7 +584,7 @@ fun ConstructorScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    constructorViewModel.setAcronym(acronymText)
+                    constructorViewModel.setAcronyms(if (acronymText.isBlank()) emptyList() else acronymText.split(",").map { it.trim() }.filter { it.isNotEmpty() })
                     if (newGroupName.isNotBlank()) {
                         constructorViewModel.createAndSetGroup(newGroupName)
                     } else {

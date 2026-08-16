@@ -1,8 +1,35 @@
+import java.util.Properties
+import java.time.LocalDate
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
 }
+
+// --- Auto-incrementing build version ------------------------------------------------
+// Single source of truth: app/version.properties  ->  versionName=1.0.1  /  build=N
+val versionPropsFile = file("version.properties")
+val versionProps = Properties().apply {
+    if (versionPropsFile.exists()) versionPropsFile.inputStream().use { load(it) }
+}
+val semVer: String = versionProps.getProperty("versionName", "1.0.0")
+val curBuild: Int = versionProps.getProperty("build", "0").toIntOrNull() ?: 0
+
+// Bump only when a real build/assemble/install/bundle task is requested — NOT on IDE
+// Gradle sync or `./gradlew tasks` (configuration runs on EVERY invocation). This is the
+// Android analog of the Windows DesignTimeBuild guard in Version.targets.
+val isRealBuild = gradle.startParameter.taskNames.any { name ->
+    listOf("assemble", "build", "install", "bundle").any { name.contains(it, ignoreCase = true) }
+}
+val buildNumber: Int = if (isRealBuild) curBuild + 1 else curBuild
+if (isRealBuild && buildNumber != curBuild) {
+    versionProps.setProperty("versionName", semVer)
+    versionProps.setProperty("build", buildNumber.toString())
+    versionPropsFile.outputStream().use { versionProps.store(it, "Auto-incremented on build") }
+}
+val appFullVersion = "$semVer.$buildNumber"                 // e.g. "1.0.1.42"
+val appBuildDate = LocalDate.now().toString()     // yyyy-MM-dd
 
 android {
     namespace = "com.example.cardiosimulator"
@@ -12,8 +39,11 @@ android {
         applicationId = "com.example.cardiosimulator"
         minSdk = 24
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = buildNumber
+        versionName = appFullVersion
+
+        buildConfigField("String", "BUILD_DATE", "\"$appBuildDate\"")
+        buildConfigField("String", "SEM_VERSION", "\"$semVer\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

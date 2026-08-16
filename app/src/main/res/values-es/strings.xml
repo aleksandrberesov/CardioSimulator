@@ -8,6 +8,7 @@
     <string name="mode_oske">ECOE</string>
     <string name="mode_editor">Constructor ECG</string>
     <string name="mode_course_constructor">Constructor de Cursos</string>
+    <string name="mode_students">Estudiantes</string>
 
     <!-- Settings dialog -->
     <string name="settings_title">Ajustes</string>
@@ -373,4 +374,9 @@
     <string name="common_dont_save">No guardar</string>
     <string name="common_save">Guardar</string>
     <string name="common_cancel">Cancelar</string>
+
+    <!-- About / Versioning -->
+    <string name="settings_about">Acerca de</string>
+    <string name="about_version">Versión</string>
+    <string name="about_built">Compilado</string>
 </resources>

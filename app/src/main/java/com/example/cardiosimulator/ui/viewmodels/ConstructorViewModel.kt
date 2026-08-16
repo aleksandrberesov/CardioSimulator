@@ -668,15 +668,15 @@ class ConstructorViewModel(
         }
     }
 
-    fun setAcronym(acronym: String?) {
+    fun setAcronyms(acronyms: List<String>) {
         val currentFile = _targetFile.value ?: return
-        val normalized = com.example.cardiosimulator.domain.Taxonomy.normalize(acronym)
-        if (currentFile.acronym != normalized) {
-            var updatedFile = currentFile.copy(acronym = normalized)
+        val normalized = acronyms.mapNotNull { com.example.cardiosimulator.domain.Taxonomy.normalize(it) }.distinct()
+        if (currentFile.acronyms != normalized) {
+            var updatedFile = currentFile.copy(acronyms = normalized)
 
-            // Tagging an ungrouped rhythm auto-files it into the acronym's taxonomy group.
-            if (normalized != null && currentFile.group == null) {
-                val entry = com.example.cardiosimulator.domain.Taxonomy.shared.find(normalized)
+            // Tagging an ungrouped rhythm auto-files it into the primary acronym's taxonomy group.
+            if (normalized.isNotEmpty() && currentFile.group == null) {
+                val entry = com.example.cardiosimulator.domain.Taxonomy.shared.find(normalized.first())
                 if (entry != null && entry.group.isNotEmpty()) {
                     updatedFile = updatedFile.copy(group = entry.group)
                 }

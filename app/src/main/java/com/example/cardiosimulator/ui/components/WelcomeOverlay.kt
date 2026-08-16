@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.cardiosimulator.R
+import com.example.cardiosimulator.BuildConfig
 
 @Composable
 fun WelcomeOverlay(
@@ -93,6 +94,12 @@ fun WelcomeOverlay(
                     fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
                 ),
                 color = MaterialTheme.colorScheme.secondary
+            )
+
+            Text(
+                text = "v${BuildConfig.VERSION_NAME}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
 
             Spacer(modifier = Modifier.height(24.dp))

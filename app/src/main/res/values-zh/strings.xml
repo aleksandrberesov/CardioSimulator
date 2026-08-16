@@ -8,6 +8,7 @@
     <string name="mode_oske">客观结构化临床考试</string>
     <string name="mode_editor">心电图构造器</string>
     <string name="mode_course_constructor">课程构造器</string>
+    <string name="mode_students">学生</string>
 
     <!-- Settings dialog -->
     <string name="settings_title">设置</string>
@@ -365,4 +366,9 @@
     <string name="common_dont_save">不保存</string>
     <string name="common_save">保存</string>
     <string name="common_cancel">取消</string>
+
+    <!-- About / Versioning -->
+    <string name="settings_about">关于</string>
+    <string name="about_version">版本</string>
+    <string name="about_built">构建于</string>
 </resources>

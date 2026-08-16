@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,9 +17,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import com.example.cardiosimulator.domain.ExamStudentInfo
 import com.example.cardiosimulator.ui.theme.*
 import com.example.cardiosimulator.ui.viewmodels.*
 
@@ -31,70 +34,91 @@ fun LearningScaleScreen(viewModel: LearningScaleViewModel) {
         Toast.makeText(context, "Welcome back, Specialist!", Toast.LENGTH_SHORT).show()
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        bottomBar = { Footer(state) }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp)
-        ) {
-            Header(state)
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            GlobalProgressSection(state.globalProgress)
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(24.dp)
-            ) {
-                Column(modifier = Modifier.weight(1.2f)) {
-                    Text(
-                        text = "Карта разделов",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    SectionsMap(state.sections)
-                }
-                
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Адаптивный план",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    AdaptivePlan(
-                        tasks = state.tasks,
-                        onMarkSolved = { taskId ->
-                            val newProgress = viewModel.markDone(taskId)
-                            if (newProgress != null) {
-                                Toast.makeText(context, "Topic mastered! Section progress: $newProgress%", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    DifficultyControl()
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(48.dp))
-            Text(
-                text = "Аналитика прогресса",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
+    Row(modifier = Modifier.fillMaxSize()) {
+        AnimatedVisibility(visible = state.isDrawerOpen) {
+            StudentDrawer(
+                roster = state.roster,
+                selectedStudent = state.selectedStudent,
+                onSelect = { viewModel.selectStudent(it) }
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            ProgressHistogram(state.sections)
-            Spacer(modifier = Modifier.height(24.dp))
+        }
+
+        Box(
+            modifier = Modifier.fillMaxHeight(),
+            contentAlignment = Alignment.Center
+        ) {
+            DrawerHandle(
+                isOpen = state.isDrawerOpen,
+                onClick = { viewModel.setDrawerOpen(!state.isDrawerOpen) }
+            )
+        }
+
+        Scaffold(
+            modifier = Modifier.weight(1f),
+            containerColor = MaterialTheme.colorScheme.background,
+            bottomBar = { Footer(state) }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(24.dp)
+            ) {
+                Header(state)
+                Spacer(modifier = Modifier.height(32.dp))
+
+                GlobalProgressSection(state.globalProgress)
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
+                    Column(modifier = Modifier.weight(1.2f)) {
+                        Text(
+                            text = "Карта разделов",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        SectionsMap(state.sections)
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Адаптивный план",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        AdaptivePlan(
+                            tasks = state.tasks,
+                            onMarkSolved = { taskId ->
+                                val newProgress = viewModel.markDone(taskId)
+                                if (newProgress != null) {
+                                    Toast.makeText(context, "Topic mastered! Section progress: $newProgress%", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        DifficultyControl()
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(48.dp))
+                Text(
+                    text = "Аналитика прогресса",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                ProgressHistogram(state.sections)
+                Spacer(modifier = Modifier.height(24.dp))
+            }
         }
     }
 }
@@ -126,7 +150,9 @@ private fun Header(state: LearningScaleState) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             LevelBadge(level = 4)
             Spacer(modifier = Modifier.width(16.dp))
-            UserChip(name = "Dr. Nikolay")
+            val studentName = state.selectedStudent?.fullName ?: if (state.roster.isEmpty()) "Dr. Nikolay" else "Все студенты"
+            val studentGroup = state.selectedStudent?.group ?: if (state.roster.isEmpty()) "Specialist" else ""
+            UserChip(name = studentName, group = studentGroup)
         }
     }
     
@@ -135,7 +161,7 @@ private fun Header(state: LearningScaleState) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
+            .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween
@@ -154,7 +180,7 @@ private fun Header(state: LearningScaleState) {
 private fun LevelBadge(level: Int) {
     Surface(
         color = MaterialTheme.colorScheme.primaryContainer,
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -178,10 +204,10 @@ private fun LevelBadge(level: Int) {
 }
 
 @Composable
-private fun UserChip(name: String) {
+private fun UserChip(name: String, group: String) {
     Row(
         modifier = Modifier
-            .clip(CircleShape)
+            .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(end = 12.dp, start = 4.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -193,18 +219,136 @@ private fun UserChip(name: String) {
                 .background(MaterialTheme.colorScheme.primary),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = name.take(1),
-                color = MaterialTheme.colorScheme.onPrimary,
-                fontWeight = FontWeight.Bold
-            )
+            if (name == "Все студенты") {
+                Icon(
+                    Icons.Default.Group,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(18.dp)
+                )
+            } else {
+                Text(
+                    text = name.take(1),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
         Spacer(modifier = Modifier.width(8.dp))
+        Column {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+            if (group.isNotEmpty()) {
+                Text(
+                    text = group,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StudentDrawer(
+    roster: List<ExamStudentInfo>,
+    selectedStudent: ExamStudentInfo?,
+    onSelect: (ExamStudentInfo?) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .width(260.dp)
+            .fillMaxHeight()
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(16.dp)
+    ) {
         Text(
-            text = name,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium
+            text = "👥 Студенты",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 16.dp)
         )
+
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            item {
+                StudentItem(
+                    name = "Все студенты",
+                    group = "",
+                    isSelected = selectedStudent == null,
+                    onClick = { onSelect(null) }
+                )
+            }
+
+            items(roster) { student ->
+                StudentItem(
+                    name = student.fullName,
+                    group = student.group,
+                    isSelected = selectedStudent == student,
+                    onClick = { onSelect(student) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StudentItem(
+    name: String,
+    group: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = if (isSelected) LsGreen.copy(alpha = 0.1f) else Color.Transparent,
+        border = if (isSelected) BorderStroke(1.dp, LsGreen) else null
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                )
+                if (group.isNotEmpty()) {
+                    Text(
+                        text = group,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DrawerHandle(isOpen: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp),
+        shadowElevation = 4.dp,
+        modifier = Modifier
+            .width(24.dp)
+            .height(64.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = if (isOpen) Icons.AutoMirrored.Filled.KeyboardArrowLeft else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
     }
 }
 
@@ -253,7 +397,7 @@ private fun GlobalProgressSection(progress: Int) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(12.dp)
-                .clip(CircleShape),
+                .clip(RoundedCornerShape(16.dp)),
             color = LsGreen,
             trackColor = MaterialTheme.colorScheme.surfaceVariant
         )
@@ -275,6 +419,7 @@ private fun SectionCard(section: LsSection) {
     
     Card(
         onClick = { expanded = !expanded },
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
@@ -285,7 +430,7 @@ private fun SectionCard(section: LsSection) {
                 Box(
                     modifier = Modifier
                         .size(36.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(16.dp))
                         .background(statusColor(section.status).copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -300,9 +445,7 @@ private fun SectionCard(section: LsSection) {
                     Text(
                         text = section.name,
                         style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        fontWeight = FontWeight.Bold
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         LinearProgressIndicator(
@@ -310,7 +453,7 @@ private fun SectionCard(section: LsSection) {
                             modifier = Modifier
                                 .width(60.dp)
                                 .height(4.dp)
-                                .clip(CircleShape),
+                                .clip(RoundedCornerShape(16.dp)),
                             color = statusColor(section.status),
                             trackColor = MaterialTheme.colorScheme.surfaceVariant
                         )
@@ -341,7 +484,7 @@ private fun SectionCard(section: LsSection) {
                             Box(
                                 modifier = Modifier
                                     .size(6.dp)
-                                    .clip(CircleShape)
+                                    .clip(RoundedCornerShape(16.dp))
                                     .background(
                                         if (subtopic.progress >= 80) LsGreen
                                         else if (subtopic.progress >= 40) LsAmber
@@ -394,6 +537,7 @@ private fun AdaptivePlan(tasks: List<PlanTask>, onMarkSolved: (String) -> Unit) 
 private fun TaskCard(task: PlanTask, onClick: () -> Unit) {
     Card(
         onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         )
@@ -406,7 +550,7 @@ private fun TaskCard(task: PlanTask, onClick: () -> Unit) {
         ) {
             val (icon, color) = when (task.type) {
                 PlanTaskType.Critical -> Icons.Default.Warning to LsRed
-                PlanTaskType.Growth -> Icons.Default.ArrowForward to LsAmber
+                PlanTaskType.Growth -> Icons.AutoMirrored.Filled.ArrowForward to LsAmber
                 PlanTaskType.Fix -> Icons.Default.Refresh to LsGreen
             }
             
@@ -428,9 +572,7 @@ private fun TaskCard(task: PlanTask, onClick: () -> Unit) {
                 Text(
                     text = task.sectionName,
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    color = MaterialTheme.colorScheme.secondary
                 )
             }
             
@@ -438,7 +580,8 @@ private fun TaskCard(task: PlanTask, onClick: () -> Unit) {
             
             Badge(
                 containerColor = color.copy(alpha = 0.1f),
-                contentColor = color
+                contentColor = color,
+                modifier = Modifier.clip(RoundedCornerShape(16.dp))
             ) {
                 Text(
                     text = task.type.name.uppercase(),
@@ -489,6 +632,7 @@ private fun TaskDetailDialog(task: PlanTask, onDismiss: () -> Unit, onSolved: ()
 private fun DifficultyControl() {
     var difficulty by remember { mutableStateOf(45f) }
     Card(
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
@@ -519,6 +663,8 @@ private fun DifficultyControl() {
 @Composable
 private fun ProgressHistogram(sections: List<LsSection>) {
     Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
@@ -543,7 +689,7 @@ private fun ProgressHistogram(sections: List<LsSection>) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .fillMaxHeight(section.progress / 100f)
-                            .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                            .clip(RoundedCornerShape(16.dp))
                             .background(color)
                     )
                     Spacer(modifier = Modifier.height(8.dp))

@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Cardio Simulator"
+rootProject.name = "antiAI ECG Simulator"
 include(":app")
  

@@ -2,13 +2,18 @@ package com.example.cardiosimulator.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cardiosimulator.domain.ExamResult
+import com.example.cardiosimulator.domain.ExamStudentInfo
 import com.example.cardiosimulator.domain.MasteryReport
+import com.example.cardiosimulator.domain.MasteryRollup
 import com.example.cardiosimulator.domain.Taxonomy
+import com.example.cardiosimulator.data.ExamResultStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
@@ -62,7 +67,10 @@ data class LearningScaleState(
     val rank: String = "#6",
     val avgSeconds: Int = 47,
     val hasInteracted: Boolean = false,
-    val hasRealData: Boolean = false
+    val hasRealData: Boolean = false,
+    val roster: List<ExamStudentInfo> = emptyList(),
+    val selectedStudent: ExamStudentInfo? = null,
+    val isDrawerOpen: Boolean = false
 )
 
 @Serializable
@@ -87,11 +95,16 @@ private data class SubtopicDto(
 
 class LearningScaleViewModel(
     private val persistenceFile: File,
-    private val masteryReportFlow: StateFlow<MasteryReport>? = null
+    private val examResultStore: ExamResultStore? = null,
+    private val taxonomy: Taxonomy = Taxonomy.shared,
+    private val initialStudent: ExamStudentInfo? = null
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LearningScaleState())
     val state: StateFlow<LearningScaleState> = _state.asStateFlow()
+
+    private val _selectedStudent = MutableStateFlow<ExamStudentInfo?>(initialStudent)
+    private val _isDrawerOpen = MutableStateFlow(false)
 
     private var _sections: List<LsSection> = seedCourse()
     private val _completed = mutableSetOf<String>()
@@ -105,16 +118,37 @@ class LearningScaleViewModel(
 
     init {
         load()
-        viewModelScope.launch {
-            masteryReportFlow?.collectLatest { report ->
-                _currentReport = report
-                if (report.hasData) {
-                    applyReport(report)
+        if (examResultStore != null) {
+            viewModelScope.launch {
+                combine(
+                    examResultStore.resultsChanged,
+                    _selectedStudent
+                ) { _, student ->
+                    val allResults = examResultStore.list()
+                    val filtered = if (student == null) {
+                        allResults
+                    } else {
+                        allResults.filter { it.student.fullName == student.fullName && it.student.group == student.group }
+                    }
+                    val roster = allResults.map { it.student }.distinctBy { it.fullName + it.group }
+                        .sortedBy { it.fullName }
+                    
+                    val report = MasteryRollup.compute(filtered, taxonomy)
+                    Triple(report, roster, student)
+                }.collectLatest { (report, roster, student) ->
+                    _currentReport = report
+                    if (report.hasData) {
+                        applyReport(report)
+                    } else {
+                        // Reset to seed if no real data for this student
+                        _sections = seedCourse()
+                    }
+                    updateState(roster, student)
                 }
-                updateState()
             }
+        } else {
+            updateState(emptyList(), null)
         }
-        updateState()
     }
 
     private fun applyReport(report: MasteryReport) {
@@ -122,13 +156,9 @@ class LearningScaleViewModel(
             val sectionStat = report.section(section.id)
             for (sub in section.subtopics) {
                 val subStat = report.subtopic(sub.id)
-                // If there's no data for this subtopic in the report, it stays at 0 or demo?
-                // The plan says: "subtopic progress = rolled-up accuracy (0 + "no data" flag when a subtopic has no attempts)"
-                // I'll set it to progress from report.
                 sub.progress = if (subStat.answered > 0) subStat.progress else 0
             }
             
-            // Section progress = average over assessed subtopics only
             val assessed = section.subtopics.filter { report.subtopic(it.id).answered > 0 }
             section.progress = if (assessed.isNotEmpty()) {
                 assessed.map { it.progress }.average().roundToInt()
@@ -139,7 +169,7 @@ class LearningScaleViewModel(
         }
     }
 
-    private fun updateState() {
+    private fun updateState(roster: List<ExamStudentInfo> = emptyList(), student: ExamStudentInfo? = null) {
         val report = _currentReport
         val hasRealData = report.hasData
         
@@ -161,7 +191,6 @@ class LearningScaleViewModel(
         
         val accuracy = String.format(Locale.US, "%.1f", accuracyValue)
         val accuracyChange = if (hasRealData) {
-            // Placeholder for real change tracking if available, otherwise neutral
             "▲0.0%"
         } else if (_completed.isNotEmpty()) {
             "▲" + String.format(Locale.US, "%.1f", 2.1 + _completed.size * 0.1) + "%"
@@ -170,7 +199,7 @@ class LearningScaleViewModel(
         }
         
         val rankIdx = if (hasRealData) {
-            (accuracyValue / 15).toInt().coerceAtMost(6) // rough estimate
+            (accuracyValue / 15).toInt().coerceAtMost(6)
         } else {
             (floor(_completed.size / 1.5)).toInt().coerceAtMost(6)
         }
@@ -186,8 +215,20 @@ class LearningScaleViewModel(
             rank = rank,
             avgSeconds = 47,
             hasInteracted = _hasInteracted,
-            hasRealData = hasRealData
+            hasRealData = hasRealData,
+            roster = roster,
+            selectedStudent = student,
+            isDrawerOpen = _isDrawerOpen.value
         )
+    }
+
+    fun selectStudent(student: ExamStudentInfo?) {
+        _selectedStudent.value = student
+    }
+
+    fun setDrawerOpen(open: Boolean) {
+        _isDrawerOpen.value = open
+        updateState(_state.value.roster, _state.value.selectedStudent)
     }
 
     private fun generateTasks(): List<PlanTask> {
@@ -323,6 +364,17 @@ class LearningScaleViewModel(
         }
     }
 
+    private fun isTableOfContents(subName: String?, sectionName: String?): Boolean {
+        if (subName.isNullOrBlank() || sectionName.isNullOrBlank()) return true
+
+        // Check for leading digits/numeration (e.g. "1.1", "4.6.1", "1.")
+        val leadingNumeration = Regex("""^\d+(\.\d+)*\.?\s+""")
+        if (leadingNumeration.containsMatchIn(subName)) return false
+
+        // If no numeration, exclude if it repeats the section name
+        return sectionName.contains(subName, ignoreCase = true)
+    }
+
     private fun seedCourse(): List<LsSection> = listOf(
         LsSection(1, "Теоретические основы и техника регистрации ЭКГ", 92, SectionStatus.Good, listOf(
             LsSubtopic("1.1", "Мембранная теория биопотенциалов", 95),
@@ -333,9 +385,9 @@ class LearningScaleViewModel(
             LsSubtopic("1.6", "Техника регистрации ЭКГ", 94),
             LsSubtopic("1.7", "Функциональные пробы", 85),
             LsSubtopic("1.8", "Дополнительные методы", 80)
-        )),
+        ).filter { !isTableOfContents(it.name, "Теоретические основы и техника регистрации ЭКГ") }),
         LsSection(2, "Анализ нормальной ЭКГ", 85, SectionStatus.Good, listOf(
-            LsSubtopic("2.1", "Зубец P", 88),
+            LsSubtopic("2.1", "Зуबेц P", 88),
             LsSubtopic("2.2", "Интервал P–Q(R)", 85),
             LsSubtopic("2.3", "Желудочковый комплекс QRST", 82),
             LsSubtopic("2.4", "Анализ ритма и проводимости", 80),
@@ -343,7 +395,7 @@ class LearningScaleViewModel(
             LsSubtopic("2.6", "Анализ предсердного зубца P", 90),
             LsSubtopic("2.7", "Анализ желудочкового комплекса", 85),
             LsSubtopic("2.8", "ЭКГ-заключение", 82)
-        )),
+        ).filter { !isTableOfContents(it.name, "Анализ нормальной ЭКГ") }),
         LsSection(3, "Нарушения ритма сердца", 45, SectionStatus.Warning, listOf(
             LsSubtopic("3.1", "Нарушения автоматизма СА-узла", 55),
             LsSubtopic("3.2", "Эктопические (гетеротопные) ритмы", 45),
@@ -353,7 +405,7 @@ class LearningScaleViewModel(
             LsSubtopic("3.6", "Фибрилляция предсердий", 25),
             LsSubtopic("3.7", "Трепетание и фибрилляция желудочков", 20),
             LsSubtopic("3.8", "Холтеровское мониторирование", 50)
-        )),
+        ).filter { !isTableOfContents(it.name, "Нарушения ритма сердца") }),
         LsSection(4, "Нарушения функции проводимости", 30, SectionStatus.Critical, listOf(
             LsSubtopic("4.1", "Синдром слабости СА-узла", 35),
             LsSubtopic("4.2", "Синоатриальная блокада", 30),
@@ -366,16 +418,16 @@ class LearningScaleViewModel(
             LsSubtopic("4.9", "Электрограмма пучка Гиса", 15),
             LsSubtopic("4.10", "Блокады ножек пучка Гиса", 25),
             LsSubtopic("4.11", "Синдромы преждевременного возбуждения", 20)
-        )),
+        ).filter { !isTableOfContents(it.name, "Нарушения функции проводимости") }),
         LsSection(5, "Гипертрофия предсердий и желудочков", 65, SectionStatus.Warning, listOf(
             LsSubtopic("5.1", "Гипертрофия левого предсердия", 70),
             LsSubtopic("5.2", "Гипертрофия правого предсердия", 65),
             LsSubtopic("5.3", "Перегрузка предсердий", 60),
             LsSubtopic("5.4", "Гипертрофия левого желудочка", 68),
-            LsSubtopic("5.5", "Гипертрофия правого желудочка", 55),
+            LsSubtopic("5.5", "Гиपरтрофия правого желудочка", 55),
             LsSubtopic("5.6", "Комбинированная гипертрофия", 50),
             LsSubtopic("5.7", "Перегрузка желудочков", 60)
-        )),
+        ).filter { !isTableOfContents(it.name, "Гиपरтрофия предсердий и желудочков") }),
         LsSection(6, "Ишемическая болезнь сердца и инфаркт", 55, SectionStatus.Warning, listOf(
             LsSubtopic("6.1", "Общие сведения об ИБС", 65),
             LsSubtopic("6.2", "ЭКГ при ишемии и повреждении", 55),
@@ -386,7 +438,7 @@ class LearningScaleViewModel(
             LsSubtopic("6.7", "Нестабильная стенокардия", 55),
             LsSubtopic("6.8", "Стабильная стенокардия", 60),
             LsSubtopic("6.9", "Хроническая ИБС", 50)
-        )),
+        ).filter { !isTableOfContents(it.name, "Ишемическая болезнь сердца и инфаркт") }),
         LsSection(7, "ЭКГ при заболеваниях сердца и синдромах", 20, SectionStatus.Critical, listOf(
             LsSubtopic("7.1", "Приобретенные пороки сердца", 25),
             LsSubtopic("7.2", "Острое легочное сердце", 20),
@@ -395,6 +447,6 @@ class LearningScaleViewModel(
             LsSubtopic("7.5", "Нарушения электролитного обмена", 20),
             LsSubtopic("7.6", "Передозировка гликозидов", 10),
             LsSubtopic("7.7", "Имплантированный ЭКС", 15)
-        ))
+        ).filter { !isTableOfContents(it.name, "ЭКГ при заболеваниях сердца и синдромах") })
     )
 }

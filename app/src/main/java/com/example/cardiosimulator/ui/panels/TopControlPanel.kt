@@ -168,6 +168,7 @@ fun TopControlPanel(
                             }
                         }
                         OperatingMode.LearningScale -> {}
+                        OperatingMode.Students -> {}
                     }
                 }
             }

@@ -22,6 +22,7 @@ import com.example.cardiosimulator.data.ExamResultStore
 import com.example.cardiosimulator.data.FileQuestionBankSource
 import com.example.cardiosimulator.data.QuestionBankRepository
 import com.example.cardiosimulator.data.TestThemeStore
+import com.example.cardiosimulator.data.StudentStore
 import com.example.cardiosimulator.domain.AppStateModel
 import com.example.cardiosimulator.domain.AppEdition
 import com.example.cardiosimulator.domain.CourseEntry
@@ -140,11 +141,14 @@ class AppViewModel(
     val testRepository: TestRepository? = null,
     val questionBankRepository: QuestionBankRepository? = null,
     val testThemeStore: TestThemeStore? = null,
+    val studentStore: StudentStore? = null,
     val examResultStore: ExamResultStore? = null,
     val appContext: Context? = null,
     val prefs: DataSourcePrefs? = null,
     private val tcpReconnectIntervalMs: Long = 5000L,
 ) : ViewModel() {
+
+    var pendingLearningScaleStudent: com.example.cardiosimulator.domain.Student? = null
 
     val operatingModes = appState.operatingModes
 
@@ -750,6 +754,26 @@ class AppViewModel(
                 _dataState.value = DataState.NotConfigured
                 throw ce
             }
+        }
+    }
+
+    /**
+     * Resets the pathology data source to the bundled default pack.
+     */
+    fun resetDataFolderToDefault(context: Context) {
+        val repo = repository ?: return
+        _isDataConfirmed.value = false
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                prefs?.setTreeUri(null)
+                // Delete overlay files to clear user edits/tombstones
+                val overlaysDir = File(context.filesDir, "overlays")
+                if (overlaysDir.exists()) {
+                    overlaysDir.deleteRecursively()
+                }
+            }
+            selectCourse(ALL_RHYTHMS_ID)
+            tryLoadPathologyPack(context, repo)
         }
     }
 

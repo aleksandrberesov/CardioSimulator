@@ -21,7 +21,8 @@ import com.example.cardiosimulator.domain.AppBuilder
 import com.example.cardiosimulator.domain.AppEdition
 import com.example.cardiosimulator.domain.OperatingMode
 import com.example.cardiosimulator.domain.OperatingModeModel
-import com.example.cardiosimulator.domain.isAuthoring
+import com.example.cardiosimulator.domain.isFullEditionOnly
+import com.example.cardiosimulator.domain.QuestionStimulus
 import com.example.cardiosimulator.domain.OskeAnswerKey
 import com.example.cardiosimulator.domain.Test
 import com.example.cardiosimulator.domain.TestQuestion
@@ -30,6 +31,7 @@ import com.example.cardiosimulator.ui.components.WelcomeOverlay
 import com.example.cardiosimulator.ui.panels.*
 import com.example.cardiosimulator.ui.theme.*
 import com.example.cardiosimulator.ui.viewmodels.*
+import com.example.cardiosimulator.ui.screens.StudentsScreen
 
 @Composable
 fun MainScreen(appViewModel: AppViewModel) {
@@ -183,7 +185,11 @@ fun MainScreen(appViewModel: AppViewModel) {
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return TestViewModel() as T
+                return TestViewModel(
+                    resultStore = appViewModel.examResultStore,
+                    bankRepository = appViewModel.questionBankRepository,
+                    appContext = appViewModel.appContext
+                ) as T
             }
         }
     )
@@ -228,6 +234,7 @@ fun MainScreen(appViewModel: AppViewModel) {
                 return TestConstructorViewModel(
                     repository = testRepo,
                     bankRepository = bankRepo,
+                    pathologyRepository = appViewModel.repository!!,
                     themeStore = themeStore
                 ) as T
             }
@@ -239,9 +246,27 @@ fun MainScreen(appViewModel: AppViewModel) {
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                val student = appViewModel.pendingLearningScaleStudent
+                appViewModel.pendingLearningScaleStudent = null
                 return LearningScaleViewModel(
                     persistenceFile = java.io.File(context.filesDir, "learning_scale.json"),
-                    masteryReportFlow = appViewModel.masteryReport
+                    examResultStore = appViewModel.examResultStore,
+                    initialStudent = student?.toExamInfo()
+                ) as T
+            }
+        }
+    )
+
+    val studentRegistrationViewModel: StudentRegistrationViewModel = viewModel(
+        key = selectedMode.id.name + "_students",
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                val store = appViewModel.studentStore ?: com.example.cardiosimulator.data.StudentStore(java.io.File(context.filesDir, "students.json"))
+                return StudentRegistrationViewModel(
+                    store = store,
+                    examStore = appViewModel.examResultStore,
+                    oskeStore = appViewModel.oskeResultStore
                 ) as T
             }
         }
@@ -250,6 +275,13 @@ fun MainScreen(appViewModel: AppViewModel) {
     LaunchedEffect(dataState, rhythmViewModel) {
         if (dataState is DataState.Ready) {
             rhythmViewModel.loadManifest()
+        }
+    }
+
+    LaunchedEffect(selectedMode) {
+        if (selectedMode.id == OperatingMode.Testing || selectedMode.id == OperatingMode.Examination) {
+            monitorViewModel.setSeriesCount(12)
+            monitorViewModel.setSeriesScheme(com.example.cardiosimulator.domain.SeriesScheme.TwoColumn)
         }
     }
 
@@ -363,6 +395,13 @@ fun MainScreen(appViewModel: AppViewModel) {
                     OperatingMode.LearningScale -> LearningScaleScreen(
                         viewModel = learningScaleViewModel
                     )
+                    OperatingMode.Students -> StudentsScreen(
+                        viewModel = studentRegistrationViewModel,
+                        onViewLearningScale = { student ->
+                            appViewModel.pendingLearningScaleStudent = student
+                            appViewModel.updateOperatingMode(appViewModel.operatingModes.first { it.id == OperatingMode.LearningScale })
+                        }
+                    )
                 }
             }
             Box(
@@ -412,6 +451,43 @@ fun MainScreen(appViewModel: AppViewModel) {
                         OperatingMode.LearningScale -> {
                             // No specific control panel for LearningScale
                         }
+                        OperatingMode.Students -> {
+                            // No specific control panel for Students
+                        }
+                        OperatingMode.Testing -> {
+                            val activeTest by testViewModel.activeTest.collectAsState()
+                            val currentQuestion = testViewModel.currentQuestion
+                            if (activeTest != null && currentQuestion?.stimulus == QuestionStimulus.Ecg) {
+                                MonitorControlPanel(
+                                    viewModel = monitorViewModel,
+                                    onStartStopClick = { isRunning ->
+                                        if (isRunning) {
+                                            appViewModel.sendStartCommand(currentQuestion.pathologyId, currentQuestion.text)
+                                        } else {
+                                            appViewModel.sendStopCommand()
+                                        }
+                                    },
+                                    isQuizMode = true
+                                )
+                            }
+                        }
+                        OperatingMode.Examination -> {
+                            val activeTest by examinationViewModel.activeTest.collectAsState()
+                            val currentQuestion = examinationViewModel.currentQuestion
+                            if (activeTest != null && currentQuestion?.stimulus == QuestionStimulus.Ecg) {
+                                MonitorControlPanel(
+                                    viewModel = monitorViewModel,
+                                    onStartStopClick = { isRunning ->
+                                        if (isRunning) {
+                                            appViewModel.sendStartCommand(currentQuestion.pathologyId, currentQuestion.text)
+                                        } else {
+                                            appViewModel.sendStopCommand()
+                                        }
+                                    },
+                                    isQuizMode = true
+                                )
+                            }
+                        }
                         else -> {}
                     }
                 }
@@ -435,7 +511,7 @@ fun MainScreen(appViewModel: AppViewModel) {
 fun MainScreenPreview() {
     val appBuilder = AppBuilder()
     OperatingMode.entries
-        .filter { !AppEdition.IS_LIMITED || !it.isAuthoring }
+        .filter { !AppEdition.IS_LIMITED || !it.isFullEditionOnly }
         .forEach { mode ->
             appBuilder.addMode(OperatingModeModel(mode))
         }

@@ -96,15 +96,15 @@ fun QuickTestScreen(
     ) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .fillMaxHeight(0.85f),
-            shape = RoundedCornerShape(16.dp),
+                .fillMaxWidth()
+                .fillMaxHeight(0.9f),
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 6.dp
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 // Header
-                QuickTestHeader(context, onBack)
+                QuickTestHeader(context)
 
                 Row(modifier = Modifier.weight(1f)) {
                     // Left sidebar or Main content depending on layout
@@ -164,6 +164,7 @@ fun QuickTestScreen(
                         QuickTestFooter(
                             selectedMode = selectedMode,
                             context = context,
+                            onBack = onBack,
                             onStartGenerated = {
                                 val test = generateQuickTest(
                                     bank = bankRepository.questions(),
@@ -187,7 +188,7 @@ fun QuickTestScreen(
 private enum class QuickTestMode { Ready, Generate }
 
 @Composable
-private fun QuickTestHeader(context: QuickTestContext, onBack: () -> Unit) {
+private fun QuickTestHeader(context: QuickTestContext) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -206,9 +207,6 @@ private fun QuickTestHeader(context: QuickTestContext, onBack: () -> Unit) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            }
-            TextButton(onClick = onBack) {
-                Text(stringResource(R.string.quick_back_to_lecture))
             }
         }
         
@@ -555,6 +553,7 @@ private fun ParameterRow(
 private fun QuickTestFooter(
     selectedMode: QuickTestMode,
     context: QuickTestContext,
+    onBack: () -> Unit,
     onStartGenerated: () -> Unit
 ) {
     Column {
@@ -564,14 +563,22 @@ private fun QuickTestFooter(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = stringResource(R.string.quick_footer_format, context.subtopic),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f)
-            )
+            ) {
+                OutlinedButton(onClick = onBack) {
+                    Text(stringResource(R.string.cd_cancel))
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(
+                    text = stringResource(R.string.quick_footer_format, context.subtopic),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
             
             if (selectedMode == QuickTestMode.Generate) {
                 Button(

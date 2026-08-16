@@ -510,38 +510,44 @@ fun BankFilters(
                     }
                 }
 
-                // Rhythm Dropdown
-                var rhythmExpanded by remember { mutableStateOf(false) }
-                val currentLang by appViewModel.selectedLanguage.collectAsState()
+                // Rhythm (Acronym) Dropdown
+                var acronymExpanded by remember { mutableStateOf(false) }
+                val bankAcronyms by viewModel.bankAcronyms.collectAsState()
+                
                 ExposedDropdownMenuBox(
-                    expanded = rhythmExpanded,
-                    onExpandedChange = { rhythmExpanded = !rhythmExpanded },
+                    expanded = acronymExpanded,
+                    onExpandedChange = { acronymExpanded = !acronymExpanded },
                     modifier = Modifier.weight(1f)
                 ) {
-                    val selectedName = rhythms.find { it.id == selectedRhythm }?.let {
-                        if (currentLang == Language.RU) it.nameRu ?: it.titleEn else it.titleEn
-                    } ?: stringResource(R.string.bank2_all_rhythms)
+                    val selectedAcronym = bankAcronyms.find { it.code == selectedRhythm }
+                    val label = if (selectedAcronym != null) {
+                        "${selectedAcronym.code} — ${selectedAcronym.name}"
+                    } else {
+                        stringResource(R.string.bank2_all_rhythms)
+                    }
 
                     OutlinedTextField(
-                        value = selectedName,
+                        value = label,
                         onValueChange = {},
                         readOnly = true,
                         label = { Text(stringResource(R.string.test_gen_rhythm_label)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = rhythmExpanded) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = acronymExpanded) },
                         modifier = Modifier.menuAnchor().fillMaxWidth()
                     )
                     ExposedDropdownMenu(
-                        expanded = rhythmExpanded,
-                        onDismissRequest = { rhythmExpanded = false }
+                        expanded = acronymExpanded,
+                        onDismissRequest = { acronymExpanded = false }
                     ) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.bank2_all_rhythms)) },
-                            onClick = { viewModel.setSelectedBankRhythm(null); rhythmExpanded = false }
+                            onClick = { viewModel.setSelectedBankRhythm(null); acronymExpanded = false }
                         )
-                        rhythms.forEach { rhythm ->
+                        bankAcronyms.forEach { acronym ->
                             DropdownMenuItem(
-                                text = { Text(if (currentLang == Language.RU) rhythm.nameRu ?: rhythm.titleEn else rhythm.titleEn) },
-                                onClick = { viewModel.setSelectedBankRhythm(rhythm.id); rhythmExpanded = false }
+                                text = { 
+                                    Text("${acronym.code} — ${acronym.name}  ·  ${acronym.count}")
+                                },
+                                onClick = { viewModel.setSelectedBankRhythm(acronym.code); acronymExpanded = false }
                             )
                         }
                     }
